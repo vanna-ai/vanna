@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
-description = "Easily create styled web pages with Python"
+description = "Generate SQL queries from natural language"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
