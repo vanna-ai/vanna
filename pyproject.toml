@@ -1,6 +1,6 @@
 [project]
 name = "vanna"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -11,6 +11,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests"
 ]
 
 [project.urls]
