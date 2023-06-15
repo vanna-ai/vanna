@@ -3,10 +3,10 @@ print("Vanna.AI Imported")
 import requests
 import json
 import dataclasses
-import types
+from .types import SQLAnswer, Explanation
 
 api_key: None | str = None
-_endpoint = "https://ask.vanna.ai/py/rpc"
+_endpoint = "https://ask.vanna.ai/rpc"
 
 def __rpc_call(method, params):
     headers = {'Content-Type': 'application/json'}
@@ -24,13 +24,19 @@ def __dataclass_to_dict(obj):
 
 # Think about this generically -- the parameters should probably be flat but also be chainable
 def generate_explanation(sql: str) -> str | None:
-    params = [types.SQLAnswer(
+    params = [SQLAnswer(
         raw_answer="",
         prefix="",
         postfix="",
         sql=sql,
     )]
 
-    result = __rpc_call(method="generate_explanation", params=params)
+    d = __rpc_call(method="generate_explanation", params=params)
 
-    return result
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    explanation = Explanation(**d['result'])
+
+    return explanation.explanation
