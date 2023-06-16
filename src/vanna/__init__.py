@@ -57,7 +57,6 @@ def __rpc_call(method, params):
         'Vanna-Key': api_key,
         'Vanna-Org': __org
     }
-    print("Headers: ", str(headers))
     data = {
         "method": method,
         "params": [__dataclass_to_dict(obj) for obj in params]
