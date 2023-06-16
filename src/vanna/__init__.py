@@ -12,6 +12,15 @@ my_question = 'What are the top 10 ABC by XYZ?'
 sql = vn.generate_sql(question=my_question, error_msg=None) 
 # SELECT * FROM table_name WHERE column_name = 'value'
 
+conn = snowflake.connector.connect(
+        user='my_user',
+        password='my_password',
+        account='my_account',
+        database='my_database',
+    )
+
+cs = conn.cursor()
+
 (my_df, error_msg) = vn.run_sql(cs: snowflake.Cursor, sql=sql)
 
 vn.generate_plotly_code(question=my_question, df=my_df)
@@ -24,6 +33,7 @@ vn.run_plotly_code(plotly_code=fig, df=my_df)
 print("Vanna.AI Imported")
 
 import requests
+import pandas as pd
 import json
 import dataclasses
 from .types import SQLAnswer, Explanation, FullQuestionDocument, Question, QuestionId
@@ -132,8 +142,30 @@ def generate_sql(question: str) -> str | None:
 
     return sql_answer.sql
 
+def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
+    """
+    Get the results of an SQL query using the Vanna.AI API.
 
-# Think about this generically -- the parameters should probably be flat but also be chainable
+    Args:
+        cs (snowflake.connector.cursor.SnowflakeCursor): The Snowflake cursor to use.
+        default_database (str): The default database to use (executed as "USE DATABASE {default_database};")
+        sql (str): The SQL query to run.
+
+    Returns:
+        pd.DataFrame: The results of the SQL query.
+    """
+    cs.execute(f"USE DATABASE {default_database}")
+
+    cur = cs.execute(sql)
+
+    results = cur.fetchall()
+        
+    # Create a pandas dataframe from the results
+    df = pd.DataFrame(results, columns=[desc[0] for desc in cur.description])
+
+    return df
+
+
 def generate_explanation(sql: str) -> str | None:
     """
 
