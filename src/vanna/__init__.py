@@ -29,6 +29,7 @@ import dataclasses
 from .types import SQLAnswer, Explanation, FullQuestionDocument, Question, QuestionId
 
 api_key: None | str = None # API key for Vanna.AI
+__org: None | str = None # Organization name for Vanna.AI
 _endpoint = "https://ask.vanna.ai/rpc"
 
 def __rpc_call(method, params):
@@ -42,7 +43,21 @@ def __rpc_call(method, params):
     Returns:
         dict: The JSON response from the API converted into a dictionary.
     """
-    headers = {'Content-Type': 'application/json'}
+    global api_key
+    global __org
+
+    if api_key is None:
+        raise Exception("API key not set")
+    
+    if __org is None:
+        raise Exception("Organization name not set")
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Vanna-Key': api_key,
+        'Vanna-Org': __org
+    }
+    print("Headers: ", str(headers))
     data = {
         "method": method,
         "params": [__dataclass_to_dict(obj) for obj in params]
@@ -62,6 +77,16 @@ def __dataclass_to_dict(obj):
         dict: The dataclass object as a dictionary.
     """
     return dataclasses.asdict(obj)
+
+def set_org(org: str) -> None:
+    """
+    Set the organization name for the Vanna.AI API.
+
+    Args:
+        org (str): The organization name.
+    """
+    global __org
+    __org = org
 
 def store_sql(question: str, sql: str) -> None:
     """

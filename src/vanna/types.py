@@ -13,7 +13,7 @@ class FullQuestionDocument:
 @dataclass
 class Organization:
     name: str
-    connection: Connection
+    connection: Connection | None
 
 @dataclass
 class QuestionId:
