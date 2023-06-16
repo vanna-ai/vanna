@@ -36,7 +36,10 @@ import requests
 import pandas as pd
 import json
 import dataclasses
-from .types import SQLAnswer, Explanation, FullQuestionDocument, Question, QuestionId
+import plotly
+import plotly.express as px
+import plotly.graph_objects as go
+from .types import SQLAnswer, Explanation, FullQuestionDocument, Question, QuestionId, DataResult, PlotlyResult
 
 api_key: None | str = None # API key for Vanna.AI
 __org: None | str = None # Organization name for Vanna.AI
@@ -141,6 +144,60 @@ def generate_sql(question: str) -> str | None:
     sql_answer = SQLAnswer(**d['result'])
 
     return sql_answer.sql
+
+def generate_plotly_code(question: str | None, sql: str | None, df: pd.DataFrame) -> str | None:
+    """
+    Generate Plotly code using the Vanna.AI API.
+
+    Args:
+        question (str): The question to generate Plotly code for.
+        sql (str): The SQL query to generate Plotly code for.
+        df (pd.DataFrame): The dataframe to generate Plotly code for.
+
+    Returns:
+        str or None: The Plotly code, or None if an error occurred.
+    """
+    params = [DataResult(
+        question=question,
+        sql=sql,
+        table_markdown=df.head().to_markdown(),
+        error=None,
+        correction_attempts=0,
+    )]
+
+    d = __rpc_call(method="generate_plotly_code", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    plotly_code = PlotlyResult(**d['result'])
+
+    return plotly_code.plotly_code
+
+def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure | None:
+    """
+    Get a Plotly figure from a dataframe and Plotly code.
+
+    Args:
+        df (pd.DataFrame): The dataframe to use.
+        plotly_code (str): The Plotly code to use.
+
+    Returns:
+        plotly.graph_objs.Figure: The Plotly figure.
+    """
+    ldict = {'df': df, 'px': px, 'go': go}
+    exec(plotly_code, globals(), ldict)
+
+    fig = ldict.get('fig', None)
+
+    if fig is None:
+        return None
+
+    if dark_mode:
+        fig.update_layout(template="plotly_dark")
+
+    return fig
 
 def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """

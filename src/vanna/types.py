@@ -50,7 +50,9 @@ class Explanation:
 
 @dataclass
 class DataResult:
-    df: any
+    question: str | None
+    sql: str | None
+    table_markdown: str
     error: str | None
     correction_attempts: int
 
