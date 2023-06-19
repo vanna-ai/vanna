@@ -3,6 +3,11 @@ from typing import List
 from dataclasses import dataclass
 
 @dataclass
+class Status:
+    success: bool
+    message: str
+
+@dataclass
 class FullQuestionDocument:
     id: QuestionId
     question: Question
@@ -11,8 +16,14 @@ class FullQuestionDocument:
     plotly: PlotlyResult | None
 
 @dataclass
+class QuestionSQLPair:
+    question: str
+    sql: str
+
+@dataclass
 class Organization:
     name: str
+    user: str | None
     connection: Connection | None
 
 @dataclass

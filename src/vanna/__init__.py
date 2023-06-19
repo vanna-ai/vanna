@@ -39,7 +39,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, FullQuestionDocument, Question, QuestionId, DataResult, PlotlyResult
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status
 
 api_key: None | str = None # API key for Vanna.AI
 __org: None | str = None # Organization name for Vanna.AI
@@ -100,7 +100,7 @@ def set_org(org: str) -> None:
     global __org
     __org = org
 
-def store_sql(question: str, sql: str) -> None:
+def store_sql(question: str, sql: str) -> bool:
     """
     Store a question and its corresponding SQL query in the Vanna.AI database.
 
@@ -108,20 +108,19 @@ def store_sql(question: str, sql: str) -> None:
         question (str): The question to store.
         sql (str): The SQL query to store.
     """
-    params = [FullQuestionDocument(
-        id=QuestionId(id=""),
-        question=Question(question=question),
-        answer=SQLAnswer(
-            raw_answer="",
-            prefix="",
-            postfix="",
-            sql=sql,
-        ),
-        data=None,
-        plotly=None,
+    params = [QuestionSQLPair(        
+        question=question,
+        sql=sql,
     )]
 
-    __rpc_call(method="store_sql", params=params)
+    d = __rpc_call(method="store_sql", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
 
 def generate_sql(question: str) -> str | None:
     """
