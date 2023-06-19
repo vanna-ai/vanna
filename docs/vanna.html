@@ -31,6 +31,24 @@
             <h2>API Documentation</h2>
                 <ul class="memberlist">
             <li>
+                    <a class="function" href="#set_org">set_org</a>
+            </li>
+            <li>
+                    <a class="function" href="#store_sql">store_sql</a>
+            </li>
+            <li>
+                    <a class="function" href="#generate_sql">generate_sql</a>
+            </li>
+            <li>
+                    <a class="function" href="#generate_plotly_code">generate_plotly_code</a>
+            </li>
+            <li>
+                    <a class="function" href="#get_plotly_figure">get_plotly_figure</a>
+            </li>
+            <li>
+                    <a class="function" href="#get_results">get_results</a>
+            </li>
+            <li>
                     <a class="function" href="#generate_explanation">generate_explanation</a>
             </li>
     </ul>
@@ -62,6 +80,15 @@ vanna    </h1>
 <span class="n">sql</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">generate_sql</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">my_question</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> 
 <span class="c1"># SELECT * FROM table_name WHERE column_name = &#39;value&#39;</span>
 
+<span class="n">conn</span> <span class="o">=</span> <span class="n">snowflake</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+        <span class="n">user</span><span class="o">=</span><span class="s1">&#39;my_user&#39;</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="s1">&#39;my_password&#39;</span><span class="p">,</span>
+        <span class="n">account</span><span class="o">=</span><span class="s1">&#39;my_account&#39;</span><span class="p">,</span>
+        <span class="n">database</span><span class="o">=</span><span class="s1">&#39;my_database&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="n">cs</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
 <span class="p">(</span><span class="n">my_df</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">)</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">run_sql</span><span class="p">(</span><span class="n">cs</span><span class="p">:</span> <span class="n">snowflake</span><span class="o">.</span><span class="n">Cursor</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">)</span>
 
 <span class="n">vn</span><span class="o">.</span><span class="n">generate_plotly_code</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">my_question</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">my_df</span><span class="p">)</span>
@@ -76,6 +103,132 @@ vanna    </h1>
                 
                 
             </section>
+                <section id="set_org">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">set_org</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">org</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#set_org"></a>
+    
+            <div class="docstring"><p>Set the organization name for the Vanna.AI API.</p>
+
+<p>Args:
+    org (str): The organization name.</p>
+</div>
+
+
+                </section>
+                <section id="store_sql">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">store_sql</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#store_sql"></a>
+    
+            <div class="docstring"><p>Store a question and its corresponding SQL query in the Vanna.AI database.</p>
+
+<p>Args:
+    question (str): The question to store.
+    sql (str): The SQL query to store.</p>
+</div>
+
+
+                </section>
+                <section id="generate_sql">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">generate_sql</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#generate_sql"></a>
+    
+            <div class="docstring"><p>Generate an SQL query using the Vanna.AI API.</p>
+
+<p>Args:
+    question (str): The question to generate an SQL query for.</p>
+
+<p>Returns:
+    str or None: The SQL query, or None if an error occurred.</p>
+</div>
+
+
+                </section>
+                <section id="generate_plotly_code">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">generate_plotly_code</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">question</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sql</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span></span><span class="return-annotation">) -> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#generate_plotly_code"></a>
+    
+            <div class="docstring"><p>Generate Plotly code using the Vanna.AI API.</p>
+
+<p>Args:
+    question (str): The question to generate Plotly code for.
+    sql (str): The SQL query to generate Plotly code for.
+    df (pd.DataFrame): The dataframe to generate Plotly code for.</p>
+
+<p>Returns:
+    str or None: The Plotly code, or None if an error occurred.</p>
+</div>
+
+
+                </section>
+                <section id="get_plotly_figure">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_plotly_figure</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">plotly_code</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>,</span><span class="param">	<span class="n">dark_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></span><span class="return-annotation">) -> <span class="n">plotly</span><span class="o">.</span><span class="n">graph_objs</span><span class="o">.</span><span class="n">_figure</span><span class="o">.</span><span class="n">Figure</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#get_plotly_figure"></a>
+    
+            <div class="docstring"><p>Get a Plotly figure from a dataframe and Plotly code.</p>
+
+<p>Args:
+    df (pd.DataFrame): The dataframe to use.
+    plotly_code (str): The Plotly code to use.</p>
+
+<p>Returns:
+    plotly.graph_objs.Figure: The Plotly figure.</p>
+</div>
+
+
+                </section>
+                <section id="get_results">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_results</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">cs</span>, </span><span class="param"><span class="n">default_database</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#get_results"></a>
+    
+            <div class="docstring"><p>Get the results of an SQL query using the Vanna.AI API.</p>
+
+<p>Args:
+    cs (snowflake.connector.cursor.SnowflakeCursor): The Snowflake cursor to use.
+    default_database (str): The default database to use (executed as "USE DATABASE {default_database};")
+    sql (str): The SQL query to run.</p>
+
+<p>Returns:
+    pd.DataFrame: The results of the SQL query.</p>
+</div>
+
+
+                </section>
                 <section id="generate_explanation">
                     <div class="attr function">
             
