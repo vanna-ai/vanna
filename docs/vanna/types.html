@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 13.1.1"/>
+    <meta name="generator" content="pdoc 14.0.0"/>
     <title>vanna.types API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
@@ -32,10 +32,55 @@
             <h2>API Documentation</h2>
                 <ul class="memberlist">
             <li>
+                    <a class="class" href="#Status">Status</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#Status.__init__">Status</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Status.success">success</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Status.message">message</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
                     <a class="class" href="#FullQuestionDocument">FullQuestionDocument</a>
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#FullQuestionDocument.__init__">FullQuestionDocument</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FullQuestionDocument.id">id</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FullQuestionDocument.question">question</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FullQuestionDocument.answer">answer</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FullQuestionDocument.data">data</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#FullQuestionDocument.plotly">plotly</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#QuestionSQLPair">QuestionSQLPair</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#QuestionSQLPair.__init__">QuestionSQLPair</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionSQLPair.question">question</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionSQLPair.sql">sql</a>
                         </li>
                 </ul>
 
@@ -46,6 +91,15 @@
                         <li>
                                 <a class="function" href="#Organization.__init__">Organization</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#Organization.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Organization.user">user</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Organization.connection">connection</a>
+                        </li>
                 </ul>
 
             </li>
@@ -54,6 +108,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#QuestionId.__init__">QuestionId</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionId.id">id</a>
                         </li>
                 </ul>
 
@@ -64,6 +121,9 @@
                         <li>
                                 <a class="function" href="#Question.__init__">Question</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#Question.question">question</a>
+                        </li>
                 </ul>
 
             </li>
@@ -73,6 +133,9 @@
                         <li>
                                 <a class="function" href="#Followup.__init__">Followup</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#Followup.followup">followup</a>
+                        </li>
                 </ul>
 
             </li>
@@ -81,6 +144,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#QuestionEmbedding.__init__">QuestionEmbedding</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionEmbedding.question">question</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionEmbedding.embedding">embedding</a>
                         </li>
                 </ul>
 
@@ -97,6 +166,18 @@
                         <li>
                                 <a class="function" href="#SQLAnswer.__init__">SQLAnswer</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#SQLAnswer.raw_answer">raw_answer</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#SQLAnswer.prefix">prefix</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#SQLAnswer.postfix">postfix</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#SQLAnswer.sql">sql</a>
+                        </li>
                 </ul>
 
             </li>
@@ -105,6 +186,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#Explanation.__init__">Explanation</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Explanation.explanation">explanation</a>
                         </li>
                 </ul>
 
@@ -115,6 +199,21 @@
                         <li>
                                 <a class="function" href="#DataResult.__init__">DataResult</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#DataResult.question">question</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DataResult.sql">sql</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DataResult.table_markdown">table_markdown</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DataResult.error">error</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#DataResult.correction_attempts">correction_attempts</a>
+                        </li>
                 </ul>
 
             </li>
@@ -123,6 +222,9 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#PlotlyResult.__init__">PlotlyResult</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PlotlyResult.plotly_code">plotly_code</a>
                         </li>
                 </ul>
 
@@ -133,6 +235,12 @@
                         <li>
                                 <a class="function" href="#WarehouseDefinition.__init__">WarehouseDefinition</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#WarehouseDefinition.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#WarehouseDefinition.tables">tables</a>
+                        </li>
                 </ul>
 
             </li>
@@ -141,6 +249,18 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#TableDefinition.__init__">TableDefinition</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#TableDefinition.schema_name">schema_name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#TableDefinition.table_name">table_name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#TableDefinition.ddl">ddl</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#TableDefinition.columns">columns</a>
                         </li>
                 </ul>
 
@@ -151,6 +271,24 @@
                         <li>
                                 <a class="function" href="#ColumnDefinition.__init__">ColumnDefinition</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.type">type</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.is_primary_key">is_primary_key</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.is_foreign_key">is_foreign_key</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.foreign_key_table">foreign_key_table</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ColumnDefinition.foreign_key_column">foreign_key_column</a>
+                        </li>
                 </ul>
 
             </li>
@@ -159,6 +297,12 @@
                             <ul class="memberlist">
                         <li>
                                 <a class="function" href="#Diagram.__init__">Diagram</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Diagram.raw">raw</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Diagram.mermaid_code">mermaid_code</a>
                         </li>
                 </ul>
 
@@ -184,6 +328,54 @@
                 
                 
             </section>
+                <section id="Status">
+                    <div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">Status</span>:
+
+        
+    </div>
+    <a class="headerlink" href="#Status"></a>
+    
+    
+
+                            <div id="Status.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">Status</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">success</span><span class="p">:</span> <span class="nb">bool</span>, </span><span class="param"><span class="n">message</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Status.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Status.success" class="classattr">
+                                <div class="attr variable">
+            <span class="name">success</span><span class="annotation">: bool</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Status.success"></a>
+    
+    
+
+                            </div>
+                            <div id="Status.message" class="classattr">
+                                <div class="attr variable">
+            <span class="name">message</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Status.message"></a>
+    
+    
+
+                            </div>
+                </section>
                 <section id="FullQuestionDocument">
                     <div class="attr class">
                     <div class="decorator">@dataclass</div>
@@ -209,6 +401,109 @@
     
 
                             </div>
+                            <div id="FullQuestionDocument.id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">id</span><span class="annotation">: <a href="#QuestionId">vanna.types.QuestionId</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#FullQuestionDocument.id"></a>
+    
+    
+
+                            </div>
+                            <div id="FullQuestionDocument.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: <a href="#Question">vanna.types.Question</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#FullQuestionDocument.question"></a>
+    
+    
+
+                            </div>
+                            <div id="FullQuestionDocument.answer" class="classattr">
+                                <div class="attr variable">
+            <span class="name">answer</span><span class="annotation">: <a href="#SQLAnswer">vanna.types.SQLAnswer</a> | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FullQuestionDocument.answer"></a>
+    
+    
+
+                            </div>
+                            <div id="FullQuestionDocument.data" class="classattr">
+                                <div class="attr variable">
+            <span class="name">data</span><span class="annotation">: <a href="#DataResult">vanna.types.DataResult</a> | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FullQuestionDocument.data"></a>
+    
+    
+
+                            </div>
+                            <div id="FullQuestionDocument.plotly" class="classattr">
+                                <div class="attr variable">
+            <span class="name">plotly</span><span class="annotation">: <a href="#PlotlyResult">vanna.types.PlotlyResult</a> | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FullQuestionDocument.plotly"></a>
+    
+    
+
+                            </div>
+                </section>
+                <section id="QuestionSQLPair">
+                    <div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">QuestionSQLPair</span>:
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionSQLPair"></a>
+    
+    
+
+                            <div id="QuestionSQLPair.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">QuestionSQLPair</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionSQLPair.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionSQLPair.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionSQLPair.question"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionSQLPair.sql" class="classattr">
+                                <div class="attr variable">
+            <span class="name">sql</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionSQLPair.sql"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="Organization">
                     <div class="attr class">
@@ -226,11 +521,44 @@
                             <div id="Organization.__init__" class="classattr">
                                 <div class="attr function">
             
-        <span class="name">Organization</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">connection</span><span class="p">:</span> <span class="n"><a href="#Connection">vanna.types.Connection</a></span> <span class="o">|</span> <span class="kc">None</span></span>)</span>
+        <span class="name">Organization</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">name</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">connection</span><span class="p">:</span> <span class="n"><a href="#Connection">vanna.types.Connection</a></span> <span class="o">|</span> <span class="kc">None</span></span>)</span>
 
         
     </div>
     <a class="headerlink" href="#Organization.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Organization.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Organization.name"></a>
+    
+    
+
+                            </div>
+                            <div id="Organization.user" class="classattr">
+                                <div class="attr variable">
+            <span class="name">user</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Organization.user"></a>
+    
+    
+
+                            </div>
+                            <div id="Organization.connection" class="classattr">
+                                <div class="attr variable">
+            <span class="name">connection</span><span class="annotation">: <a href="#Connection">vanna.types.Connection</a> | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Organization.connection"></a>
     
     
 
@@ -261,6 +589,17 @@
     
 
                             </div>
+                            <div id="QuestionId.id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">id</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionId.id"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="Question">
                     <div class="attr class">
@@ -283,6 +622,17 @@
         
     </div>
     <a class="headerlink" href="#Question.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Question.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Question.question"></a>
     
     
 
@@ -313,6 +663,17 @@
     
 
                             </div>
+                            <div id="Followup.followup" class="classattr">
+                                <div class="attr variable">
+            <span class="name">followup</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Followup.followup"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="QuestionEmbedding">
                     <div class="attr class">
@@ -335,6 +696,28 @@
         
     </div>
     <a class="headerlink" href="#QuestionEmbedding.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionEmbedding.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: <a href="#Question">vanna.types.Question</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionEmbedding.question"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionEmbedding.embedding" class="classattr">
+                                <div class="attr variable">
+            <span class="name">embedding</span><span class="annotation">: List[float]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionEmbedding.embedding"></a>
     
     
 
@@ -379,6 +762,50 @@
     
 
                             </div>
+                            <div id="SQLAnswer.raw_answer" class="classattr">
+                                <div class="attr variable">
+            <span class="name">raw_answer</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#SQLAnswer.raw_answer"></a>
+    
+    
+
+                            </div>
+                            <div id="SQLAnswer.prefix" class="classattr">
+                                <div class="attr variable">
+            <span class="name">prefix</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#SQLAnswer.prefix"></a>
+    
+    
+
+                            </div>
+                            <div id="SQLAnswer.postfix" class="classattr">
+                                <div class="attr variable">
+            <span class="name">postfix</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#SQLAnswer.postfix"></a>
+    
+    
+
+                            </div>
+                            <div id="SQLAnswer.sql" class="classattr">
+                                <div class="attr variable">
+            <span class="name">sql</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#SQLAnswer.sql"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="Explanation">
                     <div class="attr class">
@@ -401,6 +828,17 @@
         
     </div>
     <a class="headerlink" href="#Explanation.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Explanation.explanation" class="classattr">
+                                <div class="attr variable">
+            <span class="name">explanation</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Explanation.explanation"></a>
     
     
 
@@ -431,6 +869,61 @@
     
 
                             </div>
+                            <div id="DataResult.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DataResult.question"></a>
+    
+    
+
+                            </div>
+                            <div id="DataResult.sql" class="classattr">
+                                <div class="attr variable">
+            <span class="name">sql</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DataResult.sql"></a>
+    
+    
+
+                            </div>
+                            <div id="DataResult.table_markdown" class="classattr">
+                                <div class="attr variable">
+            <span class="name">table_markdown</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DataResult.table_markdown"></a>
+    
+    
+
+                            </div>
+                            <div id="DataResult.error" class="classattr">
+                                <div class="attr variable">
+            <span class="name">error</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DataResult.error"></a>
+    
+    
+
+                            </div>
+                            <div id="DataResult.correction_attempts" class="classattr">
+                                <div class="attr variable">
+            <span class="name">correction_attempts</span><span class="annotation">: int</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DataResult.correction_attempts"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="PlotlyResult">
                     <div class="attr class">
@@ -453,6 +946,17 @@
         
     </div>
     <a class="headerlink" href="#PlotlyResult.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="PlotlyResult.plotly_code" class="classattr">
+                                <div class="attr variable">
+            <span class="name">plotly_code</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PlotlyResult.plotly_code"></a>
     
     
 
@@ -483,6 +987,28 @@
     
 
                             </div>
+                            <div id="WarehouseDefinition.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#WarehouseDefinition.name"></a>
+    
+    
+
+                            </div>
+                            <div id="WarehouseDefinition.tables" class="classattr">
+                                <div class="attr variable">
+            <span class="name">tables</span><span class="annotation">: List[<a href="#TableDefinition">vanna.types.TableDefinition</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#WarehouseDefinition.tables"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="TableDefinition">
                     <div class="attr class">
@@ -505,6 +1031,50 @@
         
     </div>
     <a class="headerlink" href="#TableDefinition.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="TableDefinition.schema_name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">schema_name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TableDefinition.schema_name"></a>
+    
+    
+
+                            </div>
+                            <div id="TableDefinition.table_name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">table_name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TableDefinition.table_name"></a>
+    
+    
+
+                            </div>
+                            <div id="TableDefinition.ddl" class="classattr">
+                                <div class="attr variable">
+            <span class="name">ddl</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TableDefinition.ddl"></a>
+    
+    
+
+                            </div>
+                            <div id="TableDefinition.columns" class="classattr">
+                                <div class="attr variable">
+            <span class="name">columns</span><span class="annotation">: List[<a href="#ColumnDefinition">vanna.types.ColumnDefinition</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#TableDefinition.columns"></a>
     
     
 
@@ -535,6 +1105,72 @@
     
 
                             </div>
+                            <div id="ColumnDefinition.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.name"></a>
+    
+    
+
+                            </div>
+                            <div id="ColumnDefinition.type" class="classattr">
+                                <div class="attr variable">
+            <span class="name">type</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.type"></a>
+    
+    
+
+                            </div>
+                            <div id="ColumnDefinition.is_primary_key" class="classattr">
+                                <div class="attr variable">
+            <span class="name">is_primary_key</span><span class="annotation">: bool</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.is_primary_key"></a>
+    
+    
+
+                            </div>
+                            <div id="ColumnDefinition.is_foreign_key" class="classattr">
+                                <div class="attr variable">
+            <span class="name">is_foreign_key</span><span class="annotation">: bool</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.is_foreign_key"></a>
+    
+    
+
+                            </div>
+                            <div id="ColumnDefinition.foreign_key_table" class="classattr">
+                                <div class="attr variable">
+            <span class="name">foreign_key_table</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.foreign_key_table"></a>
+    
+    
+
+                            </div>
+                            <div id="ColumnDefinition.foreign_key_column" class="classattr">
+                                <div class="attr variable">
+            <span class="name">foreign_key_column</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ColumnDefinition.foreign_key_column"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="Diagram">
                     <div class="attr class">
@@ -557,6 +1193,28 @@
         
     </div>
     <a class="headerlink" href="#Diagram.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Diagram.raw" class="classattr">
+                                <div class="attr variable">
+            <span class="name">raw</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Diagram.raw"></a>
+    
+    
+
+                            </div>
+                            <div id="Diagram.mermaid_code" class="classattr">
+                                <div class="attr variable">
+            <span class="name">mermaid_code</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Diagram.mermaid_code"></a>
     
     
 

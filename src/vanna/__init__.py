@@ -7,6 +7,8 @@ import vanna as vn
 vn.api_key = 'vanna-key-...' # Set your API key
 vn.set_org('') # Set your organization name
 
+vn.store_sql(question="Who are the top 10 customers by Sales?", sql="SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10")
+
 my_question = 'What are the top 10 ABC by XYZ?'
 
 sql = vn.generate_sql(question=my_question, error_msg=None) 
@@ -21,12 +23,12 @@ conn = snowflake.connector.connect(
 
 cs = conn.cursor()
 
-(my_df, error_msg) = vn.run_sql(cs: snowflake.Cursor, sql=sql)
+df = vn.get_results(cs, my_default_db, sql)
 
-vn.generate_plotly_code(question=my_question, df=my_df)
-# fig = px.bar(df, x='column_name', y='column_name')
+plotly_code = vn.generate_plotly_code(question="Who are the top 10 customers by Sales?", sql=sql, df=df)
+# px.bar(df, x='column_name', y='column_name')
 
-vn.run_plotly_code(plotly_code=fig, df=my_df)
+fig = vn.get_plotly_figure(plotly_code=plotly_code, df=df)
 
 ```
 '''
@@ -202,13 +204,15 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
     Get the results of an SQL query using the Vanna.AI API.
 
-    Args:
-        cs (snowflake.connector.cursor.SnowflakeCursor): The Snowflake cursor to use.
-        default_database (str): The default database to use (executed as "USE DATABASE {default_database};")
-        sql (str): The SQL query to run.
-
-    Returns:
-        pd.DataFrame: The results of the SQL query.
+    :param cs: The Snowflake cursor to use.
+    :type cs: snowflake.connector.cursor.SnowflakeCursor
+    :param default_database: The default database to use (executed as "USE DATABASE {default_database};")
+    :type default_database: str
+    :param sql: The SQL query to run.
+    :type sql: str
+    
+    :return: The results of the SQL query.
+    :rtype: pd.DataFrame
     """
     cs.execute(f"USE DATABASE {default_database}")
 
