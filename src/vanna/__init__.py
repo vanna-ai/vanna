@@ -42,9 +42,10 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status
+from typing import List, Dict, Any, Union, Optional
 
-api_key: None | str = None # API key for Vanna.AI
-__org: None | str = None # Organization name for Vanna.AI
+api_key: Union[str, None] = None # API key for Vanna.AI
+__org: Union[str, None] = None # Organization name for Vanna.AI
 _endpoint = "https://ask.vanna.ai/rpc"
 
 def __rpc_call(method, params):
