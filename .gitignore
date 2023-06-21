@@ -1,3 +1,4 @@
 build
 **.egg-info
 venv
+.DS_Store
