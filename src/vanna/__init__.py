@@ -125,6 +125,24 @@ def store_sql(question: str, sql: str) -> bool:
 
     return status.success
 
+def remove_sql(question: str) -> bool:
+    """
+    Remove a question and its corresponding SQL query from the Vanna.AI database.
+
+    Args:
+        question (str): The question to remove.
+    """
+    params = [Question(question=question)]
+
+    d = __rpc_call(method="remove_sql", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
+
 def generate_sql(question: str) -> str | None:
     """
     Generate an SQL query using the Vanna.AI API.
