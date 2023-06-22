@@ -57,6 +57,9 @@
             <li>
                     <a class="function" href="#generate_explanation">generate_explanation</a>
             </li>
+            <li>
+                    <a class="function" href="#generate_question">generate_question</a>
+            </li>
     </ul>
 
 
@@ -182,7 +185,7 @@ vanna    </h1>
                     <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">generate_sql</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+        <span class="name">generate_sql</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
         
     </div>
@@ -203,7 +206,7 @@ vanna    </h1>
                     <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">generate_plotly_code</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">question</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">sql</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span></span><span class="return-annotation">) -> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+        <span class="name">generate_plotly_code</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">question</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>,</span><span class="param">	<span class="n">sql</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
         
     </div>
@@ -226,7 +229,7 @@ vanna    </h1>
                     <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">get_plotly_figure</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">plotly_code</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>,</span><span class="param">	<span class="n">dark_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></span><span class="return-annotation">) -> <span class="n">plotly</span><span class="o">.</span><span class="n">graph_objs</span><span class="o">.</span><span class="n">_figure</span><span class="o">.</span><span class="n">Figure</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+        <span class="name">get_plotly_figure</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">plotly_code</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">df</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span>,</span><span class="param">	<span class="n">dark_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></span><span class="return-annotation">) -> <span class="n">plotly</span><span class="o">.</span><span class="n">graph_objs</span><span class="o">.</span><span class="n">_figure</span><span class="o">.</span><span class="n">Figure</span>:</span></span>
 
         
     </div>
@@ -256,19 +259,13 @@ vanna    </h1>
     
             <div class="docstring"><p>Get the results of an SQL query using the Vanna.AI API.</p>
 
-<h6 id="parameters">Parameters</h6>
+<p>Args:
+    cs (pyodbc.Cursor): The cursor to use.
+    default_database (str): The default database to use.
+    sql (str): The SQL query to execute.</p>
 
-<ul>
-<li><strong>cs</strong>:  The Snowflake cursor to use.</li>
-<li><strong>default_database</strong>:  The default database to use (executed as "USE DATABASE {default_database};")</li>
-<li><strong>sql</strong>:  The SQL query to run.</li>
-</ul>
-
-<h6 id="returns">Returns</h6>
-
-<blockquote>
-  <p>The results of the SQL query.</p>
-</blockquote>
+<p>Returns:
+    pd.DataFrame: The results of the SQL query.</p>
 </div>
 
 
@@ -277,7 +274,7 @@ vanna    </h1>
                     <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">generate_explanation</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>:</span></span>
+        <span class="name">generate_explanation</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
         
     </div>
@@ -293,17 +290,40 @@ vanna    </h1>
 
 <p>Generate an explanation of an SQL query using the Vanna.AI API.</p>
 
-<h6 id="parameters">Parameters</h6>
+<p>Args:
+    sql (str): The SQL query to generate an explanation for.</p>
 
-<ul>
-<li><strong>sql</strong>:  The SQL query to explain.</li>
-</ul>
+<p>Returns:
+    str or None: The explanation, or None if an error occurred.</p>
+</div>
 
-<h6 id="returns">Returns</h6>
 
-<blockquote>
-  <p>The explanation of the SQL query, or None if an error occurred.</p>
-</blockquote>
+                </section>
+                <section id="generate_question">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">generate_question</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">sql</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#generate_question"></a>
+    
+            <div class="docstring"><h2 id="example">Example</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">generate_question</span><span class="p">(</span><span class="n">sql</span><span class="o">=</span><span class="s2">&quot;SELECT * FROM students WHERE name = &#39;John Doe&#39;&quot;</span><span class="p">)</span>
+<span class="c1"># &#39;AI Response&#39;</span>
+</code></pre>
+</div>
+
+<p>Generate a question from an SQL query using the Vanna.AI API.</p>
+
+<p>Args:
+    sql (str): The SQL query to generate a question for.</p>
+
+<p>Returns:
+    str or None: The question, or None if an error occurred.</p>
 </div>
 
 
