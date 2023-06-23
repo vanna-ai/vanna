@@ -143,7 +143,7 @@ def remove_sql(question: str) -> bool:
 
     return status.success
 
-def generate_sql(question: str) -> str | None:
+def generate_sql(question: str) -> str:
     """
     Generate an SQL query using the Vanna.AI API.
 
@@ -165,7 +165,7 @@ def generate_sql(question: str) -> str | None:
 
     return sql_answer.sql
 
-def generate_plotly_code(question: str | None, sql: str | None, df: pd.DataFrame) -> str | None:
+def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame) -> str:
     """
     Generate Plotly code using the Vanna.AI API.
 
@@ -195,7 +195,7 @@ def generate_plotly_code(question: str | None, sql: str | None, df: pd.DataFrame
 
     return plotly_code.plotly_code
 
-def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure | None:
+def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure:
     """
     Get a Plotly figure from a dataframe and Plotly code.
 
@@ -223,15 +223,13 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
     Get the results of an SQL query using the Vanna.AI API.
 
-    :param cs: The Snowflake cursor to use.
-    :type cs: snowflake.connector.cursor.SnowflakeCursor
-    :param default_database: The default database to use (executed as "USE DATABASE {default_database};")
-    :type default_database: str
-    :param sql: The SQL query to run.
-    :type sql: str
-    
-    :return: The results of the SQL query.
-    :rtype: pd.DataFrame
+    Args:
+        cs (pyodbc.Cursor): The cursor to use.
+        default_database (str): The default database to use.
+        sql (str): The SQL query to execute.
+
+    Returns:
+        pd.DataFrame: The results of the SQL query.
     """
     cs.execute(f"USE DATABASE {default_database}")
 
@@ -245,7 +243,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     return df
 
 
-def generate_explanation(sql: str) -> str | None:
+def generate_explanation(sql: str) -> str:
     """
 
     ## Example
@@ -256,11 +254,11 @@ def generate_explanation(sql: str) -> str | None:
     
     Generate an explanation of an SQL query using the Vanna.AI API.
 
-    :param sql: The SQL query to explain.
-    :type sql: str
-
-    :return: The explanation of the SQL query, or None if an error occurred.
-    :rtype: str or None
+    Args:
+        sql (str): The SQL query to generate an explanation for.
+    
+    Returns:
+        str or None: The explanation, or None if an error occurred.
 
     """
     params = [SQLAnswer(
@@ -279,3 +277,38 @@ def generate_explanation(sql: str) -> str | None:
     explanation = Explanation(**d['result'])
 
     return explanation.explanation
+
+def generate_question(sql: str) -> str:
+    """
+
+    ## Example
+    ```python
+    vn.generate_question(sql="SELECT * FROM students WHERE name = 'John Doe'")
+    # 'AI Response'
+    ```
+    
+    Generate a question from an SQL query using the Vanna.AI API.
+
+    Args:
+        sql (str): The SQL query to generate a question for.
+    
+    Returns:
+        str or None: The question, or None if an error occurred.
+
+    """
+    params = [SQLAnswer(
+        raw_answer="",
+        prefix="",
+        postfix="",
+        sql=sql,
+    )]
+
+    d = __rpc_call(method="generate_question", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    question = Question(**d['result'])
+
+    return question.question
