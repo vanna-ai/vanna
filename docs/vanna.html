@@ -40,6 +40,9 @@
                     <a class="function" href="#store_sql">store_sql</a>
             </li>
             <li>
+                    <a class="function" href="#flag_sql_for_review">flag_sql_for_review</a>
+            </li>
+            <li>
                     <a class="function" href="#remove_sql">remove_sql</a>
             </li>
             <li>
@@ -59,6 +62,9 @@
             </li>
             <li>
                     <a class="function" href="#generate_question">generate_question</a>
+            </li>
+            <li>
+                    <a class="function" href="#get_flagged_questions">get_flagged_questions</a>
             </li>
     </ul>
 
@@ -159,6 +165,29 @@ vanna    </h1>
 <p>Args:
     question (str): The question to store.
     sql (str): The SQL query to store.</p>
+</div>
+
+
+                </section>
+                <section id="flag_sql_for_review">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">flag_sql_for_review</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">question</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">sql</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">error_msg</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#flag_sql_for_review"></a>
+    
+            <div class="docstring"><p>Flag a question and its corresponding SQL query for review by the Vanna.AI team.</p>
+
+<p>Args:
+    question (str): The question to flag.
+    sql (str): The SQL query to flag.
+    error_msg (str): The error message to flag.</p>
+
+<p>Returns:
+    bool: True if the question and SQL query were flagged successfully, False otherwise.</p>
 </div>
 
 
@@ -324,6 +353,32 @@ vanna    </h1>
 
 <p>Returns:
     str or None: The question, or None if an error occurred.</p>
+</div>
+
+
+                </section>
+                <section id="get_flagged_questions">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_flagged_questions</span><span class="signature pdoc-code condensed">(<span class="return-annotation">) -> <span class="n"><a href="vanna/types.html#QuestionList">vanna.types.QuestionList</a></span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#get_flagged_questions"></a>
+    
+            <div class="docstring"><h2 id="example">Example</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">get_flagged_questions</span><span class="p">()</span>
+<span class="c1"># [FullQuestionDocument(...), ...]</span>
+</code></pre>
+</div>
+
+<p>Get a list of flagged questions from the Vanna.AI API.</p>
+
+<p>Returns:
+    List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.</p>
 </div>
 
 

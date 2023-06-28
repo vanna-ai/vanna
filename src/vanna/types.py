@@ -8,6 +8,10 @@ class Status:
     message: str
 
 @dataclass
+class QuestionList:
+    questions: List[FullQuestionDocument]
+
+@dataclass
 class FullQuestionDocument:
     id: QuestionId
     question: Question

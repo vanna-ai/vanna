@@ -41,7 +41,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList
 from typing import List, Dict, Any, Union, Optional
 
 api_key: Union[str, None] = None # API key for Vanna.AI
@@ -117,6 +117,29 @@ def store_sql(question: str, sql: str) -> bool:
     )]
 
     d = __rpc_call(method="store_sql", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
+
+def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
+    """
+    Flag a question and its corresponding SQL query for review by the Vanna.AI team.
+
+    Args:
+        question (str): The question to flag.
+        sql (str): The SQL query to flag.
+        error_msg (str): The error message to flag.
+
+    Returns:
+        bool: True if the question and SQL query were flagged successfully, False otherwise.
+    """
+    params = [Question(question=question)]
+
+    d = __rpc_call(method="flag_sql_for_review", params=params)
 
     if 'result' not in d:
         return False
@@ -312,3 +335,31 @@ def generate_question(sql: str) -> str:
     question = Question(**d['result'])
 
     return question.question
+
+def get_flagged_questions() -> QuestionList:
+    """
+
+    ## Example
+    ```python
+    vn.get_flagged_questions()
+    # [FullQuestionDocument(...), ...]
+    ```
+    
+    Get a list of flagged questions from the Vanna.AI API.
+
+    Returns:
+        List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.
+
+    """
+    # params = [Question(question="")]
+    params = []
+
+    d = __rpc_call(method="get_flagged_questions", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    flagged_questions = QuestionList(**d['result'])
+
+    return flagged_questions
