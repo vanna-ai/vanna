@@ -11,7 +11,23 @@
     <style>/*! theme.css */:root{--pdoc-background:#fff;}.pdoc{--text:#212529;--muted:#6c757d;--link:#3660a5;--link-hover:#1659c5;--code:#f8f8f8;--active:#fff598;--accent:#eee;--accent2:#c1c1c1;--nav-hover:rgba(255, 255, 255, 0.5);--name:#0066BB;--def:#008800;--annotation:#007020;}</style>
     <style>/*! layout.css */html, body{width:100%;height:100%;}html, main{scroll-behavior:smooth;}body{background-color:var(--pdoc-background);}@media (max-width:769px){#navtoggle{cursor:pointer;position:absolute;width:50px;height:40px;top:1rem;right:1rem;border-color:var(--text);color:var(--text);display:flex;opacity:0.8;z-index:999;}#navtoggle:hover{opacity:1;}#togglestate + div{display:none;}#togglestate:checked + div{display:inherit;}main, header{padding:2rem 3vw;}header + main{margin-top:-3rem;}.git-button{display:none !important;}nav input[type="search"]{max-width:77%;}nav input[type="search"]:first-child{margin-top:-6px;}nav input[type="search"]:valid ~ *{display:none !important;}}@media (min-width:770px){:root{--sidebar-width:clamp(12.5rem, 28vw, 22rem);}nav{position:fixed;overflow:auto;height:100vh;width:var(--sidebar-width);}main, header{padding:3rem 2rem 3rem calc(var(--sidebar-width) + 3rem);width:calc(54rem + var(--sidebar-width));max-width:100%;}header + main{margin-top:-4rem;}#navtoggle{display:none;}}#togglestate{position:absolute;height:0;opacity:0;}nav.pdoc{--pad:clamp(0.5rem, 2vw, 1.75rem);--indent:1.5rem;background-color:var(--accent);border-right:1px solid var(--accent2);box-shadow:0 0 20px rgba(50, 50, 50, .2) inset;padding:0 0 0 var(--pad);overflow-wrap:anywhere;scrollbar-width:thin; scrollbar-color:var(--accent2) transparent }nav.pdoc::-webkit-scrollbar{width:.4rem; }nav.pdoc::-webkit-scrollbar-thumb{background-color:var(--accent2); }nav.pdoc > div{padding:var(--pad) 0;}nav.pdoc .module-list-button{display:inline-flex;align-items:center;color:var(--text);border-color:var(--muted);margin-bottom:1rem;}nav.pdoc .module-list-button:hover{border-color:var(--text);}nav.pdoc input[type=search]{display:block;outline-offset:0;width:calc(100% - var(--pad));}nav.pdoc .logo{max-width:calc(100% - var(--pad));max-height:35vh;display:block;margin:0 auto 1rem;transform:translate(calc(-.5 * var(--pad)), 0);}nav.pdoc ul{list-style:none;padding-left:0;}nav.pdoc > div > ul{margin-left:calc(0px - var(--pad));}nav.pdoc li a{padding:.2rem 0 .2rem calc(var(--pad) + var(--indent));}nav.pdoc > div > ul > li > a{padding-left:var(--pad);}nav.pdoc li{transition:all 100ms;}nav.pdoc li:hover{background-color:var(--nav-hover);}nav.pdoc a, nav.pdoc a:hover{color:var(--text);}nav.pdoc a{display:block;}nav.pdoc > h2:first-of-type{margin-top:1.5rem;}nav.pdoc .class:before{content:"class ";color:var(--muted);}nav.pdoc .function:after{content:"()";color:var(--muted);}nav.pdoc footer:before{content:"";display:block;width:calc(100% - var(--pad));border-top:solid var(--accent2) 1px;margin-top:1.5rem;padding-top:.5rem;}nav.pdoc footer{font-size:small;}</style>
     <style>/*! content.css */.pdoc{color:var(--text);box-sizing:border-box;line-height:1.5;background:none;}.pdoc .pdoc-button{cursor:pointer;display:inline-block;border:solid black 1px;border-radius:2px;font-size:.75rem;padding:calc(0.5em - 1px) 1em;transition:100ms all;}.pdoc .pdoc-alert{padding:1rem 1rem 1rem calc(1.5rem + 24px);border:1px solid transparent;border-radius:.25rem;background-repeat:no-repeat;background-position:1rem center;margin-bottom:1rem;}.pdoc .pdoc-alert > *:last-child{margin-bottom:0;}.pdoc .pdoc-alert-note {color:#084298;background-color:#cfe2ff;border-color:#b6d4fe;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23084298%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M8%2016A8%208%200%201%200%208%200a8%208%200%200%200%200%2016zm.93-9.412-1%204.705c-.07.34.029.533.304.533.194%200%20.487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703%200-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381%202.29-.287zM8%205.5a1%201%200%201%201%200-2%201%201%200%200%201%200%202z%22/%3E%3C/svg%3E");}.pdoc .pdoc-alert-warning{color:#664d03;background-color:#fff3cd;border-color:#ffecb5;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23664d03%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M8.982%201.566a1.13%201.13%200%200%200-1.96%200L.165%2013.233c-.457.778.091%201.767.98%201.767h13.713c.889%200%201.438-.99.98-1.767L8.982%201.566zM8%205c.535%200%20.954.462.9.995l-.35%203.507a.552.552%200%200%201-1.1%200L7.1%205.995A.905.905%200%200%201%208%205zm.002%206a1%201%200%201%201%200%202%201%201%200%200%201%200-2z%22/%3E%3C/svg%3E");}.pdoc .pdoc-alert-danger{color:#842029;background-color:#f8d7da;border-color:#f5c2c7;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23842029%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M5.52.359A.5.5%200%200%201%206%200h4a.5.5%200%200%201%20.474.658L8.694%206H12.5a.5.5%200%200%201%20.395.807l-7%209a.5.5%200%200%201-.873-.454L6.823%209.5H3.5a.5.5%200%200%201-.48-.641l2.5-8.5z%22/%3E%3C/svg%3E");}.pdoc .visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0, 0, 0, 0) !important;white-space:nowrap !important;border:0 !important;}.pdoc h1, .pdoc h2, .pdoc h3{font-weight:300;margin:.3em 0;padding:.2em 0;}.pdoc > section:not(.module-info) h1{font-size:1.5rem;font-weight:500;}.pdoc > section:not(.module-info) h2{font-size:1.4rem;font-weight:500;}.pdoc > section:not(.module-info) h3{font-size:1.3rem;font-weight:500;}.pdoc > section:not(.module-info) h4{font-size:1.2rem;}.pdoc > section:not(.module-info) h5{font-size:1.1rem;}.pdoc a{text-decoration:none;color:var(--link);}.pdoc a:hover{color:var(--link-hover);}.pdoc blockquote{margin-left:2rem;}.pdoc pre{border-top:1px solid var(--accent2);border-bottom:1px solid var(--accent2);margin-top:0;margin-bottom:1em;padding:.5rem 0 .5rem .5rem;overflow-x:auto;background-color:var(--code);}.pdoc code{color:var(--text);padding:.2em .4em;margin:0;font-size:85%;background-color:var(--code);border-radius:6px;}.pdoc a > code{color:inherit;}.pdoc pre > code{display:inline-block;font-size:inherit;background:none;border:none;padding:0;}.pdoc > section:not(.module-info){margin-bottom:1.5rem;}.pdoc .modulename{margin-top:0;font-weight:bold;}.pdoc .modulename a{color:var(--link);transition:100ms all;}.pdoc .git-button{float:right;border:solid var(--link) 1px;}.pdoc .git-button:hover{background-color:var(--link);color:var(--pdoc-background);}.view-source-toggle-state,.view-source-toggle-state ~ .pdoc-code{display:none;}.view-source-toggle-state:checked ~ .pdoc-code{display:block;}.view-source-button{display:inline-block;float:right;font-size:.75rem;line-height:1.5rem;color:var(--muted);padding:0 .4rem 0 1.3rem;cursor:pointer;text-indent:-2px;}.view-source-button > span{visibility:hidden;}.module-info .view-source-button{float:none;display:flex;justify-content:flex-end;margin:-1.2rem .4rem -.2rem 0;}.view-source-button::before{position:absolute;content:"View Source";display:list-item;list-style-type:disclosure-closed;}.view-source-toggle-state:checked ~ .attr .view-source-button::before,.view-source-toggle-state:checked ~ .view-source-button::before{list-style-type:disclosure-open;}.pdoc .docstring{margin-bottom:1.5rem;}.pdoc section:not(.module-info) .docstring{margin-left:clamp(0rem, 5vw - 2rem, 1rem);}.pdoc .docstring .pdoc-code{margin-left:1em;margin-right:1em;}.pdoc h1:target,.pdoc h2:target,.pdoc h3:target,.pdoc h4:target,.pdoc h5:target,.pdoc h6:target,.pdoc .pdoc-code > pre > span:target{background-color:var(--active);box-shadow:-1rem 0 0 0 var(--active);}.pdoc .pdoc-code > pre > span:target{display:block;}.pdoc div:target > .attr,.pdoc section:target > .attr,.pdoc dd:target > a{background-color:var(--active);}.pdoc *{scroll-margin:2rem;}.pdoc .pdoc-code .linenos{user-select:none;}.pdoc .attr:hover{filter:contrast(0.95);}.pdoc section, .pdoc .classattr{position:relative;}.pdoc .headerlink{--width:clamp(1rem, 3vw, 2rem);position:absolute;top:0;left:calc(0rem - var(--width));transition:all 100ms ease-in-out;opacity:0;}.pdoc .headerlink::before{content:"#";display:block;text-align:center;width:var(--width);height:2.3rem;line-height:2.3rem;font-size:1.5rem;}.pdoc .attr:hover ~ .headerlink,.pdoc *:target > .headerlink,.pdoc .headerlink:hover{opacity:1;}.pdoc .attr{display:block;margin:.5rem 0 .5rem;padding:.4rem .4rem .4rem 1rem;background-color:var(--accent);overflow-x:auto;}.pdoc .classattr{margin-left:2rem;}.pdoc .name{color:var(--name);font-weight:bold;}.pdoc .def{color:var(--def);font-weight:bold;}.pdoc .signature{background-color:transparent;}.pdoc .param, .pdoc .return-annotation{white-space:pre;}.pdoc .signature.multiline .param{display:block;}.pdoc .signature.condensed .param{display:inline-block;}.pdoc .annotation{color:var(--annotation);}.pdoc .view-value-toggle-state,.pdoc .view-value-toggle-state ~ .default_value{display:none;}.pdoc .view-value-toggle-state:checked ~ .default_value{display:inherit;}.pdoc .view-value-button{font-size:.5rem;vertical-align:middle;border-style:dashed;margin-top:-0.1rem;}.pdoc .view-value-button:hover{background:white;}.pdoc .view-value-button::before{content:"show";text-align:center;width:2.2em;display:inline-block;}.pdoc .view-value-toggle-state:checked ~ .view-value-button::before{content:"hide";}.pdoc .inherited{margin-left:2rem;}.pdoc .inherited dt{font-weight:700;}.pdoc .inherited dt, .pdoc .inherited dd{display:inline;margin-left:0;margin-bottom:.5rem;}.pdoc .inherited dd:not(:last-child):after{content:", ";}.pdoc .inherited .class:before{content:"class ";}.pdoc .inherited .function a:after{content:"()";}.pdoc .search-result .docstring{overflow:auto;max-height:25vh;}.pdoc .search-result.focused > .attr{background-color:var(--active);}.pdoc .attribution{margin-top:2rem;display:block;opacity:0.5;transition:all 200ms;filter:grayscale(100%);}.pdoc .attribution:hover{opacity:1;filter:grayscale(0%);}.pdoc .attribution img{margin-left:5px;height:35px;vertical-align:middle;width:70px;transition:all 200ms;}.pdoc table{display:block;width:max-content;max-width:100%;overflow:auto;margin-bottom:1rem;}.pdoc table th{font-weight:600;}.pdoc table th, .pdoc table td{padding:6px 13px;border:1px solid var(--accent2);}</style>
-    <style>/*! custom.css */</style></head>
+    <style>/*! custom.css */</style><style>
+    .pdoc .mermaid-pre {
+        border: none;
+        background: none;
+    }
+</style>
+<script type="module" defer>
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+    /* Re-invoke Mermaid when DOM content changes, for example during search. */
+    document.addEventListener("DOMContentLoaded", () => {
+        new MutationObserver(() => mermaid.run()).observe(
+            document.querySelector("main.pdoc").parentNode,
+            {childList: true}
+        );
+    })
+</script></head>
 <body>
     <nav class="pdoc">
         <label id="navtoggle" for="togglestate" class="pdoc-button"><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke-linecap='round' stroke="currentColor" stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/></svg></label>
@@ -21,6 +37,23 @@
 </a>
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
+
+            <h2>Contents</h2>
+            <ul>
+  <li><a href="#what-is-vannaai">What is Vanna.AI?</a></li>
+  <li><a href="#how-do-i-use-vannaai">How do I use Vanna.AI?</a></li>
+  <li><a href="#how-does-vannaai-work">How does Vanna.AI work?</a></li>
+  <li><a href="#getting-started">Getting Started</a>
+  <ul>
+    <li><a href="#how-do-i-import-the-vannaai-library">How do I import the Vanna.AI library?</a></li>
+    <li><a href="#how-do-i-set-my-api-key">How do I set my API key?</a></li>
+    <li><a href="#how-do-i-set-my-organization-name">How do I set my organization name?</a></li>
+    <li><a href="#how-do-i-train-vannaai-on-my-data">How do I train Vanna.AI on my data?</a></li>
+    <li><a href="#how-do-i-ask-questions-about-my-data">How do I ask questions about my data?</a></li>
+    <li><a href="#full-example">Full Example</a></li>
+  </ul></li>
+  <li><a href="#api-reference">API Reference</a></li>
+</ul>
 
 
             <h2>Submodules</h2>
@@ -66,6 +99,9 @@
             <li>
                     <a class="function" href="#get_flagged_questions">get_flagged_questions</a>
             </li>
+            <li>
+                    <a class="function" href="#get_accuracy_stats">get_accuracy_stats</a>
+            </li>
     </ul>
 
 
@@ -82,7 +118,84 @@
                     <h1 class="modulename">
 vanna    </h1>
 
-                        <div class="docstring"><p>A module to interact with the Vanna.AI API, providing the functionality to generate SQL explanations.</p>
+                        <div class="docstring"><h1 id="what-is-vannaai">What is Vanna.AI?</h1>
+
+<p>Vanna.AI is a platform that allows you to ask questions about your data in plain English. It is an AI-powered data analyst that can answer questions about your data, generate SQL, and create visualizations.</p>
+
+<h1 id="how-do-i-use-vannaai">How do I use Vanna.AI?</h1>
+
+<ul>
+<li>Import the Vanna.AI library</li>
+<li>Set your API key</li>
+<li>Set your organization name</li>
+<li>Train Vanna.AI on your data</li>
+<li>Ask questions about your data</li>
+</ul>
+
+<h1 id="how-does-vannaai-work">How does Vanna.AI work?</h1>
+
+<pre class="mermaid-pre"><div class="mermaid">flowchart TD
+    DB[(Known Correct Question-SQL)]
+    Try[Try to Use DDL/Documentation]
+    SQL(SQL)
+    Check{Is the SQL correct?}
+    Generate[fa:fa-circle-question Use Examples to Generate]
+    DB --&gt; Find
+    Question[fa:fa-circle-question Question] --&gt; Find{fa:fa-magnifying-glass Do we have similar questions?}
+    Find -- Yes --&gt; Generate
+    Find -- No --&gt; Try
+    Generate --&gt; SQL
+    Try --&gt; SQL
+    SQL --&gt; Check
+    Check -- Yes --&gt; DB
+    Check -- No --&gt; Analyst[fa:fa-glasses Analyst Writes the SQL]
+    Analyst -- Adds --&gt; DB
+</div></pre>
+
+<h1 id="getting-started">Getting Started</h1>
+
+<h2 id="how-do-i-import-the-vannaai-library">How do I import the Vanna.AI library?</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="kn">import</span> <span class="nn">vanna</span> <span class="k">as</span> <span class="nn">vn</span>
+</code></pre>
+</div>
+
+<h2 id="how-do-i-set-my-api-key">How do I set my API key?</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;vanna-key-...&#39;</span>
+</code></pre>
+</div>
+
+<h2 id="how-do-i-set-my-organization-name">How do I set my organization name?</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">set_org</span><span class="p">(</span><span class="s1">&#39;my_org&#39;</span><span class="p">)</span>
+</code></pre>
+</div>
+
+<h2 id="how-do-i-train-vannaai-on-my-data">How do I train Vanna.AI on my data?</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">store_sql</span><span class="p">(</span>
+    <span class="n">question</span><span class="o">=</span><span class="s2">&quot;Who are the top 10 customers by Sales?&quot;</span><span class="p">,</span> 
+    <span class="n">sql</span><span class="o">=</span><span class="s2">&quot;SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10&quot;</span>
+<span class="p">)</span>
+</code></pre>
+</div>
+
+<h2 id="how-do-i-ask-questions-about-my-data">How do I ask questions about my data?</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">my_question</span> <span class="o">=</span> <span class="s1">&#39;What are the top 10 ABC by XYZ?&#39;</span>
+
+<span class="n">sql</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">generate_sql</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">my_question</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="c1"># SELECT * FROM table_name WHERE column_name = &#39;value&#39;</span>
+</code></pre>
+</div>
+
+<h2 id="full-example">Full Example</h2>
 
 <div class="pdoc-code codehilite">
 <pre><span></span><code><span class="kn">import</span> <span class="nn">vanna</span> <span class="k">as</span> <span class="nn">vn</span>
@@ -90,13 +203,19 @@ vanna    </h1>
 <span class="n">vn</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="s1">&#39;vanna-key-...&#39;</span> <span class="c1"># Set your API key</span>
 <span class="n">vn</span><span class="o">.</span><span class="n">set_org</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="c1"># Set your organization name</span>
 
-<span class="n">vn</span><span class="o">.</span><span class="n">store_sql</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="s2">&quot;Who are the top 10 customers by Sales?&quot;</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="s2">&quot;SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10&quot;</span><span class="p">)</span>
+<span class="c1"># Train Vanna.AI on your data</span>
+<span class="n">vn</span><span class="o">.</span><span class="n">store_sql</span><span class="p">(</span>
+    <span class="n">question</span><span class="o">=</span><span class="s2">&quot;Who are the top 10 customers by Sales?&quot;</span><span class="p">,</span> 
+    <span class="n">sql</span><span class="o">=</span><span class="s2">&quot;SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10&quot;</span>
+<span class="p">)</span>
 
+<span class="c1"># Ask questions about your data</span>
 <span class="n">my_question</span> <span class="o">=</span> <span class="s1">&#39;What are the top 10 ABC by XYZ?&#39;</span>
 
+<span class="c1"># Generate SQL</span>
 <span class="n">sql</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">generate_sql</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="n">my_question</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> 
-<span class="c1"># SELECT * FROM table_name WHERE column_name = &#39;value&#39;</span>
 
+<span class="c1"># Connect to your database</span>
 <span class="n">conn</span> <span class="o">=</span> <span class="n">snowflake</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
         <span class="n">user</span><span class="o">=</span><span class="s1">&#39;my_user&#39;</span><span class="p">,</span>
         <span class="n">password</span><span class="o">=</span><span class="s1">&#39;my_password&#39;</span><span class="p">,</span>
@@ -106,14 +225,29 @@ vanna    </h1>
 
 <span class="n">cs</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">get_results</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">my_default_db</span><span class="p">,</span> <span class="n">sql</span><span class="p">)</span>
+<span class="c1"># Get results</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">get_results</span><span class="p">(</span>
+    <span class="n">cs</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> 
+    <span class="n">default_db</span><span class="o">=</span><span class="n">my_default_db</span><span class="p">,</span> 
+    <span class="n">sql</span><span class="o">=</span><span class="n">sql</span>
+    <span class="p">)</span>
 
-<span class="n">plotly_code</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">generate_plotly_code</span><span class="p">(</span><span class="n">question</span><span class="o">=</span><span class="s2">&quot;Who are the top 10 customers by Sales?&quot;</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
-<span class="c1"># px.bar(df, x=&#39;column_name&#39;, y=&#39;column_name&#39;)</span>
+<span class="c1"># Generate Plotly code</span>
+<span class="n">plotly_code</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">generate_plotly_code</span><span class="p">(</span>
+    <span class="n">question</span><span class="o">=</span><span class="n">my_question</span><span class="p">,</span> 
+    <span class="n">sql</span><span class="o">=</span><span class="n">sql</span><span class="p">,</span> 
+    <span class="n">df</span><span class="o">=</span><span class="n">df</span>
+    <span class="p">)</span>
 
-<span class="n">fig</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">get_plotly_figure</span><span class="p">(</span><span class="n">plotly_code</span><span class="o">=</span><span class="n">plotly_code</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+<span class="c1"># Get Plotly figure</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">vn</span><span class="o">.</span><span class="n">get_plotly_figure</span><span class="p">(</span>
+    <span class="n">plotly_code</span><span class="o">=</span><span class="n">plotly_code</span><span class="p">,</span> 
+    <span class="n">df</span><span class="o">=</span><span class="n">df</span>
+    <span class="p">)</span>
 </code></pre>
 </div>
+
+<h1 id="api-reference">API Reference</h1>
 </div>
 
                 
@@ -144,8 +278,11 @@ vanna    </h1>
     
             <div class="docstring"><p>Set the organization name for the Vanna.AI API.</p>
 
-<p>Args:
-    org (str): The organization name.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>org (str):</strong>  The organization name.</li>
+</ul>
 </div>
 
 
@@ -162,9 +299,12 @@ vanna    </h1>
     
             <div class="docstring"><p>Store a question and its corresponding SQL query in the Vanna.AI database.</p>
 
-<p>Args:
-    question (str): The question to store.
-    sql (str): The SQL query to store.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>question (str):</strong>  The question to store.</li>
+<li><strong>sql (str):</strong>  The SQL query to store.</li>
+</ul>
 </div>
 
 
@@ -181,13 +321,19 @@ vanna    </h1>
     
             <div class="docstring"><p>Flag a question and its corresponding SQL query for review by the Vanna.AI team.</p>
 
-<p>Args:
-    question (str): The question to flag.
-    sql (str): The SQL query to flag.
-    error_msg (str): The error message to flag.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    bool: True if the question and SQL query were flagged successfully, False otherwise.</p>
+<ul>
+<li><strong>question (str):</strong>  The question to flag.</li>
+<li><strong>sql (str):</strong>  The SQL query to flag.</li>
+<li><strong>error_msg (str):</strong>  The error message to flag.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>bool: True if the question and SQL query were flagged successfully, False otherwise.</p>
+</blockquote>
 </div>
 
 
@@ -204,8 +350,11 @@ vanna    </h1>
     
             <div class="docstring"><p>Remove a question and its corresponding SQL query from the Vanna.AI database.</p>
 
-<p>Args:
-    question (str): The question to remove.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>question (str):</strong>  The question to remove.</li>
+</ul>
 </div>
 
 
@@ -222,11 +371,17 @@ vanna    </h1>
     
             <div class="docstring"><p>Generate an SQL query using the Vanna.AI API.</p>
 
-<p>Args:
-    question (str): The question to generate an SQL query for.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    str or None: The SQL query, or None if an error occurred.</p>
+<ul>
+<li><strong>question (str):</strong>  The question to generate an SQL query for.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>str or None: The SQL query, or None if an error occurred.</p>
+</blockquote>
 </div>
 
 
@@ -243,13 +398,19 @@ vanna    </h1>
     
             <div class="docstring"><p>Generate Plotly code using the Vanna.AI API.</p>
 
-<p>Args:
-    question (str): The question to generate Plotly code for.
-    sql (str): The SQL query to generate Plotly code for.
-    df (pd.DataFrame): The dataframe to generate Plotly code for.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    str or None: The Plotly code, or None if an error occurred.</p>
+<ul>
+<li><strong>question (str):</strong>  The question to generate Plotly code for.</li>
+<li><strong>sql (str):</strong>  The SQL query to generate Plotly code for.</li>
+<li><strong>df (pd.DataFrame):</strong>  The dataframe to generate Plotly code for.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>str or None: The Plotly code, or None if an error occurred.</p>
+</blockquote>
 </div>
 
 
@@ -266,12 +427,18 @@ vanna    </h1>
     
             <div class="docstring"><p>Get a Plotly figure from a dataframe and Plotly code.</p>
 
-<p>Args:
-    df (pd.DataFrame): The dataframe to use.
-    plotly_code (str): The Plotly code to use.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    plotly.graph_objs.Figure: The Plotly figure.</p>
+<ul>
+<li><strong>df (pd.DataFrame):</strong>  The dataframe to use.</li>
+<li><strong>plotly_code (str):</strong>  The Plotly code to use.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>plotly.graph_objs.Figure: The Plotly figure.</p>
+</blockquote>
 </div>
 
 
@@ -286,15 +453,21 @@ vanna    </h1>
     </div>
     <a class="headerlink" href="#get_results"></a>
     
-            <div class="docstring"><p>Get the results of an SQL query using the Vanna.AI API.</p>
+            <div class="docstring"><p>Run the SQL query and return the results as a pandas dataframe.</p>
 
-<p>Args:
-    cs (pyodbc.Cursor): The cursor to use.
-    default_database (str): The default database to use.
-    sql (str): The SQL query to execute.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    pd.DataFrame: The results of the SQL query.</p>
+<ul>
+<li><strong>cs:</strong>  Snowflake connection cursor.</li>
+<li><strong>default_database (str):</strong>  The default database to use.</li>
+<li><strong>sql (str):</strong>  The SQL query to execute.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>pd.DataFrame: The results of the SQL query.</p>
+</blockquote>
 </div>
 
 
@@ -319,11 +492,17 @@ vanna    </h1>
 
 <p>Generate an explanation of an SQL query using the Vanna.AI API.</p>
 
-<p>Args:
-    sql (str): The SQL query to generate an explanation for.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    str or None: The explanation, or None if an error occurred.</p>
+<ul>
+<li><strong>sql (str):</strong>  The SQL query to generate an explanation for.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>str or None: The explanation, or None if an error occurred.</p>
+</blockquote>
 </div>
 
 
@@ -348,11 +527,17 @@ vanna    </h1>
 
 <p>Generate a question from an SQL query using the Vanna.AI API.</p>
 
-<p>Args:
-    sql (str): The SQL query to generate a question for.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    str or None: The question, or None if an error occurred.</p>
+<ul>
+<li><strong>sql (str):</strong>  The SQL query to generate a question for.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>str or None: The question, or None if an error occurred.</p>
+</blockquote>
 </div>
 
 
@@ -377,8 +562,40 @@ vanna    </h1>
 
 <p>Get a list of flagged questions from the Vanna.AI API.</p>
 
-<p>Returns:
-    List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.</p>
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.</p>
+</blockquote>
+</div>
+
+
+                </section>
+                <section id="get_accuracy_stats">
+                    <div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_accuracy_stats</span><span class="signature pdoc-code condensed">(<span class="return-annotation">) -> <span class="n"><a href="vanna/types.html#AccuracyStats">vanna.types.AccuracyStats</a></span>:</span></span>
+
+        
+    </div>
+    <a class="headerlink" href="#get_accuracy_stats"></a>
+    
+            <div class="docstring"><h2 id="example">Example</h2>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="n">vn</span><span class="o">.</span><span class="n">get_accuracy_stats</span><span class="p">()</span>
+<span class="c1"># {&#39;accuracy&#39;: 0.0, &#39;total&#39;: 0, &#39;correct&#39;: 0}</span>
+</code></pre>
+</div>
+
+<p>Get the accuracy statistics from the Vanna.AI API.</p>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>dict or None: The accuracy statistics, or None if an error occurred.</p>
+</blockquote>
 </div>
 
 

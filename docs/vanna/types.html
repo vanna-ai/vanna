@@ -11,7 +11,23 @@
     <style>/*! theme.css */:root{--pdoc-background:#fff;}.pdoc{--text:#212529;--muted:#6c757d;--link:#3660a5;--link-hover:#1659c5;--code:#f8f8f8;--active:#fff598;--accent:#eee;--accent2:#c1c1c1;--nav-hover:rgba(255, 255, 255, 0.5);--name:#0066BB;--def:#008800;--annotation:#007020;}</style>
     <style>/*! layout.css */html, body{width:100%;height:100%;}html, main{scroll-behavior:smooth;}body{background-color:var(--pdoc-background);}@media (max-width:769px){#navtoggle{cursor:pointer;position:absolute;width:50px;height:40px;top:1rem;right:1rem;border-color:var(--text);color:var(--text);display:flex;opacity:0.8;z-index:999;}#navtoggle:hover{opacity:1;}#togglestate + div{display:none;}#togglestate:checked + div{display:inherit;}main, header{padding:2rem 3vw;}header + main{margin-top:-3rem;}.git-button{display:none !important;}nav input[type="search"]{max-width:77%;}nav input[type="search"]:first-child{margin-top:-6px;}nav input[type="search"]:valid ~ *{display:none !important;}}@media (min-width:770px){:root{--sidebar-width:clamp(12.5rem, 28vw, 22rem);}nav{position:fixed;overflow:auto;height:100vh;width:var(--sidebar-width);}main, header{padding:3rem 2rem 3rem calc(var(--sidebar-width) + 3rem);width:calc(54rem + var(--sidebar-width));max-width:100%;}header + main{margin-top:-4rem;}#navtoggle{display:none;}}#togglestate{position:absolute;height:0;opacity:0;}nav.pdoc{--pad:clamp(0.5rem, 2vw, 1.75rem);--indent:1.5rem;background-color:var(--accent);border-right:1px solid var(--accent2);box-shadow:0 0 20px rgba(50, 50, 50, .2) inset;padding:0 0 0 var(--pad);overflow-wrap:anywhere;scrollbar-width:thin; scrollbar-color:var(--accent2) transparent }nav.pdoc::-webkit-scrollbar{width:.4rem; }nav.pdoc::-webkit-scrollbar-thumb{background-color:var(--accent2); }nav.pdoc > div{padding:var(--pad) 0;}nav.pdoc .module-list-button{display:inline-flex;align-items:center;color:var(--text);border-color:var(--muted);margin-bottom:1rem;}nav.pdoc .module-list-button:hover{border-color:var(--text);}nav.pdoc input[type=search]{display:block;outline-offset:0;width:calc(100% - var(--pad));}nav.pdoc .logo{max-width:calc(100% - var(--pad));max-height:35vh;display:block;margin:0 auto 1rem;transform:translate(calc(-.5 * var(--pad)), 0);}nav.pdoc ul{list-style:none;padding-left:0;}nav.pdoc > div > ul{margin-left:calc(0px - var(--pad));}nav.pdoc li a{padding:.2rem 0 .2rem calc(var(--pad) + var(--indent));}nav.pdoc > div > ul > li > a{padding-left:var(--pad);}nav.pdoc li{transition:all 100ms;}nav.pdoc li:hover{background-color:var(--nav-hover);}nav.pdoc a, nav.pdoc a:hover{color:var(--text);}nav.pdoc a{display:block;}nav.pdoc > h2:first-of-type{margin-top:1.5rem;}nav.pdoc .class:before{content:"class ";color:var(--muted);}nav.pdoc .function:after{content:"()";color:var(--muted);}nav.pdoc footer:before{content:"";display:block;width:calc(100% - var(--pad));border-top:solid var(--accent2) 1px;margin-top:1.5rem;padding-top:.5rem;}nav.pdoc footer{font-size:small;}</style>
     <style>/*! content.css */.pdoc{color:var(--text);box-sizing:border-box;line-height:1.5;background:none;}.pdoc .pdoc-button{cursor:pointer;display:inline-block;border:solid black 1px;border-radius:2px;font-size:.75rem;padding:calc(0.5em - 1px) 1em;transition:100ms all;}.pdoc .pdoc-alert{padding:1rem 1rem 1rem calc(1.5rem + 24px);border:1px solid transparent;border-radius:.25rem;background-repeat:no-repeat;background-position:1rem center;margin-bottom:1rem;}.pdoc .pdoc-alert > *:last-child{margin-bottom:0;}.pdoc .pdoc-alert-note {color:#084298;background-color:#cfe2ff;border-color:#b6d4fe;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23084298%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M8%2016A8%208%200%201%200%208%200a8%208%200%200%200%200%2016zm.93-9.412-1%204.705c-.07.34.029.533.304.533.194%200%20.487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703%200-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381%202.29-.287zM8%205.5a1%201%200%201%201%200-2%201%201%200%200%201%200%202z%22/%3E%3C/svg%3E");}.pdoc .pdoc-alert-warning{color:#664d03;background-color:#fff3cd;border-color:#ffecb5;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23664d03%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M8.982%201.566a1.13%201.13%200%200%200-1.96%200L.165%2013.233c-.457.778.091%201.767.98%201.767h13.713c.889%200%201.438-.99.98-1.767L8.982%201.566zM8%205c.535%200%20.954.462.9.995l-.35%203.507a.552.552%200%200%201-1.1%200L7.1%205.995A.905.905%200%200%201%208%205zm.002%206a1%201%200%201%201%200%202%201%201%200%200%201%200-2z%22/%3E%3C/svg%3E");}.pdoc .pdoc-alert-danger{color:#842029;background-color:#f8d7da;border-color:#f5c2c7;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22%23842029%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M5.52.359A.5.5%200%200%201%206%200h4a.5.5%200%200%201%20.474.658L8.694%206H12.5a.5.5%200%200%201%20.395.807l-7%209a.5.5%200%200%201-.873-.454L6.823%209.5H3.5a.5.5%200%200%201-.48-.641l2.5-8.5z%22/%3E%3C/svg%3E");}.pdoc .visually-hidden{position:absolute !important;width:1px !important;height:1px !important;padding:0 !important;margin:-1px !important;overflow:hidden !important;clip:rect(0, 0, 0, 0) !important;white-space:nowrap !important;border:0 !important;}.pdoc h1, .pdoc h2, .pdoc h3{font-weight:300;margin:.3em 0;padding:.2em 0;}.pdoc > section:not(.module-info) h1{font-size:1.5rem;font-weight:500;}.pdoc > section:not(.module-info) h2{font-size:1.4rem;font-weight:500;}.pdoc > section:not(.module-info) h3{font-size:1.3rem;font-weight:500;}.pdoc > section:not(.module-info) h4{font-size:1.2rem;}.pdoc > section:not(.module-info) h5{font-size:1.1rem;}.pdoc a{text-decoration:none;color:var(--link);}.pdoc a:hover{color:var(--link-hover);}.pdoc blockquote{margin-left:2rem;}.pdoc pre{border-top:1px solid var(--accent2);border-bottom:1px solid var(--accent2);margin-top:0;margin-bottom:1em;padding:.5rem 0 .5rem .5rem;overflow-x:auto;background-color:var(--code);}.pdoc code{color:var(--text);padding:.2em .4em;margin:0;font-size:85%;background-color:var(--code);border-radius:6px;}.pdoc a > code{color:inherit;}.pdoc pre > code{display:inline-block;font-size:inherit;background:none;border:none;padding:0;}.pdoc > section:not(.module-info){margin-bottom:1.5rem;}.pdoc .modulename{margin-top:0;font-weight:bold;}.pdoc .modulename a{color:var(--link);transition:100ms all;}.pdoc .git-button{float:right;border:solid var(--link) 1px;}.pdoc .git-button:hover{background-color:var(--link);color:var(--pdoc-background);}.view-source-toggle-state,.view-source-toggle-state ~ .pdoc-code{display:none;}.view-source-toggle-state:checked ~ .pdoc-code{display:block;}.view-source-button{display:inline-block;float:right;font-size:.75rem;line-height:1.5rem;color:var(--muted);padding:0 .4rem 0 1.3rem;cursor:pointer;text-indent:-2px;}.view-source-button > span{visibility:hidden;}.module-info .view-source-button{float:none;display:flex;justify-content:flex-end;margin:-1.2rem .4rem -.2rem 0;}.view-source-button::before{position:absolute;content:"View Source";display:list-item;list-style-type:disclosure-closed;}.view-source-toggle-state:checked ~ .attr .view-source-button::before,.view-source-toggle-state:checked ~ .view-source-button::before{list-style-type:disclosure-open;}.pdoc .docstring{margin-bottom:1.5rem;}.pdoc section:not(.module-info) .docstring{margin-left:clamp(0rem, 5vw - 2rem, 1rem);}.pdoc .docstring .pdoc-code{margin-left:1em;margin-right:1em;}.pdoc h1:target,.pdoc h2:target,.pdoc h3:target,.pdoc h4:target,.pdoc h5:target,.pdoc h6:target,.pdoc .pdoc-code > pre > span:target{background-color:var(--active);box-shadow:-1rem 0 0 0 var(--active);}.pdoc .pdoc-code > pre > span:target{display:block;}.pdoc div:target > .attr,.pdoc section:target > .attr,.pdoc dd:target > a{background-color:var(--active);}.pdoc *{scroll-margin:2rem;}.pdoc .pdoc-code .linenos{user-select:none;}.pdoc .attr:hover{filter:contrast(0.95);}.pdoc section, .pdoc .classattr{position:relative;}.pdoc .headerlink{--width:clamp(1rem, 3vw, 2rem);position:absolute;top:0;left:calc(0rem - var(--width));transition:all 100ms ease-in-out;opacity:0;}.pdoc .headerlink::before{content:"#";display:block;text-align:center;width:var(--width);height:2.3rem;line-height:2.3rem;font-size:1.5rem;}.pdoc .attr:hover ~ .headerlink,.pdoc *:target > .headerlink,.pdoc .headerlink:hover{opacity:1;}.pdoc .attr{display:block;margin:.5rem 0 .5rem;padding:.4rem .4rem .4rem 1rem;background-color:var(--accent);overflow-x:auto;}.pdoc .classattr{margin-left:2rem;}.pdoc .name{color:var(--name);font-weight:bold;}.pdoc .def{color:var(--def);font-weight:bold;}.pdoc .signature{background-color:transparent;}.pdoc .param, .pdoc .return-annotation{white-space:pre;}.pdoc .signature.multiline .param{display:block;}.pdoc .signature.condensed .param{display:inline-block;}.pdoc .annotation{color:var(--annotation);}.pdoc .view-value-toggle-state,.pdoc .view-value-toggle-state ~ .default_value{display:none;}.pdoc .view-value-toggle-state:checked ~ .default_value{display:inherit;}.pdoc .view-value-button{font-size:.5rem;vertical-align:middle;border-style:dashed;margin-top:-0.1rem;}.pdoc .view-value-button:hover{background:white;}.pdoc .view-value-button::before{content:"show";text-align:center;width:2.2em;display:inline-block;}.pdoc .view-value-toggle-state:checked ~ .view-value-button::before{content:"hide";}.pdoc .inherited{margin-left:2rem;}.pdoc .inherited dt{font-weight:700;}.pdoc .inherited dt, .pdoc .inherited dd{display:inline;margin-left:0;margin-bottom:.5rem;}.pdoc .inherited dd:not(:last-child):after{content:", ";}.pdoc .inherited .class:before{content:"class ";}.pdoc .inherited .function a:after{content:"()";}.pdoc .search-result .docstring{overflow:auto;max-height:25vh;}.pdoc .search-result.focused > .attr{background-color:var(--active);}.pdoc .attribution{margin-top:2rem;display:block;opacity:0.5;transition:all 200ms;filter:grayscale(100%);}.pdoc .attribution:hover{opacity:1;filter:grayscale(0%);}.pdoc .attribution img{margin-left:5px;height:35px;vertical-align:middle;width:70px;transition:all 200ms;}.pdoc table{display:block;width:max-content;max-width:100%;overflow:auto;margin-bottom:1rem;}.pdoc table th{font-weight:600;}.pdoc table th, .pdoc table td{padding:6px 13px;border:1px solid var(--accent2);}</style>
-    <style>/*! custom.css */</style></head>
+    <style>/*! custom.css */</style><style>
+    .pdoc .mermaid-pre {
+        border: none;
+        background: none;
+    }
+</style>
+<script type="module" defer>
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+    /* Re-invoke Mermaid when DOM content changes, for example during search. */
+    document.addEventListener("DOMContentLoaded", () => {
+        new MutationObserver(() => mermaid.run()).observe(
+            document.querySelector("main.pdoc").parentNode,
+            {childList: true}
+        );
+    })
+</script></head>
 <body>
     <nav class="pdoc">
         <label id="navtoggle" for="togglestate" class="pdoc-button"><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke-linecap='round' stroke="currentColor" stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/></svg></label>
@@ -135,6 +151,60 @@
                         </li>
                         <li>
                                 <a class="variable" href="#Question.question">question</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#QuestionCategory">QuestionCategory</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#QuestionCategory.__init__">QuestionCategory</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.question">question</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.category">category</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.NO_SQL_GENERATED">NO_SQL_GENERATED</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.SQL_UNABLE_TO_RUN">SQL_UNABLE_TO_RUN</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.BOOTSTRAP_TRAINING_QUERY">BOOTSTRAP_TRAINING_QUERY</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.ASSUMED_CORRECT">ASSUMED_CORRECT</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.FLAGGED_FOR_REVIEW">FLAGGED_FOR_REVIEW</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.REVIEWED_AND_APPROVED">REVIEWED_AND_APPROVED</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.REVIEWED_AND_REJECTED">REVIEWED_AND_REJECTED</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#QuestionCategory.REVIEWED_AND_UPDATED">REVIEWED_AND_UPDATED</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#AccuracyStats">AccuracyStats</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#AccuracyStats.__init__">AccuracyStats</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AccuracyStats.num_questions">num_questions</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AccuracyStats.data">data</a>
                         </li>
                 </ul>
 
@@ -682,6 +752,198 @@
         
     </div>
     <a class="headerlink" href="#Question.question"></a>
+    
+    
+
+                            </div>
+                </section>
+                <section id="QuestionCategory">
+                    <div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">QuestionCategory</span>:
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory"></a>
+    
+    
+
+                            <div id="QuestionCategory.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">QuestionCategory</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">question</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">category</span><span class="p">:</span> <span class="nb">str</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.question" class="classattr">
+                                <div class="attr variable">
+            <span class="name">question</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.question"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.category" class="classattr">
+                                <div class="attr variable">
+            <span class="name">category</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.category"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.NO_SQL_GENERATED" class="classattr">
+                                <div class="attr variable">
+            <span class="name">NO_SQL_GENERATED</span>        =
+<span class="default_value">&#39;No SQL Generated&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.NO_SQL_GENERATED"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.SQL_UNABLE_TO_RUN" class="classattr">
+                                <div class="attr variable">
+            <span class="name">SQL_UNABLE_TO_RUN</span>        =
+<span class="default_value">&#39;SQL Unable to Run&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.SQL_UNABLE_TO_RUN"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.BOOTSTRAP_TRAINING_QUERY" class="classattr">
+                                <div class="attr variable">
+            <span class="name">BOOTSTRAP_TRAINING_QUERY</span>        =
+<span class="default_value">&#39;Bootstrap Training Query&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.BOOTSTRAP_TRAINING_QUERY"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.ASSUMED_CORRECT" class="classattr">
+                                <div class="attr variable">
+            <span class="name">ASSUMED_CORRECT</span>        =
+<span class="default_value">&#39;Assumed Correct&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.ASSUMED_CORRECT"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.FLAGGED_FOR_REVIEW" class="classattr">
+                                <div class="attr variable">
+            <span class="name">FLAGGED_FOR_REVIEW</span>        =
+<span class="default_value">&#39;Flagged for Review&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.FLAGGED_FOR_REVIEW"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.REVIEWED_AND_APPROVED" class="classattr">
+                                <div class="attr variable">
+            <span class="name">REVIEWED_AND_APPROVED</span>        =
+<span class="default_value">&#39;Reviewed and Approved&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.REVIEWED_AND_APPROVED"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.REVIEWED_AND_REJECTED" class="classattr">
+                                <div class="attr variable">
+            <span class="name">REVIEWED_AND_REJECTED</span>        =
+<span class="default_value">&#39;Reviewed and Rejected&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.REVIEWED_AND_REJECTED"></a>
+    
+    
+
+                            </div>
+                            <div id="QuestionCategory.REVIEWED_AND_UPDATED" class="classattr">
+                                <div class="attr variable">
+            <span class="name">REVIEWED_AND_UPDATED</span>        =
+<span class="default_value">&#39;Reviewed and Updated&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#QuestionCategory.REVIEWED_AND_UPDATED"></a>
+    
+    
+
+                            </div>
+                </section>
+                <section id="AccuracyStats">
+                    <div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">AccuracyStats</span>:
+
+        
+    </div>
+    <a class="headerlink" href="#AccuracyStats"></a>
+    
+    
+
+                            <div id="AccuracyStats.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">AccuracyStats</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">num_questions</span><span class="p">:</span> <span class="nb">int</span>, </span><span class="param"><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AccuracyStats.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="AccuracyStats.num_questions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">num_questions</span><span class="annotation">: int</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AccuracyStats.num_questions"></a>
+    
+    
+
+                            </div>
+                            <div id="AccuracyStats.data" class="classattr">
+                                <div class="attr variable">
+            <span class="name">data</span><span class="annotation">: Dict[str, int]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AccuracyStats.data"></a>
     
     
 
