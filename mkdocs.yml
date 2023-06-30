@@ -1,0 +1,43 @@
+site_name: Vanna.AI Documentation
+nav:
+  - What is Vanna.AI?: index.md
+  - Use with Streamlit: streamlit.md
+  - Use in Notebooks: jupyter.md
+  - Onboarding: onboarding.md
+  - Code to Get Started: getting-started.md
+  - Adding Vanna to your Workflow: workflow.md
+  - Pricing: pricing.md
+  - Support: support.md
+repo_url: https://github.com/vanna-ai/vanna-py
+theme:
+  icon:
+    repo: fontawesome/brands/github
+  logo: https://ask.vanna.ai/static/img/vanna.svg
+  favicon: https://vanna.ai/favicon.ico
+  name: material
+  palette:
+    scheme: slate
+extra_css:
+  - stylesheets/extra.css
+extra:
+  homepage: https://vanna.ai
+  consent:
+    title: Cookie consent
+    description: >- 
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+    cookies:
+      analytics:
+        name: Google Analytics
+        checked: false
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+copyright: >
+  Copyright &copy; 2023 Vanna.AI –
+  <a href="#__consent">Change cookie settings</a>

@@ -1,19 +1,87 @@
 r'''
-A module to interact with the Vanna.AI API, providing the functionality to generate SQL explanations.
+# What is Vanna.AI?
+Vanna.AI is a platform that allows you to ask questions about your data in plain English. It is an AI-powered data analyst that can answer questions about your data, generate SQL, and create visualizations.
 
+# How do I use Vanna.AI?
+- Import the Vanna.AI library
+- Set your API key
+- Set your organization name
+- Train Vanna.AI on your data
+- Ask questions about your data
+
+# How does Vanna.AI work?
+```mermaid
+flowchart TD
+    DB[(Known Correct Question-SQL)]
+    Try[Try to Use DDL/Documentation]
+    SQL(SQL)
+    Check{Is the SQL correct?}
+    Generate[fa:fa-circle-question Use Examples to Generate]
+    DB --> Find
+    Question[fa:fa-circle-question Question] --> Find{fa:fa-magnifying-glass Do we have similar questions?}
+    Find -- Yes --> Generate
+    Find -- No --> Try
+    Generate --> SQL
+    Try --> SQL
+    SQL --> Check
+    Check -- Yes --> DB
+    Check -- No --> Analyst[fa:fa-glasses Analyst Writes the SQL]
+    Analyst -- Adds --> DB
+```
+
+# Getting Started
+
+## How do I import the Vanna.AI library?
+```python
+import vanna as vn
+```
+
+## How do I set my API key?
+```python
+vn.api_key = 'vanna-key-...'
+```
+
+## How do I set my organization name?
+```python
+vn.set_org('my_org')
+```
+
+## How do I train Vanna.AI on my data?
+```python
+vn.store_sql(
+    question="Who are the top 10 customers by Sales?", 
+    sql="SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10"
+)
+```
+
+## How do I ask questions about my data?
+```python
+my_question = 'What are the top 10 ABC by XYZ?'
+
+sql = vn.generate_sql(question=my_question, error_msg=None)
+# SELECT * FROM table_name WHERE column_name = 'value'
+```
+
+## Full Example
 ```python
 import vanna as vn
 
 vn.api_key = 'vanna-key-...' # Set your API key
 vn.set_org('') # Set your organization name
 
-vn.store_sql(question="Who are the top 10 customers by Sales?", sql="SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10")
+# Train Vanna.AI on your data
+vn.store_sql(
+    question="Who are the top 10 customers by Sales?", 
+    sql="SELECT customer_name, sales FROM customers ORDER BY sales DESC LIMIT 10"
+)
 
+# Ask questions about your data
 my_question = 'What are the top 10 ABC by XYZ?'
 
+# Generate SQL
 sql = vn.generate_sql(question=my_question, error_msg=None) 
-# SELECT * FROM table_name WHERE column_name = 'value'
 
+# Connect to your database
 conn = snowflake.connector.connect(
         user='my_user',
         password='my_password',
@@ -23,14 +91,29 @@ conn = snowflake.connector.connect(
 
 cs = conn.cursor()
 
-df = vn.get_results(cs, my_default_db, sql)
+# Get results
+df = vn.get_results(
+    cs=cs, 
+    default_db=my_default_db, 
+    sql=sql
+    )
 
-plotly_code = vn.generate_plotly_code(question="Who are the top 10 customers by Sales?", sql=sql, df=df)
-# px.bar(df, x='column_name', y='column_name')
+# Generate Plotly code
+plotly_code = vn.generate_plotly_code(
+    question=my_question, 
+    sql=sql, 
+    df=df
+    )
 
-fig = vn.get_plotly_figure(plotly_code=plotly_code, df=df)
+# Get Plotly figure
+fig = vn.get_plotly_figure(
+    plotly_code=plotly_code, 
+    df=df
+    )
 
 ```
+
+# API Reference
 '''
 print("Vanna.AI Imported")
 
@@ -41,11 +124,14 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats
 from typing import List, Dict, Any, Union, Optional
 
+"""Set the API key for Vanna.AI."""
 api_key: Union[str, None] = None # API key for Vanna.AI
+
 __org: Union[str, None] = None # Organization name for Vanna.AI
+
 _endpoint = "https://ask.vanna.ai/rpc"
 
 def __rpc_call(method, params):
@@ -117,6 +203,34 @@ def store_sql(question: str, sql: str) -> bool:
     )]
 
     d = __rpc_call(method="store_sql", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
+
+def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
+    """
+    Flag a question and its corresponding SQL query for review by the Vanna.AI team.
+
+    Args:
+        question (str): The question to flag.
+        sql (str): The SQL query to flag.
+        error_msg (str): The error message to flag.
+
+    Returns:
+        bool: True if the question and SQL query were flagged successfully, False otherwise.
+    """
+    params = [
+        QuestionCategory(
+            question=question,
+            category=QuestionCategory.FLAGGED_FOR_REVIEW,
+        )
+    ]
+
+    d = __rpc_call(method="set_accuracy_category", params=params)
 
     if 'result' not in d:
         return False
@@ -221,10 +335,10 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
 def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
-    Get the results of an SQL query using the Vanna.AI API.
+    Run the SQL query and return the results as a pandas dataframe.
 
     Args:
-        cs (pyodbc.Cursor): The cursor to use.
+        cs: Snowflake connection cursor.
         default_database (str): The default database to use.
         sql (str): The SQL query to execute.
 
@@ -312,3 +426,58 @@ def generate_question(sql: str) -> str:
     question = Question(**d['result'])
 
     return question.question
+
+def get_flagged_questions() -> QuestionList:
+    """
+
+    ## Example
+    ```python
+    vn.get_flagged_questions()
+    # [FullQuestionDocument(...), ...]
+    ```
+    
+    Get a list of flagged questions from the Vanna.AI API.
+
+    Returns:
+        List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.
+
+    """
+    # params = [Question(question="")]
+    params = []
+
+    d = __rpc_call(method="get_flagged_questions", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    flagged_questions = QuestionList(**d['result'])
+
+    return flagged_questions
+
+def get_accuracy_stats() -> AccuracyStats:
+    """
+
+    ## Example
+    ```python
+    vn.get_accuracy_stats()
+    # {'accuracy': 0.0, 'total': 0, 'correct': 0}
+    ```
+    
+    Get the accuracy statistics from the Vanna.AI API.
+
+    Returns:
+        dict or None: The accuracy statistics, or None if an error occurred.
+
+    """
+    params = []
+
+    d = __rpc_call(method="get_accuracy_stats", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    accuracy_stats = AccuracyStats(**d['result'])
+
+    return accuracy_stats

@@ -1,11 +1,15 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 
 @dataclass
 class Status:
     success: bool
     message: str
+
+@dataclass
+class QuestionList:
+    questions: List[FullQuestionDocument]
 
 @dataclass
 class FullQuestionDocument:
@@ -33,6 +37,25 @@ class QuestionId:
 @dataclass
 class Question:
     question: str
+
+@dataclass
+class QuestionCategory:
+    question: str
+    category: str
+
+    NO_SQL_GENERATED = "No SQL Generated"
+    SQL_UNABLE_TO_RUN = "SQL Unable to Run"
+    BOOTSTRAP_TRAINING_QUERY = "Bootstrap Training Query"
+    ASSUMED_CORRECT = "Assumed Correct"
+    FLAGGED_FOR_REVIEW = "Flagged for Review"
+    REVIEWED_AND_APPROVED = "Reviewed and Approved"
+    REVIEWED_AND_REJECTED = "Reviewed and Rejected"
+    REVIEWED_AND_UPDATED = "Reviewed and Updated" 
+
+@dataclass
+class AccuracyStats:
+    num_questions: int
+    data: Dict[str, int]
 
 @dataclass
 class Followup:
