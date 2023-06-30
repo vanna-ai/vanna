@@ -5,7 +5,7 @@ _class: lead
 paginate: true
 backgroundColor: #111827
 color: #fff
-header: 'Updated: 2023-05-22'
+header: 'Updated: 2023-06-30'
 ---
 <style>
   strong {
@@ -30,6 +30,10 @@ header: 'Updated: 2023-05-22'
 
 For Natural Language to SQL
 (and associated functionality)
+
+[Full Documentation Reference](https://vanna.ai)
+
+[Slack]()
 
 support@vanna.ai
 
