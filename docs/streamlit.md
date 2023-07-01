@@ -1,4 +1,4 @@
-# Use Vanna.AI with Streamlit
+# Use **Vanna.AI** with Streamlit
 
 ## App
 <iframe
