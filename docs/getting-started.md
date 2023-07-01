@@ -1,5 +1,10 @@
 # Getting Started
 
+## How do I install the Vanna.AI library?
+```bash
+pip install vanna
+```
+
 ## How do I import the Vanna.AI library?
 ```python
 import vanna as vn
@@ -11,11 +16,13 @@ vn.api_key = 'vanna-key-...'
 ```
 
 ## How do I set my organization name?
+[`vn.set_org`][vanna.set_org]
 ```python
 vn.set_org('my_org')
 ```
 
 ## How do I train Vanna.AI on my data?
+[`vn.store_sql`][vanna.store_sql]
 ```python
 vn.store_sql(
     question="Who are the top 10 customers by Sales?", 
@@ -24,6 +31,7 @@ vn.store_sql(
 ```
 
 ## How do I ask questions about my data?
+[`vn.generate_sql`][vanna.generate_sql]
 ```python
 my_question = 'What are the top 10 ABC by XYZ?'
 

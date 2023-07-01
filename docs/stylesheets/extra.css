@@ -6,4 +6,16 @@
     /* --md-hue: 210;  */
 }
   
-  
+strong {
+    font-family: 'Roboto Slab', serif;
+    color: transparent !important;
+    background: linear-gradient(15deg, #009efd, #2af598);
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+marp-pre {
+    font-family: 'Fira Code Light', monospace;
+    font-size: 0.75em;
+    background: #000;
+    border-radius: 30px;
+}
