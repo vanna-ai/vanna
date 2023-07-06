@@ -40,7 +40,6 @@ class UserEmail:
 
 @dataclass
 class NewOrganization:
-    email: str
     org_name: str
     db_type: str
 

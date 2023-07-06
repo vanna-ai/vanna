@@ -13,7 +13,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization
 from typing import List, Dict, Any, Union, Optional
 
 """Set the API key for Vanna.AI."""
@@ -135,6 +135,34 @@ def list_orgs() -> List[str]:
 
     return orgs.organizations
 
+def create_org(org: str, db_type: str) -> bool:
+    """
+    ## Example
+    ```python
+    vn.create_org(org="my-org", db_type="postgres")
+    ```
+
+    Create a new organization.
+
+    Args:
+        org (str): The name of the organization to create.
+        db_type (str): The type of database to use for the organization. This can be "Snowflake", "BigQuery", "Postgres", or anything else.
+
+    Returns:
+        bool: True if the organization was created successfully, False otherwise.
+    """
+    params = [NewOrganization(org_name=org, db_type=db_type)]
+
+    d = __rpc_call(method="create_org", params=params)
+
+    if 'result' not in d:
+        return False
+
+    status = Status(**d['result'])
+
+    return status.success
+
+
 def set_org(org: str) -> None:
     """
     ## Example
@@ -165,15 +193,10 @@ def set_org(org: str) -> None:
         create = input(f"Would you like to create organization '{org}'? (y/n): ")
 
         if create.lower() == 'y':
-            params = []
-            d = __rpc_call(method="create_org", params=params)
-
-            if 'result' not in d:
-                raise Exception("Failed to create organization")
-            
-            status = Status(**d['result'])
-
-            if not status.success:
+            db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
+            if create_org(org=org, db_type=db_type):
+                __org = org
+            else:
                 raise Exception("Failed to create organization")
     else:
         __org = org
