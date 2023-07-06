@@ -13,7 +13,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization
 from typing import List, Dict, Any, Union, Optional
 
 """Set the API key for Vanna.AI."""
@@ -22,6 +22,19 @@ api_key: Union[str, None] = None # API key for Vanna.AI
 __org: Union[str, None] = None # Organization name for Vanna.AI
 
 _endpoint = "https://ask.vanna.ai/rpc"
+_unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
+
+def __unauthenticated_rpc_call(method, params):
+    headers = {
+        'Content-Type': 'application/json',
+    }
+    data = {
+        "method": method,
+        "params": [__dataclass_to_dict(obj) for obj in params]
+    }
+
+    response = requests.post(_unauthenticated_endpoint, headers=headers, data=json.dumps(data))
+    return response.json()
 
 def __rpc_call(method, params):
     global api_key
@@ -30,8 +43,10 @@ def __rpc_call(method, params):
     if api_key is None:
         raise Exception("API key not set")
     
-    if __org is None:
+    if __org is None and method != "list_orgs":
         raise Exception("Organization name not set")
+    else:
+        __org = "demo-sales"
 
     headers = {
         'Content-Type': 'application/json',
@@ -49,6 +64,77 @@ def __rpc_call(method, params):
 def __dataclass_to_dict(obj):
     return dataclasses.asdict(obj)
 
+def login(email: str, otp_code: Union[str, None] = None) -> bool:
+    """
+    ## Example
+    ```python
+    vn.login(email="username@example.com")
+    ```
+
+    Login to the Vanna.AI API.
+
+    Args:
+        email (str): The email address to login with.
+        otp_code (Union[str, None]): The OTP code to login with. If None, an OTP code will be sent to the email address.
+
+    Returns:
+        bool: True if the login was successful, False otherwise.
+    """
+    global api_key
+
+    if otp_code is None:
+        params = [UserEmail(email=email)]
+
+        d = __unauthenticated_rpc_call(method="send_otp", params=params)
+
+        if 'result' not in d:
+            return False
+
+        status = Status(**d['result'])
+
+        if not status.success:
+            return False
+
+        otp = input("Enter OTP: ")
+
+    params = [UserOTP(email=email, otp=otp)]
+
+    d = __unauthenticated_rpc_call(method="verify_otp", params=params)
+
+    if 'result' not in d:
+        return False
+
+    key = ApiKey(**d['result'])
+
+    if key is None:
+        return False
+
+    api_key = key.key
+    print("Login successful. API key set. If you'd like to stay logged in, save your vn.api_key.")
+
+    return True
+
+def list_orgs() -> List[str]:
+    """
+    ## Example
+    ```python
+    orgs = vn.list_orgs()
+    ```
+
+    List the organizations that the user is a member of.
+
+    Returns:
+        List[str]: A list of organization names.
+    """
+    d = __rpc_call(method="list_orgs", params=[])
+
+    if 'result' not in d:
+        return []
+
+    orgs = OrganizationList(**d['result'])
+
+    return orgs.organizations
+
 def set_org(org: str) -> None:
     """
     ## Example
@@ -62,7 +148,35 @@ def set_org(org: str) -> None:
         org (str): The organization name.
     """
     global __org
-    __org = org
+
+    my_orgs = list_orgs()
+    if org not in my_orgs:
+        # Check if org exists
+        d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
+
+        if 'result' not in d:
+            raise Exception("Failed to check if organization exists")
+
+        status = Status(**d['result'])
+
+        if status.success:
+            raise Exception(f"An organization with the name {org} already exists")
+
+        create = input(f"Would you like to create organization '{org}'? (y/n): ")
+
+        if create.lower() == 'y':
+            params = []
+            d = __rpc_call(method="create_org", params=params)
+
+            if 'result' not in d:
+                raise Exception("Failed to create organization")
+            
+            status = Status(**d['result'])
+
+            if not status.success:
+                raise Exception("Failed to create organization")
+    else:
+        __org = org
 
 def store_sql(question: str, sql: str) -> bool:
     """

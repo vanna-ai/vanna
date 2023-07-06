@@ -31,6 +31,29 @@ class Organization:
     connection: Connection | None
 
 @dataclass
+class OrganizationList:
+    organizations: List[str]
+
+@dataclass
+class UserEmail:
+    email: str
+
+@dataclass
+class NewOrganization:
+    email: str
+    org_name: str
+    db_type: str
+
+@dataclass
+class UserOTP:
+    email: str
+    otp: str
+
+@dataclass
+class ApiKey:
+    key: str
+
+@dataclass
 class QuestionId:
     id: str
 
