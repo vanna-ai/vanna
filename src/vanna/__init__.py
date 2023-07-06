@@ -45,14 +45,20 @@ def __rpc_call(method, params):
     
     if __org is None and method != "list_orgs":
         raise Exception("Organization name not set")
-    else:
-        __org = "demo-sales"
 
-    headers = {
-        'Content-Type': 'application/json',
-        'Vanna-Key': api_key,
-        'Vanna-Org': __org
-    }
+    if method != "list_orgs":
+        headers = {
+            'Content-Type': 'application/json',
+            'Vanna-Key': api_key,
+            'Vanna-Org': __org
+        }
+    else:
+        headers = {
+            'Content-Type': 'application/json',
+            'Vanna-Key': api_key,
+            'Vanna-Org': 'demo-sales'
+        }
+
     data = {
         "method": method,
         "params": [__dataclass_to_dict(obj) for obj in params]
