@@ -6,9 +6,7 @@ nav:
   - Onboarding: onboarding.md
   - Code to Get Started: getting-started.md
   - Adding Vanna to your Workflow: workflow.md
-  - Code Reference:
-    - Reference: reference.md
-  - Pricing: pricing.md
+  - Code Reference: reference.md
   - Support: support.md
 repo_url: https://github.com/vanna-ai/vanna-py
 theme:
