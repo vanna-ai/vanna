@@ -32,6 +32,9 @@ extra:
       analytics:
         name: Google Analytics
         checked: false
+  analytics:
+    provider: google
+    property: G-1YZ053XQJ4
 markdown_extensions:
   - pymdownx.superfences:
       custom_fences:
