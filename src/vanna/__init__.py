@@ -237,6 +237,24 @@ def store_sql(question: str, sql: str) -> bool:
 
     return status.success
 
+def train(question: str, sql: str) -> bool:
+    """
+    ## Example
+    ```python
+    vn.train(
+        question="What is the average salary of employees?", 
+        sql="SELECT AVG(salary) FROM employees"
+    )
+    ```
+
+    Train Vanna.AI on a question and its corresponding SQL query. This is equivalent to calling [`store_sql()`][vanna.store_sql].
+
+    Args:
+        question (str): The question to train on.
+        sql (str): The SQL query to train on.
+    """
+    return store_sql(question=question, sql=sql)
+
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
     """
     ## Example
@@ -318,6 +336,24 @@ def generate_sql(question: str) -> str:
     sql_answer = SQLAnswer(**d['result'])
 
     return sql_answer.sql
+
+def ask(question: str) -> str:
+    """
+    ## Example
+    ```python
+    vn.ask(question="What is the average salary of employees?")
+    # SELECT AVG(salary) FROM employees
+    ```
+
+    Ask a question using the Vanna.AI API. This is equivalent to calling [`generate_sql()`][vanna.generate_sql].
+
+    Args:
+        question (str): The question to ask.
+
+    Returns:
+        str or None: The SQL query, or None if an error occurred.
+    """
+    return generate_sql(question=question)
 
 def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame) -> str:
     """
