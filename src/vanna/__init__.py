@@ -200,9 +200,11 @@ def set_org(org: str) -> None:
 
         if create.lower() == 'y':
             db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
+            __org = 'demo-sales'
             if create_org(org=org, db_type=db_type):
                 __org = org
             else:
+                __org = None
                 raise Exception("Failed to create organization")
     else:
         __org = org
