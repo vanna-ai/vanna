@@ -101,7 +101,7 @@ def login(email: str, otp_code: Union[str, None] = None) -> bool:
         if not status.success:
             return False
 
-        otp = input("Enter OTP: ")
+        otp = input("Check your email for the code and enter it here: ")
 
     params = [UserOTP(email=email, otp=otp)]
 
