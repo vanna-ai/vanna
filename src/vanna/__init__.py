@@ -56,7 +56,7 @@ def __rpc_call(method, params):
         headers = {
             'Content-Type': 'application/json',
             'Vanna-Key': api_key,
-            'Vanna-Org': 'demo-sales'
+            'Vanna-Org': 'demo-tpc-h'
         }
 
     data = {
@@ -200,7 +200,7 @@ def set_org(org: str) -> None:
 
         if create.lower() == 'y':
             db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
-            __org = 'demo-sales'
+            __org = 'demo-tpc-h'
             if create_org(org=org, db_type=db_type):
                 __org = org
             else:
@@ -288,6 +288,34 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
     status = Status(**d['result'])
 
     return status.success
+
+# def read_questions_from_github(url: str) -> List[QuestionSQLPair]:
+#     """
+#     ## Example
+#     ```python
+#     url = "https://raw.githubusercontent.com/vanna-ai/vanna-ai/main/data/questions.json"
+#     questions = vn.read_questions_from_github(url)
+#     ```
+#     Read questions and SQL queries from a GitHub URL.
+
+#     Args:
+#         url (str): The URL to read from.
+
+#     Returns:
+#         List[QuestionSQLPair]: A list of [`QuestionSQLPair`][vanna.QuestionSQLPair] objects.
+#     """
+#     response = requests.get(url)
+#     data = response.json()
+
+#     question_sql_pairs = []
+#     for item in data:
+#         question = item.get('question')
+#         sql = item.get('sql')
+#         if question and sql:
+#             question_sql_pair = QuestionSQLPair(question=question, sql=sql)
+#             question_sql_pairs.append(question_sql_pair)
+
+#     return question_sql_pairs
 
 def remove_sql(question: str) -> bool:
     """
