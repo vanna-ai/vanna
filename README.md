@@ -80,7 +80,7 @@ fig.show()
 ```
 
 ### Output:
-![Top 10 Customers by Sales](docs/images/chart.png)
+![Top 10 Customers by Sales](docs/chart.png)
 
 ## Improve Your Training Data
 ```python
