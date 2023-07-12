@@ -1,0 +1,82 @@
+[
+    {
+      "question":"What are the names of the countries in the European region?",
+      "sql":"SELECT n.n_name AS country\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON r.r_regionkey = n.n_regionkey\nWHERE r.r_name = 'EUROPE'"
+    },
+    {
+      "question":"What is the number of customers in each region?",
+      "sql":"SELECT r.r_name AS region, COUNT(DISTINCT c.c_custkey) AS number_of_customers\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON r.r_regionkey = n.n_regionkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON n.n_nationkey = c.c_nationkey\nGROUP BY region"
+    },
+    {
+      "question":"What are the names of the top six customers with the highest total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 6"
+    },
+    {
+      "question":"What is the count of line items purchased with each discount rate in each region?",
+      "sql":"SELECT\n  r.r_name AS region_name,\n  l.l_discount AS discount,\n  COUNT(*) AS count\nFROM\n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON c.c_nationkey = n.n_nationkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r ON n.n_regionkey = r.r_regionkey\nGROUP BY\n  region_name,\n  discount\nORDER BY\n  region_name,\n  discount"
+    },
+    {
+      "question":"What are the names of the top 5 customers in terms of total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_quantity * l.l_extendedprice) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON c.c_custkey = o.o_custkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 5"
+    },
+    {
+      "question":"What is the total sales and number of customers for each region?",
+      "sql":"SELECT r.r_name AS region, COUNT(DISTINCT c.c_custkey) AS number_of_customers, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON c.c_nationkey = n.n_nationkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r ON n.n_regionkey = r.r_regionkey\nGROUP BY region"
+    },
+    {
+      "question":"What are the number of countries in each region, in descending order?",
+      "sql":"SELECT r.r_name AS region_name, COUNT(DISTINCT n.n_name) AS num_countries\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r \nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON r.r_regionkey = n.n_regionkey\nGROUP BY region_name\nORDER BY num_countries DESC"
+    },
+    {
+      "question":"What are the top 3 customers by sales ranking for each of the top 2 regions by total sales?",
+      "sql":"WITH\n  sales_by_region AS (\n    SELECT\n      r.r_name AS region_name,\n      c.c_name AS customer_name,\n      SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\n    FROM\n      SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\n      JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\n      JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\n      JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON c.c_nationkey = n.n_nationkey\n      JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r ON n.n_regionkey = r.r_regionkey\n    GROUP BY\n      region_name,\n      customer_name\n  ),\n  ranked_sales AS (\n    SELECT\n      region_name,\n      customer_name,\n      total_sales,\n      RANK() OVER (\n        PARTITION BY region_name\n        ORDER BY total_sales DESC\n      ) AS sales_rank\n    FROM\n      sales_by_region\n  )\nSELECT *\nFROM ranked_sales\nWHERE region_name IN (\n  SELECT\n    r.r_name\n  FROM\n    SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\n    JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\n    JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\n    JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON c.c_nationkey = n.n_nationkey\n    JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r ON n.n_regionkey = r.r_regionkey\n  GROUP BY\n    r.r_name\n  ORDER BY\n    SUM(l.l_extendedprice * (1 - l.l_discount)) DESC\n  LIMIT 2\n)\nAND sales_rank <= 3;"
+    },
+    {
+      "question":"What are the names of the top three customers in terms of total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_quantity * l.l_extendedprice) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON c.c_custkey = o.o_custkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 3"
+    },
+    {
+      "question":"What are the total sales for each year for the most popular part?",
+      "sql":"SELECT \n  TO_CHAR(o.o_orderdate, 'YYYY') AS order_year, \n  SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM \n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.PART p ON l.l_partkey = p.p_partkey\nWHERE \n  p.p_name = (\n    SELECT \n      p_name \n    FROM \n      SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.PART \n    JOIN \n      SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM ON p_partkey = l_partkey \n    GROUP BY \n      p_name \n    ORDER BY \n      SUM(l_quantity) DESC \n    LIMIT 1\n  )\nGROUP BY \n  order_year\nORDER BY \n  order_year;"
+    },
+    {
+      "question":"What are the top 7 customers ranked by total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 7"
+    },
+    {
+      "question":"What are the top 10 countries ranked by total sales, based on customer and order data?",
+      "sql":"SELECT\n  n.n_name AS country_name,\n  SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM\n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON n.n_nationkey = c.c_nationkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON c.c_custkey = o.o_custkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\nGROUP BY country_name\nORDER BY total_sales DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What is the average number of items per order?",
+      "sql":"SELECT AVG(total_items) AS avg_order_size\nFROM (\n  SELECT o.o_orderkey AS order_id, SUM(l.l_quantity) AS total_items\n  FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\n  GROUP BY o.o_orderkey\n)"
+    },
+    {
+      "question":"What are the top two regions by total sales of all orders?",
+      "sql":"SELECT\n  r.r_name AS region_name,\n  SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM\n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON r.r_regionkey = n.n_regionkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON n.n_nationkey = c.c_nationkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON c.c_custkey = o.o_custkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\nGROUP BY region_name\nORDER BY total_sales DESC\nLIMIT 2;"
+    },
+    {
+      "question":"What are the total sales for each region?",
+      "sql":"SELECT r.r_name as region,\n       sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales\nFROM   snowflake_sample_data.tpch_sf1.lineitem l join snowflake_sample_data.tpch_sf1.orders o\n        ON l.l_orderkey = o.o_orderkey join snowflake_sample_data.tpch_sf1.customer c\n        ON o.o_custkey = c.c_custkey join snowflake_sample_data.tpch_sf1.nation n\n        ON c.c_nationkey = n.n_nationkey join snowflake_sample_data.tpch_sf1.region r\n        ON n.n_regionkey = r.r_regionkey\nGROUP BY region\nORDER BY total_sales desc;"
+    },
+    {
+      "question":"What are the top 5 customers in terms of total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 5"
+    },
+    {
+      "question":"What are the top 10 customers in terms of total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 10"
+    },
+    {
+      "question":"What are the names of the top 3 customers with the highest total sales?",
+      "sql":"SELECT c.c_name AS customer_name, SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\nJOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\nGROUP BY customer_name\nORDER BY total_sales DESC\nLIMIT 3"
+    },
+    {
+      "question":"What are the total sales by country for the top 10 countries in descending order?",
+      "sql":"SELECT\n  n.n_name AS country_name,\n  SUM(l.l_extendedprice * (1 - l.l_discount)) AS total_sales\nFROM\n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON n.n_nationkey = c.c_nationkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON c.c_custkey = o.o_custkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l ON o.o_orderkey = l.l_orderkey\nGROUP BY\n  country_name\nORDER BY\n  total_sales DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What is the average discount for each region?",
+      "sql":"SELECT\n  r.r_name AS region_name,\n  AVG(l.l_discount) AS avg_discount\nFROM\n  SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.LINEITEM l\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS o ON l.l_orderkey = o.o_orderkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.CUSTOMER c ON o.o_custkey = c.c_custkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.NATION n ON c.c_nationkey = n.n_nationkey\n  JOIN SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.REGION r ON n.n_regionkey = r.r_regionkey\nGROUP BY\n  region_name;"
+    }
+  ]
