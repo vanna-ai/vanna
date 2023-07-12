@@ -1,6 +1,6 @@
 [project]
 name = "vanna"
-version = "0.0.7"
+version = "0.0.8"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -13,7 +13,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly"
+    "requests", "tabulate", "plotly", "pandas"
 ]
 
 [project.urls]

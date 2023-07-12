@@ -12,10 +12,7 @@ After every question you can tell Vanna.AI whether the results were correct. Thi
 Vanna provides additional functionality to manage your training data to maintain the **highest level of accuracy for your organization**.
 
 ## What can it do?
-It can support apps that allow you to:
-<video autoplay="" muted="" loop="" playsinline="" class="object-scale-down p-4">
-                    <source src="https://vanna.ai/0501.mp4" type="video/mp4">
-                </video>
+<iframe src="https://www.loom.com/embed/e6975621d57643b1857f6d54e0e699bc?sid=1c0ec5da-df9f-4912-9c08-80e8d1afb46b" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="width: 100%; height: 420px;"></iframe>
 
 ## Where can I use **Vanna.AI**?
 - Use in a [Streamlit app](streamlit.md)
