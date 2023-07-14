@@ -141,3 +141,7 @@ class ColumnDefinition:
 class Diagram:
     raw: str
     mermaid_code: str
+
+@dataclass
+class StringData:
+    data: str

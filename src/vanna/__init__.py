@@ -13,7 +13,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData
 from typing import List, Dict, Any, Union, Optional
 
 """Set the API key for Vanna.AI."""
@@ -231,6 +231,56 @@ def store_sql(question: str, sql: str) -> bool:
     )]
 
     d = __rpc_call(method="store_sql", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
+
+def store_ddl(ddl: str) -> bool:
+    """
+    ## Example
+    ```python
+    vn.store_ddl(
+        ddl="CREATE TABLE employees (id INT, name VARCHAR(255), salary INT)"
+    )
+    ```
+
+    Store a DDL statement in the Vanna.AI database.
+
+    Args:
+        ddl (str): The DDL statement to store.
+    """
+    params = [StringData(data=ddl)]
+
+    d = __rpc_call(method="store_ddl", params=params)
+
+    if 'result' not in d:
+        return False
+    
+    status = Status(**d['result'])
+
+    return status.success
+
+def store_documentation(documentation: str) -> bool:
+    """
+    ## Example
+    ```python
+    vn.store_documentation(
+        documentation="This is a documentation string for the employees table."
+    )
+    ```
+
+    Store a documentation string in the Vanna.AI database.
+
+    Args:
+        documentation (str): The documentation string to store.
+    """
+    params = [StringData(data=documentation)]
+
+    d = __rpc_call(method="store_documentation", params=params)
 
     if 'result' not in d:
         return False
