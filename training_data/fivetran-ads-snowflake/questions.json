@@ -1,0 +1,190 @@
+[
+    {
+      "question":"Which campaigns have the lowest CPM?",
+      "answer":"SELECT CAMPAIGN_NAME, SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nGROUP BY CAMPAIGN_NAME\nORDER BY CPM ASC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the top 5 campaigns by spend?",
+      "answer":"SELECT CAMPAIGN_NAME, SUM(SPEND) AS TOTAL_SPEND\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nGROUP BY CAMPAIGN_NAME\nORDER BY TOTAL_SPEND DESC\nLIMIT 5;"
+    },
+    {
+      "question":"For the keywords with the lowest CPM , how many impressions did they have?",
+      "answer":"```\nSELECT \n    KEYWORD_TEXT, \n    SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS,\n    SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT \nGROUP BY \n    KEYWORD_TEXT \nHAVING \n    TOTAL_IMPRESSIONS > 0 \nORDER BY \n    CPM ASC \nLIMIT \n    10;\n```"
+    },
+    {
+      "question":"What keywords have the highest CPM (cost per thousand impressions)?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY CPM DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the top 10 spending campaigns and corresponding URLs, along with their account, campaign, and ad group information, from a Google Ads URL report?",
+      "answer":"SELECT \n    DATE_DAY, \n    ACCOUNT_NAME, \n    ACCOUNT_ID, \n    CAMPAIGN_NAME, \n    CAMPAIGN_ID, \n    AD_GROUP_NAME, \n    AD_GROUP_ID, \n    AD_ID, \n    BASE_URL, \n    URL_HOST, \n    URL_PATH, \n    UTM_SOURCE, \n    UTM_MEDIUM, \n    UTM_CAMPAIGN, \n    UTM_CONTENT, \n    UTM_TERM, \n    SPEND, \n    CLICKS, \n    IMPRESSIONS\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__URL_REPORT \nORDER BY \n    SPEND DESC \nLIMIT \n    10;"
+    },
+    {
+      "question":"Which campaigns have the lowest CPM? Show the total impressions for each of these campaigns?",
+      "answer":"SELECT \n    CAMPAIGN_NAME, \n    SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM,\n    SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY \n    CAMPAIGN_NAME \nHAVING \n    SUM(IMPRESSIONS) > 0\nORDER BY \n    CPM ASC \nLIMIT \n    10;"
+    },
+    {
+      "question":"Which keywords have the lowest CPM?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY CPM ASC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the top 10 daily performance metrics for Google Ads accounts?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CURRENCY_CODE, AUTO_TAGGING_ENABLED, TIME_ZONE, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__ACCOUNT_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"which 10 facebook campaigns had the highest average CTR over all time per the fb_basic_all_levels table? ",
+      "answer":"```\r\nSELECT campaign_name, AVG(CTR) as average_ctr\r\nFROM mc_facebook_ads.fb_basic_all_levels\r\nGROUP BY campaign_name\r\nORDER BY average_ctr DESC\r\nLIMIT 10\r\n```"
+    },
+    {
+      "question":"What was my total spending by date for Google ads and Facebook ads by quarter?",
+      "answer":"SELECT platform,\n       extract(year\nFROM   date) as year, to_char(date, 'Q') as quarter, sum(total_spend) as total_spend\nFROM   (SELECT 'Google Ads' as platform,\n               date_day as date,\n               sum(spend) as total_spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        GROUP BY date_day\n        UNION all\nSELECT 'Facebook Ads' as platform,\n               date,\n               sum(spend) as total_spend\n        FROM   mc_facebook_ads.fb_basic_all_levels\n        GROUP BY date) as all_data\nGROUP BY platform, year, quarter\nORDER BY platform, year, quarter;"
+    },
+    {
+      "question":"Which keywords had the highest clicks?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(CLICKS) AS TOTAL_CLICKS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY TOTAL_CLICKS DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What was the total spend for Google Ads vs Facebook ads by date?",
+      "answer":"SELECT date_day,\n       'Google Ads' as platform,\n       sum(spend) as total_spend\nFROM   fivetran_database.mc_google_ads.google_ads__campaign_report\nGROUP BY date_day\nUNION all\nSELECT date,\n       'Facebook Ads' as platform,\n       sum(spend) as total_spend\nFROM   mc_facebook_ads.fb_basic_all_levels\nGROUP BY date\nORDER BY date_day desc;"
+    },
+    {
+      "question":"what was the daily spend per the fb_basic_all_levels table? ",
+      "answer":"SELECT date, SUM(spend) as daily_spend\r\nFROM mc_facebook_ads.fb_basic_all_levels\r\nGROUP BY date\r\nORDER BY date DESC"
+    },
+    {
+      "question":"What was my total spending by date for Google ads and Facebook ads?",
+      "answer":"SELECT date,\n       platform,\n       sum(total_spend) as total_spend\nFROM   (SELECT date_day as date,\n               'Google Ads' as platform,\n               sum(spend) as total_spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        GROUP BY date_day\n        UNION all\nSELECT date,\n               'Facebook Ads' as platform,\n               sum(spend) as total_spend\n        FROM   mc_facebook_ads.fb_basic_all_levels\n        GROUP BY date) as all_data\nGROUP BY date, platform\nORDER BY date desc;"
+    },
+    {
+      "question":"What is the total ad spend?",
+      "answer":"SELECT SUM(SPEND) AS TOTAL_SPEND FROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT;"
+    },
+    {
+      "question":"What was the total spend for Google Ads vs Facebook ads by date in 2022?",
+      "answer":"SELECT platform,\n       date,\n       sum(total_spend) as total_spend\nFROM   (SELECT 'Google Ads' as platform,\n               date_day as date,\n               sum(spend) as total_spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        WHERE  extract(year\n        FROM   date_day) = 2022\n        GROUP BY date_day\n        UNION all\nSELECT 'Facebook Ads' as platform,\n               date,\n               sum(spend) as total_spend\n        FROM   mc_facebook_ads.fb_basic_all_levels\n        WHERE  extract(year\n        FROM   date) = 2022\n        GROUP BY date) as all_data\nGROUP BY platform, date\nORDER BY date desc"
+    },
+    {
+      "question":"What are total clicks by day of the week? Use day names like Monday, Tuesday, etc. When visualizing use a heatmap",
+      "answer":"Here is the SQL code to get total clicks by day of the week as well as the day names:\n\n```\nSELECT \n    CASE \n        WHEN DAYOFWEEK(DATE_DAY) = 1 THEN 'Sunday' \n        WHEN DAYOFWEEK(DATE_DAY) = 2 THEN 'Monday' \n        WHEN DAYOFWEEK(DATE_DAY) = 3 THEN 'Tuesday' \n        WHEN DAYOFWEEK(DATE_DAY) = 4 THEN 'Wednesday' \n        WHEN DAYOFWEEK(DATE_DAY) = 5 THEN 'Thursday' \n        WHEN DAYOFWEEK(DATE_DAY) = 6 THEN 'Friday' \n        WHEN DAYOFWEEK(DATE_DAY) = 7 THEN 'Saturday' \n    END AS DAY_OF_WEEK_STR,\n    DAYOFWEEK(DATE_DAY) as DAY_OF_WEEK,\n    SUM(CLICKS) AS TOTAL_CLICKS \nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY \n    DAY_OF_WEEK, DAY_OF_WEEK_STR\nORDER BY \n    DAY_OF_WEEK ASC;\n```\n\nTo visualize this as a heatmap, you can use a tool like Tableau or Power BI and create a heatmap chart using the day of the week as the X axis, the week number or date as the Y axis, and the total clicks as the color or intensity of the heatmap."
+    },
+    {
+      "question":"What are the latest performance metrics for the keywords in the Google Ads account?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, AD_GROUP_NAME, AD_GROUP_ID, CRITERION_ID, TYPE, STATUS, KEYWORD_MATCH_TYPE, KEYWORD_TEXT, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What percentage of each column contains null values?",
+      "answer":"Here is the SQL code to calculate the percentage of null values for each column in the `GOOGLE_ADS__CAMPAIGN_REPORT` table:\n\n```\nSELECT \n    ROUND((SUM(CASE WHEN CAMPAIGN_ID IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_CAMPAIGN_ID,\n    ROUND((SUM(CASE WHEN CAMPAIGN_NAME IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_CAMPAIGN_NAME,\n    ROUND((SUM(CASE WHEN DATE_DAY IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_DATE_DAY,\n    ROUND((SUM(CASE WHEN CLICKS IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_CLICKS,\n    ROUND((SUM(CASE WHEN IMPRESSIONS IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_IMPRESSIONS,\n    ROUND((SUM(CASE WHEN SPEND IS NULL THEN 1 ELSE 0 END) \/ COUNT(*)) * 100, 2) AS PERC_NULL_SPEND\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT;\n```\n\nThis query will return the percentage of null values for each column in the table. You can modify the column names to calculate the percentage of null values for other columns in the table."
+    },
+    {
+      "question":"What are the top 10 keywords by impressions?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY TOTAL_IMPRESSIONS DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What is the number of impressions by date?",
+      "answer":"SELECT DATE_DAY, SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS FROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT GROUP BY DATE_DAY ORDER BY DATE_DAY DESC"
+    },
+    {
+      "question":"What are the recent performance metrics of the top ad groups in Google Ads?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, AD_GROUP_NAME, AD_GROUP_ID, AD_GROUP_STATUS, AD_GROUP_TYPE, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__AD_GROUP_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"Which campaigns have the highest CPM?",
+      "answer":"Please note that CPM is cost per thousand impressions, therefore this query will fetch campaigns with the highest cost per thousand impressions.\n\n```\nSELECT \n    CAMPAIGN_NAME, \n    SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM \nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY \n    CAMPAIGN_NAME \nORDER BY \n    CPM DESC \nLIMIT \n    10;\n```"
+    },
+    {
+      "question":"What are the top 10 keywords by spend?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND) AS TOTAL_SPEND\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY TOTAL_SPEND DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the latest performance metrics for the ads in Google Ads?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, AD_GROUP_NAME, AD_GROUP_ID, AD_ID, AD_NAME, AD_STATUS, AD_TYPE, DISPLAY_URL, SOURCE_FINAL_URLS, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__AD_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the top 10 URLs that users clicked on in the last few days, along with information about the ad campaign and associated costs?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, AD_GROUP_NAME, AD_GROUP_ID, AD_ID, BASE_URL, URL_HOST, URL_PATH, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN, UTM_CONTENT, UTM_TERM, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__URL_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What was the total spend for Google Ads vs Facebook ads?",
+      "answer":"SELECT 'Google Ads' as platform,\n       sum(spend) as total_spend\nFROM   fivetran_database.mc_google_ads.google_ads__campaign_report\nUNION all\nSELECT 'Facebook Ads' as platform,\n       sum(spend) as total_spend\nFROM   mc_facebook_ads.fb_basic_all_levels"
+    },
+    {
+      "question":"What are total clicks by day of the week? Use day names like Monday, Tuesday, etc",
+      "answer":"Assuming you want to display the day names instead of the day of the week number, you can use the following SQL code:\n\n```\nSELECT \n    CASE \n        WHEN DAYOFWEEK(DATE_DAY) = 1 THEN 'Sunday' \n        WHEN DAYOFWEEK(DATE_DAY) = 2 THEN 'Monday' \n        WHEN DAYOFWEEK(DATE_DAY) = 3 THEN 'Tuesday' \n        WHEN DAYOFWEEK(DATE_DAY) = 4 THEN 'Wednesday' \n        WHEN DAYOFWEEK(DATE_DAY) = 5 THEN 'Thursday' \n        WHEN DAYOFWEEK(DATE_DAY) = 6 THEN 'Friday' \n        WHEN DAYOFWEEK(DATE_DAY) = 7 THEN 'Saturday' \n    END AS DAY_OF_WEEK_STR,\n    DAYOFWEEK(DATE_DAY) as DAY_OF_WEEK,\n    SUM(CLICKS) AS TOTAL_CLICKS \nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY \n    DAY_OF_WEEK, DAY_OF_WEEK_STR\nORDER BY \n    DAY_OF_WEEK ASC;\n``` \n\nNote that the `CASE` statement is used to convert the day of the week number to the corresponding day name."
+    },
+    {
+      "question":"What was the total spend for Google Ads vs Facebook ads in the year 2022?",
+      "answer":"SELECT platform,\n       sum(total_spend) as total_spend\nFROM   (SELECT 'Google Ads' as platform,\n               date_trunc('day', date_day) as date_day,\n               sum(spend) as total_spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        WHERE  date_trunc('year', date_day) = '2022-01-01'\n        GROUP BY date_trunc('day', date_day)\n        UNION all\nSELECT 'Facebook Ads' as platform,\n               date_trunc('day', date) as date_day,\n               sum(spend) as total_spend\n        FROM   mc_facebook_ads.fb_basic_all_levels\n        WHERE  date_trunc('year', date) = '2022-01-01'\n        GROUP BY date_trunc('day', date)) as all_data\nGROUP BY platform;"
+    },
+    {
+      "question":"What are the top 5 keywords by spend?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND) AS TOTAL_SPEND\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY TOTAL_SPEND DESC\nLIMIT 5;"
+    },
+    {
+      "question":"What is the total ad spend by date?",
+      "answer":"SELECT DATE_DAY, SUM(SPEND) AS TOTAL_SPEND FROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT GROUP BY DATE_DAY ORDER BY DATE_DAY DESC"
+    },
+    {
+      "question":"What was the quarterly spending in Google ads vs Facebook ads?",
+      "answer":"SELECT platform,\n       date_trunc('quarter', date) as quarter,\n       sum(spend) as total_spend\nFROM   (SELECT 'Google Ads' as platform,\n               date_day as date,\n               spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        UNION all\nSELECT 'Facebook Ads' as platform,\n               date,\n               spend\n        FROM   mc_facebook_ads.fb_basic_all_levels) as all_data\nGROUP BY platform, quarter\nORDER BY platform, quarter"
+    },
+    {
+      "question":"What are the top 3 campaigns by spend?",
+      "answer":"SELECT CAMPAIGN_NAME, SUM(SPEND) AS TOTAL_SPEND\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nGROUP BY CAMPAIGN_NAME\nORDER BY TOTAL_SPEND DESC\nLIMIT 3;"
+    },
+    {
+      "question":"What are the top 10 campaigns by number of impressions?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, ADVERTISING_CHANNEL_TYPE, ADVERTISING_CHANNEL_SUBTYPE, STATUS, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nORDER BY IMPRESSIONS DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What are the latest performance metrics for the Google Ads campaigns?",
+      "answer":"SELECT DATE_DAY, ACCOUNT_NAME, ACCOUNT_ID, CAMPAIGN_NAME, CAMPAIGN_ID, ADVERTISING_CHANNEL_TYPE, ADVERTISING_CHANNEL_SUBTYPE, STATUS, SPEND, CLICKS, IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nORDER BY DATE_DAY DESC\nLIMIT 10;"
+    },
+    {
+      "question":"What are total clicks by day of the week?",
+      "answer":"SELECT DAYOFWEEK(DATE_DAY) AS DAY_OF_WEEK, SUM(CLICKS) AS TOTAL_CLICKS \nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY DAY_OF_WEEK \nORDER BY DAY_OF_WEEK ASC;"
+    },
+    {
+      "question":"What are the top 5 keywords by impressions?",
+      "answer":"SELECT KEYWORD_TEXT, SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nGROUP BY KEYWORD_TEXT\nORDER BY TOTAL_IMPRESSIONS DESC\nLIMIT 5;"
+    },
+    {
+      "question":"Which keywords have the lowest CPM, where keyword spend was at least $500",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nWHERE SPEND >= 500\nGROUP BY KEYWORD_TEXT\nHAVING SUM(IMPRESSIONS) > 0\nORDER BY CPM ASC\nLIMIT 10;"
+    },
+    {
+      "question":"Which dates had outlier spending in Facebook ads?",
+      "answer":"with daily_spend as (SELECT date,\n                            sum(spend) as total_spend,\n                            avg(sum(spend)) OVER() as mean_spend,\n                            stddev(sum(spend)) OVER() as std_spend\n                     FROM   mc_facebook_ads.fb_basic_all_levels\n                     GROUP BY date)\nSELECT date,\n       total_spend,\n       mean_spend,\n       std_spend,\n       (total_spend - mean_spend)\/std_spend as z_score\nFROM   daily_spend\nWHERE  abs((total_spend - mean_spend)\/std_spend) > 3\nORDER BY date desc;"
+    },
+    {
+      "question":"Which keywords have the lowest CPM, where keyword spend was at least $100",
+      "answer":"SELECT KEYWORD_TEXT, SUM(SPEND)\/SUM(IMPRESSIONS)*1000 AS CPM\nFROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__KEYWORD_REPORT\nWHERE SPEND >= 100\nGROUP BY KEYWORD_TEXT\nHAVING SUM(IMPRESSIONS) > 0\nORDER BY CPM ASC\nLIMIT 10;"
+    },
+    {
+      "question":"What is the distribution of impressions by campaign for the top 5 campaigns by impressions?",
+      "answer":"```\nSELECT \n    CAMPAIGN_NAME, \n    SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS, \n    ROUND(SUM(IMPRESSIONS)*100.0\/SUM(SUM(IMPRESSIONS)) OVER (),2) AS IMPRESSIONS_PCT\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\nWHERE \n    CAMPAIGN_NAME IN (\n        SELECT \n            CAMPAIGN_NAME\n        FROM \n            FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT\n        GROUP BY \n            CAMPAIGN_NAME\n        ORDER BY \n            SUM(IMPRESSIONS) DESC\n        LIMIT \n            5\n    )\nGROUP BY \n    CAMPAIGN_NAME\nORDER BY \n    TOTAL_IMPRESSIONS DESC;\n```"
+    },
+    {
+      "question":"What are the top spending campaigns by date, account, and campaign, sorted by total spend, clicks, and impressions?",
+      "answer":"SELECT \n    DATE_DAY, \n    ACCOUNT_NAME, \n    ACCOUNT_ID, \n    CAMPAIGN_NAME, \n    CAMPAIGN_ID, \n    SUM(SPEND) AS TOTAL_SPEND, \n    SUM(CLICKS) AS TOTAL_CLICKS, \n    SUM(IMPRESSIONS) AS TOTAL_IMPRESSIONS\nFROM \n    FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT \nGROUP BY \n    DATE_DAY, \n    ACCOUNT_NAME, \n    ACCOUNT_ID, \n    CAMPAIGN_NAME, \n    CAMPAIGN_ID \nORDER BY \n    TOTAL_SPEND DESC, \n    TOTAL_CLICKS DESC, \n    TOTAL_IMPRESSIONS DESC \nLIMIT \n    10;"
+    },
+    {
+      "question":"What are total clicks by date?",
+      "answer":"SELECT DATE_DAY, SUM(CLICKS) AS TOTAL_CLICKS FROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT GROUP BY DATE_DAY ORDER BY DATE_DAY DESC"
+    },
+    {
+      "question":"what was the daily spend per the fb_basic_all_levels table by campaign_name? ",
+      "answer":"```\nSELECT date, campaign_name, SUM(spend) as daily_spend\nFROM mc_facebook_ads.fb_basic_all_levels\nGROUP BY date, campaign_name\nORDER BY date DESC\n```"
+    },
+    {
+      "question":"What was the total spend for Google Ads vs Facebook ads in the year 2022 compared to 2021 for each quarter?",
+      "answer":"SELECT platform,\n       year,\n       quarter,\n       sum(total_spend) as total_spend\nFROM   (SELECT 'Google Ads' as platform,\n               extract(year\n        FROM   date_day) as year, to_char(date_day, 'Q') as quarter, sum(spend) as total_spend\n        FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n        WHERE  extract(year\n        FROM   date_day) in (2021, 2022)\n        GROUP BY extract(year\n        FROM   date_day), to_char(date_day, 'Q')\n        UNION all\nSELECT 'Facebook Ads' as platform,\n               extract(year\n        FROM   date) as year, to_char(date, 'Q') as quarter, sum(spend) as total_spend\n        FROM   mc_facebook_ads.fb_basic_all_levels\n        WHERE  extract(year\n        FROM   date) in (2021, 2022)\n        GROUP BY extract(year\n        FROM   date), to_char(date, 'Q')) as all_data\nGROUP BY platform, year, quarter\nORDER BY platform, year, quarter"
+    },
+    {
+      "question":"What is the total number of campaigns in the Google Ads Campaign Report?",
+      "answer":"SELECT COUNT(DISTINCT CAMPAIGN_ID) AS NUM_CAMPAIGNS FROM FIVETRAN_DATABASE.MC_GOOGLE_ADS.GOOGLE_ADS__CAMPAIGN_REPORT"
+    },
+    {
+      "question":"Which dates had outlier spending in Google ads?",
+      "answer":"with daily_spend as (SELECT date_day,\n                            sum(spend) as total_spend,\n                            avg(sum(spend)) OVER() as mean_spend,\n                            stddev(sum(spend)) OVER() as std_spend\n                     FROM   fivetran_database.mc_google_ads.google_ads__campaign_report\n                     GROUP BY date_day)\nSELECT date_day,\n       total_spend,\n       mean_spend,\n       std_spend,\n       (total_spend - mean_spend)\/std_spend as z_score\nFROM   daily_spend\nWHERE  abs((total_spend - mean_spend)\/std_spend) > 3\nORDER BY date_day desc;"
+    }
+  ]

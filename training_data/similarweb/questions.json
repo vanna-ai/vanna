@@ -1,0 +1,350 @@
+[
+    {
+      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2023 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\r\n       extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%Tesla%'\r\n    or company_name = 'Ford')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2023-12-31'\r\nGROUP BY company_name, extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
+    },
+    {
+      "question":"Which 10 domains received the highest amount of traffic on Black Friday in 2021 vs 2020",
+      "answer":"SELECT domain,\n       sum(case when date = '2021-11-26' then total_visits\n                else 0 end) as visits_2021,\n       sum(case when date = '2020-11-27' then total_visits\n                else 0 end) as visits_2020\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date in ('2021-11-26', '2020-11-27')\nGROUP BY domain\nORDER BY (visits_2021 - visits_2020) desc limit 10"
+    },
+    {
+      "question":"what are mobile visits for total visits for Coca Cola vs Pepsi in 2021 ?",
+      "answer":"SELECT 'Coca Cola' as company,\n       sum(mobile_visits) as mobile_visits_2021,\n       sum(total_visits) as total_visits_2021\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%Coca Cola%'\n   and date between '2021-01-01'\n   and '2021-12-31'\nUNION\nSELECT 'Pepsi' as company,\n       sum(mobile_visits) as mobile_visits_2021,\n       sum(total_visits) as total_visits_2021\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%Pepsi%'\n   and date between '2021-01-01'\n   and '2021-12-31'"
+    },
+    {
+      "question":"What's the average visit duration by date for each GOOGL domain?",
+      "answer":"```\nSELECT DATE, DOMAIN, AVG(TOTAL_AVG_VISIT_DURATION) AS AVG_VISIT_DURATION\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE TICKER = 'GOOGL'\nGROUP BY DATE, DOMAIN\nORDER BY DATE ASC\n```"
+    },
+    {
+      "question":"what are mobile visits for Expedia  from 2010 to 2021  ? Convert date from varchar to date using to date function ",
+      "answer":"SELECT sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%expedia%'\n   and to_date(date, 'YYYY-MM-DD') between '2010-01-01'\n   and '2021-12-31';"
+    },
+    {
+      "question":"What is the highest traffic domain for each ticker and what\u2019s the YoY growth rate for the top 10 fastest \/ slowest growing",
+      "answer":"with ticker_max_traffic as (SELECT ticker,\n                                   domain,\n                                   max(total_visits) as max_traffic\n                            FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                            GROUP BY ticker, domain), traffic_data as (SELECT domain,\n                                                  extract(year\n                                           FROM   cast(date as date)) as year, sum(total_visits) as total_visits\n                                           FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                                           GROUP BY domain, extract(year\n                                           FROM   cast(date as date))), yoy_data as (SELECT current_year.domain,\n                                                 current_year.year,\n                                                 (current_year.total_visits - previous_year.total_visits) \/ cast(previous_year.total_visits as float) as yoy_growth\n                                          FROM   traffic_data as current_year join traffic_data as previous_year\n                                                  ON current_year.domain = previous_year.domain and\n                                                     current_year.year = previous_year.year + 1), ranked_data as (SELECT domain,\n                                                                    avg(yoy_growth) as avg_yoy_growth\n                                                             FROM   yoy_data\n                                                             GROUP BY domain)\nSELECT ticker_max_traffic.ticker,\n       ticker_max_traffic.domain,\n       ticker_max_traffic.max_traffic,\n       ranked_data.avg_yoy_growth\nFROM   ticker_max_traffic join ranked_data\n        ON ticker_max_traffic.domain = ranked_data.domain\nORDER BY ranked_data.avg_yoy_growth desc limit 10"
+    },
+    {
+      "question":"which domains received the highest amount of traffic in the month of November?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2021-11-01'\n   and '2021-11-30'\nGROUP BY domain\nORDER BY total_visits desc limit 10"
+    },
+    {
+      "question":"which domains received the highest amount of traffic in the month of November on the 26th and 29th?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date in ('2021-11-26', '2021-11-29')\nGROUP BY domain\nORDER BY total_visits desc"
+    },
+    {
+      "question":"How many domains are there for AMZN?",
+      "answer":"SELECT COUNT(DISTINCT DOMAIN) AS NUM_DOMAINS\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE TICKER = 'AMZN'"
+    },
+    {
+      "question":"What are the top 5 domains that had the highest percentage of mobile visits to total visits?",
+      "answer":"```\nSELECT DOMAIN, \n    ROUND(MOBILE_VISITS*100.0\/TOTAL_VISITS,2) AS MOBILE_PERCENTAGE \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500 \nORDER BY MOBILE_PERCENTAGE DESC \nLIMIT 5\n```"
+    },
+    {
+      "question":"what are different company names ?",
+      "answer":"SELECT DISTINCT(company_name)\nFROM   datafeeds.sp_500"
+    },
+    {
+      "question":"what are mobile visits for Google  from 2001 to 2010  ? Convert date from varchar to date using to date function ",
+      "answer":"SELECT sum(mobile_visits) as mobile_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  company_name ilike '%google%'\r\n   and to_date(date, 'YYYY-MM-DD') between  '2010-12-31' and '2021-01-01';"
+    },
+    {
+      "question":"Which ticker does google.com belong to?",
+      "answer":"```\nSELECT TICKER \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500 \nWHERE DOMAIN = 'google.com'\n```"
+    },
+    {
+      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2021? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%ebay%'\n    or company_name ilike '%amazon%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"in 2022, which 10 domains had the highest total time spent (visits x duration) with web and mobile combined?",
+      "answer":"I'm sorry, it seems that the error message you provided is not related to a valid SQL query. Please provide the full SQL query along with the error message so that I can assist you better."
+    },
+    {
+      "question":"which 2 companies had the highest abolsute mobile visit growth from 2018 to 2021 ?",
+      "answer":"with mobile_visits as (SELECT company_name,\n                              date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\n                              sum(mobile_visits) as mobile_visits\n                       FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                       WHERE  company_name ilike '%coca-cola%'\n                           or company_name ilike '%pepsi%'\n                          and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n                          and '2021-12-31'\n                       GROUP BY company_name, year), mobile_visits_growth as (SELECT company_name,\n                                                              year,\n                                                              mobile_visits,\n                                                              lag(mobile_visits) OVER (PARTITION BY company_name\n                                                                                       ORDER BY year) as prev_mobile_visits\n                                                       FROM   mobile_visits)\nSELECT company_name,\n       max(mobile_visits - prev_mobile_visits) as max_mobile_growth\nFROM   mobile_visits_growth\nGROUP BY company_name\nORDER BY max_mobile_growth desc limit 2;"
+    },
+    {
+      "question":"Which  are the top 10 domains  that had the highest  mobile traffic in 2022 and 2021 in billions?",
+      "answer":"SELECT domain,\n       round(sum(case when date between '2021-01-01' and\n                           '2021-12-31' then mobile_visits\n                      else 0 end) \/ 1000000000, 2) as mobile_traffic_2021_billion,\n       round(sum(case when date between '2022-01-01' and\n                           '2022-12-31' then mobile_visits\n                      else 0 end) \/ 1000000000, 2) as mobile_traffic_2022_billion\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY mobile_traffic_2022_billion desc, mobile_traffic_2021_billion desc limit 10"
+    },
+    {
+      "question":"Which domains  had the highest  mobile traffic between 2022 and 2021?",
+      "answer":"One way to correct this error is to add a `NULLIF` function to the denominator of the division operation. This will return NULL instead of throwing a division by zero error if the denominator is zero. Here's the corrected query:\n\n```\nSELECT domain,\n       sum(case when date between '2021-01-01' and\n                     '2021-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2021,\n       sum(case when date between '2022-01-01' and\n                     '2022-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2022,\n       (sum(case when date between '2022-01-01' and\n                      '2022-12-31' then mobile_visits\n                 else 0 end) - sum(case when date between '2021-01-01' and\n                      '2021-12-31' then mobile_visits\n                 else 0 end)) \/ NULLIF(sum(case when date between '2021-01-01' and\n                      '2021-12-31' then mobile_visits\n                 else 0 end), 0) as mobile_growth\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY mobile_growth desc limit 10\n```"
+    },
+    {
+      "question":"what are mobile visits for Google in 2020 ? ",
+      "answer":"SELECT sum(mobile_visits) as mobile_visits_2020\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  domain = 'www.google.com'\n   and date between '2020-01-01'\n   and '2020-12-31';"
+    },
+    {
+      "question":"SELECT 10 rows from the data set",
+      "answer":"SELECT * FROM datafeeds.SP_500 \r\nLIMIT 10"
+    },
+    {
+      "question":"What is the max traffic domain for each ticker and  the YoY growth rate for the top 10 fastest or slowest growing domains?",
+      "answer":"with ticker_max_traffic as (SELECT ticker,\n                                   domain,\n                                   max(total_visits) as max_traffic\n                            FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                            GROUP BY ticker, domain), traffic_data as (SELECT domain,\n                                                  extract(year\n                                           FROM   cast(date as date)) as year, sum(total_visits) as total_visits\n                                           FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                                           GROUP BY domain, extract(year\n                                           FROM   cast(date as date))), yoy_data as (SELECT current_year.domain,\n                                                 current_year.year,\n                                                 (current_year.total_visits - previous_year.total_visits) \/ cast(previous_year.total_visits as float) as yoy_growth\n                                          FROM   traffic_data as current_year join traffic_data as previous_year\n                                                  ON current_year.domain = previous_year.domain and\n                                                     current_year.year = previous_year.year + 1), ranked_data as (SELECT domain,\n                                                                    avg(yoy_growth) as avg_yoy_growth\n                                                             FROM   yoy_data\n                                                             GROUP BY domain)\nSELECT ticker_max_traffic.ticker,\n       ticker_max_traffic.domain,\n       ticker_max_traffic.max_traffic,\n       ranked_data.avg_yoy_growth\nFROM   ticker_max_traffic join ranked_data\n        ON ticker_max_traffic.domain = ranked_data.domain\nORDER BY ranked_data.avg_yoy_growth desc limit 10;"
+    },
+    {
+      "question":"what are average mobile v\/s desktop visit duration for netflix from year 2018 to 2021.",
+      "answer":"SELECT extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, avg(mobile_avg_visit_duration) as avg_mobile_visit_duration, avg(desktop_avg_visit_duration) as avg_desktop_visit_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%netflix%'\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY 1;"
+    },
+    {
+      "question":"How many domains are there for AMZN? List them by desktop traffic",
+      "answer":"SELECT DOMAIN, DESKTOP_VISITS \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE TICKER = 'AMZN'\nORDER BY DESKTOP_VISITS DESC"
+    },
+    {
+      "question":"which company has the most difference between mobile visits and desktop visits in the year 2021 ?",
+      "answer":"SELECT company_name,\n       sum(mobile_visits) as mobile_visits_2021,\n       sum(desktop_visits) as desktop_visits_2021,\n       sum(mobile_visits) - sum(desktop_visits) as diff_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2021-01-01'\n   and '2021-12-31'\nGROUP BY company_name\nORDER BY diff_visits desc limit 1"
+    },
+    {
+      "question":"SELECT are different company names ?",
+      "answer":"SELECT DISTINCT(company_name) FROM datafeeds.sp_500"
+    },
+    {
+      "question":"Which domains had the highest  mobile traffic in 2022 and 2021?",
+      "answer":"SELECT domain,\n       sum(case when date between '2021-01-01' and\n                     '2021-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2021,\n       sum(case when date between '2022-01-01' and\n                     '2022-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2022\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY (mobile_visits_2021 + mobile_visits_2022) desc limit 10"
+    },
+    {
+      "question":"get the total duration by visits, spent on google.com in 2022 ",
+      "answer":"The corrected SQL query is:\n\n```\nSELECT (total_avg_visit_duration * total_visits) as total_duration,\nDATE_TRUNC('month', CAST(date AS DATE)) as month\nFROM s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE domain = 'google.com' and date between '2022-01-01' and '2022-12-31'\nGROUP BY total_duration, month\nORDER BY month;\n```\n\nThe error occurred because the `total_avg_visit_duration` column was used in the SELECT clause without being included in the GROUP BY clause. Therefore, I added `total_duration` to the GROUP BY clause."
+    },
+    {
+      "question":"Compare total traffic to GOOGL domains to MSFT domains grouped by date",
+      "answer":"```\nSELECT DATE,\n    SUM(CASE WHEN TICKER = 'GOOGL' THEN TOTAL_VISITS ELSE 0 END) AS GOOGL_VISITS,\n    SUM(CASE WHEN TICKER = 'MSFT' THEN TOTAL_VISITS ELSE 0 END) AS MSFT_VISITS\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE TICKER IN ('GOOGL', 'MSFT')\nGROUP BY DATE\nORDER BY DATE ASC\n```"
+    },
+    {
+      "question":"which country has the highest mobile visits on Coca Cola in 2020 V\/s which country has highest mobile visits on Pepsi in 2020? Convert date from varchar to date using to date function ",
+      "answer":"SELECT country,\r\n       sum(mobile_visits) as mobile_visits_2020\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%coca-cola%' or company_name ilike '%pepsi%')\r\n   and to_date(date, 'YYYY-MM-DD') between '2020-01-01'\r\n   and '2020-12-31'\r\nGROUP BY country\r\nORDER BY mobile_visits_2020 desc limit 1;"
+    },
+    {
+      "question":"Compare visits to google.com vs bing.com over time",
+      "answer":"```\r\nSELECT DATE,\r\n    SUM(CASE WHEN DOMAIN = 'google.com' THEN TOTAL_VISITS ELSE 0 END) AS GOOGLE_VISITS,\r\n    SUM(CASE WHEN DOMAIN = 'bing.com' THEN TOTAL_VISITS ELSE 0 END) AS BING_VISITS\r\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\r\nWHERE DOMAIN IN ('google.com', 'bing.com')\r\nGROUP BY DATE\r\nORDER BY DATE ASC\r\n```"
+    },
+    {
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"Plot year on year %growth of mobile visits on Alphabet",
+      "answer":"SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\n       sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%alphabet%'\n   and date_trunc('year', to_date(date, 'YYYY-MM-DD')) between '2010-01-01'\n   and '2021-12-31'\nGROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))\nORDER BY year;"
+    },
+    {
+      "question":"select the top 10 fastest-growing or slowest-growing domains based on YoY growth rate as a percentage.",
+      "answer":"The issue is that the `extract()` function cannot be used on a `VARCHAR(16777216)` column. The `date` column needs to be cast as a date type before using the `extract()` function. Here is the corrected SQL code:\n\n```\nwith traffic_data as (\n    SELECT domain,\n           extract(year FROM cast(date as date)) as year, \n           sum(total_visits) as total_visits\n    FROM s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n    GROUP BY domain, extract(year FROM cast(date as date))\n), \nyoy_data as (\n    SELECT current_year.domain,\n           current_year.year,\n           (current_year.total_visits - previous_year.total_visits) \/ cast(previous_year.total_visits as float) as yoy_growth\n    FROM traffic_data as current_year \n    join traffic_data as previous_year\n        ON current_year.domain = previous_year.domain and\n           current_year.year = previous_year.year + 1\n), \nranked_data as (\n    SELECT domain,\n           100 * (exp(avg(log(abs(yoy_growth) + 1, 2)))) - 100 as avg_yoy_growth_pct\n    FROM yoy_data\n    GROUP BY domain\n)\nSELECT domain,\n       avg_yoy_growth_pct\nFROM ranked_data\nORDER BY avg_yoy_growth_pct desc limit 10;\n```"
+    },
+    {
+      "question":"What are the first 10 rows in the table that tells me about mobile, desktop, and total visits by domain and ticker?",
+      "answer":"SELECT COMPANY_NAME, TICKER, DOMAIN, DATE, COUNTRY, DESKTOP_VISITS, DESKTOP_BOUNCE_RATE, DESKTOP_AVG_VISIT_DURATION, DESKTOP_PAGES_PER_VISIT, MOBILE_VISITS, MOBILE_BOUNCE_RATE, MOBILE_AVG_VISIT_DURATION, MOBILE_PAGES_PER_VISIT, TOTAL_VISITS, TOTAL_BOUNCE_RATE, TOTAL_AVG_VISIT_DURATION, TOTAL_PAGES_PER_VISIT\r\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\r\nLIMIT 10"
+    },
+    {
+      "question":"Which domains  had the highest  mobile traffic in 2022 and 2021 in billions?",
+      "answer":"SELECT domain,\n       round(sum(case when date between '2021-01-01' and\n                           '2021-12-31' then mobile_visits\n                      else 0 end) \/ 1000000000, 2) as mobile_traffic_2021_billion,\n       round(sum(case when date between '2022-01-01' and\n                           '2022-12-31' then mobile_visits\n                      else 0 end) \/ 1000000000, 2) as mobile_traffic_2022_billion\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY (mobile_traffic_2021_billion + mobile_traffic_2022_billion) desc limit 10"
+    },
+    {
+      "question":"Plot mobile and desktop visits year on year for activision bliizard",
+      "answer":"SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\n       sum(desktop_visits) as desktop_visits,\n       sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%activision blizzard%'\n   and date_trunc('year', to_date(date, 'YYYY-MM-DD')) between '2010-01-01'\n   and '2021-12-31'\nGROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))\nORDER BY year;"
+    },
+    {
+      "question":"what are mobile visits for total visits for Coca Cola vs Pepsi in 2021 ? Convert date from varchar to date using to date function",
+      "answer":"SELECT company_name,\n       sum(total_visits) as total_visits_2021,\n       sum(mobile_visits) as mobile_visits_2021\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%coca-cola%'\n    or company_name ilike '%pepsi%'\n   and to_date(date, 'YYYY-MM-DD') between '2021-01-01'\n   and '2021-12-31'\nGROUP BY company_name\nORDER BY company_name"
+    },
+    {
+      "question":"Which domains had the highest growth in mobile traffic in 2022 compared to 2021?",
+      "answer":"SELECT domain,\n       case when mobile_visits_2021 = 0 then null\n            else (mobile_visits_2022 - mobile_visits_2021) \/ mobile_visits_2021 end as mobile_growth\nFROM   (SELECT domain,\n               sum(case when date between '2021-11-01' and\n                             '2021-11-30' then mobile_visits\n                        else 0 end) as mobile_visits_2021,\n               sum(case when date between '2022-11-01' and\n                             '2022-11-30' then mobile_visits\n                        else 0 end) as mobile_visits_2022\n        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n        GROUP BY domain) subquery\nORDER BY mobile_growth desc limit 10"
+    },
+    {
+      "question":"which 5 companies have more desktop visits than mobile visits in 2022",
+      "answer":"SELECT company_name,\r\n       sum(CAST(desktop_visits AS FLOAT)) as desktop_visits,\r\n       sum(CAST(mobile_visits AS FLOAT)) as mobile_visits\r\nFROM s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE date BETWEEN '2022-01-01' AND '2022-12-31'\r\nGROUP BY company_name \r\nHAVING sum(CAST(desktop_visits AS FLOAT)) > sum(CAST(mobile_visits AS FLOAT))\r\nORDER BY desktop_visits-mobile_visits DESC \r\nLIMIT 5; "
+    },
+    {
+      "question":"What is the highest traffic domain for each ticker?",
+      "answer":"SELECT ticker,\n       domain,\n       max(total_visits) as max_traffic\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY ticker, domain"
+    },
+    {
+      "question":"which domains received the highest amount of traffic?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY total_visits desc limit 10"
+    },
+    {
+      "question":"what are average mobile visit durations of netflix v\/s desktop visit duration from year 2018 to 2021.",
+      "answer":"SELECT extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, avg(mobile_avg_visit_duration) as avg_mobile_visit_duration, avg(desktop_avg_visit_duration) as avg_desktop_visit_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%netflix%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY 1;"
+    },
+    {
+      "question":"Plot year on year % growth and absolute growth of mobile visits on Alphabet .",
+      "answer":"SELECT year,\r\n       mobile_visits - lag(mobile_visits) OVER (ORDER BY year) as mobile_visits_growth,\r\n       round((mobile_visits - lag(mobile_visits) OVER (ORDER BY year))*100.0 \/ nullif(lag(mobile_visits) OVER (ORDER BY year), 0),\r\n             2) as mobile_visits_growth_percentage\r\nFROM   (SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n               sum(mobile_visits) as mobile_visits\r\n        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\n        WHERE  company_name ilike '%alphabet%'\r\n           and to_date(date, 'YYYY-MM-DD') between '2010-01-01'\r\n           and '2021-12-31'\r\n        GROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD')))\r\nORDER BY year"
+    },
+    {
+      "question":"Compare summary stats of nest.com to ring.com",
+      "answer":"```\nSELECT \n    'nest.com' AS SITE, \n    COUNT(DISTINCT DATE) AS NUM_DAYS,\n    SUM(TOTAL_VISITS) AS TOTAL_VISITS,\n    AVG(TOTAL_AVG_VISIT_DURATION) AS AVG_VISIT_DURATION,\n    AVG(TOTAL_PAGES_PER_VISIT) AS AVG_PAGES_PER_VISIT,\n    AVG(TOTAL_BOUNCE_RATE) AS AVG_BOUNCE_RATE\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE DOMAIN = 'nest.com'\nUNION ALL\nSELECT \n    'ring.com' AS SITE, \n    COUNT(DISTINCT DATE) AS NUM_DAYS,\n    SUM(TOTAL_VISITS) AS TOTAL_VISITS,\n    AVG(TOTAL_AVG_VISIT_DURATION) AS AVG_VISIT_DURATION,\n    AVG(TOTAL_PAGES_PER_VISIT) AS AVG_PAGES_PER_VISIT,\n    AVG(TOTAL_BOUNCE_RATE) AS AVG_BOUNCE_RATE\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE DOMAIN = 'ring.com'\n```"
+    },
+    {
+      "question":"which 5 companies have the highest avg visit duration in 2021 ?",
+      "answer":"SELECT company_name,\n       avg(total_avg_visit_duration) as avg_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  to_date(date, 'YYYY-MM-DD') between '2021-01-01'\n   and '2021-12-31'\nGROUP BY company_name\nORDER BY avg_duration desc limit 5;"
+    },
+    {
+      "question":"Which are the 5 companies with the biggest difference in terms of desktop and mobile site visits in 2022?",
+      "answer":"SELECT company_name,\n       sum(cast(desktop_visits as float)) as desktop_visits,\n       sum(cast(mobile_visits as float)) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2022-01-01'\n   and '2022-12-31'\nGROUP BY company_name having sum(cast(desktop_visits as float)) > sum(cast(mobile_visits as float))\nORDER BY desktop_visits-mobile_visits desc limit 5;"
+    },
+    {
+      "question":"What's the most recent date in the dataset?",
+      "answer":"SELECT max(date)\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500"
+    },
+    {
+      "question":"which 5 companies have the highest page visits duration in 2021 ?",
+      "answer":"SELECT company_name,\r\n       sum(total_visits) as visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  to_date(date, 'YYYY-MM-DD') between '2021-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name\r\nORDER BY visits desc limit 5;"
+    },
+    {
+      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2023 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%ebay%'\n    or company_name ilike '%amazon%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2023-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"which  are the top 10 domains that  received the highest amount of traffic in the month of November on the 26th and 29th?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date in ('2021-11-26', '2021-11-29')\nGROUP BY domain\nORDER BY total_visits desc limit 10"
+    },
+    {
+      "question":"which domains received the highest amount of traffic in the month of November after the fourth Thursday?",
+      "answer":"SELECT domain,\r\n       sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  date in ('2021-11-26', '2021-11-26')\r\nGROUP BY domain\r\nORDER BY total_visits desc"
+    },
+    {
+      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2021 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\r\n       extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%tesla%'\r\n    or company_name = 'Ford')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name, extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
+    },
+    {
+      "question":"what are mobile visits for total visits for Coca Cola vs Pepsi in year on year from 2010 to 2021 ? Convert date from varchar to date using to date function",
+      "answer":"SELECT company_name,\r\n       date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n       sum(total_visits) as total_visits,\r\n       sum(mobile_visits) as mobile_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  company_name ilike '%coca-cola%'\r\n    or company_name ilike '%pepsi%'\r\n   and date between '2010-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name, date_trunc('year', to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year"
+    },
+    {
+      "question":"Which 10 domains received the highest amount of traffic on Black Friday in 2021? Show the associated tickers",
+      "answer":"SELECT domain,\n       ticker,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date = '2021-11-26'\nGROUP BY domain, ticker\nORDER BY total_visits desc limit 10"
+    },
+    {
+      "question":"which are the top 10 domains that received the highest amount of traffic in the month of November on the 26th or 29th?",
+      "answer":"SELECT domain,\r\n       sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  date = '2021-11-26' or date = '2021-11-29'\r\nGROUP BY domain\r\nORDER BY total_visits desc limit 10"
+    },
+    {
+      "question":"what are average mobile visit durations of netflix v\/s desktop visit duration from year 2018 to 2021 ?",
+      "answer":"SELECT extract(year FROM to_date(date, 'YYYY-MM-DD')) as year,\r\n       avg(mobile_avg_visit_duration) as avg_mobile_visit_duration,\r\n       avg(desktop_avg_visit_duration) as avg_desktop_visit_duration\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%netflix%')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2021-12-31'\r\nGROUP BY 1;"
+    },
+    {
+      "question":"which company had more desktop visits than mobile visits in 2020, but had more mobile visits than desktop visits in 2021 ? ",
+      "answer":"with desktop_visits as (SELECT company_name,\n                               sum(case when date between '2020-01-01' and\n                                             '2020-12-31' then desktop_visits\n                                        else 0 end) as desktop_visits_2020,\n                               sum(case when date between '2021-01-01' and\n                                             '2021-12-31' then desktop_visits\n                                        else 0 end) as desktop_visits_2021\n                        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                        GROUP BY company_name having sum(case when date between '2020-01-01' and '2020-12-31' then mobile_visits else 0 end) < desktop_visits_2020 and sum(case when date between '2021-01-01' and '2021-12-31' then mobile_visits else 0 end) > desktop_visits_2021)\nSELECT company_name\nFROM   desktop_visits;"
+    },
+    {
+      "question":"Which domains  had the highest  mobile traffic in 2022 and 2021?",
+      "answer":"with mobile_visits as (SELECT domain,\n                              sum(case when date between '2021-01-01' and\n                                            '2021-12-31' then mobile_visits\n                                       else 0 end) as mobile_visits_2021,\n                              sum(case when date between '2022-01-01' and\n                                            '2022-12-31' then mobile_visits\n                                       else 0 end) as mobile_visits_2022\n                       FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                       GROUP BY domain)\nSELECT domain,\n       mobile_visits_2021,\n       mobile_visits_2022\nFROM   mobile_visits\nORDER BY (mobile_visits_2021 + mobile_visits_2022) desc limit 10;"
+    },
+    {
+      "question":"select the top 5 and bottom 5 domains based on  yoy growth rate.",
+      "answer":"with traffic_data as (SELECT domain,\n                             extract(year\n                      FROM   cast(date as date)) as year, sum(total_visits) as total_visits\n                      FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                      GROUP BY domain, extract(year\n                      FROM   cast(date as date))), yoy_data as (SELECT current_year.domain,\n                                                 current_year.year,\n                                                 (current_year.total_visits - previous_year.total_visits) \/ cast(previous_year.total_visits as float) as yoy_growth\n                                          FROM   traffic_data as current_year join traffic_data as previous_year\n                                                  ON current_year.domain = previous_year.domain and\n                                                     current_year.year = previous_year.year + 1), ranked_data as (SELECT domain,\n                                                                    avg(yoy_growth) as avg_yoy_growth\n                                                             FROM   yoy_data\n                                                             GROUP BY domain)\nSELECT domain,\n       avg_yoy_growth\nFROM   ranked_data\nORDER BY avg_yoy_growth desc limit 5;"
+    },
+    {
+      "question":"Plot year on year % growth of mobile visits on Alphabet ",
+      "answer":"SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\n       sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%alphabet%'\n   and date_trunc('year', to_date(date, 'YYYY-MM-DD')) between '2010-01-01'\n   and '2021-12-31'\nGROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))\nORDER BY year;"
+    },
+    {
+      "question":"Which domains  had the highest  mobile traffic between 2022 or 2021?",
+      "answer":"SELECT domain,\r\n       sum(case when date between '2021-01-01' and\r\n                     '2021-12-31' then mobile_visits\r\n                else 0 end) as mobile_visits_2021,\r\n       sum(case when date between '2022-01-01' and\r\n                     '2022-12-31' then mobile_visits\r\n                else 0 end) as mobile_visits_2022,\r\n(mobile_visits_2022 - mobile_visits_2021) \/ mobile_visits_2021 * 100 as perc_change\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nGROUP BY domain\r\nORDER BY mobile_visits_2022 desc limit 10"
+    },
+    {
+      "question":"which 5 companies have more desktop visits than mobile visits in 2020, rank by highest to lowest desktop views",
+      "answer":"The corrected SQL query is:\n\n```\nSELECT company_name,\n       sum(CAST(desktop_visits AS FLOAT)) as desktop_visits,\n       sum(CAST(mobile_visits AS FLOAT)) as mobile_visits\nFROM s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE date BETWEEN '2020-01-01' AND '2020-12-31'\nGROUP BY company_name \nHAVING sum(CAST(desktop_visits AS FLOAT)) > sum(CAST(mobile_visits AS FLOAT))\nORDER BY desktop_visits DESC \nLIMIT 5; \n```\n\nI removed the `SUM` function from the `ORDER BY` clause since it was already used in the `SELECT` clause. This should fix the error."
+    },
+    {
+      "question":"Plot year on year % growth and absolute growth of mobile visits on Alphabet ",
+      "answer":"SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n       (sum(mobile_visits) - lag(sum(mobile_visits), 1) OVER (ORDER BY date_trunc('year', to_date(date, 'YYYY-MM-DD')))) as mobile_growth,\r\n       (sum(mobile_visits) - lag(sum(mobile_visits), 1) OVER (ORDER BY date_trunc('year', to_date(date, 'YYYY-MM-DD')))) \/ lag(sum(mobile_visits), 1) OVER (ORDER BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))) * 100 as mobile_growth_percentage\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  company_name ilike '%alphabet%'\r\n   and to_date(date, 'YYYY-MM-DD') between '2010-01-01'\r\n   and '2021-12-31'\r\nGROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))\r\nORDER BY year;"
+    },
+    {
+      "question":"select the top 10 fastest-growing or slowest-growing domains based on YoY growth rate",
+      "answer":"The corrected SQL code is:\n\n```\nWITH traffic_data AS (\n    SELECT \n        domain,\n        EXTRACT(YEAR FROM CAST(date AS DATE)) AS year,\n        SUM(total_visits) AS total_visits\n    FROM s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n    GROUP BY domain, EXTRACT(YEAR FROM CAST(date AS DATE))\n),\nyoy_data AS (\n    SELECT \n        current_year.domain,\n        current_year.year,\n        (current_year.total_visits - previous_year.total_visits) \/ CAST(previous_year.total_visits AS FLOAT) AS yoy_growth\n    FROM traffic_data AS current_year\n    JOIN traffic_data AS previous_year\n    ON current_year.domain = previous_year.domain\n    AND current_year.year = previous_year.year + 1\n),\nranked_data AS (\n    SELECT \n        domain,\n        AVG(yoy_growth) AS avg_yoy_growth\n    FROM yoy_data\n    GROUP BY domain\n)\nSELECT \n    domain,\n    avg_yoy_growth\nFROM ranked_data\nORDER BY avg_yoy_growth DESC\nLIMIT 10;\n```"
+    },
+    {
+      "question":"which 2 companies had the highest abolsute mobile visit growth from 2020 to 2021 ?",
+      "answer":"with mobile_visits as (SELECT company_name,\r\n                              date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n                              sum(mobile_visits) as mobile_visits\r\n                       FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\n                       WHERE to_date(date, 'YYYY-MM-DD') between '2020-01-01'\r\n                          and '2021-12-31'\r\n                       GROUP BY company_name, year), mobile_visits_growth as (SELECT company_name,\r\n                                                              year,\r\n                                                              mobile_visits,\r\n                                                              lag(mobile_visits) OVER (PARTITION BY company_name\r\n                                                                                       ORDER BY year) as prev_mobile_visits\r\n                                                       FROM   mobile_visits)\r\nSELECT company_name,\r\n       max(mobile_visits - prev_mobile_visits) as max_mobile_growth\r\nFROM   mobile_visits_growth\r\nGROUP BY company_name\r\nORDER BY max_mobile_growth desc limit 2;"
+    },
+    {
+      "question":"Which domains had the highest average visit duration? Limit to the top 100 domains by total traffic",
+      "answer":"```\nSELECT DOMAIN, ROUND(AVG(TOTAL_AVG_VISIT_DURATION),2) AS AVG_DURATION \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500 \nGROUP BY DOMAIN \nORDER BY SUM(TOTAL_VISITS) DESC \nLIMIT 100\n```"
+    },
+    {
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2023 ? Convert varchar to date using to date fucntion ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2023-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"what are mobile visits for total visits for Coca Cola vs Pepsi in year on year from 2010 to 2021 ? Convert date from varchar to date using to date function, Plot it on a line chart with year as x axis ",
+      "answer":"SELECT company_name,\r\n       date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n       sum(total_visits) as total_visits,\r\n       sum(mobile_visits) as mobile_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%coca-cola%'\r\n    or company_name ilike '%pepsi%')\r\n   and date between '2010-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name, date_trunc('year', to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
+    },
+    {
+      "question":"Which are the 5 companies with the biggest difference in terms of desktop and mobile site visits in 2022.",
+      "answer":"SELECT company_name,\n       sum(cast(desktop_visits as float)) as desktop_visits,\n       sum(cast(mobile_visits as float)) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2022-01-01'\n   and '2022-12-31'\nGROUP BY company_name having sum(cast(desktop_visits as float)) > sum(cast(mobile_visits as float))\nORDER BY desktop_visits-mobile_visits desc limit 5;"
+    },
+    {
+      "question":"Which domain received the highest amount of traffic on Black Friday in 2022?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date = '2022-11-25'\nGROUP BY domain\nORDER BY total_visits desc limit 1"
+    },
+    {
+      "question":"what are mobile visits for Google  from 2010 to 2021  ? Convert date from varchar to date using to date function ",
+      "answer":"SELECT sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%google%'\n   and to_date(date, 'YYYY-MM-DD') between '2010-12-31'\n   and '2021-01-01';"
+    },
+    {
+      "question":"what are the year on year total visits on Coca Coal and Pepsi from 2018 to 2021 ? Convert varchar to date using to date fucntion ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%coca-cola%'\n    or company_name ilike '%pepsi%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"select the top 10 fastest-growing or slowest-growing domains based on YoY growth rate ",
+      "answer":"with traffic_data as (SELECT domain,\n                             extract(year\n                      FROM   cast(date as date)) as year, sum(total_visits) as total_visits\n                      FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                      GROUP BY domain, extract(year\n                      FROM   cast(date as date))), yoy_data as (SELECT current_year.domain,\n                                                 current_year.year,\n                                                 (current_year.total_visits - previous_year.total_visits) \/ cast(previous_year.total_visits as float) as yoy_growth\n                                          FROM   traffic_data as current_year join traffic_data as previous_year\n                                                  ON current_year.domain = previous_year.domain and\n                                                     current_year.year = previous_year.year + 1), ranked_data as (SELECT domain,\n                                                                    avg(yoy_growth) as avg_yoy_growth\n                                                             FROM   yoy_data\n                                                             GROUP BY domain)\nSELECT domain,\n       avg_yoy_growth\nFROM   ranked_data\nORDER BY avg_yoy_growth desc limit 10;"
+    },
+    {
+      "question":"get the total duration by visits, spent on google.com in 2022 and group by month ",
+      "answer":"SELECT date_trunc('month', CAST(date AS DATE)) AS month,\n       SUM(total_avg_visit_duration * total_visits) AS total_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  domain = 'google.com'\n   AND date BETWEEN '2022-01-01' AND '2022-12-31'\nGROUP BY month\nORDER BY month ASC;"
+    },
+    {
+      "question":"what are different company names ? ",
+      "answer":"SELECT DISTINCT company_name \r\nFROM datafeeds.sp_500 "
+    },
+    {
+      "question":"what are mobile visits for Google  from 2001 to 2010  ? ",
+      "answer":"SELECT sum(mobile_visits)\r\nFROM datafeeds.sp_500\r\nWHERE date >= '2001-01-01'\r\nand date <= '2010-01-01'\r\nand company_name ilike '%google%'"
+    },
+    {
+      "question":"Show visits to TSLA domains over time",
+      "answer":"```\nSELECT DATE, SUM(TOTAL_VISITS) AS VISITS\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\nWHERE TICKER = 'TSLA'\nGROUP BY DATE\nORDER BY DATE ASC\n```"
+    },
+    {
+      "question":"Which domains had the highest growth in mobile traffic in 2022 and 2021?",
+      "answer":"Here is the corrected SQL query:\n\n```\nSELECT domain,\n       CASE \n          WHEN mobile_visits_2020 = 0 THEN NULL \n          ELSE (mobile_visits_2021 - mobile_visits_2020) \/ mobile_visits_2020 \n       END AS mobile_growth\nFROM   (SELECT domain,\n               sum(case when date between '2020-11-01' and\n                             '2020-11-30' then mobile_visits\n                        else 0 end) as mobile_visits_2020,\n               sum(case when date between '2021-11-01' and\n                             '2021-11-30' then mobile_visits\n                        else 0 end) as mobile_visits_2021\n        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n        GROUP BY domain) subquery\nORDER BY mobile_growth desc limit 10\n```\n\nThe error occurred because the initial query was included in the error message."
+    },
+    {
+      "question":"which 2 companies have the highest avg visit duration in 2021 ?",
+      "answer":"SELECT company_name,\n       avg(total_avg_visit_duration) as avg_visit_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2021-01-01'\n   and '2021-12-31'\nGROUP BY company_name\nORDER BY avg_visit_duration desc limit 2;"
+    },
+    {
+      "question":"Which are top 10 domains with the highest mobile traffic in the year 2021 and 2022?",
+      "answer":"SELECT domain,\n       sum(case when date between '2021-01-01' and\n                     '2021-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2021,\n       sum(case when date between '2022-01-01' and\n                     '2022-12-31' then mobile_visits\n                else 0 end) as mobile_visits_2022\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY domain\nORDER BY (mobile_visits_2021 + mobile_visits_2022) desc limit 10"
+    },
+    {
+      "question":"which 3 companies have the highest mobile visit duration in the year 2021 ? ",
+      "answer":"SELECT company_name,\n       avg(total_avg_visit_duration) as avg_visit_duration\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date between '2021-01-01'\n   and '2021-12-31'\nGROUP BY company_name\nORDER BY avg_visit_duration desc limit 3;"
+    },
+    {
+      "question":"which 5 companies have more desktop visits than mobile visits, rank by highest to lowest desktop views",
+      "answer":"Here is the corrected SQL query:\n\n```\nSELECT company_name,\n       sum(desktop_visits) as desktop_visits,\n       sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nGROUP BY company_name \nHAVING sum(CAST(desktop_visits AS FLOAT)) > sum(CAST(mobile_visits AS FLOAT))\nORDER BY desktop_visits DESC \nLIMIT 5;\n```\n\nThe error message indicates that the `SUM()` function in the `HAVING` clause cannot be nested. Therefore, I have removed the `SUM()` function from the `ORDER BY` clause and replaced it with just the column name `desktop_visits`."
+    },
+    {
+      "question":"retrieve the top 10 domains with the highest total time spent (visits x duration) in 2022, combining desktop and mobile traffic",
+      "answer":"I'm sorry but I cannot correct the SQL query without seeing it. Can you please provide the SQL query?"
+    },
+    {
+      "question":"Plot year on year % growth and absolute growth of mobile visits on Alphabet.",
+      "answer":"SELECT year,\r\n       mobile_visits - lag(mobile_visits,\r\n                           1) OVER (ORDER BY year) as mobile_visits_growth,\r\n       round((mobile_visits - lag(mobile_visits, 1) OVER (ORDER BY year)) * 100.0 \/ nullif(lag(mobile_visits, 1) OVER (ORDER BY year), 0),\r\n             2) as mobile_visits_growth_percentage\r\nFROM   (SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n               sum(mobile_visits) as mobile_visits\r\n        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\n        WHERE  company_name ilike '%alphabet%'\r\n           and to_date(date, 'YYYY-MM-DD') between '2010-01-01'\r\n           and '2021-12-31'\r\n        GROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))) subquery\r\nORDER BY year"
+    },
+    {
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date fucntion ",
+      "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
+    },
+    {
+      "question":"Which domains received the highest amount of traffic on Black Friday in 2021?",
+      "answer":"SELECT domain,\n       sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date = '2021-11-26'\nGROUP BY domain\nORDER BY total_visits desc"
+    },
+    {
+      "question":"What is the percentage change in domains which had the highest  mobile traffic between 2022 and 2021?",
+      "answer":"with mobile_visits as (SELECT domain,\n                              sum(case when date between '2021-11-01' and\n                                            '2021-11-30' then mobile_visits\n                                       else 0 end) as mobile_visits_2021,\n                              sum(case when date between '2022-11-01' and\n                                            '2022-11-30' then mobile_visits\n                                       else 0 end) as mobile_visits_2022\n                       FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\n                       GROUP BY domain), top_domains as (SELECT domain,\n                                         mobile_visits_2021,\n                                         mobile_visits_2022,\n                                         rank() OVER (ORDER BY mobile_visits_2022 desc) as rank_2022,\n                                         rank() OVER (ORDER BY mobile_visits_2021 desc) as rank_2021\n                                  FROM   mobile_visits)\nSELECT top 10 t.domain,\n       round((t.mobile_visits_2022 - t.mobile_visits_2021) \/ t.mobile_visits_2021 * 100,\n             2) as mobile_traffic_percentage_change\nFROM   top_domains t\nWHERE  t.rank_2022 <= 10\n   and t.rank_2021 <= 10\nORDER BY mobile_traffic_percentage_change desc"
+    }
+  ]

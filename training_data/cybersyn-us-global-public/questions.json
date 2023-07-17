@@ -1,0 +1,482 @@
+[
+    {
+      "question":"Which 5 countries saw the most %increase in fertility between 2012 and 2020 ? where life expectancy is not null in 2012 ,",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Fertility Rate, worldbank.org'\n           and date = '2012-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Fertility Rate, worldbank.org'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\n   and ts.value is not null\nORDER BY increase_percentage desc limit 5;"
+    },
+    {
+      "question":"Which 5 countries has the maximum Annual Electricity Consumption in 2019 ?",
+      "answer":"SELECT gi.geo_name,\n       dcts.value as annual_electricity_consumption\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as dcts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as gi\n        ON dcts.geo_id = gi.geo_id\nWHERE  dcts.variable_name = 'Annual Electricity Consumption'\n   and gi.level = 'Country'\n   and dcts.date between '2019-01-01'\n   and '2019-12-31'\nORDER BY dcts.value desc limit 5"
+    },
+    {
+      "question":"which country has the most population in 2018 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as total_population\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and geo.level = 'Country'\n   and ts.date = '2018-01-01'\nORDER BY ts.value desc limit 1;"
+    },
+    {
+      "question":"Which country has lowest but greater than 0 cumulative rainfall ?",
+      "answer":"SELECT geo.geo_name,\n       sum(ts.value) as cumulative_rainfall\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Mean Rainfall'\n   and geo.level = 'Country'\n   and ts.date between '2019-01-01'\n   and '2019-12-31'\nGROUP BY geo.geo_name having sum(ts.value) > 0\nORDER BY cumulative_rainfall asc limit 1"
+    },
+    {
+      "question":"What are different geo names and related geo names, for countries",
+      "answer":"SELECT geo_name,\n       related_geo_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_relationships\nWHERE  level = 'Country'\nORDER BY geo_name, related_geo_name"
+    },
+    {
+      "question":"what are the public holidays in united states in 2023. make sure the dates are unique. order by the date.",
+      "answer":"SELECT DISTINCT holiday_name,\n                date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'\n   and date between '2023-01-01'\n   and '2023-12-31'\nORDER BY date asc"
+    },
+    {
+      "question":"Which 5 countries have the lowest rainfall in 2023?",
+      "answer":"SELECT geo.geo_name,\n       sum(ts.value) as cumulative_rainfall\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Mean Rainfall'\n   and geo.level = 'Country'\n   and ts.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name\nORDER BY cumulative_rainfall asc limit 5"
+    },
+    {
+      "question":"List all the public holidays in the United States in 2023. Show all columns",
+      "answer":"SELECT *\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    },
+    {
+      "question":"what is the average rainfall in each country in 2023 ?",
+      "answer":"SELECT geo.geo_name,\n       avg(ts.value) as average_rainfall\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Rainfall'\n   and geo.level = 'Country'\n   and ts.date = '2023-01-01'\nGROUP BY geo.geo_name\nORDER BY average_rainfall desc"
+    },
+    {
+      "question":"what are the top 10 countries by the most public holidays in 2023?",
+      "answer":"SELECT geo.geo_name,\n       count(distinct holiday_name) as num_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON cal.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\n   and cal.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name\nORDER BY num_holidays desc limit 10"
+    },
+    {
+      "question":"What are different countries we have information about ?",
+      "answer":"SELECT DISTINCT iso_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\nWHERE  level = 'Country'\nORDER BY iso_name;"
+    },
+    {
+      "question":"Which country has had the maximum growth of Mean Temperature from 2010 to 2020?",
+      "answer":"The corrected SQL code would be:\n\n```\nSELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id as geo_id1,\n               date,\n               MAX(value) as value \n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts \n        join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\n        and geo.level = 'Country'\n        WHERE  variable_name = 'Mean Temperature'\n           and date = '2010-01-01'\n       ) as ts  \n    join (SELECT geo_id as geo_id2,\n                 date,\n                 MAX(value) as value \n          FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts \n          join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n          ON ts.geo_id = geo.geo_id\n          and geo.level = 'Country'\n          WHERE  variable_name = 'Mean Temperature'\n          and date = '2020-01-01'\n       ) as ts2\n        ON ts.geo_id1 = ts2.geo_id2 \n    join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id1 = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1 \n``` \n\nI added the table alias 'geo' to the SELECT statement in order to specify which table the column 'GEO_ID' should be selected from. \n\n\n The error was 002028 (42601): SQL compilation error:\nambiguous column name 'GEO_ID'"
+    },
+    {
+      "question":"Which country has lowest but greater than 0 cumulative rainfall in 2023?",
+      "answer":"SELECT geo.geo_name,\n       sum(ts.value) as cumulative_rainfall\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Mean Rainfall'\n   and geo.level = 'Country'\n   and ts.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name having sum(ts.value) > 0\nORDER BY cumulative_rainfall asc limit 1"
+    },
+    {
+      "question":"What is the overall percentage population growth of california and US  from 2010 to 2018 ? Take max of population for each year to clean the data ",
+      "answer":"The corrected SQL code is:\n\n```\nSELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT \n               datacommons_timeseries.geo_id,\n               max(value) as value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n  join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON datacommons_timeseries.geo_id = geo.geo_id\n        WHERE  variable_name = 'Total Population, census.gov'\n           and date = '2010-01-01'\n           and (geo.geo_name = 'California'\n           and geo.level = 'State')\n           or (geo.geo_name = 'United States'\n           and geo.level = 'Country')\n        GROUP BY datacommons_timeseries.geo_id) as ts\n join (SELECT \n              datacommons_timeseries.geo_id,\n               max(value) as value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n  join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON datacommons_timeseries.geo_id = geo.geo_id\n        WHERE  variable_name = 'Total Population, census.gov'\n        and date = '2018-01-01'\n        and (geo.geo_name = 'California'\n        and geo.level = 'State')\n         or (geo.geo_name = 'United States'\n        and geo.level = 'Country')\n         GROUP BY datacommons_timeseries.geo_id) as ts2\n     ON ts.geo_id = ts2.geo_id\n        join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nORDER BY geo.geo_name\n```"
+    },
+    {
+      "question":"Which 5 countries has the maximum Annual Electricity Consumption in 2015 ?",
+      "answer":"SELECT gi.geo_name,\n       dcts.value as annual_electricity_consumption\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as dcts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as gi\n        ON dcts.geo_id = gi.geo_id\nWHERE  dcts.variable_name = 'Annual Electricity Consumption'\n   and gi.level = 'Country'\n   and dcts.date between '2015-01-01'\n   and '2015-12-31'\nORDER BY dcts.value desc limit 5"
+    },
+    {
+      "question":"What are the first 10 rows in the GEOGRAPHY_RELATIONSHIPS table?",
+      "answer":"SELECT GEO_NAME, GEO_ID, LEVEL, RELATED_GEO_NAME, RELATED_GEO_ID, RELATED_LEVEL, RELATIONSHIP_TYPE\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.CYBERSYN.GEOGRAPHY_RELATIONSHIPS\r\nLIMIT 10"
+    },
+    {
+      "question":"What are the first 10 rows in the PUBLIC_HOLIDAY_CALENDAR table?",
+      "answer":"SELECT GEO_ID, ISO_ALPHA2, DATE, HOLIDAY_NAME, SUBDIVISION, IS_FINANCIAL\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.CYBERSYN.PUBLIC_HOLIDAY_CALENDAR\r\nLIMIT 10"
+    },
+    {
+      "question":"show Unemployment Rates in New York City vs. New York state",
+      "answer":"SELECT ts.date,\r\n       geo.geo_name,\r\n       geo.level,\r\n       ts.value\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_timeseries AS ts\r\nJOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_index AS geo ON (ts.geo_id = geo.geo_id)\r\nWHERE geo.geo_name = 'New York'\r\n  AND geo.level IN ('State', 'City')\r\n  AND ts.variable_name ILIKE 'Unemployment Rate%'\r\n  AND date >= '2015-01-01'\r\nORDER BY date"
+    },
+    {
+      "question":"On which day did Sierra Leone receive maximum rainfall along with the unit? ",
+      "answer":"The corrected SQL query is:\n\n```\nSELECT date,\n       value,\n       datacommons_timeseries.unit\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries \nJOIN   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes\n       ON datacommons_timeseries.variable_name = datacommons_attributes.variable_name\nWHERE  geo_id = 'country\/SLE'\n       AND datacommons_timeseries.variable_name = 'Mean Rainfall'\nORDER BY value DESC \nLIMIT 1;\n```\n\nThe error occurred because the column name `variable_name` was ambiguous in the query. I specified which table the column `variable_name` should be selected from to return a valid SQL code."
+    },
+    {
+      "question":"Compare Median Income to Median Age by Zipcode",
+      "answer":"SELECT t1.geo_name,\r\n       t1.geo_id,\r\n       x as Median_Income,\r\n       y as Median_Age\r\nFROM\r\n  (WITH x_cte AS\r\n     (SELECT geo_name,\r\n             ts.geo_id,\r\n             value AS x,\r\n             ROW_NUMBER() OVER (PARTITION BY ts.geo_id\r\n                                ORDER BY date DESC) AS rn\r\n      FROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_timeseries AS ts\r\n      JOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_index AS geo ON (ts.geo_id = geo.geo_id)\r\n      WHERE level = 'CensusZipCodeTabulationArea'\r\n        AND variable_name = 'Median Income for All Households') SELECT geo_name,\r\n                                                    geo_id,\r\n                                                    x\r\n   FROM x_cte\r\n   WHERE rn=1) t1\r\nJOIN\r\n  (WITH y_cte AS\r\n     (SELECT geo_name,\r\n             ts.geo_id,\r\n             value AS y,\r\n             ROW_NUMBER() OVER (PARTITION BY ts.geo_id\r\n                                ORDER BY date DESC) AS rn\r\n      FROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_timeseries AS ts\r\n      JOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_index AS geo ON (ts.geo_id = geo.geo_id)\r\n      WHERE level = 'CensusZipCodeTabulationArea'\r\n        AND variable_name = 'Median Age of Population') SELECT geo_id,\r\n                                                 y\r\n   FROM y_cte\r\n   WHERE rn = 1) t2 ON t1.GEO_ID = t2.GEO_ID\r\nORDER BY t1.geo_name"
+    },
+    {
+      "question":"Which 5 countries have the highest Fertility Rate?",
+      "answer":"SELECT geo.geo_name,\n       avg(ts.value) as avg_fertility_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Fertility Rate, worldbank.org'\n   and geo.level = 'Country'\nGROUP BY geo.geo_name\nORDER BY avg_fertility_rate desc limit 5"
+    },
+    {
+      "question":"How many different variable are there in the arrtibutes ?",
+      "answer":"SELECT count(distinct variable_name) as num_variables\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes"
+    },
+    {
+      "question":"what are the public holidays in united states in 2023. make sure the dates are unique",
+      "answer":"SELECT DISTINCT holiday_name,\n                date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    },
+    {
+      "question":"Which country  saw the highest population variable name growth % from 2010 to 2020 ? ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Total Population, census.gov'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Total Population, census.gov'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"what is the most populous state in the United States in year 2018 ? ",
+      "answer":"SELECT geo.geo_name,\n       ts.value as total_population\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and geo.level = 'State'\n   and ts.date = '2018-01-01'\nORDER BY ts.value desc limit 1;"
+    },
+    {
+      "question":"Which country AQI is highest in 2005 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON (ts.geo_id = geo.geo_id)\nWHERE  variable_name = 'Air Quality Index, EPA'\n   and level = 'Country'\n   and date = '2005-01-01'\nORDER BY value desc limit 1"
+    },
+    {
+      "question":"Which country has had the maximum growth of Mean Temperature from 2010 to 2020? ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Mean Temperature'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Mean Temperature'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"Which 5 countries saw the most %decline in life expectation between 2012 and 2020 ? where life expectancy is not null in 2012 , load a bar chart ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as decline_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Life Expectancy, worldbank.org'\n           and date = '2012-01-01'\n           and value is not null) as ts join (SELECT geo_id,\n                                          date,\n                                          value\n                                   FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                   WHERE  variable_name = 'Life Expectancy, worldbank.org'\n                                      and date = '2020-01-01'\n                                      and value is not null) as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY decline_percentage desc limit 5;"
+    },
+    {
+      "question":"What are the first 10 rows in the DATACOMMONS_ATTRIBUTES table?",
+      "answer":"SELECT VARIABLE, VARIABLE_NAME, VARIABLE_GROUP, CATEGORY, UNIT\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.CYBERSYN.DATACOMMONS_ATTRIBUTES\r\nLIMIT 10"
+    },
+    {
+      "question":"Which 5 countries saw the most %increase in nominal gdp bewtween 2012 and 2020 ? where life expectancy is not null in 2012 , load a bar chart ",
+      "answer":"SELECT geo.geo_name,\r\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\r\nFROM   (SELECT geo_id,\r\n               date,\r\n               value\r\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n        WHERE  variable_name = 'Nominal GDP'\r\n           and date = '2012-01-01') as ts join (SELECT geo_id,\r\n                                            date,\r\n                                            value\r\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n                                     WHERE  variable_name = 'Nominal GDP'\r\n                                        and date = '2020-01-01') as ts2\r\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and ts.date = '2012-01-01'\r\nORDER BY increase_percentage desc limit 5;"
+    },
+    {
+      "question":"What are different geo names and related geo names?",
+      "answer":"SELECT geo_name,\n       related_geo_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_relationships limit 10;"
+    },
+    {
+      "question":"Which country has the maximum mean snowfall in 2010 ? ",
+      "answer":"SELECT geo.geo_name,\r\n       ts.value as mean_snowfall\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Mean Snowfall'\r\n   and geo.level = 'Country'\r\n   and ts.date between '2010-01-01'\r\n   and '2010-12-31'\r\nORDER BY mean_snowfall desc limit 1"
+    },
+    {
+      "question":"which country has the maximum growth of public holidays from 2000 to 2023 in absolute?",
+      "answer":"SELECT geo.geo_name,\r\n       count(distinct cal.holiday_name) as num_holidays,\r\n       count(distinct cal.holiday_name) - count(distinct cal2.holiday_name) as growth\r\nFROM   (SELECT * \r\n        FROM cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar \r\n        WHERE date >= '2023-01-01'\r\n        and date < '2024-01-01'\r\n       )\r\n        as cal \r\njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id \r\njoin (\r\n        SELECT * \r\n        FROM cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar \r\n        WHERE date >= '2000-01-01'\r\n        and date < '2001-01-01'\r\n      ) as cal2 \r\n        ON cal.geo_id = cal2.geo_id \r\nWHERE  geo.level = 'Country'\r\nGROUP BY geo.geo_name\r\nORDER BY growth desc limit 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+      "question":"What different categories for the Life Expectancy variable  ?",
+      "answer":"SELECT DISTINCT category, variable_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes\r\nWHERE  variable_name ilike '%expectancy%';"
+    },
+    {
+      "question":"Which country AQI is highest ?",
+      "answer":"SELECT geo.geo_name,\r\n       date,\r\n       sum(value) as AQI\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON (ts.geo_id = geo.geo_id)\r\nWHERE  variable_name ilike '%Air%'\r\nGROUP BY geo.geo_name, date\r\nORDER BY AQI desc limit 1"
+    },
+    {
+      "question":"Display available measures for CBSAs (Cities)",
+      "answer":"SELECT DISTINCT variable_name\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_timeseries AS ts\r\nJOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_index AS geo ON (ts.geo_id = geo.geo_id)\r\nWHERE level = 'CensusCoreBasedStatisticalArea'"
+    },
+    {
+      "question":"..",
+      "answer":"SELECT geo.geo_name,\r\n       ts.date,\r\n       ts.value\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Total Population, census.gov'\r\n   and (geo.geo_id = 'country\/USA'\r\n    or geo.geo_name = 'California')\r\n   and ts.date =  '2010-01-01'\r\nORDER BY geo.geo_name, ts.date\r\n"
+    },
+    {
+      "question":"List all the public holidays in the United States",
+      "answer":"SELECT holiday_name,\n       date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'"
+    },
+    {
+      "question":"What is the unit of variable windspeed ? ",
+      "answer":"SELECT DISTINCT unit\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes\r\nWHERE  variable_name = 'Mean Wind Speed'"
+    },
+    {
+      "question":"On which day did Sierra Leone receive maximum rainfall ? ",
+      "answer":"SELECT date,\n       value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\nWHERE  variable_name = 'Mean Rainfall'\n   and geo_id = 'country\/SLE'\nORDER BY value desc limit 1"
+    },
+    {
+      "question":"What is the year on year population growth  of males between 2010 and 2018 ?",
+      "answer":"The corrected query is:\n\n```\nSELECT ts.date,\n       CASE WHEN lag(ts.value) OVER (ORDER BY ts.date) = 0 THEN NULL ELSE \n       ((ts.value - lag(ts.value) OVER (ORDER BY ts.date)) \/ lag(ts.value) OVER (ORDER BY ts.date)) * 100 END as growth_percentage\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts\nWHERE  ts.variable_name = 'Male Population, census.gov'\n``` \n\nThis query uses a `CASE` statement to check if the denominator is zero. If it is, the growth percentage is set to `NULL`. Otherwise, the growth percentage is calculated normally."
+    },
+    {
+      "question":"What are different geo levels we have information about ?",
+      "answer":"SELECT DISTINCT level\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index"
+    },
+    {
+      "question":" What are the 10 countries with highest government debt in 2008 ? ",
+      "answer":"SELECT geo.geo_name,\n       value as government_debt\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON (ts.geo_id = geo.geo_id)\nWHERE  variable_name = 'Total Gross Government Debt, Percent of GDP'\n   and date = '2008-01-01'\n   and level = 'Country'\nORDER BY government_debt desc limit 10"
+    },
+    {
+      "question":"Which country  saw the snowfall variable name  growth % from 2010 to 2018 ? ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Snowfall'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Snowfall'\n                                        and date = '2018-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"Which country geoname saw the highest population variable name growth % from 2010 to 2020 ? ",
+      "answer":"Here is the corrected SQL query:\n\n```\nSELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Total Population, census.gov'\n               and date = '2010-01-01'\n        ) as ts \nJOIN (SELECT geo_id,\n               date,\n               value\n      FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n      WHERE  variable_name = 'Total Population, census.gov'\n             and date = '2020-01-01'\n       ) as ts2 \n        on ts.geo_id = ts2.geo_id \njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n       ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1 \n```"
+    },
+    {
+      "question":"What are some financial holidays ? ",
+      "answer":"SELECT DISTINCT holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\r\nWHERE  is_financial = true"
+    },
+    {
+      "question":"Which 5 countries have the least Life Expectancy ",
+      "answer":"SELECT geo.geo_name,\r\n       geo.level,\r\n       da.variable_name,\r\n       da.value as life_expectancy\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as da\r\njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON da.geo_id = geo.geo_id\r\nWHERE  da.variable_name ilike '%Life expectancy%'\r\n   and geo.level = 'Country'\r\nORDER BY da.value asc limit 5"
+    },
+    {
+      "question":"Which state has the highest population in the United States in 2018 ?",
+      "answer":"SELECT geo.geo_name,\r\n       ts.value as total_population\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts\r\n join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_relationships as geo2\r\nON geo.geo_name = geo2.related_geo_name\r\nWHERE  ts.variable_name = 'Total Population, census.gov'\r\n   and geo.level = 'State'\r\n   and ts.date = '2018-01-01'\r\n   and geo2.geo_name = 'United States'\r\nORDER BY ts.value desc limit 1;"
+    },
+    {
+      "question":"Fetch population for US, Canada, Mexico since 2000, along with human readable names",
+      "answer":"-- The timeseries table contains the core data. The geo_index table contains human readable names for geographies. Note the variable name, in this case, can be found in the measures table.\r\nSELECT att.variable_name,\r\n       geo.geo_name,\r\n       geo.geo_id,\r\n       date,\r\n       value\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_timeseries AS ts\r\nJOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_attributes AS att ON (ts.variable = att.variable)\r\nJOIN CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_index AS geo ON (ts.geo_id = geo.geo_id)\r\nWHERE att.variable_group ='Total Population'\r\n  AND geo.geo_id IN ('country\/USA', 'country\/CAN', 'country\/MEX')\r\n  AND date >= '2000-01-01'\r\nORDER BY date DESC"
+    },
+    {
+      "question":"Which country has the most public holidays in the year 2023 ?",
+      "answer":"SELECT geo.geo_name,\n       count(distinct holiday_name) as num_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON cal.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\n   and cal.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name\nORDER BY num_holidays desc limit 1"
+    },
+    {
+      "question":"Which 5 countries saw the greatest increase in nominal GDP, expressed in percentage terms, between 2012 and 2020?",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Nominal GDP'\n           and date = '2012-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Nominal GDP'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY increase_percentage desc limit 5;"
+    },
+    {
+      "question":"Which country has the highest count of housing units in the year 2005 ?",
+      "answer":"I'm sorry, but without the original SQL code provided in the query, I cannot correct the SQL query. Please provide the original SQL code along with the error message so that I can assist you better. \n\nThe error message indicates a syntax error with an unexpected 'I' at the beginning of the SQL code. Additionally, there is a parse error near the end of the code at position 198. Please provide the original SQL code for me to assist you better."
+    },
+    {
+      "question":"Which country has the highest count of housing units in the year 2020 ?",
+      "answer":"SELECT geo.geo_name,\n       sum(value) as total_housing_units\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON (ts.geo_id = geo.geo_id)\nWHERE  variable_name = 'Housing Units'\n   and level = 'Country'\n   and date = '2020-01-01'\nGROUP BY geo.geo_name\nORDER BY total_housing_units desc limit 1"
+    },
+    {
+      "question":"What is the different variables  related to the housing sector ? ",
+      "answer":"SELECT DISTINCT variable_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes\r\nWHERE  variable_group ilike '%Housing%'"
+    },
+    {
+      "question":"What is the overall percentage population growth of california and US  from 2010 to 2018 ?",
+      "answer":"SELECT geo.geo_name,\n       ((ts.value - ts2.value) \/ ts2.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Total Population, census.gov'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Total Population, census.gov'\n                                        and date = '2018-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  (geo.geo_name = 'California'\n   and geo.level = 'State')\n    or (geo.geo_name = 'United States'\n   and geo.level = 'Country')\nORDER BY geo.geo_name"
+    },
+    {
+      "question":"What are different variable names ?",
+      "answer":"SELECT DISTINCT variable_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes"
+    },
+    {
+      "question":"]Which countries showed the most  decline in life expectancy ?",
+      "answer":"SELECT geo_name,\n       max(case when date = '2020-01-01' then value\n                else null end) - max(case when date = '2012-01-01' then value\n                else null end) as decline\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n        ON datacommons_timeseries.geo_id = geography_index.geo_id\nWHERE  variable_name = 'Life Expectancy, worldbank.org'\n   and date in ('2012-01-01', '2020-01-01')\n   and geo_name != 'World'\n   and level = 'Country'\nGROUP BY geo_name\nORDER BY decline desc limit 5;"
+    },
+    {
+      "question":"what percentage of the US population was living in California in 2018?",
+      "answer":"\r\n\r\nwith base as \r\n(SELECT MAX(ts.value) as val1 \r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts \r\njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Total Population, census.gov'\r\n   and geo.geo_name = 'California'\r\n   and geo.level = 'State'\r\n   and ts.date = '2018-01-01'\r\n)\r\n\r\n, b2 as \r\n(SELECT MAX(ts.value) as val2 \r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts \r\njoin cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Total Population, census.gov'\r\n   and geo.geo_name = 'United States'\r\n   and geo.level = 'Country'\r\n   and ts.date = '2018-01-01'\r\n)\r\n\r\nSELECT (val1\/val2 )*100\r\nFROM base, b2 \r\n"
+    },
+    {
+      "question":"What is the growth in Total Population of USA year on year in %?",
+      "answer":"SELECT date,\n       value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts\nWHERE  variable_name = 'Total Population, census.gov'\n   and geo_id = 'country\/USA'\nORDER BY date asc"
+    },
+    {
+      "question":"What's the annual electricity consumption of the United States and China?",
+      "answer":"SELECT geo.geo_name,\r\nts.date,\r\n       ts.value\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  variable_name = 'Annual Electricity Consumption'\r\n   and geo.geo_name in ('United States', 'China')\r\nORDER BY geo.geo_name"
+    },
+    {
+      "question":"what are the public holidays in united states in 2023",
+      "answer":"SELECT holiday_name,\n       date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    },
+    {
+      "question":"What is the population growth of US Country And California State year or year from 2010 to 2018 ? ",
+      "answer":"SELECT geo.geo_name,\n       ts.date,\n       ts.value,\n       ((ts.value - lag(ts.value) OVER(PARTITION BY geo.geo_name\n                                       ORDER BY ts.date)) \/ lag(ts.value) OVER(PARTITION BY geo.geo_name ORDER BY ts.date)) * 100 as growth_percentage\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and (geo.geo_id = 'country\/USA'\n    or geo.geo_name = 'California')\n   and ts.date between '2010-01-01'\n   and '2018-01-01'\nORDER BY geo.geo_name, ts.date"
+    },
+    {
+      "question":"Find all counties and zip codes in New York",
+      "answer":"SELECT related_geo_id,\r\n       related_geo_name,\r\n       related_level\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.geography_relationships\r\nWHERE geo_name = 'New York'\r\n  AND level = 'State'\r\n  AND related_level IN ('County', 'CensusZipCodeTabulationArea')\r\nORDER BY related_geo_name"
+    },
+    {
+      "question":"Which 5 countries have the most public holidays in 2023 ?",
+      "answer":"SELECT geo.geo_name,\r\n       count(distinct date) as num_holidays\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\nGROUP BY geo.geo_name\r\nORDER BY num_holidays desc limit 5"
+    },
+    {
+      "question":"Which 5 countries saw the most %decline in life expectation between 2012 and 2020 ? where life expectancy is not null in 2012 ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as decline_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Life Expectancy, worldbank.org'\n           and date = '2012-01-01'\n           and value is not null) as ts join (SELECT geo_id,\n                                          date,\n                                          value\n                                   FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                   WHERE  variable_name = 'Life Expectancy, worldbank.org'\n                                      and date = '2020-01-01'\n                                      and value is not null) as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY decline_percentage desc limit 5;"
+    },
+    {
+      "question":"What state had the highest population in the united states in the year 2018 ?",
+      "answer":"SELECT geo2.* \r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts\r\n join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\n join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_relationships as geo2\r\n        ON geo.geo_id = geo2.related_geo_id\r\nWHERE  ts.variable_name = 'Total Population, census.gov'\r\n   and geo.level = 'State'\r\nand geo.geo_name = 'California'\r\n"
+    },
+    {
+      "question":"how many public holidays does india have in the year 2023?",
+      "answer":"SELECT count(distinct holiday_name) as num_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id in (SELECT geo_id\n                  FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n                  WHERE  geo_name = 'India')\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    },
+    {
+      "question":"which country has highest cumulative rainfall in 2023 ?",
+      "answer":"SELECT geo.geo_name,\n       sum(ts.value) as cumulative_rainfall\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Mean Rainfall'\n   and geo.level = 'Country'\n   and ts.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name\nORDER BY cumulative_rainfall desc limit 1"
+    },
+    {
+      "question":"Which 5 countries have the highest Fertility Rate from  year 2020 to date?",
+      "answer":"SELECT geo.geo_name,\n       avg(ts.value) as avg_fertility_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Fertility Rate, worldbank.org'\n   and geo.level = 'Country'\n   and ts.date >= '2020-01-01'\nGROUP BY geo.geo_name\nORDER BY avg_fertility_rate desc limit 5"
+    },
+    {
+      "question":"Which 5 countries have the least Life Expectancy in year 2018 ?",
+      "answer":"SELECT geo.geo_name,\r\n       ts.value as life_expectancy\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Life Expectancy, worldbank.org'\r\n   and geo.level = 'Country'\r\n   and ts.date = '2018-01-01'\r\nORDER BY ts.value asc limit 5"
+    },
+    {
+      "question":"what is the cumulative rainfall in each country in 2023 ?",
+      "answer":"SELECT geo.geo_name,\r\n       sum(ts.value) as cumulative_rainfall\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Mean Rainfall'\r\n   and geo.level = 'Country'\r\n   and ts.date between '2023-01-01'\r\n   and '2023-12-31'\r\nGROUP BY geo.geo_name"
+    },
+    {
+      "question":"What is the percentage population growth of california and US  from 2010 to 2018 ?",
+      "answer":"SELECT geo.geo_name,\n       ((ts.value - lag(ts.value) OVER (PARTITION BY geo.geo_name\n                                        ORDER BY ts.date)) \/ lag(ts.value) OVER (PARTITION BY geo.geo_name ORDER BY ts.date)) * 100 as growth_percentage\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and geo.level = 'State'\n   and geo.geo_name = 'California'\n   and ts.date between '2010-01-01'\n   and '2018-01-01'\n    or (geo.level = 'Country'\n   and geo.geo_name = 'United States'\n   and ts.variable_name = 'Total Population, census.gov'\n   and ts.date between '2010-01-01'\n   and '2018-01-01')\nORDER BY geo.geo_name, ts.date;"
+    },
+    {
+      "question":"What is the year on year population growth  of males between 2010 and 2018 in California ?",
+      "answer":"SELECT ts.date,\r\n       ((ts.value - lag(ts.value) OVER (ORDER BY ts.date)) \/ lag(ts.value) OVER (ORDER BY ts.date)) * 100 as growth_percentage\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Male Population, census.gov'\r\n   and geo.geo_name = 'California'\r\n   and ts.date between '2010-01-01'\r\n   and '2018-01-01'"
+    },
+    {
+      "question":"Which 5 countries have the highest Obesity Rate?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as obesity_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Obesity, adult prevalence rate (%)'\n   and geo.level = 'Country'\nORDER BY ts.value desc limit 5"
+    },
+    {
+      "question":"Which year has the highest population for the US ? ",
+      "answer":"SELECT date,\n       value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts\nWHERE  variable_name = 'Total Population, census.gov'\n   and geo_id = 'country\/USA'\nORDER BY value desc limit 1"
+    },
+    {
+      "question":"what are the public holidays in india have in the year 2023 ?",
+      "answer":"SELECT holiday_name,\n       date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id in (SELECT geo_id\n                  FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n                  WHERE  geo_name = 'India')\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    },
+    {
+      "question":"Which 5 countries has the maximum Annual Electricity Consumption in 2020 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as annual_electricity_consumption\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  variable_name = 'Annual Electricity Consumption'\n   and geo.level = 'Country'\n   and ts.date between '2020-01-01'\n   and '2020-12-31'\nORDER BY annual_electricity_consumption desc limit 5;"
+    },
+    {
+      "question":"Which 5 countries have the highest Fertility Rate in all years ?",
+      "answer":"SELECT geo.geo_name,\n       avg(ts.value) as avg_fertility_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Fertility Rate, worldbank.org'\n   and geo.level = 'Country'\nGROUP BY geo.geo_name\nORDER BY avg_fertility_rate desc limit 5"
+    },
+    {
+      "question":"Which 5 countries have the lowes rainfall in 2023 ?",
+      "answer":"SELECT geo.geo_name,\r\n       sum(ts.value) as cumulative_rainfall\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Mean Rainfall'\r\n   and geo.level = 'Country'\r\n   and ts.date between '2023-01-01'\r\n   and '2023-12-31'\r\nGROUP BY geo.geo_name\r\nORDER BY cumulative_rainfall desc limit 5"
+    },
+    {
+      "question":"What are the first 10 rows in the GEOGRAPHY_INDEX table?",
+      "answer":"SELECT GEO_ID, GEO_NAME, LEVEL, ISO_NAME, ISO_ALPHA2, ISO_ALPHA3, ISO_NUMERIC_CODE, ISO_3166_2_CODE\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.CYBERSYN.GEOGRAPHY_INDEX\r\nLIMIT 10"
+    },
+    {
+      "question":"What the public holdiays in India in 2023, also display if they are a financial holiday or not",
+      "answer":"SELECT holiday_name,\r\n       date,\r\n       is_financial\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\r\nWHERE  geo_id = 'country\/IND'\r\n   and date between '2023-01-01'\r\n   and '2023-12-31'"
+    },
+    {
+      "question":"How many geographies are there?",
+      "answer":"SELECT count(distinct geo_id) as num_geographies\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index"
+    },
+    {
+      "question":"Which country  saw the snowfall growth % from 2010 to 2018 ? ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Snowfall'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Snowfall'\n                                        and date = '2018-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"Which percentage of italy's public holidays in 2023 were financial holidays ?",
+      "answer":"SELECT (COUNT(DISTINCT case when is_financial then holiday_name\r\n                 else null end) \/ count(DISTINCT holiday_name)) * 100 as percentage\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\r\nWHERE  geo_id in (SELECT geo_id\r\n                  FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\r\n                  WHERE  geo_name = 'Italy')\r\n   and date between '2023-01-01'\r\n   and '2023-12-31'"
+    },
+    {
+      "question":"Which 5 countries have the least Fertility Rate in year 2020 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as fertility_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Fertility Rate, worldbank.org'\n   and geo.level = 'Country'\n   and ts.date = '2020-01-01'\nORDER BY ts.value asc limit 5;"
+    },
+    {
+      "question":"Which country has the highest female population in 2020?",
+      "answer":"SELECT geo.geo_name,\r\n       ts.value as female_population\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Female Population, census.gov'\r\n   and geo.level = 'Country'\r\n   and date = '2020-01-01'\r\nORDER BY ts.value desc limit 1;"
+    },
+    {
+      "question":"What are levels of geoid available ?",
+      "answer":"SELECT DISTINCT level\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index"
+    },
+    {
+      "question":"Which 5 countries have the least Life Expectancy in year 2020 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as life_expectancy\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Life Expectancy, worldbank.org'\n   and geo.level = 'Country'\n   and ts.date = '2020-01-01'\nORDER BY ts.value asc limit 5;"
+    },
+    {
+      "question":"Which 5 countries have high asthma  rate?",
+      "answer":"SELECT geo.geo_name,\n       avg(ts.value) as avg_asthma_rate\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Asthma prevalence, adult (% of population ages 18-45)'\n   and geo.level = 'Country'\nGROUP BY geo.geo_name\nORDER BY avg_asthma_rate desc limit 5;"
+    },
+    {
+      "question":"Which 5 countries have the highest rainfall in 2023?",
+      "answer":"SELECT geo.geo_name,\r\n       sum(ts.value) as cumulative_rainfall\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  ts.variable_name = 'Mean Rainfall'\r\n   and geo.level = 'Country'\r\n   and ts.date between '2023-01-01'\r\n   and '2023-12-31'\r\nGROUP BY geo.geo_name\r\nORDER BY cumulative_rainfall desc limit 5"
+    },
+    {
+      "question":"which country has the most population in year 2018 ? ",
+      "answer":"SELECT geo.geo_name,\n       ts.value as total_population\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and geo.level = 'Country'\n   and ts.date = '2018-01-01'\nORDER BY ts.value desc limit 1"
+    },
+    {
+      "question":"Which are 2 counties that have the highest Air Quality Index variable?",
+      "answer":"SELECT geo.geo_name,\r\n        MAX(ts.value) as max_aqi\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON (ts.geo_id = geo.geo_id)\r\nWHERE  variable_name ilike '%Air Quality Index%'\r\n   and level = 'County'\r\nGROUP BY 1 \r\nORDER BY max_aqi DESC \r\nLIMIT 2"
+    },
+    {
+      "question":"What is the population growth of US Country And California State year or year from 2010 to 2018 ? The California state has multiple values for the population in each year, take the maximum for cleaning the data",
+      "answer":"SELECT geo.geo_name,\n       ts.date,\n       max(ts.value) as value,\n       ((max(ts.value) - lag(max(ts.value)) OVER(PARTITION BY geo.geo_name\n                                                 ORDER BY ts.date)) \/ lag(max(ts.value)) OVER(PARTITION BY geo.geo_name ORDER BY ts.date)) * 100 as growth_percentage\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and (geo.geo_id = 'country\/USA'\n    or geo.geo_name = 'California')\n   and ts.date between '2010-01-01'\n   and '2018-01-01'\nGROUP BY geo.geo_name, ts.date\nORDER BY geo.geo_name, ts.date"
+    },
+    {
+      "question":"Which country  highest saw the snowfall growth % from 2010 to 2018 ? ",
+      "answer":"SELECT geo.geo_name,\r\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\r\nFROM   (SELECT geo_id,\r\n               date,\r\n               value\r\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n        WHERE  variable_name = 'Snowfall'\r\n           and date = '2010-01-01') as ts join (SELECT geo_id,\r\n                                            date,\r\n                                            value\r\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n                                     WHERE  variable_name = 'Snowfall'\r\n                                        and date = '2018-01-01') as ts2\r\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"Which US states (use RELATED_GEO_NAME) have the highest population in the latest data?",
+      "answer":"The error is caused by the incorrect usage of alias name for the `geography_index` table. To fix this, replace `geo.related_geo_name` with `geo.geo_name`.\n\nCorrected SQL query:\n\n```\nSELECT geo.geo_name as state,\n       max(ts.value) as population\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries ts \n       JOIN cybersyn_us__global_public_data_starter_kit.cybersyn.geography_relationships geo_rel\n        ON ts.geo_id = geo_rel.geo_id \n       JOIN cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index geo\n        ON geo.geo_id = geo_rel.related_geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   AND geo.level = 'State'\n   AND ts.date = (SELECT max(date)\n               FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries)\nGROUP BY geo.geo_name\nORDER BY population DESC;\n```"
+    },
+    {
+      "question":"Which county has the highest Air Quality variable is highest ?",
+      "answer":"SELECT geo.geo_name,\r\n       ts.date,\r\n       ts.value,\r\n       level,\r\n        variable_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON (ts.geo_id = geo.geo_id)\r\nWHERE  variable_name ilike '%Air%'\r\nORDER BY ts.value desc limit 1"
+    },
+    {
+      "question":"what percentage of Us population was in California in 2018 ? ",
+      "answer":"SELECT (ts.value\/sum(ts.value) OVER()) * 100 as percentage\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Total Population, census.gov'\n   and geo.geo_name = 'California'\n   and ts.date = '2018-01-01'"
+    },
+    {
+      "question":"Which 5 countries have the most public financial holidays in 2023 ?",
+      "answer":"SELECT geo.geo_name,\r\n       count(distinct case when is_financial then date\r\n                           else null end) as num_financial_holidays\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\nGROUP BY geo.geo_name\r\nORDER BY num_financial_holidays desc limit 5"
+    },
+    {
+      "question":"What is the total population growth  of males between 2010 and 2018 ?",
+      "answer":"SELECT (ts2.value - ts.value) as total_population_growth\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Total Male Population, census.gov'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Total Male Population, census.gov'\n                                        and date = '2018-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id\nWHERE  ts.geo_id = 'country\/USA'"
+    },
+    {
+      "question":"What are different Continents we have information around ?",
+      "answer":"SELECT DISTINCT iso_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\r\nWHERE  level ilike '%Cont%'\r\nORDER BY iso_name;"
+    },
+    {
+      "question":"Which country has the highest count of housing units?",
+      "answer":"SELECT geo.geo_name,\n       sum(value) as total_housing_units\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON (ts.geo_id = geo.geo_id)\nWHERE  variable_name = 'Housing Units'\n   and level = 'Country'\nGROUP BY geo.geo_name\nORDER BY total_housing_units desc limit 1"
+    },
+    {
+      "question":"What's the annual electricity consumption by country?",
+      "answer":"SELECT gi.geo_name,\r\n       dcts.date,\r\n       dcts.value as annual_electricity_consumption\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as dcts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as gi\r\n        ON dcts.geo_id = gi.geo_id\r\nWHERE  dcts.variable_name = 'Annual Electricity Consumption'\r\n   and gi.level = 'Country'\r\nORDER BY dcts.date"
+    },
+    {
+      "question":"which country has the maximum decrement of public holidays from 2000 to 2023 ?",
+      "answer":"SELECT geo.geo_name,\n       count(distinct cal.holiday_name) as num_holidays,\n       count(distinct cal2.holiday_name) - count(distinct cal.holiday_name) as decrement\nFROM   (SELECT *\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\n        WHERE  date >= '2023-01-01'\n           and date < '2024-01-01') as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON cal.geo_id = geo.geo_id join (SELECT *\n                                 FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\n                                 WHERE  date >= '2000-01-01'\n                                    and date < '2001-01-01') as cal2\n        ON cal.geo_id = cal2.geo_id\nWHERE  geo.level = 'Country'\nGROUP BY geo.geo_name\nORDER BY decrement desc limit 1"
+    },
+    {
+      "question":"Which state has the lowest Air Quality Index in 2017 ? ",
+      "answer":"SELECT geo.geo_name,\n       DATE_TRUNC('day', date) as date,\n       AVG(value) as average_aqi\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts \nJOIN cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON (ts.geo_id = geo.geo_id)\nWHERE  variable_name = 'Air Quality Index, EPA'\n   AND level = 'State'\nGROUP BY geo.geo_name, DATE_TRUNC('day', date)\nORDER BY average_aqi asc LIMIT 1;"
+    },
+    {
+      "question":"What are the first 10 rows in the DATACOMMONS_TIMESERIES table?",
+      "answer":"SELECT GEO_ID, VARIABLE, VARIABLE_NAME, DATE, VALUE, UNIT\r\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.CYBERSYN.DATACOMMONS_TIMESERIES\r\nLIMIT 10"
+    },
+    {
+      "question":"What is the year on year population growth  of males between 2010 and 2018 in California ? Take the maximum value of population for each year ",
+      "answer":"SELECT ts.date,\n       case when lag(ts.value) OVER (ORDER BY ts.date) = 0 then null\n            else ((ts.value - lag(ts.value) OVER (ORDER BY ts.date)) \/ lag(ts.value) OVER (ORDER BY ts.date)) * 100 end as growth_percentage\nFROM   (SELECT date,\n               max(value) as value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Male Population, census.gov'\n           and geo_id in (SELECT geo_id\n                       FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n                       WHERE  geo_name = 'California')\n           and date between '2010-01-01'\n           and '2018-01-01'\n        GROUP BY date) as ts"
+    },
+    {
+      "question":"how many public holidays does india have ?",
+      "answer":"SELECT count(distinct holiday_name) as num_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id in (SELECT geo_id\n                  FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n                  WHERE  geo_name = 'India')"
+    },
+    {
+      "question":"Which country has had the maximum growth of Mean Temperature in the last 10 years ? ",
+      "answer":"SELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as growth_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n        WHERE  variable_name = 'Mean Temperature'\n           and date = '2010-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\n                                     WHERE  variable_name = 'Mean Temperature'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\nORDER BY growth_percentage desc limit 1"
+    },
+    {
+      "question":"In which year did the United States have the highest Population ?",
+      "answer":"SELECT date,\n       value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts\nWHERE  variable_name = 'Total Population, census.gov'\n   and geo_id = 'country\/USA'\nORDER BY value desc limit 1"
+    },
+    {
+      "question":"Which country has the most public holidays ?",
+      "answer":"SELECT geo.geo_name,\r\n       count(DISTINCT holiday_name) as num_holidays\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\nGROUP BY geo.geo_name\r\nORDER BY num_holidays desc limit 1"
+    },
+    {
+      "question":"Which 5 countries have the least Life Expectancy in year 2022 ?",
+      "answer":"SELECT geo.geo_name,\n       ts.value as life_expectancy\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Life Expectancy, worldbank.org'\n   and geo.level = 'Country'\n   and ts.date = '2022-01-01'\nORDER BY ts.value asc limit 5"
+    },
+    {
+      "question":"What are the top 10 countries by financial holidays in 2023?",
+      "answer":"SELECT geo.geo_name,\n       count(distinct case when is_financial then holiday_name\n                           else null end) as num_financial_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON cal.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\n   and cal.date between '2023-01-01'\n   and '2023-12-31'\nGROUP BY geo.geo_name\nORDER BY num_financial_holidays desc limit 10"
+    },
+    {
+      "question":"What is the different variables  ? ",
+      "answer":"SELECT DISTINCT variable_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_attributes"
+    },
+    {
+      "question":"What different variable are there in the arrtibutes ?",
+      "answer":"SELECT DISTINCT VARIABLE_NAME\nFROM CYBERSYN_US__GLOBAL_PUBLIC_DATA_STARTER_KIT.cybersyn.datacommons_attributes"
+    },
+    {
+      "question":"What are the different public holidays ?",
+      "answer":"SELECT DISTINCT holiday_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar"
+    },
+    {
+      "question":"Which 5 countries saw the most decline in life expectation between 2012 and 2020 ? ",
+      "answer":"SELECT geo.geo_name,\n       (max(case when ts.date = '2020-01-01' then ts.value\n                 else null end) - max(case when ts.date = '2012-01-01' then ts.value\n                 else null end)) as life_expectancy_decline\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON ts.geo_id = geo.geo_id\nWHERE  ts.variable_name = 'Life Expectancy, worldbank.org'\n   and geo.level = 'Country'\n   and ts.date in ('2012-01-01', '2020-01-01')\nGROUP BY geo.geo_name\nORDER BY life_expectancy_decline desc limit 5"
+    },
+    {
+      "question":"On which day did Sierra Leone have least but not zero rainfall ? ",
+      "answer":"SELECT date,\n       value\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\nWHERE  variable_name = 'Mean Rainfall'\n   and geo_id = 'country\/SLE'\n   and value > 0\nORDER BY value asc limit 1"
+    },
+    {
+      "question":"Which country has the maximum Annual Electricity Consumption in 2010 ?",
+      "answer":"SELECT geo.geo_name,\r\n       ts.value as annual_electricity_consumption\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries as ts join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  variable_name = 'Annual Electricity Consumption'\r\n   and geo.level = 'Country'\r\n   and ts.date between '2010-01-01'\r\n   and '2010-12-31'\r\nORDER BY annual_electricity_consumption desc limit 1"
+    },
+    {
+      "question":"Which 5 countries saw the most %increase in mean temperature bewtween 2012 and 2020 ? where life expectancy is not null in 2012 , load a bar chart ",
+      "answer":"SELECT geo.geo_name,\r\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\r\nFROM   (SELECT geo_id,\r\n               date,\r\n               value\r\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n        WHERE  variable_name = 'Mean Temperature, noaa.gov'\r\n           and date = '2012-01-01') as ts join (SELECT geo_id,\r\n                                            date,\r\n                                            value\r\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n                                     WHERE  variable_name = 'Mean Temperature, noaa.gov'\r\n                                        and date = '2020-01-01') as ts2\r\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and ts.value is not null\r\nORDER BY increase_percentage desc limit 5;"
+    },
+    {
+      "question":"List all the public holidays in the United States in 2023",
+      "answer":"SELECT holiday_name,\n       date\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = 'country\/USA'\n   and date between '2023-01-01'\n   and '2023-12-31'"
+    }
+  ]

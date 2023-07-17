@@ -1,0 +1,54 @@
+[
+    {
+      "question":"what are 5 most grossing movies in IMDB top 1000 ",
+      "answer":"SELECT series_title,\n       gross\nFROM   imdb.public.movies\nORDER BY gross desc limit 5;"
+    },
+    {
+      "question":"what are the top 5 movies and their ratings basis IMDB rating ? ",
+      "answer":"SELECT series_title,\n       imdb_rating\nFROM   imdb.public.movies\nORDER BY imdb_rating desc limit 5"
+    },
+    {
+      "question":"which 5 director have the most number of movies in the IMDB top 1000 ? ",
+      "answer":"SELECT director,\r\n       count(*) as num_of_movies\r\nFROM   imdb.public.movies\r\nGROUP BY director\r\nORDER BY num_of_movies desc limit 5;"
+    },
+    {
+      "question":"what are the top 5 movies and their ratings basis IMDB ? ",
+      "answer":"SELECT series_title,\n       imdb_rating\nFROM   imdb.public.movies\nORDER BY imdb_rating desc limit 5"
+    },
+    {
+      "question":"what is the distribution of imdb top 1000 movies across the release year ?",
+      "answer":"SELECT released_year, count(*) as num_movies\r\nFROM   imdb.public.movies\r\nGROUP BY 1\r\nORDER BY 1;"
+    },
+    {
+      "question":"What are the 5 best rated action movies ? ",
+      "answer":"SELECT series_title,\n       imdb_rating\nFROM   imdb.public.movies\nWHERE  genre = 'Action'\nORDER BY imdb_rating desc limit 5;"
+    },
+    {
+      "question":"What are the top 2 rated movies of ingmar bergman in drama genre and what are the lead actors in the movies ?",
+      "answer":"SELECT series_title,\n       star1,\n       imdb_rating\nFROM   imdb.public.movies\nWHERE  director = 'Ingmar Bergman'\n   and genre = 'Drama'\nORDER BY imdb_rating desc limit 2;;"
+    },
+    {
+      "question":"what are the top 5 movies basis IMDB rating ? ",
+      "answer":"SELECT series_title\r\nFROM IMDB.PUBLIC.MOVIES\r\nORDER BY imdb_rating DESC\r\nLIMIT 5"
+    },
+    {
+      "question":"which 5 director has the most number of movies in the IMDB top 1000 ? ",
+      "answer":"```\nSELECT director,\n       count(*) as num_movies\nFROM   imdb.public.movies\nWHERE  imdb_rating <= 1000\nGROUP BY director\nORDER BY num_movies desc limit 5;\n```"
+    },
+    {
+      "question":"what is the average IMDB rating for each genre ? ",
+      "answer":"SELECT genre,\n       avg(imdb_rating) as avg_imdb_rating\nFROM   imdb.public.movies\nGROUP BY genre;"
+    },
+    {
+      "question":"what is the genre wise, average IMDB rating ? ",
+      "answer":"SELECT genre,\n       avg(imdb_rating) as avg_imdb_rating\nFROM   imdb.public.movies\nGROUP BY genre;"
+    },
+    {
+      "question":"What is the runtime of Forest Gump, Saving Private Ryan and The Green Mile",
+      "answer":"SELECT series_title,\n       runtime\nFROM   imdb.public.movies\nWHERE  series_title in ('Forrest Gump', 'Saving Private Ryan', 'The Green Mile');"
+    },
+    {
+      "question":"what is the distribution of titles on IMDB across genres ? ",
+      "answer":"SELECT genre,\n       count(*) as num_titles\nFROM   imdb.public.movies\nGROUP BY genre\nORDER BY num_titles desc;"
+    }
+  ]

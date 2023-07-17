@@ -1,0 +1,202 @@
+[
+    {
+      "question":"What are the names of all the Cities in Canada",
+      "answer":"SELECT geo_name, id\r\nFROM   data_commons_public_data.cybersyn.geo_index\r\nWHERE iso_name ilike '%can%'"
+    },
+    {
+      "question":"what are the number of public holidays for US year on year ? ",
+      "answer":"The corrected SQL query is:\n\n```\nSELECT date_part('year', date) as year,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.public_holidays \nWHERE  geo ilike '%United States%'\nGROUP BY year\nORDER BY year asc\n``` \n\nI replaced `geo_name` with `geo` in the `WHERE` clause as the error message suggests that `geo_name` is an invalid identifier."
+    },
+    {
+      "question":"What is average Fertility Rate measure of Canada in 2002 ?",
+      "answer":"SELECT variable_name,\n       avg(value) as average_fertility_rate\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  variable_name = 'Fertility Rate'\n   and geo_id = 'country\/CAN'\n   and date >= '2002-01-01'\n   and date < '2003-01-01'\nGROUP BY 1;"
+    },
+    {
+      "question":"what is the  % growth of Housing Units in the United States year on year?",
+      "answer":"SELECT date,\n       ((value\/lag(value, 1) OVER (ORDER BY date asc)) - 1) * 100 as percent_growth\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  geo_id = 'country\/USA'\n   and variable_name = 'Housing Units'\n   and date >= '2001-01-01'\n   and date < '2022-01-01'\nORDER BY date asc"
+    },
+    {
+      "question":"What are the 10 countries with highest government debt in 2020 ? ",
+      "answer":"SELECT geo_name,\n       value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Amount of Debt: Government'\n   and date = '2020-01-01'\n   and geo_id like 'country\/%'\nORDER BY value desc limit 10;"
+    },
+    {
+      "question":"Compare Unemployment Rate in Manhattan County versus New York State",
+      "answer":"SELECT t1.date,\r\n\r\n       t2.geo_name,\r\n\r\n       t1.value\r\n\r\nFROM DATA_COMMONS_PUBLIC_DATA.cybersyn.timeseries AS t1\r\n\r\nINNER JOIN DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_index AS t2\r\n\r\nWHERE t1.geo_id in ('geoId\/36061',\r\n\r\n                    'geoId\/36')\r\n\r\n  AND t1.variable_name = 'Unemployment Rate of a Population'\r\n\r\n  AND date BETWEEN '2015-01-01' AND '2022-10-01'\r\n\r\n  AND t1.geo_id=t2.id\r\n\r\nORDER BY date ASC"
+    },
+    {
+      "question":"What are the 10 countries with highest government debt in 2019 ? ",
+      "answer":"SELECT geo_name,\n       value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Amount of Debt: Government'\n   and date = '2019-01-01'\n   and geo_id like 'country\/%'\nORDER BY value desc limit 10;"
+    },
+    {
+      "question":"What is the mean temperature of every geoid in 2002 ?",
+      "answer":"SELECT geo_id,\r\n       avg(value) as mean_temperature\r\nFROM   data_commons_public_data.cybersyn.timeseries\r\nWHERE  variable_name = 'Temperature'\r\n   and date >= '2002-01-01'\r\n   and date < '2003-01-01'\r\nGROUP BY geo_id"
+    },
+    {
+      "question":"What is average number of deaths measure of Canada in 2002 ?",
+      "answer":"Here is the corrected SQL query:\n\n```\nSELECT variable_name,\n       AVG(value) AS average_number_of_deaths\nFROM data_commons_public_data.cybersyn.timeseries\nWHERE variable_name = 'Number of Deaths'\n   AND geo_id = 'country\/CAN'\n   AND date >= '2002-01-01'\n   AND date < '2003-01-01'\nGROUP BY 1;\n``` \n\nThe error was caused by a missing single quote on the WHERE clause. The corrected query includes the missing single quote on line 4. Additionally, there was a typo on the SELECT clause where the AVG function was not capitalized, this has been corrected on line 2."
+    },
+    {
+      "question":"what is the % growth of Housing Units in the United States year on year",
+      "answer":"SELECT date,\n       ((value\/lag(value, 1) OVER (ORDER BY date asc)) - 1) * 100 as percent_growth\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  geo_id = 'country\/USA'\n   and variable_name = 'Housing Units'\n   and date >= '2001-01-01'\n   and date < '2022-01-01'\nORDER BY date asc"
+    },
+    {
+      "question":"Which 5 countries saw the most %increase in nominal gdp bewtween 2012 and 2020 ?",
+      "answer":"SELECT geo.geo_name,\r\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\r\nFROM   (SELECT geo_id,\r\n               date,\r\n               value\r\n        FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n        WHERE  variable_name = 'Nominal GDP'\r\n           and date = '2012-01-01') as ts join (SELECT geo_id,\r\n                                            date,\r\n                                            value\r\n                                     FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.datacommons_timeseries\r\n                                     WHERE  variable_name = 'Nominal GDP'\r\n                                        and date = '2020-01-01') as ts2\r\n        ON ts.geo_id = ts2.geo_id join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON ts.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and ts.date = '2012-01-01'\r\nORDER BY increase_percentage desc limit 5;"
+    },
+    {
+      "question":"What are the number financial holidays in the US year on year from 2015 to current year? ",
+      "answer":"SELECT geo.geo_name,\r\n       year(date),\r\n       count(distinct holiday_name) as num_holidays\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2015-01-01'\r\n   and '2023-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\nGROUP BY 1,2"
+    },
+    {
+      "question":"What is mean population of Canada in 2002 ?",
+      "answer":"SELECT variable_name, avg(value) as mean_population\r\nFROM   data_commons_public_data.cybersyn.timeseries\r\nWHERE  geo_id = 'country\/CAN'\r\n   and date >= '2002-01-01'\r\n   and date < '2003-01-01'\r\nGROUP BY 1 ;"
+    },
+    {
+      "question":"What 5 countries have the highest life expectancy ? ",
+      "answer":"SELECT geo_name,\n       value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Life Expectancy'\n   and date = '2020-01-01'\nORDER BY value desc limit 5;"
+    },
+    {
+      "question":"Population for US, Canada, Mexico since 2000",
+      "answer":"SELECT \r\n    variable_name, \r\n    geo_name, \r\n    geo_id, \r\n    date,\r\n    value \r\nFROM DATA_COMMONS_PUBLIC_DATA.cybersyn.timeseries \r\nJOIN DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_index \r\nON timeseries.geo_id = geo_index.id\r\nWHERE \r\n    variable ='Count_Person' \r\n    AND timeseries.geo_id IN ('country\/USA', 'country\/CAN', 'country\/MEX') \r\n    AND date >= '2000-01-01'\r\nORDER BY date desc;"
+    },
+    {
+      "question":"Display available measures for CBSAs (Cities)",
+      "answer":"SELECT\r\n\tDISTINCT measures.variable_name\r\nFROM\r\n\tDATA_COMMONS_PUBLIC_DATA.cybersyn.measures\r\n\tjoin DATA_COMMONS_PUBLIC_DATA.cybersyn.variable_summary on variable_summary.variable_name = measures.variable_name\r\nWHERE\r\n\tvariable_summary.level = 'CensusCoreBasedStatisticalArea'\r\nORDER BY\r\n\tmeasures.variable_name;"
+    },
+    {
+      "question":"What is the Average Amount of Government Debt of countries in the data",
+      "answer":"SELECT avg(value) as avg_government_debt\r\nFROM   data_commons_public_data.cybersyn.timeseries\r\nWHERE  variable_name = 'Amount of Debt: Government'\r\n   and geo_id like 'country\/%';"
+    },
+    {
+      "question":"What is the Average Amount of Government Debt of countries in the data in 2020 ? ",
+      "answer":"SELECT avg(value) as avg_government_debt\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  variable_name = 'Amount of Debt: Government'\n   and geo_id like 'country\/%'\n   and date = '2020-01-01';"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2016.",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2016-01-01'\n   and date < '2017-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2020 ? ",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2020-01-01'\n   and date < '2021-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2021 ",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2021-01-01'\n   and date < '2022-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"Which 5 countries saw the greatest increase in nominal GDP, expressed in percentage terms, between 2012 and 2020?",
+      "answer":"The corrected query is:\n```\nSELECT geo.geo_name,\n       ((ts2.value - ts.value) \/ ts.value) * 100 as increase_percentage\nFROM   (SELECT geo_id,\n               date,\n               value\n        FROM   data_commons_public_data.cybersyn.timeseries\n        WHERE  variable_name = 'Nominal GDP'\n           and date = '2012-01-01') as ts join (SELECT geo_id,\n                                            date,\n                                            value\n                                     FROM   data_commons_public_data.cybersyn.timeseries\n                                     WHERE  variable_name = 'Nominal GDP'\n                                        and date = '2020-01-01') as ts2\n        ON ts.geo_id = ts2.geo_id join data_commons_public_data.cybersyn.geo_index as geo\n        ON ts.geo_id = geo.id\nWHERE  lower(geo.geo_level) = 'country'\n   and ts.date = '2012-01-01'\nORDER BY increase_percentage desc limit 5;\n```\nThe error occurred because the column `geo_level` in the `geo_index` table is in lowercase letters, not uppercase. To correct this, we can use the `lower` function to convert the `geo_level` to lowercase letters and compare it with the string `'country'`."
+    },
+    {
+      "question":"what are the number of public holidays across countries, also plot a histogram for the same.",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\nGROUP BY geo_name\nORDER BY num_public_holidays desc;"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2021.",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2021-01-01'\n   and date < '2022-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"What is the average Precipitation in Canada in 2002 ?",
+      "answer":"SELECT variable_name,\n       avg(value) as avg_precipitation_rate\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  variable_name = 'Precipitation Rate'\n   and geo_id = 'country\/CAN'\n   and date >= '2002-01-01'\n   and date < '2003-01-01'\nGROUP BY variable_name;"
+    },
+    {
+      "question":"what is the yoy trend of number of public holidays in the US ? ",
+      "answer":"The error message indicates that there is a syntax error in the SQL query, specifically at line 4 position 7 where there is an unexpected '<' character. Without seeing the original SQL query, it is difficult to determine the exact cause of the error. However, it is possible that there is an error in the syntax of the SQL statement or an issue with the database schema or table.\n\nPlease provide the original SQL query for me to assist you in correcting it."
+    },
+    {
+      "question":"what is the % growth of housing units in the united states yr over yr",
+      "answer":"SELECT date,\n       ((value\/lag(value, 1) OVER (ORDER BY date asc)) - 1) * 100 as percent_growth\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  geo_id = 'country\/USA'\n   and variable_name = 'Housing Units'\n   and date >= '2001-01-01'\n   and date < '2022-01-01'\nORDER BY date asc"
+    },
+    {
+      "question":"Which date 5 countries saw the highest growth % in terms of housing units ",
+      "answer":"SELECT date,\n       geo_name,\n       value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Housing Units'\n   and date >= '2000-01-01'\n   and date < '2022-01-01'\n   and geo_id in ('country\/CHN', 'country\/IND', 'country\/USA', 'country\/BRA', 'country\/RUS')\nORDER BY value desc limit 5;"
+    },
+    {
+      "question":"Find counties that make up Chicago and Philadelphia",
+      "answer":"SELECT \r\n    t3.geo_name as city_name, \r\n    t1.geo_id, \r\n    t2.geo_name as county_name, \r\n    t2.id as parent  \r\nFROM DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_hierarchy t1 \r\nJOIN DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_index t2 \r\n    ON t1.parent_geo_id = t2.id\r\nJOIN DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_index t3 \r\n    ON t1.geo_id = t3.id\r\nWHERE t3.geo_name IN ('Philadelphia', 'Chicago')\r\nAND t2.level = 'County' ORDER BY t3.geo_name"
+    },
+    {
+      "question":"What are the number public holidays in the US year on year ? ",
+      "answer":"The corrected SQL query is: \n\n```\nSELECT date_part('year', date) as year,\n       count(*) as num_public_holidays\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar\nWHERE  geo_id = (SELECT geo_id\n                 FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index\n                 WHERE  geo_name = 'United States')\nGROUP BY year\nORDER BY year;\n```\n\nExplanation: The error message suggests that the identifier 'ID' is invalid. It is because the subquery in the WHERE clause is selecting the 'id' column which does not exist in the geography_index table. Instead, it should select the 'geo_id' column."
+    },
+    {
+      "question":"What is average female population measure of Canada in 2002 ?",
+      "answer":"SELECT variable_name,\r\n       avg(value) as average_female_population\r\nFROM   data_commons_public_data.cybersyn.timeseries\r\nWHERE  variable_name = 'Female Population'\r\n   and geo_id = 'country\/CAN'\r\n   and date >= '2002-01-01'\r\n   and date < '2003-01-01'\r\nGROUP BY 1;"
+    },
+    {
+      "question":"what is the % growth of Housing Units in the United States year on yr",
+      "answer":"SELECT date,\n       ((value\/lag(value, 1) OVER (ORDER BY date asc)) - 1) * 100 as percent_growth\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  geo_id = 'country\/USA'\n   and variable_name = 'Housing Units'\n   and date >= '2001-01-01'\n   and date < '2022-01-01'\nORDER BY date asc"
+    },
+    {
+      "question":"what are the names of the current year financial holdiays in the US which were not there in 2021 ?",
+      "answer":"SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\nand holiday_name not in \r\n  ( \r\n    SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2021-01-01'\r\n   and '2021-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\n)\r\n\r\n"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2020.",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2020-01-01'\n   and date < '2021-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"What is the Average Amount of Government Debt of countries in the data in 2017 ? ",
+      "answer":"SELECT avg(value) as avg_government_debt\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  variable_name = 'Amount of Debt: Government'\n   and geo_id like 'country\/%'\n   and date = '2017-01-01';"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2021 ? ",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2021-01-01'\n   and date < '2022-01-01'\nGROUP BY geo_name;"
+    },
+    {
+      "question":"What are the 10 countries with highest government debt in 2017 ? ",
+      "answer":"SELECT geo_name,\n       value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Amount of Debt: Government'\n   and date = '2017-01-01'\n   and geo_id like 'country\/%'\nORDER BY value desc limit 10;"
+    },
+    {
+      "question":"what are the names of the current year financial holdiays in the US which were not there in 2018 ?",
+      "answer":"SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\nand holiday_name not in \r\n  ( \r\n    SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2018-01-01'\r\n   and '2018-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\n)\r\n\r\n\r\n"
+    },
+    {
+      "question":"What are the public holidays in the US which are also financial holidays? ",
+      "answer":"SELECT geo.geo_name,\r\n       count(distinct holiday_name) as num_holidays\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\nGROUP BY geo.geo_name\r\nORDER BY num_holidays desc limit 1"
+    },
+    {
+      "question":"What is average Precipitation Rate measure of Canada in 2002 ?",
+      "answer":"SELECT variable_name,\n       avg(value) as avg_precipitation_rate\nFROM   data_commons_public_data.cybersyn.timeseries\nWHERE  variable_name = 'Precipitation Rate'\n   and geo_id = 'country\/CAN'\n   and date >= '2002-01-01'\n   and date < '2003-01-01'\nGROUP BY variable_name;"
+    },
+    {
+      "question":"What are if the mean temperature of every zipcode in Canada in 2002 ?",
+      "answer":"SELECT geo_id,\r\n       avg(value) as mean_temperature\r\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\r\n       ON timeseries.geo_id = geo_index.id\r\nWHERE  variable_name = 'Mean Temperature'\r\n       and timeseries.geo_id = 'country\/CAN'\r\n       and date >= '2023-01-01'\r\nGROUP BY geo_id;"
+    },
+    {
+      "question":"what are the number of public holidays across countries in 2021, also plot a histogram for the same.",
+      "answer":"SELECT geo_name,\n       count(*) as num_public_holidays\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Public Holidays'\n   and date >= '2021-01-01'\n   and date < '2022-01-01'\nGROUP BY geo_name\nORDER BY num_public_holidays desc;"
+    },
+    {
+      "question":"Fetch total population of China in 2001 ? ",
+      "answer":"SELECT value\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable = 'Count_Person'\n   and geo_id = 'country\/CHN'\n   and date = '2001-01-01'"
+    },
+    {
+      "question":"Find all counties in NY",
+      "answer":"SELECT * \r\nFROM DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_hierarchy \r\nJOIN DATA_COMMONS_PUBLIC_DATA.cybersyn.geo_index \r\n    ON geo_hierarchy.geo_id = geo_index.id\r\nWHERE parent_geo_id = 'geoId\/36' \r\n    AND level = 'County';"
+    },
+    {
+      "question":"what are the names of the current year financial holdiays in the US which were not there in 2010 ?",
+      "answer":"SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2023-01-01'\r\n   and '2023-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\nand holiday_name not in \r\n  ( \r\n    SELECT distinct holiday_name\r\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\r\n        ON cal.geo_id = geo.geo_id\r\nWHERE  geo.level = 'Country'\r\n   and cal.date between '2010-01-01'\r\n   and '2010-12-31'\r\n   and geo_name ilike '%United States%'\r\nand is_financial = 1 \r\n)\r\n\r\n\r\n"
+    },
+    {
+      "question":"what are the names of the current year financial holdiays in the US which were not there in 2020 ?",
+      "answer":"SELECT DISTINCT holiday_name\nFROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n        ON cal.geo_id = geo.geo_id\nWHERE  geo.level = 'Country'\n   and cal.date between '2021-01-01'\n   and '2021-12-31'\n   and geo_name ilike '%United States%'\n   and is_financial = 1\n   and holiday_name not in (SELECT DISTINCT holiday_name\n                         FROM   cybersyn_us__global_public_data_starter_kit.cybersyn.public_holiday_calendar as cal join cybersyn_us__global_public_data_starter_kit.cybersyn.geography_index as geo\n                                 ON cal.geo_id = geo.geo_id\n                         WHERE  geo.level = 'Country'\n                            and cal.date between '2020-01-01'\n                            and '2020-12-31'\n                            and geo_name ilike '%United States%'\n                            and is_financial = 1)"
+    },
+    {
+      "question":"What is average life expectancy measure of Canada in 2002 ?",
+      "answer":"SELECT variable_name,\r\n       date,\r\n       avg(value) as average_life_expectancy\r\nFROM   data_commons_public_data.cybersyn.timeseries\r\nWHERE  variable_name = 'Life Expectancy'\r\n   and geo_id = 'country\/CAN'\r\n   and date >= '2002-01-01'\r\n   and date < '2003-01-01'\r\nGROUP BY 1,2;"
+    },
+    {
+      "question":"What are different levels in the geo index ?",
+      "answer":"SELECT DISTINCT level\nFROM   data_commons_public_data.cybersyn.geo_index;"
+    },
+    {
+      "question":"What is countries have the highest life expectancy ? ",
+      "answer":"SELECT geo_name,\n       avg(value) as avg_life_expectancy\nFROM   data_commons_public_data.cybersyn.timeseries join data_commons_public_data.cybersyn.geo_index\n        ON timeseries.geo_id = geo_index.id\nWHERE  variable_name = 'Life Expectancy'\nGROUP BY 1\nORDER BY 2 desc limit 10;"
+    },
+    {
+      "question":"What are the different types of variables in timeseries data ",
+      "answer":"SELECT DISTINCT variable_name\r\nFROM   data_commons_public_data.cybersyn.timeseries;"
+    }
+  ]

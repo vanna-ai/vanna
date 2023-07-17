@@ -1,0 +1,26 @@
+[
+    {
+      "question":"What are the daily costs for the last 30 days?",
+      "answer":"SELECT usage_date,\n       sum(usage_in_currency) as daily_cost\nFROM   snowflake.organization_usage.preview_usage_in_currency_daily\nWHERE  currency = 'USD'\n   and usage_date >= dateadd(day, -30, current_date())\nGROUP BY usage_date\nORDER BY usage_date"
+    },
+    {
+      "question":"What are the first 10 rows in the USAGE_IN_CURRENCY_DAILY table?",
+      "answer":"SELECT ORGANIZATION_NAME, CONTRACT_NUMBER, ACCOUNT_NAME, ACCOUNT_LOCATOR, REGION, SERVICE_LEVEL, USAGE_DATE, USAGE_TYPE, CURRENCY, USAGE, USAGE_IN_CURRENCY, BALANCE_SOURCE\r\nFROM SNOWFLAKE.ORGANIZATION_USAGE.USAGE_IN_CURRENCY_DAILY\r\nLIMIT 10"
+    },
+    {
+      "question":"Total usage costs in dollars for the organization, broken down by account",
+      "answer":"SELECT account_name,\n       sum(usage_in_currency) as total_cost\nFROM   snowflake.organization_usage.preview_usage_in_currency_daily\nWHERE  currency = 'USD'\nGROUP BY account_name"
+    },
+    {
+      "question":"What is the daily cost by usage type?",
+      "answer":"SELECT usage_date,\n       usage_type,\n       sum(usage_in_currency) as daily_cost\nFROM   snowflake.organization_usage.preview_usage_in_currency_daily\nWHERE  currency = 'USD'\nGROUP BY usage_date, usage_type\nORDER BY usage_date, daily_cost desc"
+    },
+    {
+      "question":"What are the first 10 rows in the PREVIEW_USAGE_IN_CURRENCY_DAILY table?",
+      "answer":"SELECT ORGANIZATION_NAME, CONTRACT_NUMBER, ACCOUNT_NAME, ACCOUNT_LOCATOR, REGION, SERVICE_LEVEL, USAGE_DATE, USAGE_TYPE, CURRENCY, USAGE, USAGE_IN_CURRENCY\r\nFROM SNOWFLAKE.ORGANIZATION_USAGE.PREVIEW_USAGE_IN_CURRENCY_DAILY\r\nLIMIT 10"
+    },
+    {
+      "question":"Daily usage cost by account",
+      "answer":"SELECT account_name,\n       usage_date,\n       sum(usage_in_currency) as daily_usage_cost\nFROM   snowflake.organization_usage.preview_usage_in_currency_daily\nWHERE  currency = 'USD'\nGROUP BY account_name, usage_date\nORDER BY usage_date, daily_usage_cost desc"
+    }
+  ]
