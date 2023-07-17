@@ -4,7 +4,6 @@ Vanna.AI is a platform that allows you to ask questions about your data in plain
 
 # API Reference
 '''
-print("Vanna.AI Imported")
 
 import requests
 import pandas as pd
@@ -13,11 +12,16 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData
-from typing import List, Dict, Any, Union, Optional
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList
+from typing import List, Dict, Any, Union, Optional, Callable
+import warnings
+import traceback
 
 """Set the API key for Vanna.AI."""
 api_key: Union[str, None] = None # API key for Vanna.AI
+
+"""Set the SQL to DataFrame function for Vanna.AI."""
+sql_to_df: Union[Callable[[str], pd.DataFrame], None] = None # Function to convert SQL to a Pandas DataFrame
 
 __org: Union[str, None] = None # Organization name for Vanna.AI
 
@@ -171,16 +175,42 @@ def create_org(org: str, db_type: str) -> bool:
 
 def set_org(org: str) -> None:
     """
-    ## Example
-    ```python
-    vn.set_org("my-org")
-    ```
-
-    Set the organization name for the Vanna.AI API.
+    DEPRECATED. Use [`use_datasets`][vanna.use_datasets] instead.
 
     Args:
         org (str): The organization name.
     """
+    global __org
+    print("vn.set_org is deprecated. Please use vn.use_datasets instead.")
+    warnings.warn("vn.set_org is deprecated. Please use vn.use_datasets instead.", DeprecationWarning)
+
+    my_orgs = list_orgs()
+    if org not in my_orgs:
+        # Check if org exists
+        d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
+
+        if 'result' not in d:
+            raise Exception("Failed to check if organization exists")
+
+        status = Status(**d['result'])
+
+        if status.success:
+            raise Exception(f"An organization with the name {org} already exists")
+
+        create = input(f"Would you like to create organization '{org}'? (y/n): ")
+
+        if create.lower() == 'y':
+            db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
+            __org = 'demo-tpc-h'
+            if create_org(org=org, db_type=db_type):
+                __org = org
+            else:
+                __org = None
+                raise Exception("Failed to create organization")
+    else:
+        __org = org
+
+def _set_org(org: str) -> None:
     global __org
 
     my_orgs = list_orgs()
@@ -208,6 +238,27 @@ def set_org(org: str) -> None:
                 raise Exception("Failed to create organization")
     else:
         __org = org
+
+
+def use_datasets(datasets: List[str]):
+    """
+    ## Example
+    ```python
+    vn.use_datasets(datasets=["employees", "departments"])
+    ```
+
+    Set the datasets to use for the Vanna.AI API.
+
+    Args:
+        datasets (List[str]): A list of dataset names.
+
+    Returns:
+        bool: True if the datasets were set successfully, False otherwise.
+    """
+    if len(datasets) >= 1:
+        _set_org(org=datasets[0])
+    else:
+        raise Exception("No datasets provided")
 
 def store_sql(question: str, sql: str) -> bool:
     """
@@ -417,7 +468,30 @@ def generate_sql(question: str) -> str:
 
     return sql_answer.sql
 
-def ask(question: str) -> str:
+def generate_questions() -> List[str]:
+    """
+    ## Example
+    ```python
+    vn.generate_questions()
+    # ['What is the average salary of employees?', 'What is the total salary of employees?', ...]
+    ```
+
+    Generate questions using the Vanna.AI API.
+
+    Returns:
+        List[str] or None: The questions, or None if an error occurred.
+    """
+    d = __rpc_call(method="generate_questions", params=[])
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    question_string_list = QuestionStringList(**d['result'])
+
+    return question_string_list.questions
+
+def ask(question: str, print_results: bool = True, auto_train: bool = True) -> (str, pd.DataFrame, plotly.graph_objs.Figure):
     """
     ## Example
     ```python
@@ -425,15 +499,55 @@ def ask(question: str) -> str:
     # SELECT AVG(salary) FROM employees
     ```
 
-    Ask a question using the Vanna.AI API. This is equivalent to calling [`generate_sql()`][vanna.generate_sql].
+    Ask a question using the Vanna.AI API. This generates an SQL query, runs it, and returns the results in a dataframe and a Plotly figure.
 
     Args:
         question (str): The question to ask.
 
     Returns:
         str or None: The SQL query, or None if an error occurred.
+        pd.DataFrame or None: The results of the SQL query, or None if an error occurred.
+        plotly.graph_objs.Figure or None: The Plotly figure, or None if an error occurred.
     """
-    return generate_sql(question=question)
+
+    try:
+        sql = generate_sql(question=question)
+    except Exception as e:
+        print(e)
+        return None, None, None
+
+    if print_results:
+        print(sql)
+
+    if sql_to_df is None:
+        print("If you want to run the SQL query, provide a vn.sql_to_df function.")
+        return sql, None, None
+
+    try:
+        df = sql_to_df(sql=sql)
+
+        if print_results:
+            print(df.head().to_markdown())
+
+        try:
+            plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
+            fig = get_plotly_figure(plotly_code=plotly_code, df=df)
+            if print_results:
+                fig.show()
+
+            return sql, df, fig
+
+        except Exception as e:
+            # Print stack trace
+            traceback.print_exc()
+            print("Couldn't run plotly code: ", e)
+            return sql, df, None
+
+    except Exception as e:
+        print("Couldn't run sql: ", e)
+        return sql, None, None
+
+
 
 def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame) -> str:
     """
@@ -508,10 +622,7 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
 def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
-    ## Example
-    ```python
-    df = vn.get_results(cs=cs, default_database="PUBLIC", sql="SELECT * FROM students")
-    ```
+    DEPRECATED. Use [`vanna.sql_to_df()`][vanna.sql_to_df] instead.
     Run the SQL query and return the results as a pandas dataframe. This is just a helper function that does not use the Vanna.AI API.
 
     Args:
@@ -522,6 +633,9 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
+    print("`vn.get_results()` is deprecated. Use `vn.sql_to_df()` instead.")
+    warnings.warn("`vn.get_results()` is deprecated. Use `vn.sql_to_df()` instead.")
+
     cs.execute(f"USE DATABASE {default_database}")
 
     cur = cs.execute(sql)

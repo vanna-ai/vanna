@@ -35,6 +35,10 @@ class OrganizationList:
     organizations: List[str]
 
 @dataclass
+class QuestionStringList:
+    questions: List[str]
+
+@dataclass
 class UserEmail:
     email: str
 
