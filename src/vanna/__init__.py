@@ -13,7 +13,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember
-from typing import List, Dict, Any, Union, Optional, Callable
+from typing import List, Dict, Any, Union, Optional, Callable, Tuple
 import warnings
 import traceback
 
@@ -548,7 +548,7 @@ def generate_questions() -> List[str]:
 
     return question_string_list.questions
 
-def ask(question: str, print_results: bool = True, auto_train: bool = True) -> (str, pd.DataFrame, plotly.graph_objs.Figure):
+def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True) -> Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None]]:
     """
     ## Example
     ```python
@@ -559,13 +559,16 @@ def ask(question: str, print_results: bool = True, auto_train: bool = True) -> (
     Ask a question using the Vanna.AI API. This generates an SQL query, runs it, and returns the results in a dataframe and a Plotly figure.
 
     Args:
-        question (str): The question to ask.
+        question (str): The question to ask. If None, you will be prompted to enter a question.
 
     Returns:
         str or None: The SQL query, or None if an error occurred.
         pd.DataFrame or None: The results of the SQL query, or None if an error occurred.
         plotly.graph_objs.Figure or None: The Plotly figure, or None if an error occurred.
     """
+
+    if question is None:
+        question = input("Enter a question: ")
 
     try:
         sql = generate_sql(question=question)
