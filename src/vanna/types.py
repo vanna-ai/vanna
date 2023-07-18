@@ -39,6 +39,10 @@ class QuestionStringList:
     questions: List[str]
 
 @dataclass
+class Visibility:
+    visibility: bool
+
+@dataclass
 class UserEmail:
     email: str
 

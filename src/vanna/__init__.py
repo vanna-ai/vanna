@@ -12,7 +12,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility
 from typing import List, Dict, Any, Union, Optional, Callable
 import warnings
 import traceback
@@ -172,6 +172,32 @@ def create_org(org: str, db_type: str) -> bool:
 
     return status.success
 
+def set_org_visibility(visibility: bool) -> bool:
+    """
+    ## Example
+    ```python
+    vn.set_org_visibility(org="my-org", visibility=True)
+    ```
+
+    Set the visibility of an organization. If an organization is visible, anyone can see it. If it is not visible, only members of the organization can see it.
+
+    Args:
+        org (str): The name of the organization to set the visibility of.
+        visibility (bool): Whether or not the organization should be visible.
+
+    Returns:
+        bool: True if the organization visibility was set successfully, False otherwise.
+    """
+    params = [Visibility(visibility=visibility)]
+
+    d = __rpc_call(method="set_org_visibility", params=params)
+
+    if 'result' not in d:
+        return False
+
+    status = Status(**d['result'])
+
+    return status.success
 
 def set_org(org: str) -> None:
     """
