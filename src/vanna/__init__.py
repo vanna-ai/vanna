@@ -12,7 +12,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember
 from typing import List, Dict, Any, Union, Optional, Callable
 import warnings
 import traceback
@@ -169,6 +169,37 @@ def create_org(org: str, db_type: str) -> bool:
         return False
 
     status = Status(**d['result'])
+
+    return status.success
+
+def add_user_to_org(org: str, email: str, is_admin: bool) -> bool:
+    """
+    ## Example
+    ```python
+    vn.add_user_to_org(org="my-org", email="user@example.com")
+    ```
+
+    Add a user to an organization.
+
+    Args:
+        org (str): The name of the organization to add the user to.
+        email (str): The email address of the user to add.
+
+    Returns:
+        bool: True if the user was added successfully, False otherwise.
+    """
+
+    params = [NewOrganizationMember(org_name=org, email=email, is_admin=is_admin)]
+
+    d = __rpc_call(method="add_user_to_org", params=params)
+
+    if 'result' not in d:
+        return False
+
+    status = Status(**d['result'])
+    
+    if not status.success:
+        print(status.message)
 
     return status.success
 

@@ -52,6 +52,12 @@ class NewOrganization:
     db_type: str
 
 @dataclass
+class NewOrganizationMember:
+    org_name: str
+    email: str
+    is_admin: bool
+
+@dataclass
 class UserOTP:
     email: str
     otp: str
