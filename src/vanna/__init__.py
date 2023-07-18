@@ -317,7 +317,7 @@ def use_datasets(datasets: List[str]):
     else:
         raise Exception("No datasets provided")
 
-def store_sql(question: str, sql: str) -> bool:
+def store_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
     """
     ## Example
     ```python
@@ -332,10 +332,12 @@ def store_sql(question: str, sql: str) -> bool:
     Args:
         question (str): The question to store.
         sql (str): The SQL query to store.
+        tag (Union[str, None]): A tag to associate with the question and SQL query.
     """
     params = [QuestionSQLPair(        
         question=question,
         sql=sql,
+        tag=tag
     )]
 
     d = __rpc_call(method="store_sql", params=params)
@@ -594,6 +596,9 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             fig = get_plotly_figure(plotly_code=plotly_code, df=df)
             if print_results:
                 fig.show()
+
+            if auto_train:
+                store_sql(question=question, sql=sql, tag="Assumed Correct")
 
             return sql, df, fig
 

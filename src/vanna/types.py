@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Dict
+from typing import List, Dict, Union
 from dataclasses import dataclass
 
 @dataclass
@@ -23,6 +23,7 @@ class FullQuestionDocument:
 class QuestionSQLPair:
     question: str
     sql: str
+    tag: Union[str, None]
 
 @dataclass
 class Organization:
