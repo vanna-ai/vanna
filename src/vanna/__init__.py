@@ -105,9 +105,9 @@ def login(email: str, otp_code: Union[str, None] = None) -> bool:
         if not status.success:
             return False
 
-        otp = input("Check your email for the code and enter it here: ")
+        otp_code = input("Check your email for the code and enter it here: ")
 
-    params = [UserOTP(email=email, otp=otp)]
+    params = [UserOTP(email=email, otp=otp_code)]
 
     d = __unauthenticated_rpc_call(method="verify_otp", params=params)
 
@@ -597,7 +597,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             if print_results:
                 fig.show()
 
-            if auto_train:
+            if len(df) > 0 and auto_train:
                 store_sql(question=question, sql=sql, tag="Assumed Correct")
 
             return sql, df, fig
