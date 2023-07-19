@@ -12,7 +12,7 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
 from typing import List, Dict, Any, Union, Optional, Callable, Tuple
 import warnings
 import traceback
@@ -783,55 +783,31 @@ def generate_question(sql: str) -> str:
 
     return question.question
 
-def get_flagged_questions() -> QuestionList:
+def get_all_questions() -> pd.DataFrame:
     """
 
     ## Example
     ```python
-    questions = vn.get_flagged_questions()
+    questions = vn.get_all_questions()
     ```
     
-    Get a list of flagged questions from the Vanna.AI API.
+    Get a list of questions from the Vanna.AI API.
 
     Returns:
-        List[FullQuestionDocument] or None: The list of flagged questions, or None if an error occurred.
+        pd.DataFrame or None: The list of questions, or None if an error occurred.
 
     """
     # params = [Question(question="")]
     params = []
 
-    d = __rpc_call(method="get_flagged_questions", params=params)
+    d = __rpc_call(method="get_all_questions", params=params)
 
     if 'result' not in d:
         return None
 
     # Load the result into a dataclass
-    flagged_questions = QuestionList(**d['result'])
+    all_questions = DataFrameJSON(**d['result'])
 
-    return flagged_questions
+    df = pd.read_json(all_questions.data)
 
-def get_accuracy_stats() -> AccuracyStats:
-    """
-
-    ## Example
-    ```python
-    vn.get_accuracy_stats()
-    ```
-    
-    Get the accuracy statistics from the Vanna.AI API.
-
-    Returns:
-        dict or None: The accuracy statistics, or None if an error occurred.
-
-    """
-    params = []
-
-    d = __rpc_call(method="get_accuracy_stats", params=params)
-
-    if 'result' not in d:
-        return None
-
-    # Load the result into a dataclass
-    accuracy_stats = AccuracyStats(**d['result'])
-
-    return accuracy_stats
+    return df

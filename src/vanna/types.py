@@ -160,3 +160,7 @@ class Diagram:
 @dataclass
 class StringData:
     data: str
+
+@dataclass
+class DataFrameJSON:
+    data: str
