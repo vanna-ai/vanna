@@ -204,6 +204,7 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
     Args:
         dataset (str): The name of the dataset to add the user to.
         email (str): The email address of the user to add.
+        is_admin (bool): Whether or not the user should be an admin.
 
     Returns:
         bool: True if the user was added successfully, False otherwise.
@@ -258,14 +259,14 @@ def _set_org(org: str) -> None:
         d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
 
         if 'result' not in d:
-            raise Exception("Failed to check if organization exists")
+            raise Exception("Failed to check if dataset exists")
 
         status = Status(**d['result'])
 
         if status.success:
             raise Exception(f"An organization with the name {org} already exists")
 
-        create = input(f"Would you like to create organization '{org}'? (y/n): ")
+        create = input(f"Would you like to create dataset '{org}'? (y/n): ")
 
         if create.lower() == 'y':
             db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
@@ -274,7 +275,7 @@ def _set_org(org: str) -> None:
                 __org = org
             else:
                 __org = None
-                raise Exception("Failed to create organization")
+                raise Exception("Failed to create dataset")
     else:
         __org = org
 
