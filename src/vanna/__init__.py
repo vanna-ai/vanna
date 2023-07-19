@@ -25,8 +25,8 @@ sql_to_df: Union[Callable[[str], pd.DataFrame], None] = None # Function to conve
 
 __org: Union[str, None] = None # Organization name for Vanna.AI
 
-_endpoint = "https://ask.vanna.ai/rpc"
-_unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
+_endpoint = "https://vanna-rpc-test-x5y3argz6q-uc.a.run.app/rpc"
+_unauthenticated_endpoint = "https://vanna-rpc-test-x5y3argz6q-uc.a.run.app/unauthenticated_rpc"
 
 def __unauthenticated_rpc_call(method, params):
     headers = {
