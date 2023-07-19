@@ -83,7 +83,7 @@ class QuestionCategory:
     NO_SQL_GENERATED = "No SQL Generated"
     SQL_UNABLE_TO_RUN = "SQL Unable to Run"
     BOOTSTRAP_TRAINING_QUERY = "Bootstrap Training Query"
-    ASSUMED_CORRECT = "Assumed Correct"
+    SQL_RAN = "SQL Ran Successfully"
     FLAGGED_FOR_REVIEW = "Flagged for Review"
     REVIEWED_AND_APPROVED = "Reviewed and Approved"
     REVIEWED_AND_REJECTED = "Reviewed and Rejected"
