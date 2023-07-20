@@ -4,7 +4,7 @@ You can use Vanna with any database that you can connect to via Python. Here are
 
 All you have to do is provide Vanna with a function that takes in a SQL query and returns a Pandas DataFrame. Here are some examples of how to do that.
 
-**PostgreSQL**
+## **PostgreSQL**
 
 ```python
 import pandas as pd
@@ -20,7 +20,7 @@ def sql_to_df_postgres(sql: str) -> pd.DataFrame:
 vn.sql_to_df = sql_to_df_postgres
 ```
 
-**Snowflake**
+## **Snowflake**
 
 ```python
 import pandas as pd
@@ -37,7 +37,7 @@ def sql_to_df_snowflake(sql: str) -> pd.DataFrame:
 vn.sql_to_df = sql_to_df_snowflake
 ```
 
-**Google BigQuery**
+## **Google BigQuery**
 
 ```python
 from google.cloud import bigquery
@@ -53,7 +53,7 @@ def sql_to_df_bigquery(sql: str) -> pd.DataFrame:
 vn.sql_to_df = sql_to_df_bigquery
 ```
 
-**Amazon Athena**
+## **Amazon Athena**
 
 ```python
 import pandas as pd
@@ -69,7 +69,7 @@ def sql_to_df_athena(sql: str) -> pd.DataFrame:
 vn.sql_to_df = sql_to_df_athena
 ```
 
-**Amazon Redshift**
+## **Amazon Redshift**
 
 ```python
 import pandas as pd
@@ -87,7 +87,7 @@ vn.sql_to_df = sql_to_df_redshift
 
 Sure, here is an example for Google Cloud SQL using the MySQL connector:
 
-**Google Cloud SQL (MySQL)**
+## **Google Cloud SQL (MySQL)**
 
 ```python
 import pandas as pd
@@ -103,7 +103,7 @@ def sql_to_df_google_cloud_sql(sql: str) -> pd.DataFrame:
 
 Note: Google Cloud SQL supports MySQL, PostgreSQL, and SQL Server. The above example uses MySQL. If you are using PostgreSQL or SQL Server, you should use the appropriate connector.
 
-**SQLite**
+## **SQLite**
 
 ```python
 import sqlite3
@@ -119,7 +119,7 @@ def sql_to_df_sqlite(sql: str) -> pd.DataFrame:
 vn.sql_to_df = sql_to_df_sqlite
 ```
 
-**Microsoft SQL Server**
+## **Microsoft SQL Server**
 
 ```python
 import pandas as pd
