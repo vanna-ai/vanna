@@ -1,6 +1,7 @@
 site_name: Vanna.AI Documentation
 nav:
   - What is Vanna.AI?: index.md
+  - Intro to Vanna: intro-to-vanna.md
   - Use with Streamlit: streamlit.md
   - Use in Notebooks: jupyter.md
   - Onboarding: onboarding.md
