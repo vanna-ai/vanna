@@ -181,6 +181,10 @@ def create_dataset(dataset: str, db_type: str) -> bool:
     Returns:
         bool: True if the dataset was created successfully, False otherwise.
     """
+    global __org
+    if __org is None:
+        __org = 'demo-tpc-h'
+
     params = [NewOrganization(org_name=dataset, db_type=db_type)]
 
     d = __rpc_call(method="create_org", params=params)
@@ -270,7 +274,6 @@ def _set_org(org: str) -> None:
 
         if create.lower() == 'y':
             db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
-            __org = 'demo-tpc-h'
             if create_dataset(dataset=org, db_type=db_type):
                 __org = org
             else:
