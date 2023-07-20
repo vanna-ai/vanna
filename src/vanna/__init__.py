@@ -510,6 +510,41 @@ def generate_sql(question: str) -> str:
 
     return sql_answer.sql
 
+def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
+    """
+    ## Example
+    ```python
+    vn.generate_followup_questions(question="What is the average salary of employees?", df=df)
+    # ['What is the average salary of employees in the Sales department?', 'What is the average salary of employees in the Engineering department?', ...]
+    ```
+
+    Generate follow-up questions using the Vanna.AI API.
+
+    Args:
+        question (str): The question to generate follow-up questions for.
+        df (pd.DataFrame): The DataFrame to generate follow-up questions for.
+
+    Returns:
+        List[str] or None: The follow-up questions, or None if an error occurred.
+    """
+    params = [DataResult(
+        question=question,
+        sql=None,
+        table_markdown=df.head().to_markdown(),
+        error=None,
+        correction_attempts=0,
+    )]
+
+    d = __rpc_call(method="generate_followup_questions", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    question_string_list = QuestionStringList(**d['result'])
+
+    return question_string_list.questions
+
 def generate_questions() -> List[str]:
     """
     ## Example
