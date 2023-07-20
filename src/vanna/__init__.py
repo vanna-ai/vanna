@@ -224,22 +224,22 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
 
     return status.success
 
-def set_dataset_visibility(visibility: bool) -> bool:
+def set_dataset_visibility(public: bool) -> bool:
     """
     ## Example
     ```python
-    vn.set_dataset_visibility(visibility=True)
+    vn.set_dataset_visibility(public=True)
     ```
 
     Set the visibility of the current dataset. If a dataset is visible, anyone can see it. If it is not visible, only members of the dataset can see it.
 
     Args:
-        visibility (bool): Whether or not the dataset should be publicly visible.
+        public (bool): Whether or not the dataset should be publicly visible.
 
     Returns:
         bool: True if the dataset visibility was set successfully, False otherwise.
     """
-    params = [Visibility(visibility=visibility)]
+    params = [Visibility(visibility=public)]
 
     d = __rpc_call(method="set_org_visibility", params=params)
 

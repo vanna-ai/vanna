@@ -4,6 +4,7 @@ nav:
   - Intro to Vanna: intro-to-vanna.md
   - Use with Streamlit: streamlit.md
   - Use in Notebooks: jupyter.md
+  - Use with your Database: databases.md
   - Onboarding: onboarding.md
   - Code to Get Started: getting-started.md
   - Adding Vanna to your Workflow: workflow.md
