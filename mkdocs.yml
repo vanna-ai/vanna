@@ -3,10 +3,13 @@ nav:
   - What is Vanna.AI?: index.md
   - Intro to Vanna: intro-to-vanna.md
   - Use with Streamlit: streamlit.md
-  - Use in Notebooks: jupyter.md
+  - Use in Notebooks:
+    - Getting Started: notebooks/vn-starter.md
+    - Training Vanna: notebooks/vn-training.md
+    - Full Functionality: notebooks/vn-full.md
   - Use with your Database: databases.md
   - Onboarding: onboarding.md
-  - Code to Get Started: getting-started.md
+  - Code to Get Started: notebooks/vn-starter.md
   - Adding Vanna to your Workflow: workflow.md
   - Code Reference: reference.md
   - Support: support.md

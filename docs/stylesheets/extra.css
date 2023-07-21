@@ -21,3 +21,13 @@ marp-pre {
     background: #000;
     border-radius: 30px;
 }
+
+.md-nav__link {
+    font-size: 0.9rem;
+}
+
+h2.doc-heading {
+    border-top: 1px solid rgb(217, 217, 217);
+    padding-top: 1rem;
+    text-align: center;
+}

@@ -13,11 +13,11 @@ import psycopg2
 conn_details = {...}  # fill this with your connection details
 conn_postgres = psycopg2.connect(**conn_details)
 
-def sql_to_df_postgres(sql: str) -> pd.DataFrame:
+def run_sql_postgres(sql: str) -> pd.DataFrame:
     df = pd.read_sql_query(sql, conn_postgres)
     return df
 
-vn.sql_to_df = sql_to_df_postgres
+vn.run_sql = run_sql_postgres
 ```
 
 ## **Snowflake**
@@ -30,11 +30,11 @@ from snowflake.connector import connect
 conn_details = {...}  # fill this with your connection details
 conn_snowflake = connect(**conn_details)
 
-def sql_to_df_snowflake(sql: str) -> pd.DataFrame:
+def run_sql_snowflake(sql: str) -> pd.DataFrame:
     df = pd_read_sql(sql, conn_snowflake)
     return df
 
-vn.sql_to_df = sql_to_df_snowflake
+vn.run_sql = run_sql_snowflake
 ```
 
 ## **Google BigQuery**
@@ -46,11 +46,11 @@ import pandas as pd
 project_id = 'your-project-id'  # replace with your Project ID
 client_bigquery = bigquery.Client(project=project_id)
 
-def sql_to_df_bigquery(sql: str) -> pd.DataFrame:
+def run_sql_bigquery(sql: str) -> pd.DataFrame:
     df = client_bigquery.query(sql).to_dataframe()
     return df
 
-vn.sql_to_df = sql_to_df_bigquery
+vn.run_sql = run_sql_bigquery
 ```
 
 ## **Amazon Athena**
@@ -62,11 +62,11 @@ from pyathena import connect
 conn_details = {...}  # fill this with your connection details
 conn_athena = connect(**conn_details)
 
-def sql_to_df_athena(sql: str) -> pd.DataFrame:
+def run_sql_athena(sql: str) -> pd.DataFrame:
     df = pd.read_sql(sql, conn_athena)
     return df
 
-vn.sql_to_df = sql_to_df_athena
+vn.run_sql = run_sql_athena
 ```
 
 ## **Amazon Redshift**
@@ -78,11 +78,11 @@ import psycopg2
 conn_details = {...}  # fill this with your connection details
 conn_redshift = psycopg2.connect(**conn_details)
 
-def sql_to_df_redshift(sql: str) -> pd.DataFrame:
+def run_sql_redshift(sql: str) -> pd.DataFrame:
     df = pd.read_sql_query(sql, conn_redshift)
     return df
 
-vn.sql_to_df = sql_to_df_redshift
+vn.run_sql = run_sql_redshift
 ```
 
 Sure, here is an example for Google Cloud SQL using the MySQL connector:
@@ -96,7 +96,7 @@ import mysql.connector
 conn_details = {...}  # fill this with your connection details
 conn_google_cloud_sql = mysql.connector.connect(**conn_details)
 
-def sql_to_df_google_cloud_sql(sql: str) -> pd.DataFrame:
+def run_sql_google_cloud_sql(sql: str) -> pd.DataFrame:
     df = pd.read_sql(sql, conn_google_cloud_sql)
     return df
 ```
@@ -112,11 +112,11 @@ import pandas as pd
 db_path = 'path_to_your_db'  # replace with your SQLite DB path
 conn_sqlite = sqlite3.connect(db_path)
 
-def sql_to_df_sqlite(sql: str) -> pd.DataFrame:
+def run_sql_sqlite(sql: str) -> pd.DataFrame:
     df = pd.read_sql_query(sql, conn_sqlite)
     return df
 
-vn.sql_to_df = sql_to_df_sqlite
+vn.run_sql = run_sql_sqlite
 ```
 
 ## **Microsoft SQL Server**
@@ -128,9 +128,9 @@ import pyodbc
 conn_details = {...}  # fill this with your connection details
 conn_sql_server = pyodbc.connect(**conn_details)
 
-def sql_to_df_sql_server(sql: str) -> pd.DataFrame:
+def run_sql_sql_server(sql: str) -> pd.DataFrame:
     df = pd.read_sql(sql, conn_sql_server)
     return df
 
-vn.sql_to_df = sql_to_df_sql_server
+vn.run_sql = run_sql_sql_server
 ```

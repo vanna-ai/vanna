@@ -16,6 +16,6 @@ Vanna provides additional functionality to manage your training data to maintain
 
 ## Where can I use **Vanna.AI**?
 - Use in a [Streamlit app](streamlit.md)
-- Use in [Jupyter Notebooks](jupyter.md)
-- Add a [Slack bot](slack.md) that responds to `/askvanna [question]`
+- Use in [Jupyter Notebooks](notebooks/vn-starter.md)
+- Add a Slack bot that responds to `/askvanna [question]` (coming soon)
 - Use in a Python app

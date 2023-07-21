@@ -6,11 +6,11 @@ Vanna.AI is a platform that allows you to ask questions about your data in plain
 
 | Prefix | Definition | Examples |
 | --- | --- | --- |
-| `vn.set_` | Sets the variable for the current session |  |
-| `vn.get_` | Performs a read-only operation | |
+| `vn.set_` | Sets the variable for the current session | [`vn.set_dataset(...)`][vanna.set_dataset] <br> [`vn.set_api_key(...)`][vanna.set_api_key]  |
+| `vn.get_` | Performs a read-only operation | [`vn.get_dataset()`][vanna.get_datasets] |
 | `vn.add_` | Adds something to the dataset | |
 | `vn.generate_` | Generates something using AI based on the information in the dataset | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
-| `vn.run_` | Runs code (SQL or Plotly) | |
+| `vn.run_` | Runs code (SQL or Plotly) | [`vn.run_sql`][vanna.run_sql] |
 | `vn.remove_` | Removes something from the dataset | |
 | `vn.update_` | Updates something in the dataset | |
 | `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
@@ -29,30 +29,19 @@ from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId
 from typing import List, Dict, Any, Union, Optional, Callable, Tuple
 import warnings
 import traceback
+import os
 
 api_key: Union[str, None] = None # API key for Vanna.AI
+
+run_sql: Union[Callable[[str], pd.DataFrame], None] = None # Function to convert SQL to a Pandas DataFrame
 """
-## Example
+**Example**
 ```python
-# Login to Vanna.AI
-vn.login('user@example.com')
-print(vn.api_key)
-
-vn.api_key='my_api_key'
-```
-
-This is the API key for Vanna.AI. You can set it manually if you have it or use [`vn.login(...)`][vanna.login] to login and set it automatically.
-
-"""
-
-sql_to_df: Union[Callable[[str], pd.DataFrame], None] = None # Function to convert SQL to a Pandas DataFrame
-"""
-## Example
-```python
-vn.sql_to_df = lambda sql: pd.read_sql(sql, engine)
+vn.run_sql = lambda sql: pd.read_sql(sql, engine)
 ```
 
 Set the SQL to DataFrame function for Vanna.AI. This is used in the [`vn.ask(...)`][vanna.ask] function.
+Instead of setting this directly you can also use [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] to set this.
 
 """
 
@@ -78,10 +67,10 @@ def __rpc_call(method, params):
     global __org
 
     if api_key is None:
-        raise Exception("API key not set. Use vn.login(...) to login.")
+        raise Exception("API key not set. Use vn.get_api_key(...) to get an API key.")
     
     if __org is None and method != "list_orgs":
-        raise Exception("Datasets not set. Use vn.use_datasets([...]) to set the datasets to use.")
+        raise Exception("Dataset not set. Use vn.set_dataset(...) to set the dataset to use.")
 
     if method != "list_orgs":
         headers = {
@@ -107,11 +96,11 @@ def __rpc_call(method, params):
 def __dataclass_to_dict(obj):
     return dataclasses.asdict(obj)
 
-def login(email: str, otp_code: Union[str, None] = None) -> bool:
+def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
     """
-    ## Example
+    **Example:**
     ```python
-    vn.login(email="username@example.com")
+    vn.get_api_key(email="my-email@example.com")
     ```
 
     Login to the Vanna.AI API.
@@ -121,9 +110,15 @@ def login(email: str, otp_code: Union[str, None] = None) -> bool:
         otp_code (Union[str, None]): The OTP code to login with. If None, an OTP code will be sent to the email address.
 
     Returns:
-        bool: True if the login was successful, False otherwise.
+        str: The API key.
     """
-    global api_key
+    vanna_api_key = os.environ.get('VANNA_API_KEY', None)
+
+    if vanna_api_key is not None:
+        return vanna_api_key
+
+    if email == 'my-email@example.com':
+        raise Exception("Please replace 'my-email@example.com' with your email address.")
 
     if otp_code is None:
         params = [UserEmail(email=email)]
@@ -131,12 +126,12 @@ def login(email: str, otp_code: Union[str, None] = None) -> bool:
         d = __unauthenticated_rpc_call(method="send_otp", params=params)
 
         if 'result' not in d:
-            return False
+            raise Exception("Error sending OTP code.")
 
         status = Status(**d['result'])
 
         if not status.success:
-            return False
+            raise Exception(f"Error sending OTP code: {status.message}")
 
         otp_code = input("Check your email for the code and enter it here: ")
 
@@ -145,23 +140,43 @@ def login(email: str, otp_code: Union[str, None] = None) -> bool:
     d = __unauthenticated_rpc_call(method="verify_otp", params=params)
 
     if 'result' not in d:
-        return False
+        raise Exception("Error verifying OTP code.")
 
     key = ApiKey(**d['result'])
 
     if key is None:
-        return False
+        raise Exception("Error verifying OTP code.")
 
     api_key = key.key
-    print("Login successful. API key set. If you'd like to stay logged in, save your vn.api_key.")
 
-    return True
+    return api_key
 
-def list_datasets() -> List[str]:
+def set_api_key(key: str) -> None:
     """
-    ## Example
+    Sets the API key for Vanna.AI.
+
+    **Example:**
     ```python
-    datasets = vn.list_datasets()
+    api_key = vn.get_api_key(email="my-email@example.com")
+    vn.set_api_key(api_key)
+    ```
+
+    Args:
+        key (str): The API key.
+    """
+    global api_key
+    api_key = key
+
+    datasets = get_datasets()
+
+    if len(datasets) == 0:
+        raise Exception("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
+
+def get_datasets() -> List[str]:
+    """
+    **Example:**
+    ```python
+    datasets = vn.get_datasets()
     ```
 
     List the datasets that the user is a member of.
@@ -180,7 +195,7 @@ def list_datasets() -> List[str]:
 
 def create_dataset(dataset: str, db_type: str) -> bool:
     """
-    ## Example
+    **Example:**
     ```python
     vn.create_dataset(dataset="my-dataset", db_type="postgres")
     ```
@@ -211,7 +226,7 @@ def create_dataset(dataset: str, db_type: str) -> bool:
 
 def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
     """
-    ## Example
+    **Example:**
     ```python
     vn.add_user_to_dataset(dataset="my-dataset", email="user@example.com")
     ```
@@ -243,7 +258,7 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
 
 def set_dataset_visibility(public: bool) -> bool:
     """
-    ## Example
+    **Example:**
     ```python
     vn.set_dataset_visibility(public=True)
     ```
@@ -270,7 +285,7 @@ def set_dataset_visibility(public: bool) -> bool:
 def _set_org(org: str) -> None:
     global __org
 
-    my_orgs = list_datasets()
+    my_orgs = get_datasets()
     if org not in my_orgs:
         # Check if org exists
         d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
@@ -296,42 +311,47 @@ def _set_org(org: str) -> None:
         __org = org
 
 
-def use_datasets(datasets: List[str]):
+def set_dataset(dataset: str):
     """
-    ## Example
-    ```python
-    vn.use_datasets(datasets=["employees", "departments"])
-    ```
-
     Set the datasets to use for the Vanna.AI API.
 
-    Args:
-        datasets (List[str]): A list of dataset names.
-
-    Returns:
-        bool: True if the datasets were set successfully, False otherwise.
-    """
-    if len(datasets) >= 1:
-        _set_org(org=datasets[0])
-    else:
-        raise Exception("No datasets provided")
-
-def store_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
-    """
-    ## Example
+    **Example:**
     ```python
-    vn.store_sql(
+    vn.set_dataset("my-dataset")
+    ```
+
+    Args:
+        dataset (str): The name of the dataset to use.
+    """
+    if dataset == 'my-dataset':
+        env_dataset = os.environ.get('VANNA_DATASET', None)
+
+        if env_dataset is not None:
+            dataset = env_dataset
+        else:
+            raise Exception("Please replace 'my-dataset' with the name of your dataset")
+
+    _set_org(org=dataset)
+
+def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
+    """
+    Adds a question and its corresponding SQL query to the dataset's training data
+
+    **Example:**
+    ```python
+    vn.add_sql(
         question="What is the average salary of employees?", 
         sql="SELECT AVG(salary) FROM employees"
     )
     ```
 
-    Store a question and its corresponding SQL query in the Vanna.AI database.
-
     Args:
         question (str): The question to store.
         sql (str): The SQL query to store.
         tag (Union[str, None]): A tag to associate with the question and SQL query.
+
+    Returns:
+        bool: True if the question and SQL query were stored successfully, False otherwise.
     """
     params = [QuestionSQLPair(        
         question=question,
@@ -348,19 +368,22 @@ def store_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained
 
     return status.success
 
-def store_ddl(ddl: str) -> bool:
+def add_ddl(ddl: str) -> bool:
     """
-    ## Example
+    Adds a DDL statement to the dataset's training data
+
+    **Example:**
     ```python
-    vn.store_ddl(
+    vn.add_ddl(
         ddl="CREATE TABLE employees (id INT, name VARCHAR(255), salary INT)"
     )
     ```
 
-    Store a DDL statement in the Vanna.AI database.
-
     Args:
         ddl (str): The DDL statement to store.
+    
+    Returns:
+        bool: True if the DDL statement was stored successfully, False otherwise.
     """
     params = [StringData(data=ddl)]
 
@@ -373,19 +396,22 @@ def store_ddl(ddl: str) -> bool:
 
     return status.success
 
-def store_documentation(documentation: str) -> bool:
+def add_documentation(documentation: str) -> bool:
     """
-    ## Example
+    Adds documentation to the dataset's training data
+
+    **Example:**
     ```python
-    vn.store_documentation(
+    vn.add_documentation(
         documentation="Our organization's definition of sales is the discount price of an item multiplied by the quantity sold."
     )
     ```
 
-    Store a documentation string in the Vanna.AI database.
-
     Args:
         documentation (str): The documentation string to store.
+
+    Returns:
+        bool: True if the documentation string was stored successfully, False otherwise.
     """
     params = [StringData(data=documentation)]
 
@@ -400,7 +426,7 @@ def store_documentation(documentation: str) -> bool:
 
 def train(question: str, sql: str) -> bool:
     """
-    ## Example
+    **Example:**
     ```python
     vn.train(
         question="What is the average salary of employees?", 
@@ -408,17 +434,17 @@ def train(question: str, sql: str) -> bool:
     )
     ```
 
-    Train Vanna.AI on a question and its corresponding SQL query. This is equivalent to calling [`store_sql()`][vanna.store_sql].
+    Train Vanna.AI on a question and its corresponding SQL query. This is equivalent to calling [`add_sql()`][vanna.add_sql].
 
     Args:
         question (str): The question to train on.
         sql (str): The SQL query to train on.
     """
-    return store_sql(question=question, sql=sql)
+    return add_sql(question=question, sql=sql)
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
     """
-    ## Example
+    **Example:**
     ```python
     vn.flag_sql_for_review(question="What is the average salary of employees?")
     ```
@@ -450,7 +476,7 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
 
 # def read_questions_from_github(url: str) -> List[QuestionSQLPair]:
 #     """
-#     ## Example
+#     **Example:**
 #     ```python
 #     url = "https://raw.githubusercontent.com/vanna-ai/vanna-ai/main/data/questions.json"
 #     questions = vn.read_questions_from_github(url)
@@ -478,11 +504,12 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
 
 def remove_sql(question: str) -> bool:
     """
-    ## Example
+    Remove a question and its corresponding SQL query from the dataset's training data
+
+    **Example:**
     ```python
     vn.remove_sql(question="What is the average salary of employees?")
     ```
-    Remove a question and its corresponding SQL query from the Vanna.AI database.
 
     Args:
         question (str): The question to remove.
@@ -492,15 +519,19 @@ def remove_sql(question: str) -> bool:
     d = __rpc_call(method="remove_sql", params=params)
 
     if 'result' not in d:
+        raise Exception(f"Error removing SQL")
         return False
     
     status = Status(**d['result'])
+
+    if not status.success:
+        raise Exception(f"Error removing SQL: {status.message}")
 
     return status.success
 
 def generate_sql(question: str) -> str:
     """
-    ## Example
+    **Example:**
     ```python
     vn.generate_sql(question="What is the average salary of employees?")
     # SELECT AVG(salary) FROM employees
@@ -528,7 +559,7 @@ def generate_sql(question: str) -> str:
 
 def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
     """
-    ## Example
+    **Example:**
     ```python
     vn.generate_followup_questions(question="What is the average salary of employees?", df=df)
     # ['What is the average salary of employees in the Sales department?', 'What is the average salary of employees in the Engineering department?', ...]
@@ -563,7 +594,7 @@ def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
 
 def generate_questions() -> List[str]:
     """
-    ## Example
+    **Example:**
     ```python
     vn.generate_questions()
     # ['What is the average salary of employees?', 'What is the total salary of employees?', ...]
@@ -586,7 +617,7 @@ def generate_questions() -> List[str]:
 
 def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True) -> Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None]]:
     """
-    ## Example
+    **Example:**
     ```python
     vn.ask(question="What is the average salary of employees?")
     # SELECT AVG(salary) FROM employees
@@ -615,18 +646,18 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     if print_results:
         print(sql)
 
-    if sql_to_df is None:
-        print("If you want to run the SQL query, provide a vn.sql_to_df function.")
+    if run_sql is None:
+        print("If you want to run the SQL query, provide a vn.run_sql function.")
         return sql, None, None
 
     try:
-        df = sql_to_df(sql=sql)
+        df = run_sql(sql=sql)
 
         if print_results:
             print(df.head().to_markdown())
 
         if len(df) > 0 and auto_train:
-            store_sql(question=question, sql=sql, tag="SQL Ran")
+            add_sql(question=question, sql=sql, tag="SQL Ran")
 
         try:
             plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
@@ -650,7 +681,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
 
 def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame) -> str:
     """
-    ## Example
+    **Example:**
     ```python
     vn.generate_plotly_code(
         question="What is the average salary of employees?",
@@ -689,7 +720,7 @@ def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: 
 
 def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure:
     """
-    ## Example
+    **Example:**
     ```python
     fig = vn.get_plotly_figure(
         plotly_code="fig = px.bar(df, x='name', y='salary')",
@@ -721,7 +752,7 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
 def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
-    DEPRECATED. Use `vn.sql_to_df` instead.
+    DEPRECATED. Use `vn.run_sql` instead.
     Run the SQL query and return the results as a pandas dataframe. This is just a helper function that does not use the Vanna.AI API.
 
     Args:
@@ -732,8 +763,8 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
-    print("`vn.get_results()` is deprecated. Use `vn.sql_to_df()` instead.")
-    warnings.warn("`vn.get_results()` is deprecated. Use `vn.sql_to_df()` instead.")
+    print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
+    warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
     cs.execute(f"USE DATABASE {default_database}")
 
@@ -750,7 +781,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
 def generate_explanation(sql: str) -> str:
     """
 
-    ## Example
+    **Example:**
     ```python
     vn.generate_explanation(sql="SELECT * FROM students WHERE name = 'John Doe'")
     # 'This query selects all columns from the students table where the name is John Doe.'
@@ -785,7 +816,7 @@ def generate_explanation(sql: str) -> str:
 def generate_question(sql: str) -> str:
     """
 
-    ## Example
+    **Example:**
     ```python
     vn.generate_question(sql="SELECT * FROM students WHERE name = 'John Doe'")
     # 'What is the name of the student?'
@@ -820,7 +851,7 @@ def generate_question(sql: str) -> str:
 def get_all_questions() -> pd.DataFrame:
     """
 
-    ## Example
+    **Example:**
     ```python
     questions = vn.get_all_questions()
     ```
@@ -848,9 +879,9 @@ def get_all_questions() -> pd.DataFrame:
 
 def connect_to_snowflake(account: str, username: str, password: str, database: str, role: Union[str, None] = None):
     """
-    Connect to Snowflake using the Snowflake connector.
+    Connect to Snowflake using the Snowflake connector. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
 
-    ## Example
+    **Example:**
     ```python
     import snowflake.connector
 
@@ -873,6 +904,38 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
     
     snowflake = __import__('snowflake.connector')
 
+    if username == 'my-username':
+        username_env = os.getenv('SNOWFLAKE_USERNAME')
+
+        if username_env is not None:
+            username = username_env
+        else:
+            raise Exception("Please set your Snowflake username.")
+
+    if password == 'my-password':
+        password_env = os.getenv('SNOWFLAKE_PASSWORD')
+
+        if password_env is not None:
+            password = password_env
+        else:
+            raise Exception("Please set your Snowflake password.")
+        
+    if account == 'my-account':
+        account_env = os.getenv('SNOWFLAKE_ACCOUNT')
+
+        if account_env is not None:
+            account = account_env
+        else:
+            raise Exception("Please set your Snowflake account.")
+        
+    if database == 'my-database':
+        database_env = os.getenv('SNOWFLAKE_DATABASE')
+
+        if database_env is not None:
+            database = database_env
+        else:
+            raise Exception("Please set your Snowflake database.")
+
     conn = snowflake.connector.connect(
         user=username,
         password=password,
@@ -880,7 +943,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         database=database,
     )
 
-    def sql_to_df_snowflake(sql: str) -> pd.DataFrame:
+    def run_sql_snowflake(sql: str) -> pd.DataFrame:
         cs = conn.cursor()
 
         if role is not None:
@@ -896,5 +959,5 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
 
         return df
     
-    global sql_to_df
-    sql_to_df = sql_to_df_snowflake
+    global run_sql
+    run_sql = run_sql_snowflake
