@@ -1,17 +1,21 @@
 site_name: Vanna.AI Documentation
 nav:
-  - What is Vanna.AI?: index.md
-  - Intro to Vanna: intro-to-vanna.md
-  - Use with Streamlit: streamlit.md
+  - Intro:
+    - What is Vanna.AI?: index.md
+    - Intro to Vanna: intro-to-vanna.md
+  - How Vanna Works:
+    - Onboarding: onboarding.md
+    - Adding Vanna to your Workflow: workflow.md
   - Use in Notebooks:
     - Getting Started: notebooks/vn-starter.md
     - Training Vanna: notebooks/vn-training.md
     - Full Functionality: notebooks/vn-full.md
-  - Use with your Database: databases.md
-  - Onboarding: onboarding.md
-  - Code to Get Started: notebooks/vn-starter.md
-  - Adding Vanna to your Workflow: workflow.md
-  - Code Reference: reference.md
+  - Other Ways to Use Vanna:
+    - Use with Streamlit: streamlit.md
+  - Databases:
+    - Use with your Database: databases.md
+  - Advanced:
+    - Code Reference: reference.md
   - Support: support.md
 repo_url: https://github.com/vanna-ai/vanna-py
 theme:
@@ -22,6 +26,8 @@ theme:
   name: material
   palette:
     scheme: slate
+  features:
+    - navigation.sections
 extra_css:
   - stylesheets/extra.css
 extra:

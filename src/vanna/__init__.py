@@ -1,6 +1,24 @@
 r'''
-# What is Vanna.AI?
-Vanna.AI is a platform that allows you to ask questions about your data in plain English. It is an AI-powered data analyst that can answer questions about your data, generate SQL, and create visualizations.
+# Basic Usage
+
+## Getting an API key
+```python
+import vanna as vn
+api_key = vn.get_api_key('my-email@example.com')
+vn.set_api_key(api_key)
+```
+
+## Setting the dataset
+```python
+vn.set_dataset('demo-tpc-h')
+```
+
+## Asking a question
+```python
+sql, df, fig = vn.ask(question='What are the top 10 customers by sales?')
+```
+
+For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn-starter/).
 
 # Nomenclature
 
@@ -8,11 +26,11 @@ Vanna.AI is a platform that allows you to ask questions about your data in plain
 | --- | --- | --- |
 | `vn.set_` | Sets the variable for the current session | [`vn.set_dataset(...)`][vanna.set_dataset] <br> [`vn.set_api_key(...)`][vanna.set_api_key]  |
 | `vn.get_` | Performs a read-only operation | [`vn.get_dataset()`][vanna.get_datasets] |
-| `vn.add_` | Adds something to the dataset | |
+| `vn.add_` | Adds something to the dataset | [`vn.add_sql(...)`][vanna.add_sql] <br> [`vn.add_ddl(...)`][vanna.add_ddl] |
 | `vn.generate_` | Generates something using AI based on the information in the dataset | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
 | `vn.run_` | Runs code (SQL or Plotly) | [`vn.run_sql`][vanna.run_sql] |
-| `vn.remove_` | Removes something from the dataset | |
-| `vn.update_` | Updates something in the dataset | |
+| `vn.remove_` | Removes something from the dataset | [`vn.remove_sql`][vanna.remove_sql] |
+| `vn.update_` | Updates something in the dataset | [`vn.update_dataset_visibility(...)`][vanna.update_dataset_visibility] |
 | `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
 
 # API Reference
@@ -256,11 +274,11 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
 
     return status.success
 
-def set_dataset_visibility(public: bool) -> bool:
+def update_dataset_visibility(public: bool) -> bool:
     """
     **Example:**
     ```python
-    vn.set_dataset_visibility(public=True)
+    vn.update_dataset_visibility(public=True)
     ```
 
     Set the visibility of the current dataset. If a dataset is visible, anyone can see it. If it is not visible, only members of the dataset can see it.

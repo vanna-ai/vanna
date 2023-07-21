@@ -22,9 +22,9 @@ marp-pre {
     border-radius: 30px;
 }
 
-.md-nav__link {
+/* .md-nav__link {
     font-size: 0.9rem;
-}
+} */
 
 h2.doc-heading {
     border-top: 1px solid rgb(217, 217, 217);

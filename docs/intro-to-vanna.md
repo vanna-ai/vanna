@@ -1,6 +1,6 @@
 # Intro to Vanna: A Python-based AI SQL co-pilot
 
-**TLDR**: We help data people that know Python write SQL faster using AI. [See our starter notebook here](https://github.com/vanna-ai/vanna-py/blob/main/notebooks/vn-starter.ipynb).
+**TLDR**: We help data people that know Python write SQL faster using AI. [See our starter notebook here](notebooks/vn-starter.md).
 
 ## The deluge of data
 

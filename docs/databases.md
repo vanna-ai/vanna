@@ -22,6 +22,12 @@ vn.run_sql = run_sql_postgres
 
 ## **Snowflake**
 
+We have a built-in function for Snowflake, so you don't need to write your own.
+
+```python
+vn.connect_to_snowflake(account='my-account', username='my-username', password='my-password', database='my-database')
+```
+
 ```python
 import pandas as pd
 from snowflake.connector.pandas_tools import pd_read_sql
