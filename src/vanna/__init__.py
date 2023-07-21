@@ -2,6 +2,19 @@ r'''
 # What is Vanna.AI?
 Vanna.AI is a platform that allows you to ask questions about your data in plain English. It is an AI-powered data analyst that can answer questions about your data, generate SQL, and create visualizations.
 
+# Nomenclature
+
+| Prefix | Definition | Examples |
+| --- | --- | --- |
+| `vn.set_` | Sets the variable for the current session |  |
+| `vn.get_` | Performs a read-only operation | |
+| `vn.add_` | Adds something to the dataset | |
+| `vn.generate_` | Generates something using AI based on the information in the dataset | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
+| `vn.run_` | Runs code (SQL or Plotly) | |
+| `vn.remove_` | Removes something from the dataset | |
+| `vn.update_` | Updates something in the dataset | |
+| `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
+
 # API Reference
 '''
 
@@ -45,8 +58,8 @@ Set the SQL to DataFrame function for Vanna.AI. This is used in the [`vn.ask(...
 
 __org: Union[str, None] = None # Organization name for Vanna.AI
 
-_endpoint = "https://vanna-rpc-test-x5y3argz6q-uc.a.run.app/rpc"
-_unauthenticated_endpoint = "https://vanna-rpc-test-x5y3argz6q-uc.a.run.app/unauthenticated_rpc"
+_endpoint = "https://ask.vanna.ai/rpc"
+_unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
 
 def __unauthenticated_rpc_call(method, params):
     headers = {
@@ -832,3 +845,56 @@ def get_all_questions() -> pd.DataFrame:
     df = pd.read_json(all_questions.data)
 
     return df
+
+def connect_to_snowflake(account: str, username: str, password: str, database: str, role: Union[str, None] = None):
+    """
+    Connect to Snowflake using the Snowflake connector.
+
+    ## Example
+    ```python
+    import snowflake.connector
+
+    vn.connect_to_snowflake(
+        account="myaccount",
+        username="myusername",
+        password="mypassword",
+        database="mydatabase",
+        role="myrole",
+    )
+    ```
+
+    Args:
+        account (str): The Snowflake account name.
+        username (str): The Snowflake username.
+        password (str): The Snowflake password.
+        database (str): The default database to use.
+        role (Union[str, None], optional): The role to use. Defaults to None.
+    """
+    
+    snowflake = __import__('snowflake.connector')
+
+    conn = snowflake.connector.connect(
+        user=username,
+        password=password,
+        account=account,
+        database=database,
+    )
+
+    def sql_to_df_snowflake(sql: str) -> pd.DataFrame:
+        cs = conn.cursor()
+
+        if role is not None:
+            cs.execute(f"USE ROLE {role}")
+        cs.execute(f"USE DATABASE {database}")
+
+        cur = cs.execute(sql)
+
+        results = cur.fetchall()
+
+        # Create a pandas dataframe from the results
+        df = pd.DataFrame(results, columns=[desc[0] for desc in cur.description])
+
+        return df
+    
+    global sql_to_df
+    sql_to_df = sql_to_df_snowflake
