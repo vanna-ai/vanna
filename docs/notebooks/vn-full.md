@@ -64,10 +64,10 @@ This gets the SQL, gets the dataframe, and prints them both. Note that we use yo
 
 
 ```python
-sql, df, fig = vn.ask()
+sql, df, fig, followup_questions = vn.ask()
 ```
 
-    Enter a question:  Who are the top 10 customers by sales?
+    Enter a question:  What are the top 10 customers by sales?
 
 
     SELECT c.c_name as customer_name,
@@ -77,13 +77,97 @@ sql, df, fig = vn.ask()
             ON o.o_custkey = c.c_custkey
     GROUP BY customer_name
     ORDER BY total_sales desc limit 10;
-    |    | CUSTOMER_NAME      |   TOTAL_SALES |
-    |---:|:-------------------|--------------:|
-    |  0 | Customer#000143500 |   6.75757e+06 |
-    |  1 | Customer#000095257 |   6.29412e+06 |
-    |  2 | Customer#000087115 |   6.18465e+06 |
-    |  3 | Customer#000131113 |   6.08094e+06 |
-    |  4 | Customer#000134380 |   6.07514e+06 |
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CUSTOMER_NAME</th>
+      <th>TOTAL_SALES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Customer#000143500</td>
+      <td>6757566.0218</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Customer#000095257</td>
+      <td>6294115.3340</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Customer#000087115</td>
+      <td>6184649.5176</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Customer#000131113</td>
+      <td>6080943.8305</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Customer#000134380</td>
+      <td>6075141.9635</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Customer#000103834</td>
+      <td>6059770.3232</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Customer#000069682</td>
+      <td>6057779.0348</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Customer#000102022</td>
+      <td>6039653.6335</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Customer#000098587</td>
+      <td>6027021.5855</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Customer#000064660</td>
+      <td>5905659.6159</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+    AI-generated follow-up questions:
+    What is the total sales amount for each of the top 10 customers?
+    Can you provide the details of the transactions for each of the top 10 customers?
+    Which products did the top 10 customers purchase the most?
+    What is the average sales amount for all customers?
+    What is the distribution of sales amounts among all customers?
+    How does the total sales of the top 10 customers compare to the total sales of the rest of the customers?
+    Are there any seasonal patterns in the sales of the top 10 customers?
+    Which regions do the top 10 customers belong to?
+    What is the percentage contribution of each of the top 10 customers to the total sales?
+    How have the sales of the top 10 customers changed over time?
 
 
 # Improve Your Training Data

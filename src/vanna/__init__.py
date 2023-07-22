@@ -15,7 +15,7 @@ vn.set_dataset('demo-tpc-h')
 
 ## Asking a question
 ```python
-sql, df, fig = vn.ask(question='What are the top 10 customers by sales?')
+sql, df, fig, followup_questions = vn.ask(question='What are the top 10 customers by sales?')
 ```
 
 For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn-starter/).
@@ -633,7 +633,7 @@ def generate_questions() -> List[str]:
 
     return question_string_list.questions
 
-def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True) -> Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None]]:
+def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]]:
     """
     **Example:**
     ```python
@@ -650,6 +650,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         str or None: The SQL query, or None if an error occurred.
         pd.DataFrame or None: The results of the SQL query, or None if an error occurred.
         plotly.graph_objs.Figure or None: The Plotly figure, or None if an error occurred.
+        List[str] or None: The follow-up questions, or None if an error occurred.
     """
 
     if question is None:
@@ -659,20 +660,24 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         sql = generate_sql(question=question)
     except Exception as e:
         print(e)
-        return None, None, None
+        return None, None, None, None
 
     if print_results:
         print(sql)
 
     if run_sql is None:
         print("If you want to run the SQL query, provide a vn.run_sql function.")
-        return sql, None, None
+        return sql, None, None, None
 
     try:
-        df = run_sql(sql=sql)
+        df = run_sql(sql)
 
         if print_results:
-            print(df.head().to_markdown())
+            try:
+                display = __import__('IPython.display', fromlist=['display']).display
+                display(df)
+            except Exception as e:
+                print(df)
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag="SQL Ran")
@@ -683,17 +688,26 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             if print_results:
                 fig.show()
 
-            return sql, df, fig
+            if generate_followups:
+                followup_questions = generate_followup_questions(question=question, df=df)
+                if followup_questions is not None and len(followup_questions) > 0:
+                    print("AI-generated follow-up questions:")
+                    for followup_question in followup_questions:
+                        print(followup_question)
+
+                return sql, df, fig, followup_questions
+            
+            return sql, df, fig, None
 
         except Exception as e:
             # Print stack trace
             traceback.print_exc()
             print("Couldn't run plotly code: ", e)
-            return sql, df, None
+            return sql, df, None, None
 
     except Exception as e:
         print("Couldn't run sql: ", e)
-        return sql, None, None
+        return sql, None, None, None
 
 
 
