@@ -105,4 +105,4 @@ print(sql)
 
 # Read the [Full Documentation Reference](https://docs.vanna.ai) for More Functionality
 
-So that was cool, but there's more. Vanna can actually execute the SQL (in a privacy / security safe manner), generate explanations for what the SQL is doing, and even generate visualizations. [Click here](https://github.com/vanna-ai/vanna-notebooks/blob/main/vn-full.ipynb) for the next notebook that goes through this.
+So that was cool, but there's more. Vanna can actually execute the SQL (in a privacy / security safe manner), generate explanations for what the SQL is doing, and even generate visualizations. [Click here](https://github.com/vanna-ai/vanna-py/blob/main/notebooks/vn-full.ipynb) for the next notebook that goes through this.

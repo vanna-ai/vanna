@@ -55,4 +55,6 @@ print(sql)
 
 # Want to use Vanna with your own data?
 
-Get started with [this notebook](https://github.com/vanna-ai/vanna-notebooks/blob/main/vn-training.ipynb).
+Get started with [this notebook](https://github.com/vanna-ai/vanna-py/blob/main/notebooks/vn-training.ipynb).
+
+

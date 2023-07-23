@@ -680,7 +680,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
                 print(df)
 
         if len(df) > 0 and auto_train:
-            add_sql(question=question, sql=sql, tag="SQL Ran")
+            add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
 
         try:
             plotly_code = generate_plotly_code(question=question, sql=sql, df=df)

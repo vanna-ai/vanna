@@ -15,7 +15,7 @@ Since you are reading this, chances are you are one of those fortunate few (data
 
 ## Introducing Vanna, the SQL co-pilot
 
-Vanna, at its core, is a co-pilot to Python & SQL savvy data people to to streamline the process of writing custom SQL on your company’s data warehouse using AI and LLMs. Most of our users use our Python package directly via Jupyter Notebooks ([starter notebook here](https://github.com/vanna-ai/vanna-notebooks/blob/main/vn-starter.ipynb)) —
+Vanna, at its core, is a co-pilot to Python & SQL savvy data people to to streamline the process of writing custom SQL on your company’s data warehouse using AI and LLMs. Most of our users use our Python package directly via Jupyter Notebooks ([starter notebook here](notebooks/vn-starter.md)) —
 
 ```python
 sql = vn.generate_sql(question='What are the top 10 customers by Sales?')
