@@ -358,7 +358,6 @@ def update_model_visibility(public: bool) -> bool:
 
     return status.success
 
-
 def _set_org(org: str) -> None:
     global __org
 
@@ -401,6 +400,8 @@ def set_model(model: str):
     Args:
         model (str): The name of the model to use.
     """
+    if not type(model) is str:
+        raise ValidationError(f"Please provide dataset in string format not {type(model)}")
     if model == 'my-model':
         env_model = os.environ.get('VANNA_model', None)
 
