@@ -44,6 +44,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
+from .utils import sanitize_dataset_name
 from typing import List, Dict, Any, Union, Optional, Callable, Tuple
 import warnings
 import traceback
@@ -230,7 +231,7 @@ def create_dataset(dataset: str, db_type: str) -> bool:
     global __org
     if __org is None:
         __org = 'demo-tpc-h'
-
+    dataset = sanitize_dataset_name(dataset)
     params = [NewOrganization(org_name=dataset, db_type=db_type)]
 
     d = __rpc_call(method="create_org", params=params)
@@ -259,7 +260,7 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
     Returns:
         bool: True if the user was added successfully, False otherwise.
     """
-
+    dataset = sanitize_dataset_name(dataset)
     params = [NewOrganizationMember(org_name=dataset, email=email, is_admin=is_admin)]
 
     d = __rpc_call(method="add_user_to_org", params=params)
@@ -348,7 +349,7 @@ def set_dataset(dataset: str):
             dataset = env_dataset
         else:
             raise Exception("Please replace 'my-dataset' with the name of your dataset")
-
+    dataset = sanitize_dataset_name(dataset)
     _set_org(org=dataset)
 
 def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
