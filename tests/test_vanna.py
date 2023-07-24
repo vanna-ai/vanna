@@ -4,7 +4,7 @@ import sys
 import io
 import pandas as pd
 
-endpoint_base = 'http://127.0.0.1:8080'
+endpoint_base = 'https://debug.vanna.ai'
 
 vn._endpoint = endpoint_base + '/rpc'
 vn._unauthenticated_endpoint = endpoint_base + '/unauthenticated_rpc'
