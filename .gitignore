@@ -3,3 +3,4 @@ build
 venv
 .DS_Store
 notebooks/.ipynb_checkpoints
+tests/__pycache__
