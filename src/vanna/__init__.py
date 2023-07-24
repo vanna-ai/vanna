@@ -882,14 +882,13 @@ def generate_question(sql: str) -> str:
 
 def get_all_questions() -> pd.DataFrame:
     """
+    Get a list of questions from the Vanna.AI API.
 
     **Example:**
     ```python
     questions = vn.get_all_questions()
     ```
     
-    Get a list of questions from the Vanna.AI API.
-
     Returns:
         pd.DataFrame or None: The list of questions, or None if an error occurred.
 
@@ -906,6 +905,34 @@ def get_all_questions() -> pd.DataFrame:
     all_questions = DataFrameJSON(**d['result'])
 
     df = pd.read_json(all_questions.data)
+
+    return df
+
+def get_training_data() -> pd.DataFrame:
+    """
+    Get the training data for the current dataset
+
+    **Example:**
+    ```python
+    training_data = vn.get_training_data()
+    ```
+
+    Returns:
+        pd.DataFrame or None: The training data, or None if an error occurred.
+
+    """
+    # params = [Question(question="")]
+    params = []
+
+    d = __rpc_call(method="get_training_data", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    training_data = DataFrameJSON(**d['result'])
+
+    df = pd.read_json(training_data.data)
 
     return df
 
