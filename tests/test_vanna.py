@@ -200,3 +200,10 @@ def test_remove_training_data():
         assert rv == True
 
         assert vn.get_training_data().shape[0] == 2-index
+
+def test_create_dataset_and_add_user():
+    created = vn.create_dataset('test_org2', 'Snowflake')
+    assert created == True
+
+    added = vn.add_user_to_dataset(dataset='test_org2', email="user5@example.com", is_admin=False)
+    assert added == True
