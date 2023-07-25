@@ -667,7 +667,11 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     """
     **Example:**
     ```python
-    vn.ask(question="What is the average salary of employees?")
+    # RECOMMENDED IN A NOTEBOOK:
+    sql, df, fig, followup_questions = vn.ask()
+
+
+    sql, df, fig, followup_questions = vn.ask(question="What is the average salary of employees?")
     # SELECT AVG(salary) FROM employees
     ```
 
