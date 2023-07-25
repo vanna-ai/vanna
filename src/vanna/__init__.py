@@ -29,7 +29,7 @@ For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn
 | `vn.add_` | Adds something to the dataset | [`vn.add_sql(...)`][vanna.add_sql] <br> [`vn.add_ddl(...)`][vanna.add_ddl] |
 | `vn.generate_` | Generates something using AI based on the information in the dataset | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
 | `vn.run_` | Runs code (SQL or Plotly) | [`vn.run_sql`][vanna.run_sql] |
-| `vn.remove_` | Removes something from the dataset | [`vn.remove_sql`][vanna.remove_sql] |
+| `vn.remove_` | Removes something from the dataset | [`vn.remove_training_data`][vanna.remove_training_data] |
 | `vn.update_` | Updates something in the dataset | [`vn.update_dataset_visibility(...)`][vanna.update_dataset_visibility] |
 | `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
 
@@ -544,6 +544,33 @@ def remove_sql(question: str) -> bool:
 
     if not status.success:
         raise Exception(f"Error removing SQL: {status.message}")
+
+    return status.success
+
+def remove_training_data(id: str) -> bool:
+    """
+    Remove training data from the dataset
+
+    **Example:**
+    ```python
+    vn.remove_training_data(id="1-ddl")
+    ```
+
+    Args:
+        id (str): The ID of the training data to remove.
+    """
+    params = [StringData(data=id)]
+
+    d = __rpc_call(method="remove_training_data", params=params)
+
+    if 'result' not in d:
+        raise Exception(f"Error removing training data")
+        return False
+    
+    status = Status(**d['result'])
+
+    if not status.success:
+        raise Exception(f"Error removing training data: {status.message}")
 
     return status.success
 

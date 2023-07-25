@@ -164,10 +164,6 @@ def test_flag_sql():
     rv = vn.flag_sql_for_review(question="What's the data about student Jane Doe?")
     assert rv == True
 
-def test_get_training_data():
-    rv = vn.get_training_data()
-    assert rv.to_csv() == ",id,training_data_type,content\n0,3-sql,sql,SELECT * FROM students WHERE name = 'Jane Doe'\n"
-
 def test_get_all_questions():
     rv = vn.get_all_questions()
     assert rv.shape == (3, 5)
@@ -188,3 +184,19 @@ def test_add_ddl():
     rv = vn.add_ddl(ddl="This is the ddl")
     assert rv == True
 
+def test_add_sql2():
+    rv = vn.add_sql(question="How many students are there?", sql="SELECT * FROM students")
+    assert rv == True
+
+def test_get_training_data():
+    rv = vn.get_training_data()
+    assert rv.shape == (3, 4)
+
+def test_remove_training_data():
+    training_data = vn.get_training_data()
+
+    for index, row in training_data.iterrows():
+        rv = vn.remove_training_data(row['id'])
+        assert rv == True
+
+        assert vn.get_training_data().shape[0] == 2-index
