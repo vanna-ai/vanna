@@ -240,6 +240,9 @@ def create_dataset(dataset: str, db_type: str) -> bool:
 
     status = Status(**d['result'])
 
+    if status.success:
+        __org = dataset
+
     return status.success
 
 def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
