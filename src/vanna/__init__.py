@@ -8,9 +8,9 @@ api_key = vn.get_api_key('my-email@example.com')
 vn.set_api_key(api_key)
 ```
 
-## Setting the dataset
+## Setting the model
 ```python
-vn.set_dataset('demo-tpc-h')
+vn.set_model('demo-tpc-h')
 ```
 
 ## Asking a question
@@ -24,13 +24,13 @@ For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn
 
 | Prefix | Definition | Examples |
 | --- | --- | --- |
-| `vn.set_` | Sets the variable for the current session | [`vn.set_dataset(...)`][vanna.set_dataset] <br> [`vn.set_api_key(...)`][vanna.set_api_key]  |
-| `vn.get_` | Performs a read-only operation | [`vn.get_dataset()`][vanna.get_datasets] |
-| `vn.add_` | Adds something to the dataset | [`vn.add_sql(...)`][vanna.add_sql] <br> [`vn.add_ddl(...)`][vanna.add_ddl] |
-| `vn.generate_` | Generates something using AI based on the information in the dataset | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
+| `vn.set_` | Sets the variable for the current session | [`vn.set_model(...)`][vanna.set_model] <br> [`vn.set_api_key(...)`][vanna.set_api_key]  |
+| `vn.get_` | Performs a read-only operation | [`vn.get_model()`][vanna.get_models] |
+| `vn.add_` | Adds something to the model | [`vn.add_sql(...)`][vanna.add_sql] <br> [`vn.add_ddl(...)`][vanna.add_ddl] |
+| `vn.generate_` | Generates something using AI based on the information in the model | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
 | `vn.run_` | Runs code (SQL or Plotly) | [`vn.run_sql`][vanna.run_sql] |
-| `vn.remove_` | Removes something from the dataset | [`vn.remove_training_data`][vanna.remove_training_data] |
-| `vn.update_` | Updates something in the dataset | [`vn.update_dataset_visibility(...)`][vanna.update_dataset_visibility] |
+| `vn.remove_` | Removes something from the model | [`vn.remove_training_data`][vanna.remove_training_data] |
+| `vn.update_` | Updates something in the model | [`vn.update_model_visibility(...)`][vanna.update_model_visibility] |
 | `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
 
 # API Reference
@@ -88,7 +88,7 @@ def __rpc_call(method, params):
         raise Exception("API key not set. Use vn.get_api_key(...) to get an API key.")
     
     if __org is None and method != "list_orgs":
-        raise Exception("Dataset not set. Use vn.set_dataset(...) to set the dataset to use.")
+        raise Exception("model not set. Use vn.set_model(...) to set the model to use.")
 
     if method != "list_orgs":
         headers = {
@@ -185,22 +185,22 @@ def set_api_key(key: str) -> None:
     global api_key
     api_key = key
 
-    datasets = get_datasets()
+    models = get_models()
 
-    if len(datasets) == 0:
+    if len(models) == 0:
         raise Exception("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
 
-def get_datasets() -> List[str]:
+def get_models() -> List[str]:
     """
     **Example:**
     ```python
-    datasets = vn.get_datasets()
+    models = vn.get_models()
     ```
 
-    List the datasets that the user is a member of.
+    List the models that the user is a member of.
 
     Returns:
-        List[str]: A list of dataset names.
+        List[str]: A list of model names.
     """
     d = __rpc_call(method="list_orgs", params=[])
 
@@ -211,27 +211,27 @@ def get_datasets() -> List[str]:
 
     return orgs.organizations
 
-def create_dataset(dataset: str, db_type: str) -> bool:
+def create_model(model: str, db_type: str) -> bool:
     """
     **Example:**
     ```python
-    vn.create_dataset(dataset="my-dataset", db_type="postgres")
+    vn.create_model(model="my-model", db_type="postgres")
     ```
 
-    Create a new dataset.
+    Create a new model.
 
     Args:
-        dataset (str): The name of the dataset to create.
-        db_type (str): The type of database to use for the dataset. This can be "Snowflake", "BigQuery", "Postgres", or anything else.
+        model (str): The name of the model to create.
+        db_type (str): The type of database to use for the model. This can be "Snowflake", "BigQuery", "Postgres", or anything else.
 
     Returns:
-        bool: True if the dataset was created successfully, False otherwise.
+        bool: True if the model was created successfully, False otherwise.
     """
     global __org
     if __org is None:
         __org = 'demo-tpc-h'
 
-    params = [NewOrganization(org_name=dataset, db_type=db_type)]
+    params = [NewOrganization(org_name=model, db_type=db_type)]
 
     d = __rpc_call(method="create_org", params=params)
 
@@ -241,21 +241,21 @@ def create_dataset(dataset: str, db_type: str) -> bool:
     status = Status(**d['result'])
 
     if status.success:
-        __org = dataset
+        __org = model
 
     return status.success
 
-def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
+def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
     """
     **Example:**
     ```python
-    vn.add_user_to_dataset(dataset="my-dataset", email="user@example.com")
+    vn.add_user_to_model(model="my-model", email="user@example.com")
     ```
 
-    Add a user to an dataset.
+    Add a user to an model.
 
     Args:
-        dataset (str): The name of the dataset to add the user to.
+        model (str): The name of the model to add the user to.
         email (str): The email address of the user to add.
         is_admin (bool): Whether or not the user should be an admin.
 
@@ -263,7 +263,7 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
         bool: True if the user was added successfully, False otherwise.
     """
 
-    params = [NewOrganizationMember(org_name=dataset, email=email, is_admin=is_admin)]
+    params = [NewOrganizationMember(org_name=model, email=email, is_admin=is_admin)]
 
     d = __rpc_call(method="add_user_to_org", params=params)
 
@@ -277,20 +277,20 @@ def add_user_to_dataset(dataset: str, email: str, is_admin: bool) -> bool:
 
     return status.success
 
-def update_dataset_visibility(public: bool) -> bool:
+def update_model_visibility(public: bool) -> bool:
     """
     **Example:**
     ```python
-    vn.update_dataset_visibility(public=True)
+    vn.update_model_visibility(public=True)
     ```
 
-    Set the visibility of the current dataset. If a dataset is visible, anyone can see it. If it is not visible, only members of the dataset can see it.
+    Set the visibility of the current model. If a model is visible, anyone can see it. If it is not visible, only members of the model can see it.
 
     Args:
-        public (bool): Whether or not the dataset should be publicly visible.
+        public (bool): Whether or not the model should be publicly visible.
 
     Returns:
-        bool: True if the dataset visibility was set successfully, False otherwise.
+        bool: True if the model visibility was set successfully, False otherwise.
     """
     params = [Visibility(visibility=public)]
 
@@ -306,57 +306,57 @@ def update_dataset_visibility(public: bool) -> bool:
 def _set_org(org: str) -> None:
     global __org
 
-    my_orgs = get_datasets()
+    my_orgs = get_models()
     if org not in my_orgs:
         # Check if org exists
         d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
 
         if 'result' not in d:
-            raise Exception("Failed to check if dataset exists")
+            raise Exception("Failed to check if model exists")
 
         status = Status(**d['result'])
 
         if status.success:
             raise Exception(f"An organization with the name {org} already exists")
 
-        create = input(f"Would you like to create dataset '{org}'? (y/n): ")
+        create = input(f"Would you like to create model '{org}'? (y/n): ")
 
         if create.lower() == 'y':
             db_type = input("What type of database would you like to use? (Snowflake, BigQuery, Postgres, etc.): ")
-            if create_dataset(dataset=org, db_type=db_type):
+            if create_model(model=org, db_type=db_type):
                 __org = org
             else:
                 __org = None
-                raise Exception("Failed to create dataset")
+                raise Exception("Failed to create model")
     else:
         __org = org
 
 
-def set_dataset(dataset: str):
+def set_model(model: str):
     """
-    Set the datasets to use for the Vanna.AI API.
+    Set the models to use for the Vanna.AI API.
 
     **Example:**
     ```python
-    vn.set_dataset("my-dataset")
+    vn.set_model("my-model")
     ```
 
     Args:
-        dataset (str): The name of the dataset to use.
+        model (str): The name of the model to use.
     """
-    if dataset == 'my-dataset':
-        env_dataset = os.environ.get('VANNA_DATASET', None)
+    if model == 'my-model':
+        env_model = os.environ.get('VANNA_model', None)
 
-        if env_dataset is not None:
-            dataset = env_dataset
+        if env_model is not None:
+            model = env_model
         else:
-            raise Exception("Please replace 'my-dataset' with the name of your dataset")
+            raise Exception("Please replace 'my-model' with the name of your model")
 
-    _set_org(org=dataset)
+    _set_org(org=model)
 
 def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
     """
-    Adds a question and its corresponding SQL query to the dataset's training data
+    Adds a question and its corresponding SQL query to the model's training data
 
     **Example:**
     ```python
@@ -391,7 +391,7 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
 
 def add_ddl(ddl: str) -> bool:
     """
-    Adds a DDL statement to the dataset's training data
+    Adds a DDL statement to the model's training data
 
     **Example:**
     ```python
@@ -419,7 +419,7 @@ def add_ddl(ddl: str) -> bool:
 
 def add_documentation(documentation: str) -> bool:
     """
-    Adds documentation to the dataset's training data
+    Adds documentation to the model's training data
 
     **Example:**
     ```python
@@ -525,7 +525,7 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
 
 def remove_sql(question: str) -> bool:
     """
-    Remove a question and its corresponding SQL query from the dataset's training data
+    Remove a question and its corresponding SQL query from the model's training data
 
     **Example:**
     ```python
@@ -552,7 +552,7 @@ def remove_sql(question: str) -> bool:
 
 def remove_training_data(id: str) -> bool:
     """
-    Remove training data from the dataset
+    Remove training data from the model
 
     **Example:**
     ```python
@@ -971,7 +971,7 @@ def get_all_questions() -> pd.DataFrame:
 
 def get_training_data() -> pd.DataFrame:
     """
-    Get the training data for the current dataset
+    Get the training data for the current model
 
     **Example:**
     ```python
