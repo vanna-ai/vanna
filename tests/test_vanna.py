@@ -176,21 +176,37 @@ def test_get_all_questions():
 #     rv = vn.get_accuracy_stats()
 #     assert rv == AccuracyStats(num_questions=2, data={'No SQL Generated': 2, 'SQL Unable to Run': 0, 'Assumed Correct': 0, 'Flagged for Review': 0, 'Reviewed and Approved': 0, 'Reviewed and Rejected': 0, 'Reviewed and Updated': 0})
 
-def test_add_documentation():
+def test_add_documentation_fail():
+    rv = vn.add_documentation(documentation="This is the documentation")
+    assert rv == False
+
+def test_add_ddl_pass_fail():
+    rv = vn.add_ddl(ddl="This is the ddl")
+    assert rv == False
+
+def test_add_sql_pass_fail():
+    rv = vn.add_sql(question="How many students are there?", sql="SELECT * FROM students")
+    assert rv == False
+
+def test_add_documentation_pass(monkeypatch):
+    switch_to_user('user1', monkeypatch)
+    vn.set_model('test_org')
     rv = vn.add_documentation(documentation="This is the documentation")
     assert rv == True
 
-def test_add_ddl():
+def test_add_ddl_pass():
     rv = vn.add_ddl(ddl="This is the ddl")
     assert rv == True
 
-def test_add_sql2():
+def test_add_sql_pass():
     rv = vn.add_sql(question="How many students are there?", sql="SELECT * FROM students")
     assert rv == True
 
+num_training_data = 4
+
 def test_get_training_data():
     rv = vn.get_training_data()
-    assert rv.shape == (3, 4)
+    assert rv.shape == (num_training_data, 4)
 
 def test_remove_training_data():
     training_data = vn.get_training_data()
@@ -199,7 +215,7 @@ def test_remove_training_data():
         rv = vn.remove_training_data(row['id'])
         assert rv == True
 
-        assert vn.get_training_data().shape[0] == 2-index
+        assert vn.get_training_data().shape[0] == num_training_data-1-index
 
 def test_create_model_and_add_user():
     created = vn.create_model('test_org2', 'Snowflake')
