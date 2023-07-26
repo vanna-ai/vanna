@@ -32,71 +32,71 @@ def test_create_user1(monkeypatch):
     api_key = vn.get_api_key(email='user1@example.com')
     vn.set_api_key(api_key)
 
-    datasets = vn.get_datasets()
+    models = vn.get_models()
 
-    assert datasets == ['demo-tpc-h']
+    assert models == ['demo-tpc-h']
 
-def test_create_dataset():
-    rv = vn.create_dataset(dataset='test_org', db_type='Snowflake')
+def test_create_model():
+    rv = vn.create_model(model='test_org', db_type='Snowflake')
     assert rv == True
 
-def test_is_user1_in_dataset():
-    rv = vn.get_datasets()
+def test_is_user1_in_model():
+    rv = vn.get_models()
     assert rv == ['demo-tpc-h', 'test_org']
 
-def test_is_user2_in_dataset(monkeypatch):
+def test_is_user2_in_model(monkeypatch):
     switch_to_user('user2', monkeypatch)
 
-    datasets = vn.get_datasets()
+    models = vn.get_models()
 
-    assert datasets == ['demo-tpc-h']
+    assert models == ['demo-tpc-h']
 
 def test_switch_back_to_user1(monkeypatch):
     switch_to_user('user1', monkeypatch)
 
-    datasets = vn.get_datasets()
-    assert datasets == ['demo-tpc-h', 'test_org']
+    models = vn.get_models()
+    assert models == ['demo-tpc-h', 'test_org']
 
-def test_set_dataset_my_dataset():
+def test_set_model_my_model():
     try:
-        vn.set_dataset('my-dataset')
+        vn.set_model('my-model')
         assert False
     except Exception as e:
-        assert str(e) == "Please replace 'my-dataset' with the name of your dataset"
+        assert str(e) == "Please replace 'my-model' with the name of your model"
 
-def test_set_dataset():
-    vn.set_dataset('test_org')
+def test_set_model():
+    vn.set_model('test_org')
     assert vn.__org == 'test_org' # type: ignore
 
-def test_add_user_to_dataset(monkeypatch):
-    rv = vn.add_user_to_dataset(dataset='test_org', email="user2@example.com", is_admin=False)
+def test_add_user_to_model(monkeypatch):
+    rv = vn.add_user_to_model(model='test_org', email="user2@example.com", is_admin=False)
     assert rv == True
 
     switch_to_user('user2', monkeypatch)
-    datasets = vn.get_datasets()
-    assert datasets == ['demo-tpc-h', 'test_org']
+    models = vn.get_models()
+    assert models == ['demo-tpc-h', 'test_org']
 
-def test_update_dataset_visibility(monkeypatch):
-    rv = vn.update_dataset_visibility(public=True)
+def test_update_model_visibility(monkeypatch):
+    rv = vn.update_model_visibility(public=True)
     # user2 is not an admin, so this should fail
     assert rv == False
 
     switch_to_user('user1', monkeypatch)
-    rv = vn.update_dataset_visibility(public=True)
+    rv = vn.update_model_visibility(public=True)
 
     switch_to_user('user3', monkeypatch)
-    datasets = vn.get_datasets()
-    assert datasets == ['demo-tpc-h', 'test_org']
+    models = vn.get_models()
+    assert models == ['demo-tpc-h', 'test_org']
 
     switch_to_user('user1', monkeypatch)
 
-    rv = vn.update_dataset_visibility(public=False)
+    rv = vn.update_model_visibility(public=False)
     assert rv == True
 
     switch_to_user('user3', monkeypatch)
 
-    datasets = vn.get_datasets()
-    assert datasets == ['demo-tpc-h']
+    models = vn.get_models()
+    assert models == ['demo-tpc-h']
 
 def test_generate_explanation(monkeypatch):
     switch_to_user('user1', monkeypatch)
@@ -168,7 +168,7 @@ def test_get_all_questions():
     rv = vn.get_all_questions()
     assert rv.shape == (3, 5)
 
-    vn.set_dataset('demo-tpc-h')
+    vn.set_model('demo-tpc-h')
     rv = vn.get_all_questions()
     assert rv.shape == (0, 0)
 
@@ -201,11 +201,11 @@ def test_remove_training_data():
 
         assert vn.get_training_data().shape[0] == 2-index
 
-def test_create_dataset_and_add_user():
-    created = vn.create_dataset('test_org2', 'Snowflake')
+def test_create_model_and_add_user():
+    created = vn.create_model('test_org2', 'Snowflake')
     assert created == True
 
-    added = vn.add_user_to_dataset(dataset='test_org2', email="user5@example.com", is_admin=False)
+    added = vn.add_user_to_model(model='test_org2', email="user5@example.com", is_admin=False)
     assert added == True
 
 def test_ask_no_output():
