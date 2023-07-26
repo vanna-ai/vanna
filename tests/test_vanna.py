@@ -245,7 +245,7 @@ def test_generate_meta():
     ('tests/test_files/sql/testSql.sql', 'tests/test_files/training/s.json', False),
 ])
 def test_train(sql_file_path, json_file_path, should_work):
-    vn.set_model('demo-tpc-h')
+    vn.set_model('test_org')
 
     # if just question not sql
     with pytest.raises(ValidationError):
