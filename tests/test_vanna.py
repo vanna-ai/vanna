@@ -219,3 +219,8 @@ def test_ask_with_output():
     assert sql == 'SELECT * FROM students'
 
     assert df.to_csv() == ',Name\n0,John\n1,Emma\n2,Tom\n3,Emily\n4,Alex\n'
+
+def test_generate_meta():
+    meta = vn.generate_meta("What tables are available?")
+
+    assert meta == 'AI Response'
