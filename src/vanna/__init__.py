@@ -663,7 +663,7 @@ def generate_questions() -> List[str]:
 
     return question_string_list.questions
 
-def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]]:
+def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]], None]:
     """
     **Example:**
     ```python
@@ -676,9 +676,13 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     ```
 
     Ask a question using the Vanna.AI API. This generates an SQL query, runs it, and returns the results in a dataframe and a Plotly figure.
+    If you set print_results to True, the sql, dataframe, and figure will be output to the screen instead of returned.
 
     Args:
         question (str): The question to ask. If None, you will be prompted to enter a question.
+        print_results (bool): Whether to print the SQL query and results.
+        auto_train (bool): Whether to automatically train the model if the SQL query is incorrect.
+        generate_followups (bool): Whether to generate follow-up questions.
 
     Returns:
         str or None: The SQL query, or None if an error occurred.
@@ -701,7 +705,11 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
 
     if run_sql is None:
         print("If you want to run the SQL query, provide a vn.run_sql function.")
-        return sql, None, None, None
+
+        if print_results:
+            return None
+        else:
+            return sql, None, None, None
 
     try:
         df = run_sql(sql)
@@ -724,28 +732,40 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
 
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
-                if followup_questions is not None and len(followup_questions) > 0:
+                if print_results and followup_questions is not None and len(followup_questions) > 0:
                     print("AI-generated follow-up questions:")
                     for followup_question in followup_questions:
                         print(followup_question)
 
-                return sql, df, fig, followup_questions
+                if print_results:
+                    return None
+                else:
+                    return sql, df, fig, followup_questions
             
-            return sql, df, fig, None
+            if print_results:
+                return None
+            else:
+                return sql, df, fig, None
 
         except Exception as e:
             # Print stack trace
             traceback.print_exc()
             print("Couldn't run plotly code: ", e)
-            return sql, df, None, None
+            if print_results:
+                return None
+            else:
+                return sql, df, None, None
 
     except Exception as e:
         print("Couldn't run sql: ", e)
-        return sql, None, None, None
+        if print_results:
+            return None
+        else:
+            return sql, None, None, None
 
 
 
-def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame) -> str:
+def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame, chart_instructions: Union[str, None] = None) -> str:
     """
     **Example:**
     ```python
@@ -762,10 +782,17 @@ def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: 
         question (str): The question to generate Plotly code for.
         sql (str): The SQL query to generate Plotly code for.
         df (pd.DataFrame): The dataframe to generate Plotly code for.
+        chart_instructions (str): Optional instructions for how to plot the chart.
 
     Returns:
         str or None: The Plotly code, or None if an error occurred.
     """
+    if chart_instructions is not None:
+        if question is not None:
+            question = question + " -- When plotting, follow these instructions: " + chart_instructions
+        else:
+            question = "When plotting, follow these instructions: " + chart_instructions
+
     params = [DataResult(
         question=question,
         sql=sql,
