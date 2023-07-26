@@ -1,0 +1,10 @@
+[
+    {
+      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2023 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "answer":"SELECT company_name,\r\n       extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%Tesla%'\r\n    or company_name = 'Ford')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2023-12-31'\r\nGROUP BY company_name, extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
+    },
+    {
+      "question":"Which 10 domains received the highest amount of traffic on Black Friday in 2021 vs 2020",
+      "answer":"SELECT domain,\n       sum(case when date = '2021-11-26' then total_visits\n                else 0 end) as visits_2021,\n       sum(case when date = '2020-11-27' then total_visits\n                else 0 end) as visits_2020\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  date in ('2021-11-26', '2020-11-27')\nGROUP BY domain\nORDER BY (visits_2021 - visits_2020) desc limit 10"
+    }
+]

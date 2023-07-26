@@ -43,15 +43,23 @@ import dataclasses
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
-from typing import List, Dict, Any, Union, Optional, Callable, Tuple
+import sqlparse
+import logging
+
+from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, \
+    FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
+    Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
+from typing import List, Union, Callable, Tuple
+from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OtpCodeError, SQLRemoveError, \
+    ValidationError, APIError
+from .utils import validate_config_path
 import warnings
 import traceback
 import os
 
-api_key: Union[str, None] = None # API key for Vanna.AI
+api_key: Union[str, None] = None  # API key for Vanna.AI
 
-run_sql: Union[Callable[[str], pd.DataFrame], None] = None # Function to convert SQL to a Pandas DataFrame
+run_sql: Union[Callable[[str], pd.DataFrame], None] = None  # Function to convert SQL to a Pandas DataFrame
 """
 **Example**
 ```python
@@ -63,10 +71,13 @@ Instead of setting this directly you can also use [`vn.connect_to_snowflake(...)
 
 """
 
-__org: Union[str, None] = None # Organization name for Vanna.AI
+__org: Union[str, None] = None  # Organization name for Vanna.AI
 
 _endpoint = "https://ask.vanna.ai/rpc"
 _unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
+
+logger = logging.getLogger(__name__)
+
 
 def __unauthenticated_rpc_call(method, params):
     headers = {
@@ -80,15 +91,16 @@ def __unauthenticated_rpc_call(method, params):
     response = requests.post(_unauthenticated_endpoint, headers=headers, data=json.dumps(data))
     return response.json()
 
+
 def __rpc_call(method, params):
     global api_key
     global __org
 
     if api_key is None:
-        raise Exception("API key not set. Use vn.get_api_key(...) to get an API key.")
-    
+        raise ImproperlyConfigured("API key not set. Use vn.get_api_key(...) to get an API key.")
+
     if __org is None and method != "list_orgs":
-        raise Exception("model not set. Use vn.set_model(...) to set the model to use.")
+        raise ImproperlyConfigured("model not set. Use vn.set_model(...) to set the model to use.")
 
     if method != "list_orgs":
         headers = {
@@ -136,7 +148,7 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
         return vanna_api_key
 
     if email == 'my-email@example.com':
-        raise Exception("Please replace 'my-email@example.com' with your email address.")
+        raise ValidationError("Please replace 'my-email@example.com' with your email address.")
 
     if otp_code is None:
         params = [UserEmail(email=email)]
@@ -144,12 +156,12 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
         d = __unauthenticated_rpc_call(method="send_otp", params=params)
 
         if 'result' not in d:
-            raise Exception("Error sending OTP code.")
+            raise OtpCodeError("Error sending OTP code.")
 
         status = Status(**d['result'])
 
         if not status.success:
-            raise Exception(f"Error sending OTP code: {status.message}")
+            raise OtpCodeError(f"Error sending OTP code: {status.message}")
 
         otp_code = input("Check your email for the code and enter it here: ")
 
@@ -158,16 +170,17 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
     d = __unauthenticated_rpc_call(method="verify_otp", params=params)
 
     if 'result' not in d:
-        raise Exception("Error verifying OTP code.")
+        raise OtpCodeError("Error verifying OTP code.")
 
     key = ApiKey(**d['result'])
 
     if key is None:
-        raise Exception("Error verifying OTP code.")
+        raise OtpCodeError("Error verifying OTP code.")
 
     api_key = key.key
 
     return api_key
+
 
 def set_api_key(key: str) -> None:
     """
@@ -188,7 +201,7 @@ def set_api_key(key: str) -> None:
     models = get_models()
 
     if len(models) == 0:
-        raise Exception("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
+        raise ConnectionError("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
 
 def get_models() -> List[str]:
     """
@@ -210,6 +223,7 @@ def get_models() -> List[str]:
     orgs = OrganizationList(**d['result'])
 
     return orgs.organizations
+
 
 def create_model(model: str, db_type: str) -> bool:
     """
@@ -245,6 +259,7 @@ def create_model(model: str, db_type: str) -> bool:
 
     return status.success
 
+
 def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
     """
     **Example:**
@@ -271,11 +286,12 @@ def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
         return False
 
     status = Status(**d['result'])
-    
+
     if not status.success:
-        print(status.message)
+        logger.info(status.message)
 
     return status.success
+
 
 def update_model_visibility(public: bool) -> bool:
     """
@@ -303,21 +319,23 @@ def update_model_visibility(public: bool) -> bool:
 
     return status.success
 
+
 def _set_org(org: str) -> None:
     global __org
 
     my_orgs = get_models()
     if org not in my_orgs:
         # Check if org exists
-        d = __unauthenticated_rpc_call(method="check_org_exists", params=[Organization(name=org, user=None, connection=None)])
+        d = __unauthenticated_rpc_call(method="check_org_exists",
+                                       params=[Organization(name=org, user=None, connection=None)])
 
         if 'result' not in d:
-            raise Exception("Failed to check if model exists")
+            raise ValidationError("Failed to check if model exists")
 
         status = Status(**d['result'])
 
         if status.success:
-            raise Exception(f"An organization with the name {org} already exists")
+            raise ValidationError(f"An organization with the name {org} already exists")
 
         create = input(f"Would you like to create model '{org}'? (y/n): ")
 
@@ -327,7 +345,7 @@ def _set_org(org: str) -> None:
                 __org = org
             else:
                 __org = None
-                raise Exception("Failed to create model")
+                raise ValidationError("Failed to create model")
     else:
         __org = org
 
@@ -350,9 +368,10 @@ def set_model(model: str):
         if env_model is not None:
             model = env_model
         else:
-            raise Exception("Please replace 'my-model' with the name of your model")
+            raise ValidationError("Please replace 'my-model' with the name of your model")
 
     _set_org(org=model)
+
 
 def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
     """
@@ -361,7 +380,7 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
     **Example:**
     ```python
     vn.add_sql(
-        question="What is the average salary of employees?", 
+        question="What is the average salary of employees?",
         sql="SELECT AVG(salary) FROM employees"
     )
     ```
@@ -374,7 +393,7 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
     Returns:
         bool: True if the question and SQL query were stored successfully, False otherwise.
     """
-    params = [QuestionSQLPair(        
+    params = [QuestionSQLPair(
         question=question,
         sql=sql,
         tag=tag
@@ -384,10 +403,11 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
 
     if 'result' not in d:
         return False
-    
+
     status = Status(**d['result'])
 
     return status.success
+
 
 def add_ddl(ddl: str) -> bool:
     """
@@ -402,7 +422,7 @@ def add_ddl(ddl: str) -> bool:
 
     Args:
         ddl (str): The DDL statement to store.
-    
+
     Returns:
         bool: True if the DDL statement was stored successfully, False otherwise.
     """
@@ -412,10 +432,11 @@ def add_ddl(ddl: str) -> bool:
 
     if 'result' not in d:
         return False
-    
+
     status = Status(**d['result'])
 
     return status.success
+
 
 def add_documentation(documentation: str) -> bool:
     """
@@ -440,17 +461,19 @@ def add_documentation(documentation: str) -> bool:
 
     if 'result' not in d:
         return False
-    
+
     status = Status(**d['result'])
 
     return status.success
 
-def train(question: str, sql: str) -> bool:
+
+def train(question: str = None, sql: str = None, ddl: str = None, documentation: bool = False, json_file: str = None,
+          sql_file: str = None) -> bool:
     """
     **Example:**
     ```python
     vn.train(
-        question="What is the average salary of employees?", 
+        question="What is the average salary of employees?",
         sql="SELECT AVG(salary) FROM employees"
     )
     ```
@@ -460,8 +483,60 @@ def train(question: str, sql: str) -> bool:
     Args:
         question (str): The question to train on.
         sql (str): The SQL query to train on.
+        sql_file (str): The SQL file path.
+        json_file (str): The JSON file path.
+        ddl (str):  The DDL statement.
+        documentation (bool): Generate Documentaion for the SQL.
     """
-    return add_sql(question=question, sql=sql)
+
+    if question and not sql:
+        example_question = "What is the average salary of employees?"
+        raise ValidationError(
+            f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
+
+    if sql:
+        if documentation:
+            logger.info("Adding documentation....")
+            return add_documentation(sql)
+        question = generate_question(sql)
+        logger.info("Question generated with sql:", Question, '\nAdding SQL...')
+        return add_sql(question=question, sql=sql)
+
+    if ddl:
+        logger.info("Adding ddl:", ddl)
+        return add_ddl(sql)
+
+    if json_file:
+        validate_config_path(json_file)
+        with open(json_file, 'r') as js_file:
+            data = json.load(js_file)
+            logger.info("Adding Questions And SQLs using file:", json_file)
+            for question in data:
+                if not add_sql(question=question['question'], sql=question['answer']):
+                    logger.warning(f"Not able to add sql for question: {question['question']} from {json_file}")
+                    return False
+        return True
+
+    if sql_file:
+        validate_config_path(sql_file)
+        with open(sql_file, 'r') as file:
+            sql_statements = sqlparse.split(file.read())
+            for statement in sql_statements:
+                if 'CREATE TABLE' in statement:
+                    if add_ddl(statement):
+                        logger.info("ddl Added!")
+                        return True
+                    logger.info("Not able to add DDL")
+                    return False
+                else:
+                    question = generate_question(sql=statement)
+                    if add_sql(question=question, sql=statement):
+                        logger.info("SQL added!")
+                        return True
+                    logger.warning("Not able to add sql.")
+                    return False
+        return False
+
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
     """
@@ -490,10 +565,11 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
 
     if 'result' not in d:
         return False
-    
+
     status = Status(**d['result'])
 
     return status.success
+
 
 # def read_questions_from_github(url: str) -> List[QuestionSQLPair]:
 #     """
@@ -546,9 +622,10 @@ def remove_sql(question: str) -> bool:
     status = Status(**d['result'])
 
     if not status.success:
-        raise Exception(f"Error removing SQL: {status.message}")
+        raise SQLRemoveError(f"Error removing SQL: {status.message}")
 
     return status.success
+
 
 def remove_training_data(id: str) -> bool:
     """
@@ -567,15 +644,15 @@ def remove_training_data(id: str) -> bool:
     d = __rpc_call(method="remove_training_data", params=params)
 
     if 'result' not in d:
-        raise Exception(f"Error removing training data")
-        return False
-    
+        raise APIError(f"Error removing training data")
+
     status = Status(**d['result'])
 
     if not status.success:
-        raise Exception(f"Error removing training data: {status.message}")
+        raise APIError(f"Error removing training data: {status.message}")
 
     return status.success
+
 
 def generate_sql(question: str) -> str:
     """
@@ -605,6 +682,7 @@ def generate_sql(question: str) -> str:
 
     return sql_answer.sql
 
+
 def generate_meta(question: str) -> str:
     """
     **Example:**
@@ -632,6 +710,7 @@ def generate_meta(question: str) -> str:
     string_data = StringData(**d['result'])
 
     return string_data.data
+
 
 def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
     """
@@ -668,6 +747,7 @@ def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
 
     return question_string_list.questions
 
+
 def generate_questions() -> List[str]:
     """
     **Example:**
@@ -690,6 +770,7 @@ def generate_questions() -> List[str]:
     question_string_list = QuestionStringList(**d['result'])
 
     return question_string_list.questions
+
 
 def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]], None]:
     """
@@ -725,14 +806,14 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     try:
         sql = generate_sql(question=question)
     except Exception as e:
-        print(e)
+        logger.info(e)
         return None, None, None, None
 
     if print_results:
-        print(sql)
+        logger.info(sql)
 
     if run_sql is None:
-        print("If you want to run the SQL query, provide a vn.run_sql function.")
+        logger.info("If you want to run the SQL query, provide a vn.run_sql function.")
 
         if print_results:
             return None
@@ -747,7 +828,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
                 display = __import__('IPython.display', fromlist=['display']).display
                 display(df)
             except Exception as e:
-                print(df)
+                logger.info(df)
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
@@ -761,15 +842,15 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
                 if print_results and followup_questions is not None and len(followup_questions) > 0:
-                    print("AI-generated follow-up questions:")
+                    logger.info("AI-generated follow-up questions:")
                     for followup_question in followup_questions:
-                        print(followup_question)
+                        logger.info(followup_question)
 
                 if print_results:
                     return None
                 else:
                     return sql, df, fig, followup_questions
-            
+
             if print_results:
                 return None
             else:
@@ -778,19 +859,18 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         except Exception as e:
             # Print stack trace
             traceback.print_exc()
-            print("Couldn't run plotly code: ", e)
+            logger.info("Couldn't run plotly code: ", e)
             if print_results:
                 return None
             else:
                 return sql, df, None, None
 
     except Exception as e:
-        print("Couldn't run sql: ", e)
+        logger.info("Couldn't run sql: ", e)
         if print_results:
             return None
         else:
             return sql, None, None, None
-
 
 
 def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: pd.DataFrame, chart_instructions: Union[str, None] = None) -> str:
@@ -839,6 +919,7 @@ def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: 
 
     return plotly_code.plotly_code
 
+
 def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure:
     """
     **Example:**
@@ -871,6 +952,7 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
     return fig
 
+
 def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     """
     DEPRECATED. Use `vn.run_sql` instead.
@@ -884,7 +966,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
-    print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
+    logger.info("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
     warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
     cs.execute(f"USE DATABASE {default_database}")
@@ -892,7 +974,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     cur = cs.execute(sql)
 
     results = cur.fetchall()
-        
+
     # Create a pandas dataframe from the results
     df = pd.DataFrame(results, columns=[desc[0] for desc in cur.description])
 
@@ -907,12 +989,12 @@ def generate_explanation(sql: str) -> str:
     vn.generate_explanation(sql="SELECT * FROM students WHERE name = 'John Doe'")
     # 'This query selects all columns from the students table where the name is John Doe.'
     ```
-    
+
     Generate an explanation of an SQL query using the Vanna.AI API.
 
     Args:
         sql (str): The SQL query to generate an explanation for.
-    
+
     Returns:
         str or None: The explanation, or None if an error occurred.
 
@@ -942,12 +1024,12 @@ def generate_question(sql: str) -> str:
     vn.generate_question(sql="SELECT * FROM students WHERE name = 'John Doe'")
     # 'What is the name of the student?'
     ```
-    
+
     Generate a question from an SQL query using the Vanna.AI API.
 
     Args:
         sql (str): The SQL query to generate a question for.
-    
+
     Returns:
         str or None: The question, or None if an error occurred.
 
@@ -969,6 +1051,7 @@ def generate_question(sql: str) -> str:
 
     return question.question
 
+
 def get_all_questions() -> pd.DataFrame:
     """
     Get a list of questions from the Vanna.AI API.
@@ -977,7 +1060,7 @@ def get_all_questions() -> pd.DataFrame:
     ```python
     questions = vn.get_all_questions()
     ```
-    
+
     Returns:
         pd.DataFrame or None: The list of questions, or None if an error occurred.
 
@@ -996,6 +1079,7 @@ def get_all_questions() -> pd.DataFrame:
     df = pd.read_json(all_questions.data)
 
     return df
+
 
 def get_training_data() -> pd.DataFrame:
     """
@@ -1025,6 +1109,7 @@ def get_training_data() -> pd.DataFrame:
 
     return df
 
+
 def connect_to_snowflake(account: str, username: str, password: str, database: str, role: Union[str, None] = None):
     """
     Connect to Snowflake using the Snowflake connector. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
@@ -1049,8 +1134,12 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         database (str): The default database to use.
         role (Union[str, None], optional): The role to use. Defaults to None.
     """
-    
-    snowflake = __import__('snowflake.connector')
+
+    try:
+        import snowflake.connector as snowflake
+    except ImportError:
+        raise DependencyError("You need to install required dependencies to execute this method, run command:"
+                                  " \npip install vanna[snowflake]")
 
     if username == 'my-username':
         username_env = os.getenv('SNOWFLAKE_USERNAME')
@@ -1058,7 +1147,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         if username_env is not None:
             username = username_env
         else:
-            raise Exception("Please set your Snowflake username.")
+            raise ImproperlyConfigured("Please set your Snowflake username.")
 
     if password == 'my-password':
         password_env = os.getenv('SNOWFLAKE_PASSWORD')
@@ -1066,23 +1155,23 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         if password_env is not None:
             password = password_env
         else:
-            raise Exception("Please set your Snowflake password.")
-        
+            raise ImproperlyConfigured("Please set your Snowflake password.")
+
     if account == 'my-account':
         account_env = os.getenv('SNOWFLAKE_ACCOUNT')
 
         if account_env is not None:
             account = account_env
         else:
-            raise Exception("Please set your Snowflake account.")
-        
+            raise ImproperlyConfigured("Please set your Snowflake account.")
+
     if database == 'my-database':
         database_env = os.getenv('SNOWFLAKE_DATABASE')
 
         if database_env is not None:
             database = database_env
         else:
-            raise Exception("Please set your Snowflake database.")
+            raise ImproperlyConfigured("Please set your Snowflake database.")
 
     conn = snowflake.connector.connect(
         user=username,
@@ -1106,6 +1195,6 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         df = pd.DataFrame(results, columns=[desc[0] for desc in cur.description])
 
         return df
-    
+
     global run_sql
     run_sql = run_sql_snowflake
