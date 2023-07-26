@@ -4,7 +4,8 @@ import sys
 import io
 import pandas as pd
 import os
-
+import pytest
+from vanna.exceptions import ValidationError, ImproperlyConfigured
 
 endpoint_base = os.environ.get('VANNA_ENDPOINT', 'https://debug.vanna.ai')
 
@@ -58,11 +59,8 @@ def test_switch_back_to_user1(monkeypatch):
     assert models == ['demo-tpc-h', 'test_org']
 
 def test_set_model_my_model():
-    try:
+    with pytest.raises(ValidationError):
         vn.set_model('my-model')
-        assert False
-    except Exception as e:
-        assert str(e) == "Please replace 'my-model' with the name of your model"
 
 def test_set_model():
     vn.set_model('test_org')
@@ -224,3 +222,33 @@ def test_generate_meta():
     meta = vn.generate_meta("What tables are available?")
 
     assert meta == 'AI Response'
+
+@pytest.mark.parametrize("sql_file_path, json_file_path, should_work", [
+    ('tests/test_files/sql/testSqlSelect.sql', 'tests/test_files/training/questions.json', True),
+    ('tests/test_files/sql/testSqlCreate.sql', 'tests/test_files/training/questions.json', True),
+    ('tests/test_files/sql/testSql.sql', 'tests/test_files/training/s.json', False),
+])
+def test_train(sql_file_path, json_file_path, should_work):
+    vn.set_model('demo-tpc-h')
+
+    # if just question not sql
+    with pytest.raises(ValidationError):
+        vn.train(question="What's the data about student John Doe?")
+
+    # if just sql
+    assert vn.train(sql="SELECT * FROM students WHERE name = 'Jane Doe'") == True
+
+    # if just sql and documentation=True
+    assert vn.train(sql="SELECT * FROM students WHERE name = 'Jane Doe'", documentation=True) == True
+
+    # if just ddl statement
+    assert vn.train(ddl="This is the ddl") == True
+
+    # if just sql_file
+    if should_work:
+        assert vn.train(sql_file=sql_file_path) == True
+        assert vn.train(json_file=json_file_path) == True
+    else:
+        with pytest.raises(ImproperlyConfigured):
+            vn.train(sql_file=sql_file_path)
+            vn.train(json_file=json_file_path)
