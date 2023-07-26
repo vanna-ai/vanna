@@ -605,6 +605,34 @@ def generate_sql(question: str) -> str:
 
     return sql_answer.sql
 
+def generate_meta(question: str) -> str:
+    """
+    **Example:**
+    ```python
+    vn.generate_meta(question="What tables are in the database?")
+    # Information about the tables in the database
+    ```
+
+    Generate answers about the metadata of a database using the Vanna.AI API.
+
+    Args:
+        question (str): The question to generate an answer for.
+
+    Returns:
+        str or None: The answer, or None if an error occurred.
+    """
+    params = [Question(question=question)]
+
+    d = __rpc_call(method="generate_meta_from_question", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    string_data = StringData(**d['result'])
+
+    return string_data.data
+
 def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
     """
     **Example:**
