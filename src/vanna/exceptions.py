@@ -5,7 +5,7 @@ class ImproperlyConfigured(BaseException):
     pass
 
 
-class DependencyException(BaseException):
+class DependencyError(BaseException):
     """Raise for missing dependencies."""
 
     pass
@@ -33,3 +33,10 @@ class ExecutionError(BaseException):
     """Raise when not able to execute Code"""
 
     pass
+
+
+class ValidationError(BaseException):
+    """Raise for validations"""
+
+    pass
+

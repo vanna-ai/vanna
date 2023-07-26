@@ -51,7 +51,8 @@ from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId
     FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
     Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
 from typing import List, Union, Callable, Tuple
-from .exceptions import ImproperlyConfigured, DependencyException, ConnectionError, OtpCodeError, SQLRemoveError
+from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OtpCodeError, SQLRemoveError, \
+    ValidationError
 from .utils import validate_config_path
 import warnings
 import traceback
@@ -152,7 +153,7 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
         return vanna_api_key
 
     if email == 'my-email@example.com':
-        raise ImproperlyConfigured("Please replace 'my-email@example.com' with your email address.")
+        raise ValidationError("Please replace 'my-email@example.com' with your email address.")
 
     if otp_code is None:
         params = [UserEmail(email=email)]
@@ -336,12 +337,12 @@ def _set_org(org: str) -> None:
                                        params=[Organization(name=org, user=None, connection=None)])
 
         if 'result' not in d:
-            raise ImproperlyConfigured("Failed to check if dataset exists")
+            raise ValidationError("Failed to check if dataset exists")
 
         status = Status(**d['result'])
 
         if status.success:
-            raise ImproperlyConfigured(f"An organization with the name {org} already exists")
+            raise ValidationError(f"An organization with the name {org} already exists")
 
         create = input(f"Would you like to create dataset '{org}'? (y/n): ")
 
@@ -351,7 +352,7 @@ def _set_org(org: str) -> None:
                 __org = org
             else:
                 __org = None
-                raise ImproperlyConfigured("Failed to create dataset")
+                raise ValidationError("Failed to create dataset")
     else:
         __org = org
 
@@ -374,7 +375,7 @@ def set_dataset(dataset: str):
         if env_dataset is not None:
             dataset = env_dataset
         else:
-            raise ImproperlyConfigured("Please replace 'my-dataset' with the name of your dataset")
+            raise ValidationError("Please replace 'my-dataset' with the name of your dataset")
 
     _set_org(org=dataset)
 
@@ -497,7 +498,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
 
     if question and not sql:
         example_question = "What is the average salary of employees?"
-        raise ImproperlyConfigured(
+        raise ValidationError(
             f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
 
     if sql:
@@ -1085,7 +1086,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
     try:
         import snowflake.connector as snowflake
     except ImportError:
-        raise DependencyException("You need to install required dependencies to execute this method, run command:"
+        raise DependencyError("You need to install required dependencies to execute this method, run command:"
                                   " \npip install vanna[snowflake]")
 
     if username == 'my-username':
@@ -1170,7 +1171,7 @@ def connect_to_bigquery(cred_file_path: str, project_id: str = None):
         from google.api_core.exceptions import GoogleAPIError
         from google.cloud import bigquery
     except ImportError:
-        raise DependencyException("You need to install required dependencies to execute this method, run command:"
+        raise DependencyError("You need to install required dependencies to execute this method, run command:"
                                   " \npip install vanna[bigquery]")
 
     if not project_id:
@@ -1242,7 +1243,7 @@ def connect_to_postgres(host: str = None, dbname: str = None, user: str = None, 
         import psycopg2
         import psycopg2.extras
     except ImportError:
-        raise DependencyException("You need to install required dependencies to execute this method,"
+        raise DependencyError("You need to install required dependencies to execute this method,"
                                   " run command: \npip install vanna[postgres]")
 
     if not host:
@@ -1286,7 +1287,7 @@ def connect_to_postgres(host: str = None, dbname: str = None, user: str = None, 
             port=port,
         )
     except psycopg2.Error as e:
-        raise ImproperlyConfigured(e)
+        raise ValidationError(e)
 
     def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
         if conn:
@@ -1300,7 +1301,7 @@ def connect_to_postgres(host: str = None, dbname: str = None, user: str = None, 
                 return df
 
             except psycopg2.Error as e:
-                raise ImproperlyConfigured(e)
+                raise ValidationError(e)
 
     global run_sql
     run_sql = run_sql_postgres
