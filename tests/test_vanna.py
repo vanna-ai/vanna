@@ -207,3 +207,15 @@ def test_create_dataset_and_add_user():
 
     added = vn.add_user_to_dataset(dataset='test_org2', email="user5@example.com", is_admin=False)
     assert added == True
+
+def test_ask_no_output():
+    vn.run_sql = lambda sql: pd.DataFrame({'Name': ['John', 'Emma', 'Tom', 'Emily', 'Alex']})
+    vn.generate_sql = lambda question: 'SELECT * FROM students'
+    vn.ask(question="How many students are there?")
+
+def test_ask_with_output():
+    sql, df, fig, followup_questions = vn.ask(question="How many students are there?", print_results=False)
+
+    assert sql == 'SELECT * FROM students'
+
+    assert df.to_csv() == ',Name\n0,John\n1,Emma\n2,Tom\n3,Emily\n4,Alex\n'
