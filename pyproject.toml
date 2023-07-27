@@ -1,9 +1,14 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
 [project]
 name = "vanna"
 version = "0.0.16"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
+
 description = "Generate SQL queries from natural language"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -13,9 +18,14 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas"
+    "requests==2.31.0", "tabulate==0.9.0", "plotly==5.15.0", "pandas==2.0.3", "sqlparse==0.4.4"
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/vanna-ai/vanna-py"
 "Bug Tracker" = "https://github.com/vanna-ai/vanna-py/issues"
+
+[project.optional-dependencies]
+postgres = ["psycopg2==2.9.6", "db-dtypes==1.1.1"]
+bigqury = ["google-cloud-core==2.3.3", "google-cloud-bigquery==3.11.4"]
+snowflake = ["snowflake-connector-python==3.0.4"]
