@@ -33,6 +33,45 @@ For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn
 | `vn.update_` | Updates something in the model | [`vn.update_model_visibility(...)`][vanna.update_model_visibility] |
 | `vn.connect_` | Connects to a database | [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] |
 
+# Permissions
+By default when you create a model it is private. You can add members or admins to your model or make it public.
+
+<table>
+  <tr>
+    <th rowspan="2">User Role</th>
+    <th colspan="2">Public Model</th>
+    <th colspan="2">Private Model</th>
+  </tr>
+  <tr>
+    <td>Use</td>
+    <td>Train</td>
+    <td>Use</td>
+    <td>Train</td>
+  </tr>
+  <tr>
+    <td>Non-Member</td>
+    <td>✅</td>
+    <td>❌</td>
+    <td>❌</td>
+    <td>❌</td>
+  </tr>
+  <tr>
+    <td>Member</td>
+    <td>✅</td>
+    <td>❌</td>
+    <td>✅</td>
+    <td>❌</td>
+  </tr>
+  <tr>
+    <td>Admin</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+    <td>✅</td>
+  </tr>
+</table>
+
+
 # API Reference
 '''
 
