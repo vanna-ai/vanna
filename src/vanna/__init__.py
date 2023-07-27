@@ -84,6 +84,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import sqlparse
 import logging
+from dataclasses import dataclass
 
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, \
     FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
@@ -505,19 +506,124 @@ def add_documentation(documentation: str) -> bool:
 
     return status.success
 
+@dataclass
+class TrainingPlanItem:
+    item_type: str
+    item_group: str
+    item_name: str
+    item_value: str
 
-def train(question: str = None, sql: str = None, ddl: str = None, documentation: bool = False, json_file: str = None,
+    def __str__(self):
+        if self.item_type == self.ITEM_TYPE_SQL:
+            return f"Train on SQL: {self.item_group} {self.item_name}"
+        elif self.item_type == self.ITEM_TYPE_DDL:
+            return f"Train on DDL: {self.item_group} {self.item_name}"
+        elif self.item_type == self.ITEM_TYPE_IS:
+            return f"Train on Information Schema: {self.item_group} {self.item_name}"
+
+    ITEM_TYPE_SQL = "sql"
+    ITEM_TYPE_DDL = "ddl"
+    ITEM_TYPE_IS = "is"
+
+
+class TrainingPlan:
+    """
+    A class representing a training plan. You can see what's in it, and remove items from it that you don't want trained.
+
+    **Example:**
+    ```python
+    plan = vn.get_training_plan()
+
+    plan.get_summary()
+    ```
+
+    """
+    _plan: List[TrainingPlanItem]
+
+    def __init__(self, plan: List[TrainingPlanItem]):
+        self._plan = plan
+
+    def __str__(self):
+        return "\n".join(self.get_summary())
+    
+    def __repr__(self):
+        return self.__str__()
+
+    def get_summary(self) -> List[str]:
+        """
+        **Example:**
+        ```python
+        plan = vn.get_training_plan()
+
+        plan.get_summary()
+        ```
+
+        Get a summary of the training plan.
+
+        Returns:
+            List[str]: A list of strings describing the training plan.
+        """
+
+        return [f"{item}" for item in self._plan]
+
+    def remove_item(self, item: str):
+        """
+        **Example:**
+        ```python
+        plan = vn.get_training_plan()
+
+        plan.remove_item("Train on SQL: What is the average salary of employees?")
+        ```
+
+        Remove an item from the training plan.
+
+        Args:
+            item (str): The item to remove.
+        """
+        for plan_item in self._plan:
+            if str(plan_item) == item:
+                self._plan.remove(plan_item)
+                break
+
+    
+
+def get_training_plan() -> TrainingPlan:
+    """
+    **Example:**
+    ```python
+    plan = vn.get_training_plan()
+
+    vn.train(plan=plan)
+    ```
+
+    Get the training plan for the model.
+
+    Returns:
+        TrainingPlan: The training plan for the model.
+    """
+    d = __rpc_call(method="get_training_plan", params=[])
+
+    if 'result' not in d:
+        raise ValidationError("Failed to get training plan")
+
+    training_plan = TrainingPlan(**d['result'])
+
+    return training_plan
+
+def train(question: str = None, sql: str = None, ddl: str = None, documentation: str = None, json_file: str = None,
           sql_file: str = None) -> bool:
     """
     **Example:**
     ```python
-    vn.train(
-        question="What is the average salary of employees?",
-        sql="SELECT AVG(salary) FROM employees"
-    )
+    vn.train()
     ```
 
-    Train Vanna.AI on a question and its corresponding SQL query. This is equivalent to calling [`add_sql()`][vanna.add_sql].
+    Train Vanna.AI on a question and its corresponding SQL query. 
+    If you call it with no arguments, it will check if you connected to a database and it will attempt to train on the metadata of that database.
+    If you call it with the sql argument, it's equivalent to [`add_sql()`][vanna.add_sql].
+    If you call it with the ddl argument, it's equivalent to [`add_ddl()`][vanna.add_ddl].
+    If you call it with the documentation argument, it's equivalent to [`add_documentation()`][vanna.add_documentation].
+    It can also accept a JSON file path or SQL file path to train on a batch of questions and SQL queries or a list of SQL queries respectively.
 
     Args:
         question (str): The question to train on.
@@ -525,7 +631,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         sql_file (str): The SQL file path.
         json_file (str): The JSON file path.
         ddl (str):  The DDL statement.
-        documentation (bool): Generate Documentaion for the SQL.
+        documentation (str): The documentation to train on.
     """
 
     if question and not sql:
@@ -533,10 +639,11 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         raise ValidationError(
             f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
 
+    if documentation:
+        logger.info("Adding documentation....")
+        return add_documentation(sql)
+
     if sql:
-        if documentation:
-            logger.info("Adding documentation....")
-            return add_documentation(sql)
         question = generate_question(sql)
         logger.info("Question generated with sql:", Question, '\nAdding SQL...')
         return add_sql(question=question, sql=sql)
@@ -575,6 +682,8 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
                     logger.warning("Not able to add sql.")
                     return False
         return False
+    
+    # Here we're going to attempt auto training
 
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
