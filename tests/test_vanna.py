@@ -275,4 +275,4 @@ def test_set_model_validation(model_name):
     # test invalid model name
     with pytest.raises(ValidationError) as exc:
         vn.set_model(model_name)
-        assert "Please provide dataset in string format" in exc.args[0]
+        assert "Please provide model name in string format" in exc.args[0]

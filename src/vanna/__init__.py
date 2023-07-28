@@ -401,7 +401,7 @@ def set_model(model: str):
         model (str): The name of the model to use.
     """
     if type(model) is not str:
-        raise ValidationError(f"Please provide dataset in string format and not {type(model)}.")
+        raise ValidationError(f"Please provide model name in string format and not {type(model)}.")
 
     if model == 'my-model':
         env_model = os.environ.get('VANNA_model', None)
