@@ -239,14 +239,29 @@ def test_generate_meta():
 
     assert meta == 'AI Response'
 
+def test_double_train():
+    vn.set_model('test_org')
+
+    training_data = vn.get_training_data()
+    assert training_data.shape == (0, 0)
+
+    trained = vn.train(question="What's the data about student John Doe?", sql="SELECT * FROM students WHERE name = 'John Doe'")
+    assert trained == True
+
+    training_data = vn.get_training_data()
+    assert training_data.shape == (1, 4)
+
+    vn.train(question="What's the data about student John Doe?", sql="SELECT * FROM students WHERE name = 'John Doe'")
+
+    training_data = vn.get_training_data()
+    assert training_data.shape == (1, 4)
+
 @pytest.mark.parametrize("sql_file_path, json_file_path, should_work", [
     ('tests/test_files/sql/testSqlSelect.sql', 'tests/test_files/training/questions.json', True),
     ('tests/test_files/sql/testSqlCreate.sql', 'tests/test_files/training/questions.json', True),
     ('tests/test_files/sql/testSql.sql', 'tests/test_files/training/s.json', False),
 ])
 def test_train(sql_file_path, json_file_path, should_work):
-    vn.set_model('test_org')
-
     # if just question not sql
     with pytest.raises(ValidationError):
         vn.train(question="What's the data about student John Doe?")
