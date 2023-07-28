@@ -7,9 +7,8 @@ nav:
     - Onboarding: onboarding.md
     - Adding Vanna to your Workflow: workflow.md
   - Use in Notebooks:
-    - Getting Started: notebooks/vn-starter.md
-    - Training Vanna: notebooks/vn-training.md
-    - Full Functionality: notebooks/vn-full.md
+    - Asking Questions: notebooks/vn-ask.md
+    - Training Vanna: notebooks/vn-train.md
   - Other Ways to Use Vanna:
     - Use with Streamlit: streamlit.md
   - Databases:
@@ -32,20 +31,6 @@ extra_css:
   - stylesheets/extra.css
 extra:
   homepage: https://vanna.ai
-  consent:
-    title: Cookie consent
-    description: >- 
-      We use cookies to recognize your repeated visits and preferences, as well
-      as to measure the effectiveness of our documentation and whether users
-      find what they're searching for. With your consent, you're helping us to
-      make our documentation better.
-    cookies:
-      analytics:
-        name: Google Analytics
-        checked: false
-  analytics:
-    provider: google
-    property: G-1YZ053XQJ4
 markdown_extensions:
   - pymdownx.superfences:
       custom_fences:
@@ -56,5 +41,4 @@ plugins:
   - search
   - mkdocstrings
 copyright: >
-  Copyright &copy; 2023 Vanna.AI –
-  <a href="#__consent">Change cookie settings</a>
+  Copyright &copy; 2023 Vanna.AI
