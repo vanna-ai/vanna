@@ -116,9 +116,6 @@ __org: Union[str, None] = None  # Organization name for Vanna.AI
 _endpoint = "https://ask.vanna.ai/rpc"
 _unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
 
-logger = logging.getLogger(__name__)
-
-
 def __unauthenticated_rpc_call(method, params):
     headers = {
         'Content-Type': 'application/json',
@@ -328,7 +325,7 @@ def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
     status = Status(**d['result'])
 
     if not status.success:
-        logger.info(status.message)
+        print(status.message)
 
     return status.success
 
@@ -640,24 +637,24 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
 
     if documentation:
-        logger.info("Adding documentation....")
+        print("Adding documentation....")
         return add_documentation(sql)
 
     if sql:
         if question is None:
             question = generate_question(sql)
-            logger.info("Question generated with sql:", Question, '\nAdding SQL...')
+            print("Question generated with sql:", Question, '\nAdding SQL...')
         return add_sql(question=question, sql=sql)
 
     if ddl:
-        logger.info("Adding ddl:", ddl)
+        print("Adding ddl:", ddl)
         return add_ddl(sql)
 
     if json_file:
         validate_config_path(json_file)
         with open(json_file, 'r') as js_file:
             data = json.load(js_file)
-            logger.info("Adding Questions And SQLs using file:", json_file)
+            print("Adding Questions And SQLs using file:", json_file)
             for question in data:
                 if not add_sql(question=question['question'], sql=question['answer']):
                     logger.warning(f"Not able to add sql for question: {question['question']} from {json_file}")
@@ -671,14 +668,14 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             for statement in sql_statements:
                 if 'CREATE TABLE' in statement:
                     if add_ddl(statement):
-                        logger.info("ddl Added!")
+                        print("ddl Added!")
                         return True
-                    logger.info("Not able to add DDL")
+                    print("Not able to add DDL")
                     return False
                 else:
                     question = generate_question(sql=statement)
                     if add_sql(question=question, sql=statement):
-                        logger.info("SQL added!")
+                        print("SQL added!")
                         return True
                     logger.warning("Not able to add sql.")
                     return False
@@ -955,14 +952,14 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     try:
         sql = generate_sql(question=question)
     except Exception as e:
-        logger.info(e)
+        print(e)
         return None, None, None, None
 
     if print_results:
-        logger.info(sql)
+        print(sql)
 
     if run_sql is None:
-        logger.info("If you want to run the SQL query, provide a vn.run_sql function.")
+        print("If you want to run the SQL query, provide a vn.run_sql function.")
 
         if print_results:
             return None
@@ -977,7 +974,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
                 display = __import__('IPython.display', fromlist=['display']).display
                 display(df)
             except Exception as e:
-                logger.info(df)
+                print(df)
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
@@ -991,9 +988,9 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
                 if print_results and followup_questions is not None and len(followup_questions) > 0:
-                    logger.info("AI-generated follow-up questions:")
+                    print("AI-generated follow-up questions:")
                     for followup_question in followup_questions:
-                        logger.info(followup_question)
+                        print(followup_question)
 
                 if print_results:
                     return None
@@ -1008,14 +1005,14 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         except Exception as e:
             # Print stack trace
             traceback.print_exc()
-            logger.info("Couldn't run plotly code: ", e)
+            print("Couldn't run plotly code: ", e)
             if print_results:
                 return None
             else:
                 return sql, df, None, None
 
     except Exception as e:
-        logger.info("Couldn't run sql: ", e)
+        print("Couldn't run sql: ", e)
         if print_results:
             return None
         else:
@@ -1115,7 +1112,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
-    logger.info("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
+    print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
     warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
     cs.execute(f"USE DATABASE {default_database}")
