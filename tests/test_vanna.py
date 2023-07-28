@@ -273,5 +273,6 @@ def test_train(sql_file_path, json_file_path, should_work):
 @pytest.mark.parametrize('model_name', [1234, ['test_org']])
 def test_set_model_validation(model_name):
     # test invalid model name
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc:
         vn.set_model(model_name)
+        assert "Please provide dataset in string format" in exc.args[0]
