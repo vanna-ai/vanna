@@ -399,7 +399,7 @@ def set_model(model: str):
         model (str): The name of the model to use.
     """
     if model == 'my-model':
-        env_model = os.environ.get('VANNA_model', None)
+        env_model = os.environ.get('VANNA_MODEL', None)
 
         if env_model is not None:
             model = env_model
@@ -1281,7 +1281,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
     """
 
     try:
-        import snowflake.connector as snowflake
+        snowflake = __import__('snowflake.connector')
     except ImportError:
         raise DependencyError("You need to install required dependencies to execute this method, run command:"
                                   " \npip install vanna[snowflake]")
