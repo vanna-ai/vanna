@@ -83,7 +83,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import sqlparse
-import logging
 from dataclasses import dataclass
 
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, \
