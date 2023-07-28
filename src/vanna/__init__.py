@@ -982,7 +982,13 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
             fig = get_plotly_figure(plotly_code=plotly_code, df=df)
             if print_results:
-                fig.show()
+                try:
+                    display = __import__('IPython.display', fromlist=['display']).display
+                    Image = __import__('IPython.display', fromlist=['Image']).Image
+                    img_bytes = fig.to_image(format="png", scale=2)
+                    display(Image(img_bytes))
+                except Exception as e:
+                    fig.show()
 
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
@@ -990,6 +996,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
                     print("AI-generated follow-up questions:")
                     for followup_question in followup_questions:
                         print(followup_question)
+                        pass
 
                 if print_results:
                     return None
