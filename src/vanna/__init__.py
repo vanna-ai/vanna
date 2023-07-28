@@ -644,8 +644,9 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         return add_documentation(sql)
 
     if sql:
-        question = generate_question(sql)
-        logger.info("Question generated with sql:", Question, '\nAdding SQL...')
+        if question is None:
+            question = generate_question(sql)
+            logger.info("Question generated with sql:", Question, '\nAdding SQL...')
         return add_sql(question=question, sql=sql)
 
     if ddl:
