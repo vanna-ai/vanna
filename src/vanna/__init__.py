@@ -955,8 +955,12 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         return None, None, None, None
 
     if print_results:
-        print(sql)
-
+        try:
+                Code = __import__('IPython.display', fromlist=['Code']).Code
+                display(Code(sql))
+        except Exception as e:
+            print(sql)
+        
     if run_sql is None:
         print("If you want to run the SQL query, provide a vn.run_sql function.")
 
@@ -993,10 +997,17 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
                 if print_results and followup_questions is not None and len(followup_questions) > 0:
-                    print("AI-generated follow-up questions:")
+                    md = "AI-generated follow-up questions:\n\n"
                     for followup_question in followup_questions:
-                        print(followup_question)
-                        pass
+                        md += f"* {followup_question}\n"
+
+                    try:
+                        display = __import__('IPython.display', fromlist=['display']).display
+                        Markdown = __import__('IPython.display', fromlist=['Markdown']).Markdown
+                        display(Markdown(md))
+                    except Exception as e:
+                        print(md)
+
 
                 if print_results:
                     return None
