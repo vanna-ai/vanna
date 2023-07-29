@@ -756,7 +756,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
     If you call it with the ddl argument, it's equivalent to [`add_ddl()`][vanna.add_ddl].
     If you call it with the documentation argument, it's equivalent to [`add_documentation()`][vanna.add_documentation].
     It can also accept a JSON file path or SQL file path to train on a batch of questions and SQL queries or a list of SQL queries respectively.
-    Additionally, you can pass a [`TrainingPlan`][vanna.TrainingPlan] object. Get a training plan with [`vn.get_training_plan()`][vanna.get_training_plan].
+    Additionally, you can pass a [`TrainingPlan`][vanna.TrainingPlan] object. Get a training plan with [`vn.get_training_plan_experimental()`][vanna.get_training_plan_experimental].
 
     Args:
         question (str): The question to train on.

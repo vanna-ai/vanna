@@ -1,10 +1,10 @@
-![Vanna AI](https://img.vanna.ai/vanna-full.svg)
+![Vanna AI](https://img.vanna.ai/vanna-ask.svg)
 
-This notebook will help you unleash the full potential of AI-powered data analysis at your organization. We'll go through how to "bulk train" Vanna and generate SQL, tables, charts, and explanations, all with minimal code and effort. For more about Vanna, see our [intro blog post](https://medium.com/vanna-ai/intro-to-vanna-a-python-based-ai-sql-co-pilot-218c25b19c6a).
+The following notebook goes through the process of asking questions from your data using Vanna AI. Here we use a demo model that is pre-trained on the [TPC-H dataset](https://docs.snowflake.com/en/user-guide/sample-data-tpch.html) that is available in Snowflake.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vanna-ai/vanna-py/blob/main/notebooks/vn-full.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vanna-ai/vanna-py/blob/main/notebooks/vn-ask.ipynb)
 
-[![Open in GitHub](https://img.vanna.ai/github.svg)](https://github.com/vanna-ai/vanna-py/blob/main/notebooks/vn-full.ipynb)
+[![Open in GitHub](https://img.vanna.ai/github.svg)](https://github.com/vanna-ai/vanna-py/blob/main/notebooks/vn-ask.ipynb)
 
 # Install Vanna
 First we install Vanna from [PyPI](https://pypi.org/project/vanna/) and import it.
@@ -20,7 +20,6 @@ Here, we'll also install the Snowflake connector. If you're using a different da
 ```python
 import vanna as vn
 import snowflake.connector
-import pandas as pd
 ```
 
 # Login
@@ -37,7 +36,7 @@ You need to choose a globally unique model name. Try using your company name or 
 
 
 ```python
-vn.set_model('my-model') # Enter your dataset name here. This is a globally unique identifier for your dataset.
+vn.set_model('tpc') # Enter your model name here. This is a globally unique identifier for your model.
 ```
 
 # Set Database Connection
@@ -64,20 +63,105 @@ vn.ask("What are the top 10 customers by sales?")
     GROUP BY customer_name
     ORDER BY total_sales desc limit 10;
 
-![plot1](plot1.png)
 
 
-    AI-generated follow-up questions:
-    What are the countries of the top 10 customers by sales?
-    How many orders did each of the top 10 customers place?
-    What is the average sales amount per customer in the top 10?
-    Can you provide a breakdown of the sales by country for the top 10 customers?
-    Who are the top 10 customers in terms of returned parts gross value?
-    What are the total sales for each customer in the top 3?
-    Can you provide a breakdown of the sales by region for the top customers?
-    How many customers are there in each country?
-    What is the total revenue for the top 5 countries?
-    Can you provide a breakdown of the sales by customer for the top 5 countries?
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CUSTOMER_NAME</th>
+      <th>TOTAL_SALES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Customer#000143500</td>
+      <td>6757566.0218</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Customer#000095257</td>
+      <td>6294115.3340</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Customer#000087115</td>
+      <td>6184649.5176</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Customer#000131113</td>
+      <td>6080943.8305</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Customer#000134380</td>
+      <td>6075141.9635</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Customer#000103834</td>
+      <td>6059770.3232</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Customer#000069682</td>
+      <td>6057779.0348</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Customer#000102022</td>
+      <td>6039653.6335</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Customer#000098587</td>
+      <td>6027021.5855</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Customer#000064660</td>
+      <td>5905659.6159</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+    
+![png](vn-ask_files/vn-ask_10_2.png)
+    
+
+
+
+AI-generated follow-up questions:
+
+* What is the country name for each of the top 10 customers by sales?
+* How many orders does each of the top 10 customers by sales have?
+* What is the total revenue for each of the top 10 customers by sales?
+* What are the customer names and total sales for customers in the United States?
+* Which customers in Africa have returned the most parts with a gross value?
+* What are the total sales for the top 3 customers?
+* What are the customer names and total sales for the top 5 customers?
+* What are the total sales for customers in Europe?
+* How many customers are there in each country?
+
 
 
 
@@ -149,19 +233,26 @@ vn.ask("Which 5 countries have the highest sales?")
 </div>
 
 
-![plot2](plot2.png)
+
+    
+![png](vn-ask_files/vn-ask_11_2.png)
+    
 
 
-    AI-generated follow-up questions:
-    What are the total sales for each country?
-    Which country has the highest number of customers?
-    What are the total sales for each customer?
-    What are the top 3 customers with the highest sales?
-    What is the total revenue for each customer and country?
-    What are the total sales for each customer in Europe?
-    What are the top 10 countries with the highest total order amount?
-    Which country has the highest number of failed orders?
-    What are the top 3 customers with the highest sales?
+
+AI-generated follow-up questions:
+
+* What are the total sales for each country in descending order?
+* Which country has the highest number of customers?
+* What are the total sales for each customer in descending order?
+* Which customers in the United States have the highest total sales?
+* What are the total sales and number of orders for each customer in each country?
+* What are the total sales for customers in Europe?
+* What are the top 10 countries with the highest total order amount?
+* Which country has the highest number of failed orders?
+* Which customers have the highest total sales?
+* 
+
 
 
 
@@ -264,20 +355,26 @@ vn.ask("Who are the top 2 biggest customers in each region?")
 </div>
 
 
-![plot3](plot3.png)
+
+    
+![png](vn-ask_files/vn-ask_12_2.png)
+    
 
 
-    AI-generated follow-up questions:
-    - What are the total sales for each customer in Europe?
-    - What are the total sales for each customer in the United States?
-    - How many customers are there in each country?
-    - What is the total revenue for each customer in each country?
-    - Which customers have the highest total sales?
-    - Which customers have the highest number of orders?
-    - Which customers have the highest returned parts gross value in Africa?
-    - What are the total sales for the top 3 customers?
-    - What are the total sales for the top 10 customers?
-    - What is the total sales for each customer?
+
+AI-generated follow-up questions:
+
+* - What are the total sales for each customer in the Asia region?
+* - How many orders does each customer in the Americas region have?
+* - Who are the top 5 customers with the highest total sales?
+* - What is the total revenue for each customer in the Europe region?
+* - Can you provide a breakdown of the number of customers in each country?
+* - Which customers in the United States have the highest total sales?
+* - What are the total sales for each customer in the Asia region?
+* - What are the top 10 customers with the highest returned parts gross value in Africa?
+* - What are the top 3 customers with the highest total sales overall?
+* - Can you provide a list of the first 10 customers in the database?
+
 
 
 # Run as a Web App
