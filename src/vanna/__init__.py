@@ -600,11 +600,15 @@ def __get_information_schema_tables(database: str) -> pd.DataFrame:
     return df_tables
 
 
-def get_training_plan(filter_databases: Union[List[str], None] = None, filter_schemas: Union[List[str], None] = None, include_information_schema: bool = False, use_historical_queries: bool = True) -> TrainingPlan:
+def get_training_plan_experimental(filter_databases: Union[List[str], None] = None, filter_schemas: Union[List[str], None] = None, include_information_schema: bool = False, use_historical_queries: bool = True) -> TrainingPlan:
     """
+    **EXPERIMENTAL** : This method is experimental and may change in future versions.
+
+    Get a training plan based on the metadata in the database. Currently this only works for Snowflake.
+
     **Example:**
     ```python
-    plan = vn.get_training_plan()
+    plan = vn.get_training_plan_experimental(filter_databases=["employees"], filter_schemas=["public"])
 
     vn.train(plan=plan)
     ```
@@ -614,6 +618,31 @@ def get_training_plan(filter_databases: Union[List[str], None] = None, filter_sc
 
     if run_sql is None:
         raise ValidationError("Please connect to a database first.")
+
+    if use_historical_queries:
+        try:
+            print("Trying query history")
+            df_history = run_sql(""" select * from table(information_schema.query_history(result_limit => 5000)) order by start_time""")
+
+            df_history_filtered = df_history.query('ROWS_PRODUCED > 1')
+            if filter_databases is not None:
+                mask = df_history_filtered['QUERY_TEXT'].str.lower().apply(lambda x: any(s in x for s in [s.lower() for s in filter_databases]))
+                df_history_filtered = df_history_filtered[mask]
+
+            if filter_schemas is not None:
+                mask = df_history_filtered['QUERY_TEXT'].str.lower().apply(lambda x: any(s in x for s in [s.lower() for s in filter_schemas]))
+                df_history_filtered = df_history_filtered[mask]
+
+            for query in df_history_filtered.sample(10)['QUERY_TEXT'].unique().tolist():
+                plan._plan.append(TrainingPlanItem(
+                    item_type=TrainingPlanItem.ITEM_TYPE_SQL,
+                    item_group="",
+                    item_name=generate_question(query),
+                    item_value=query
+                ))
+
+        except Exception as e:
+            print(e)
 
     databases = __get_databases()
     
@@ -657,7 +686,6 @@ def get_training_plan(filter_databases: Union[List[str], None] = None, filter_sc
         except Exception as e:
             print(e)
 
-            
     # try:
     #     print("Trying SHOW TABLES")
     #     df_f = run_sql("SHOW TABLES")
@@ -715,7 +743,7 @@ def get_training_plan(filter_databases: Union[List[str], None] = None, filter_sc
 
 
 def train(question: str = None, sql: str = None, ddl: str = None, documentation: str = None, json_file: str = None,
-          sql_file: str = None) -> bool:
+          sql_file: str = None, plan: TrainingPlan = None) -> bool:
     """
     **Example:**
     ```python
@@ -728,6 +756,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
     If you call it with the ddl argument, it's equivalent to [`add_ddl()`][vanna.add_ddl].
     If you call it with the documentation argument, it's equivalent to [`add_documentation()`][vanna.add_documentation].
     It can also accept a JSON file path or SQL file path to train on a batch of questions and SQL queries or a list of SQL queries respectively.
+    Additionally, you can pass a [`TrainingPlan`][vanna.TrainingPlan] object. Get a training plan with [`vn.get_training_plan()`][vanna.get_training_plan].
 
     Args:
         question (str): The question to train on.
@@ -736,6 +765,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         json_file (str): The JSON file path.
         ddl (str):  The DDL statement.
         documentation (str): The documentation to train on.
+        plan (TrainingPlan): The training plan to train on.
     """
 
     if question and not sql:
@@ -764,7 +794,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             print("Adding Questions And SQLs using file:", json_file)
             for question in data:
                 if not add_sql(question=question['question'], sql=question['answer']):
-                    logger.warning(f"Not able to add sql for question: {question['question']} from {json_file}")
+                    print(f"Not able to add sql for question: {question['question']} from {json_file}")
                     return False
         return True
 
@@ -784,11 +814,24 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
                     if add_sql(question=question, sql=statement):
                         print("SQL added!")
                         return True
-                    logger.warning("Not able to add sql.")
+                    print("Not able to add sql.")
                     return False
         return False
     
-    # Here we're going to attempt auto training
+    if plan:
+        for item in plan._plan:
+            if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
+                if not add_ddl(item.item_value):
+                    print(f"Not able to add ddl for {item.item_group}")
+                    return False
+            elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
+                if not add_documentation(item.item_value):
+                    print(f"Not able to add documentation for {item.item_group}.{item.item_name}")
+                    return False
+            elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
+                if not add_sql(question=item.item_name, sql=item.item_value):
+                    print(f"Not able to add sql for {item.item_group}.{item.item_name}")
+                    return False
 
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
