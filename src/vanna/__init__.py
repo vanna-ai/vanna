@@ -583,7 +583,24 @@ class TrainingPlan:
 
     
 
-def get_training_plan() -> TrainingPlan:
+def __get_databases() -> List[str]:
+    try:
+        df_databases = run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
+    except:
+        try:
+            df_databases = run_sql("SHOW DATABASES")
+        except:
+            return []
+        
+    return df_databases['DATABASE_NAME'].unique().tolist()
+
+def __get_information_schema_tables(database: str) -> pd.DataFrame:
+    df_tables = run_sql(f'SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES')
+
+    return df_tables
+
+
+def get_training_plan(filter_databases: Union[List[str], None] = None, filter_schemas: Union[List[str], None] = None, include_information_schema: bool = False, use_historical_queries: bool = True) -> TrainingPlan:
     """
     **Example:**
     ```python
@@ -591,20 +608,111 @@ def get_training_plan() -> TrainingPlan:
 
     vn.train(plan=plan)
     ```
-
-    Get the training plan for the model.
-
-    Returns:
-        TrainingPlan: The training plan for the model.
     """
-    d = __rpc_call(method="get_training_plan", params=[])
 
-    if 'result' not in d:
-        raise ValidationError("Failed to get training plan")
+    plan = TrainingPlan([])
 
-    training_plan = TrainingPlan(**d['result'])
+    if run_sql is None:
+        raise ValidationError("Please connect to a database first.")
 
-    return training_plan
+    databases = __get_databases()
+    
+    for database in databases:
+        if filter_databases is not None and database not in filter_databases:
+            continue
+
+        try:
+            df_tables = __get_information_schema_tables(database=database)
+
+            print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+            df_columns = run_sql(f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS")
+
+            for schema in df_tables['TABLE_SCHEMA'].unique().tolist():
+                if filter_schemas is not None and schema not in filter_schemas:
+                    continue
+
+                if not include_information_schema and schema == "INFORMATION_SCHEMA":
+                    continue
+
+                df_columns_filtered_to_schema = df_columns.query(f"TABLE_SCHEMA == '{schema}'")
+
+                try:
+                    tables = df_columns_filtered_to_schema['TABLE_NAME'].unique().tolist()
+
+                    for table in tables:
+                        df_columns_filtered_to_table = df_columns_filtered_to_schema.query(f"TABLE_NAME == '{table}'")
+                        doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+                        doc += df_columns_filtered_to_table[["TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "COLUMN_NAME", "DATA_TYPE", "COMMENT"]].to_markdown()
+                    
+                        plan._plan.append(TrainingPlanItem(
+                            item_type=TrainingPlanItem.ITEM_TYPE_IS,
+                            item_group=f"{database}.{schema}",
+                            item_name=table,
+                            item_value=doc
+                        ))
+                
+                except Exception as e:
+                    print(e)
+                    pass
+        except Exception as e:
+            print(e)
+
+            
+    # try:
+    #     print("Trying SHOW TABLES")
+    #     df_f = run_sql("SHOW TABLES")
+
+    #     for schema in df_f.schema_name.unique():
+    #         try:
+    #             print(f"Trying GET_DDL for {schema}")
+    #             ddl_df = run_sql(f"SELECT GET_DDL('schema', '{schema}')")
+
+    #             plan._plan.append(TrainingPlanItem(
+    #                 item_type=TrainingPlanItem.ITEM_TYPE_DDL,
+    #                 item_group=schema,
+    #                 item_name="All Tables",
+    #                 item_value=ddl_df.iloc[0, 0]
+    #             ))
+    #         except:
+    #             pass
+    # except:
+    #     try:
+    #         print("Trying INFORMATION_SCHEMA.TABLES")
+    #         df = run_sql("SELECT * FROM INFORMATION_SCHEMA.TABLES")
+
+    #         breakpoint()    
+
+        # try:
+        #     print("Trying SCHEMATA")
+        #     df_schemata = run_sql("SELECT * FROM region-us.INFORMATION_SCHEMA.SCHEMATA")
+
+        #     for schema in df_schemata.schema_name.unique():
+        #         df = run_sql(f"SELECT * FROM {schema}.information_schema.tables")
+
+        #         for table in df.table_name.unique():
+        #             plan._plan.append(TrainingPlanItem(
+        #                 item_type=TrainingPlanItem.ITEM_TYPE_IS,
+        #                 item_group=schema,
+        #                 item_name=table,
+        #                 item_value=None
+        #             ))
+
+        #         try:
+        #             ddl_df = run_sql(f"SELECT GET_DDL('schema', '{schema}')")
+
+        #             plan._plan.append(TrainingPlanItem(
+        #                 item_type=TrainingPlanItem.ITEM_TYPE_DDL,
+        #                 item_group=schema,
+        #                 item_name=None,
+        #                 item_value=ddl_df.iloc[0, 0]
+        #             ))
+        #         except:
+        #             pass
+        # except:
+        #     pass
+
+    return plan
+
 
 def train(question: str = None, sql: str = None, ddl: str = None, documentation: str = None, json_file: str = None,
           sql_file: str = None) -> bool:
