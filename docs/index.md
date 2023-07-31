@@ -215,7 +215,7 @@ vn.ask("What are the top 10 customers by sales?")
 
 
     
-![png](docs/notebooks/vn-ask_files/vn-ask_10_2.png)
+![png](vn-ask_files/vn-ask_10_2.png)
     
 
 

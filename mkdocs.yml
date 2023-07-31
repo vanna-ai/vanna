@@ -2,13 +2,9 @@ site_name: Vanna.AI Documentation
 nav:
   - Intro:
     - What is Vanna.AI?: index.md
-    - Intro to Vanna: intro-to-vanna.md
   - Use in Notebooks:
-    - Asking Questions: notebooks/vn-ask.md
     - Training Vanna: notebooks/vn-train.md
-  - How Vanna Works:
-    - Onboarding: onboarding.md
-    - Adding Vanna to your Workflow: workflow.md
+    - Asking Questions: notebooks/vn-ask.md
   - Other Ways to Use Vanna:
     - Use with Streamlit: streamlit.md
   - Databases:
