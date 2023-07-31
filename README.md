@@ -6,6 +6,10 @@
 
 **Let Vanna.AI write your nasty SQL for you**. Vanna is a Python based AI SQL agent trained on your schema that writes complex SQL in seconds. `pip install vanna` to get started now.
 
+
+https://github.com/vanna-ai/vanna-py/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f
+
+
 ## An example
 
 A business user asks you **"who are the top 2 customers in each region?"**. Right in the middle of lunch. And they need it for a presentation this afternoon. :rage::rage::rage: 
