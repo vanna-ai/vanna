@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests==2.31.0", "tabulate==0.9.0", "plotly==5.15.0", "pandas==2.0.3", "sqlparse==0.4.4"
+    "requests", "tabulate", "plotly", "pandas", "sqlparse"
 ]
 
 [project.urls]
