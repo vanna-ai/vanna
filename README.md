@@ -10,7 +10,7 @@
 
 A business user asks you **"who are the top 2 customers in each region?"** 
 
-### The old way
+### The old way :rage: :tired_face: :hankey:
 Simple question to ask, not so fun to answer. You spend over an hour a) finding the tables, b) figuring out out the joins, c) look up the syntax for ranking, d) putting this into a CTE, e) filtering by rank, and f) choosing the correct metrics. Finally, you come up with this ugly mess - 
 
 ```sql
@@ -30,7 +30,7 @@ FROM   ranked_customers
 WHERE  rank <= 2;
 ```
 
-### The Vanna way
+### The Vanna way :heart_eyes: :star2: :rocket:
 With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
 
 ```python
