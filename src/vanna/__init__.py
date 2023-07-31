@@ -230,14 +230,16 @@ def set_api_key(key: str) -> None:
 
     Args:
         key (str): The API key.
-    """
-    global api_key
-    api_key = key
-
-    models = get_models()
-
-    if len(models) == 0:
-        raise ConnectionError("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
+    def set_api_key(key: str) -> None:
+        global api_key
+        try:
+            api_key = key
+            models = get_models()
+    
+            if len(models) == 0:
+                raise ConnectionError("There was an error communicating with the Vanna.AI API. Please try again or contact support@vanna.ai")
+        except Exception as e:
+            print(f"Error setting API key or retrieving models: {e}")
 
 def get_models() -> List[str]:
     """
