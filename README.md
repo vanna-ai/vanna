@@ -30,6 +30,8 @@ FROM   ranked_customers
 WHERE  rank <= 2;
 ```
 
+And you had to skip your lunch. **HANGRY!**
+
 ### The Vanna way :heart_eyes: :star2: :rocket:
 With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
 
@@ -45,6 +47,8 @@ Vanna generates that nasty SQL above for you, runs it (locally & securely) and g
 | ------------- | ----------- |
 | Customer#000000001 |  68127.72 |
 | Customer#000000002 |  65898.69 |
+
+And you ate your lunch in peace. **YUMMY!**
 
 ## Why Vanna?
 
