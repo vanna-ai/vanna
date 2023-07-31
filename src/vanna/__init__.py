@@ -358,6 +358,7 @@ def update_model_visibility(public: bool) -> bool:
 
     return status.success
 
+
 def _set_org(org: str) -> None:
     global __org
 
@@ -400,9 +401,6 @@ def set_model(model: str):
     Args:
         model (str): The name of the model to use.
     """
-    if type(model) is not str:
-        raise ValidationError(f"Please provide model name in string format and not {type(model)}.")
-
     if model == 'my-model':
         env_model = os.environ.get('VANNA_MODEL', None)
 
@@ -416,7 +414,7 @@ def set_model(model: str):
 
 def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
     """
-    Adds a question and its corresponding SQL query to the model's training data
+    Adds a question and its corresponding SQL query to the model's training data."
 
     **Example:**
     ```python
