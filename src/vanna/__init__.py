@@ -253,12 +253,13 @@ def get_models() -> List[str]:
     Returns:
         List[str]: A list of model names.
     """
-    d = __rpc_call(method="list_orgs", params=[])
-
-    if 'result' not in d:
-        return []
-
-    orgs = OrganizationList(**d['result'])
+    def get_models() -> List[str]:
+        d = __rpc_call(method="list_orgs", params=[])
+        if 'result' not in d:
+            return []
+        orgs = OrganizationList(**d['result'])
+        print(f"Models: {orgs.organizations}")  # Added print statement
+        return orgs.organizations
 
     return orgs.organizations
 
