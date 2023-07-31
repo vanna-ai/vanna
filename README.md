@@ -54,6 +54,16 @@ Vanna generates that nasty SQL above for you, runs it (locally & securely) and g
 
 And you ate your lunch in peace. **YUMMY!**
 
+## How Vanna works
+Vanna works in two easy steps - train a model on your data, and then ask questions.
+
+1. **Train a model on your data**. 
+2. **Ask questions**.
+
+When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
+
+<<image>>
+
 ## Why Vanna?
 
 1. **High accuracy on complex datasets.**
