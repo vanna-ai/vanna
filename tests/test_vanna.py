@@ -75,6 +75,7 @@ def test_add_user_to_model(monkeypatch):
 
     switch_to_user('user2', monkeypatch)
     models = vn.get_models()
+    print(f"Models after adding user to model: {models}")  # Added print statement
     assert models == ['demo-tpc-h', 'test_org']
     assert 'user2@example.com' in models
 
