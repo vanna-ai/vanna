@@ -14,9 +14,9 @@ https://github.com/vanna-ai/vanna-py/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750
 
 ## An example
 
-A business user asks you **"who are the top 2 customers in each region?"**. Right in the middle of lunch. And they need it for a presentation this afternoon. :rage::rage::rage: 
+A business user asks you **"who are the top 2 customers in each region?"**. Right in the middle of lunch. And they need it for a presentation this afternoon. 😡😡😡
 
-### The old way :rage: :tired_face: :hankey:
+### The old way 😡 😫 💩
 Simple question to ask, not so fun to answer. You spend over an hour a) finding the tables, b) figuring out out the joins, c) look up the syntax for ranking, d) putting this into a CTE, e) filtering by rank, and f) choosing the correct metrics. Finally, you come up with this ugly mess - 
 
 ```sql
@@ -38,7 +38,7 @@ WHERE  rank <= 2;
 
 And you had to skip your lunch. **HANGRY!**
 
-### The Vanna way :heart_eyes: :star2: :rocket:
+### The Vanna way 😍 🌟 🚀
 With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
 
 ```python
@@ -49,10 +49,11 @@ vn.ask('who are the top 2 customers in each region?')
 
 Vanna generates that nasty SQL above for you, runs it (locally & securely) and gives you back a Dataframe in seconds:
 
-| customer_name | total_sales |
-| ------------- | ----------- |
-| Customer#000000001 |  68127.72 |
-| Customer#000000002 |  65898.69 |
+| region_name | customer_name | total_sales |
+| ----------- | ------------- | ----------- |
+| ASIA | Customer#000000001 |  68127.72 |
+| ASIA | Customer#000000002 |  65898.69 |
+...
 
 And you ate your lunch in peace. **YUMMY!**
 
@@ -83,7 +84,7 @@ When you ask a question, we utilize a custom model for your dataset to generate 
     - As you use Vanna more, your model continuously improves as we augment your training data
 5. **Supports many databases.**
     - We have out-of-the-box support Snowflake, BigQuery, Postgres
-    - You can easily make a connector for any database https://docs.vanna.ai/databases/
+    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/) 
 6. **Pretrained models.**
     - If you’re a data provider you can publish your models for anyone to use
     - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
@@ -93,28 +94,152 @@ When you ask a question, we utilize a custom model for your dataset to generate 
     - Even integrate in your web app for customers.
 
 ## Getting started
-Training a model - link to vn-train notebook. Copy some code below
+You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/notebooks/vn-train/) or add manual training data.
+
+### Train with DDL Statements
+If you prefer to manually train, you do not need to connect to a database. You can use the train function with other parmaeters like ddl
+
 
 ```python
-%pip install vanna
-import vanna as vn
-
-vn.train(
-    question="Which products have the highest sales?",
-    sql="...",
-)
+vn.train(ddl="""
+    CREATE TABLE IF NOT EXISTS my-table (
+        id INT PRIMARY KEY,
+        name VARCHAR(100),
+        age INT
+    )
+""")
 ```
+
+### Train with Documentation
+Sometimes you may want to add documentation about your business terminology or definitions.
+
+```python
+vn.train(documentation="Our business defines OTIF score as the percentage of orders that are delivered on time and in full")
+```
+
+### Train with SQL
+You can also add SQL queries to your training data. This is useful if you have some queries already laying around. You can just copy and paste those from your editor to begin generating new SQL.
+
+```python
+vn.train(sql="SELECT * FROM my-table WHERE name = 'John Doe'")
+```
+
 
 
 ## Asking questions
-Show one question - returning chart, etc.
-
 ```python
-adsfdaf
+vn.ask("What are the top 10 customers by sales?")
 ```
+
+    SELECT c.c_name as customer_name,
+           sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales
+    FROM   snowflake_sample_data.tpch_sf1.lineitem l join snowflake_sample_data.tpch_sf1.orders o
+            ON l.l_orderkey = o.o_orderkey join snowflake_sample_data.tpch_sf1.customer c
+            ON o.o_custkey = c.c_custkey
+    GROUP BY customer_name
+    ORDER BY total_sales desc limit 10;
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CUSTOMER_NAME</th>
+      <th>TOTAL_SALES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Customer#000143500</td>
+      <td>6757566.0218</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Customer#000095257</td>
+      <td>6294115.3340</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Customer#000087115</td>
+      <td>6184649.5176</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Customer#000131113</td>
+      <td>6080943.8305</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Customer#000134380</td>
+      <td>6075141.9635</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Customer#000103834</td>
+      <td>6059770.3232</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Customer#000069682</td>
+      <td>6057779.0348</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Customer#000102022</td>
+      <td>6039653.6335</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Customer#000098587</td>
+      <td>6027021.5855</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Customer#000064660</td>
+      <td>5905659.6159</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+    
+![png](docs/notebooks/vn-ask_files/vn-ask_10_2.png)
+    
+
+
+
+AI-generated follow-up questions:
+
+* What is the country name for each of the top 10 customers by sales?
+* How many orders does each of the top 10 customers by sales have?
+* What is the total revenue for each of the top 10 customers by sales?
+* What are the customer names and total sales for customers in the United States?
+* Which customers in Africa have returned the most parts with a gross value?
+* What are the total sales for the top 3 customers?
+* What are the customer names and total sales for the top 5 customers?
+* What are the total sales for customers in Europe?
+* How many customers are there in each country?
 
 ## More resources
  - [Full Documentation](https://docs.vanna.ai)
- - Website
- - Slack channel for support
- - LinkedIn
+ - [Website](https://vanna.ai)
+ - [Slack channel for support](https://join.slack.com/t/vanna-ai/shared_invite/zt-1unu0ipog-iE33QCoimQiBDxf2o7h97w)
+ - [LinkedIn](https://www.linkedin.com/company/vanna-ai/)
