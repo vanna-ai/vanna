@@ -89,7 +89,7 @@ from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId
     FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
     Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
 from typing import List, Union, Callable, Tuple
-from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OtpCodeError, SQLRemoveError, \
+from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OTPCodeError, SQLRemoveError, \
     ValidationError, APIError
 from .utils import validate_config_path
 import warnings
@@ -192,12 +192,12 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
         d = __unauthenticated_rpc_call(method="send_otp", params=params)
 
         if 'result' not in d:
-            raise OtpCodeError("Error sending OTP code.")
+            raise OTPCodeError("Error sending OTP code.")
 
         status = Status(**d['result'])
 
         if not status.success:
-            raise OtpCodeError(f"Error sending OTP code: {status.message}")
+            raise OTPCodeError(f"Error sending OTP code: {status.message}")
 
         otp_code = input("Check your email for the code and enter it here: ")
 
@@ -206,12 +206,12 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
     d = __unauthenticated_rpc_call(method="verify_otp", params=params)
 
     if 'result' not in d:
-        raise OtpCodeError("Error verifying OTP code.")
+        raise OTPCodeError("Error verifying OTP code.")
 
     key = ApiKey(**d['result'])
 
     if key is None:
-        raise OtpCodeError("Error verifying OTP code.")
+        raise OTPCodeError("Error verifying OTP code.")
 
     api_key = key.key
 
