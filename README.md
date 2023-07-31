@@ -2,141 +2,98 @@
 | ------ | ---- | ----- | ------------- |
 | [![GitHub](https://img.shields.io/badge/GitHub-vanna--py-blue?logo=github)](https://github.com/vanna-ai/vanna-py) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna--py-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna-py/blob/main/notebooks/vn-starter.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna--py-blue?logo=read-the-docs)](https://docs.vanna.ai) |
 
-# Vanna.AI
+# Vanna.AI - Personalized AI SQL Agent
 
-Vanna is a Python-based AI SQL co-pilot. Our initial users are data-savvy data analysts, data scientists, engineers, and similar people that use Vanna to automate writing complex SQL.
+**Let Vanna.AI write your nasty SQL for you**. Vanna is a Python based AI SQL agent trained on your schema that writes complex SQL in seconds. `pip install vanna` to get started now.
 
-Vanna can:
-- [Convert natural language to SQL](#natural-language-to-sql)
-- [Run SQL](#run-sql)
-- [Generate Plotly code](#generate-plotly-code)
-- [Run Plotly code](#run-plotly-code)
-- [Get better over time](#improve-your-training-data)
-- Be used in a Jupyter Notebooks, Colab, or other Python environments
-- Be used with Snowflake, BigQuery, and other databases
-- Be used with Python UIs, such as [Streamlit](https://github.com/vanna-ai/vanna-streamlit), Dash, and others
-- Be used to make Slack bots
+## An example
 
-## Natural Language to SQL
-```python
-sql = vn.generate_sql(question='Who are the top 10 customers?')
-```
+A business user asks you **"who are the top 2 customers in each region?"** 
 
-### Output:
+### The old way
+Simple question to ask, not so fun to answer. You spend over an hour a) finding the tables, b) figuring out out the joins, c) look up the syntax for ranking, d) putting this into a CTE, e) filtering by rank, and f) choosing the correct metrics. Finally, you come up with this ugly mess - 
+
 ```sql
-SELECT customer_name,
-       total_sales
-FROM   (SELECT c.c_name as customer_name,
-               sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales,
-               row_number() OVER (ORDER BY sum(l.l_extendedprice * (1 - l.l_discount)) desc) as rank
-        FROM   snowflake_sample_data.tpch_sf1.lineitem l join snowflake_sample_data.tpch_sf1.orders o
-                ON l.l_orderkey = o.o_orderkey join snowflake_sample_data.tpch_sf1.customer c
-                ON o.o_custkey = c.c_custkey
-        GROUP BY customer_name)
-WHERE  rank <= 10;
+with ranked_customers as (SELECT c.c_name as customer_name,
+  r.r_name as region_name,
+  row_number() OVER (PARTITION BY r.r_name
+     ORDER BY sum(l.l_quantity * l.l_extendedprice) desc) as rank	
+     FROM   snowflake_sample_data.tpch_sf1.customer c join snowflake_sample_data.tpch_sf1.orders o
+         ON c.c_custkey = o.o_custkey join snowflake_sample_data.tpch_sf1.lineitem l
+         ON o.o_orderkey = l.l_orderkey join snowflake_sample_data.tpch_sf1.nation n
+         ON c.c_nationkey = n.n_nationkey join snowflake_sample_data.tpch_sf1.region r
+         ON n.n_regionkey = r.r_regionkey
+             GROUP BY customer_name, region_name)
+SELECT region_name,
+       customer_name
+FROM   ranked_customers
+WHERE  rank <= 2;
 ```
 
-## Run SQL
-This function is provided as a convenience. You can choose to run your SQL however you normally do and use the rest of the downstream functions.
+### The Vanna way
+With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
+
 ```python
-df = vn.get_results(cs, database, sql)
+import vanna as vn
+vn.set_model('your-model')
+vn.ask('who are the top 2 customers in each region?')
 ```
 
-### Output:
+Vanna generates that nasty SQL above for you, runs it (locally & securely) and gives you back a Dataframe in seconds:
+
 | customer_name | total_sales |
 | ------------- | ----------- |
 | Customer#000000001 |  68127.72 |
 | Customer#000000002 |  65898.69 |
-...
 
-## Generate Plotly Code
-```python
-plotly_code = vn.generate_plotly_code(question=my_question, sql=sql, df=df)
-```
+## Why Vanna?
 
-### Output:
-```python
-fig = go.Figure(go.Bar(
-    x=df['CUSTOMER_NAME'],
-    y=df['TOTAL_SALES'],
-    marker={'color': df['TOTAL_SALES'], 'colorscale': 'Viridis'},
-    text=df['TOTAL_SALES'],
-    textposition='auto',
-))
+1. **High accuracy on complex datasets.**
+    - Vanna’s capabilities are tied to the training data you give it
+    - More training data means better accuracy for large and complex datasets
+2. **Secure and private.**
+    - Your database contents  are never sent to Vanna’s servers
+    - We only see the bare minimum - schemas & queries.
+3. **Isolated, custom model.**
+    - You train a custom model specific to your database and your schema.
+    - Nobody else can use your model or view your model’s training data unless you choose to add members to your model or make it public
+    - We use a combination of third-party foundational models (OpenAI, Google) and our own LLM.
+4. **Self learning.**
+    - As you use Vanna more, your model continuously improves as we augment your training data
+5. **Supports many databases.**
+    - We have out-of-the-box support Snowflake, BigQuery, Postgres
+    - You can easily make a connector for any database https://docs.vanna.ai/databases/
+6. **Pretrained models.**
+    - If you’re a data provider you can publish your models for anyone to use
+    - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
+7. **Choose your front end.**
+    - Start in a Jupyter Notebook. 
+    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin. 
+    - Even integrate in your web app for customers.
 
-fig.update_layout(
-    title="Top 10 Customers by Sales",
-    xaxis_title="Customer",
-    yaxis_title="Total Sales",
-    xaxis_tickangle=-45,
-    yaxis_tickprefix="$",
-)
-```
+## Getting started
+Training a model - link to vn-train notebook. Copy some code below
 
-## Run Plotly Code
-```python
-fig = vn.get_plotly_figure(plotly_code=plotly_code, df=df)
-fig.show()
-```
-
-### Output:
-![Top 10 Customers by Sales](docs/chart.png)
-
-## Improve Your Training Data
-```python
-vn.store_sql(
-    question=my_question,
-    sql=sql,
-)
-```
-
-## How Vanna Works
-```mermaid
-flowchart LR
-    DB[(Known Correct Question-SQL)]
-    Try[Try to Use DDL/Documentation]
-    SQL(SQL)
-    Check{Is the SQL correct?}
-    Generate[fa:fa-circle-question Use Examples to Generate]
-    DB --> Find
-    Question[fa:fa-circle-question Question] --> Find{fa:fa-magnifying-glass Do we have similar questions?}
-    Find -- Yes --> Generate
-    Find -- No --> Try
-    Generate --> SQL
-    Try --> SQL
-    SQL --> Check
-    Check -- Yes --> DB
-    Check -- No --> Analyst[fa:fa-glasses Analyst Writes the SQL]
-    Analyst -- Adds --> DB
-```
-
-# Getting Started
-
-## Install Vanna from PyPI and import it:
 ```python
 %pip install vanna
 import vanna as vn
-```
 
-## Enter your email to set an API Key
-This will send a one-time code to your email address. Copy and paste the code into the prompt.
-```python
-my_email = '' # Enter your email here
-vn.login(email=my_email)
-```
-
-## Add Training Data
-```python
 vn.train(
     question="Which products have the highest sales?",
     sql="...",
 )
 ```
 
-## Generate SQL
+
+## Asking questions
+Show one question - returning chart, etc.
+
 ```python
-sql = vn.generate_sql(question="Who are the top 10 customers?")
+adsfdaf
 ```
 
-# Documentation
-[Full Documentation](https://docs.vanna.ai)
+## More resources
+ - [Full Documentation](https://docs.vanna.ai)
+ - Website
+ - Slack channel for support
+ - LinkedIn
