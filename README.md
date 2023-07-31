@@ -63,8 +63,9 @@ Vanna works in two easy steps - train a model on your data, and then ask questio
 2. **Ask questions**.
 
 When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
+<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna-py/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
 
-<<image>>
+
 
 ## Why Vanna?
 
