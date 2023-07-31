@@ -83,7 +83,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import sqlparse
-import logging
+from dataclasses import dataclass
 
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, \
     FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
@@ -114,9 +114,6 @@ __org: Union[str, None] = None  # Organization name for Vanna.AI
 
 _endpoint = "https://ask.vanna.ai/rpc"
 _unauthenticated_endpoint = "https://ask.vanna.ai/unauthenticated_rpc"
-
-logger = logging.getLogger(__name__)
-
 
 def __unauthenticated_rpc_call(method, params):
     headers = {
@@ -327,7 +324,7 @@ def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
     status = Status(**d['result'])
 
     if not status.success:
-        logger.info(status.message)
+        print(status.message)
 
     return status.success
 
@@ -357,7 +354,6 @@ def update_model_visibility(public: bool) -> bool:
     status = Status(**d['result'])
 
     return status.success
-
 
 def _set_org(org: str) -> None:
     global __org
@@ -401,8 +397,11 @@ def set_model(model: str):
     Args:
         model (str): The name of the model to use.
     """
+    if type(model) is not str:
+        raise ValidationError(f"Please provide model name in string format and not {type(model)}.")
+
     if model == 'my-model':
-        env_model = os.environ.get('VANNA_model', None)
+        env_model = os.environ.get('VANNA_MODEL', None)
 
         if env_model is not None:
             model = env_model
@@ -505,19 +504,261 @@ def add_documentation(documentation: str) -> bool:
 
     return status.success
 
+@dataclass
+class TrainingPlanItem:
+    item_type: str
+    item_group: str
+    item_name: str
+    item_value: str
 
-def train(question: str = None, sql: str = None, ddl: str = None, documentation: bool = False, json_file: str = None,
-          sql_file: str = None) -> bool:
+    def __str__(self):
+        if self.item_type == self.ITEM_TYPE_SQL:
+            return f"Train on SQL: {self.item_group} {self.item_name}"
+        elif self.item_type == self.ITEM_TYPE_DDL:
+            return f"Train on DDL: {self.item_group} {self.item_name}"
+        elif self.item_type == self.ITEM_TYPE_IS:
+            return f"Train on Information Schema: {self.item_group} {self.item_name}"
+
+    ITEM_TYPE_SQL = "sql"
+    ITEM_TYPE_DDL = "ddl"
+    ITEM_TYPE_IS = "is"
+
+
+class TrainingPlan:
+    """
+    A class representing a training plan. You can see what's in it, and remove items from it that you don't want trained.
+
+    **Example:**
+    ```python
+    plan = vn.get_training_plan()
+
+    plan.get_summary()
+    ```
+
+    """
+    _plan: List[TrainingPlanItem]
+
+    def __init__(self, plan: List[TrainingPlanItem]):
+        self._plan = plan
+
+    def __str__(self):
+        return "\n".join(self.get_summary())
+    
+    def __repr__(self):
+        return self.__str__()
+
+    def get_summary(self) -> List[str]:
+        """
+        **Example:**
+        ```python
+        plan = vn.get_training_plan()
+
+        plan.get_summary()
+        ```
+
+        Get a summary of the training plan.
+
+        Returns:
+            List[str]: A list of strings describing the training plan.
+        """
+
+        return [f"{item}" for item in self._plan]
+
+    def remove_item(self, item: str):
+        """
+        **Example:**
+        ```python
+        plan = vn.get_training_plan()
+
+        plan.remove_item("Train on SQL: What is the average salary of employees?")
+        ```
+
+        Remove an item from the training plan.
+
+        Args:
+            item (str): The item to remove.
+        """
+        for plan_item in self._plan:
+            if str(plan_item) == item:
+                self._plan.remove(plan_item)
+                break
+
+    
+
+def __get_databases() -> List[str]:
+    try:
+        df_databases = run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
+    except:
+        try:
+            df_databases = run_sql("SHOW DATABASES")
+        except:
+            return []
+        
+    return df_databases['DATABASE_NAME'].unique().tolist()
+
+def __get_information_schema_tables(database: str) -> pd.DataFrame:
+    df_tables = run_sql(f'SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES')
+
+    return df_tables
+
+
+def get_training_plan_experimental(filter_databases: Union[List[str], None] = None, filter_schemas: Union[List[str], None] = None, include_information_schema: bool = False, use_historical_queries: bool = True) -> TrainingPlan:
+    """
+    **EXPERIMENTAL** : This method is experimental and may change in future versions.
+
+    Get a training plan based on the metadata in the database. Currently this only works for Snowflake.
+
+    **Example:**
+    ```python
+    plan = vn.get_training_plan_experimental(filter_databases=["employees"], filter_schemas=["public"])
+
+    vn.train(plan=plan)
+    ```
+    """
+
+    plan = TrainingPlan([])
+
+    if run_sql is None:
+        raise ValidationError("Please connect to a database first.")
+
+    if use_historical_queries:
+        try:
+            print("Trying query history")
+            df_history = run_sql(""" select * from table(information_schema.query_history(result_limit => 5000)) order by start_time""")
+
+            df_history_filtered = df_history.query('ROWS_PRODUCED > 1')
+            if filter_databases is not None:
+                mask = df_history_filtered['QUERY_TEXT'].str.lower().apply(lambda x: any(s in x for s in [s.lower() for s in filter_databases]))
+                df_history_filtered = df_history_filtered[mask]
+
+            if filter_schemas is not None:
+                mask = df_history_filtered['QUERY_TEXT'].str.lower().apply(lambda x: any(s in x for s in [s.lower() for s in filter_schemas]))
+                df_history_filtered = df_history_filtered[mask]
+
+            for query in df_history_filtered.sample(10)['QUERY_TEXT'].unique().tolist():
+                plan._plan.append(TrainingPlanItem(
+                    item_type=TrainingPlanItem.ITEM_TYPE_SQL,
+                    item_group="",
+                    item_name=generate_question(query),
+                    item_value=query
+                ))
+
+        except Exception as e:
+            print(e)
+
+    databases = __get_databases()
+    
+    for database in databases:
+        if filter_databases is not None and database not in filter_databases:
+            continue
+
+        try:
+            df_tables = __get_information_schema_tables(database=database)
+
+            print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+            df_columns = run_sql(f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS")
+
+            for schema in df_tables['TABLE_SCHEMA'].unique().tolist():
+                if filter_schemas is not None and schema not in filter_schemas:
+                    continue
+
+                if not include_information_schema and schema == "INFORMATION_SCHEMA":
+                    continue
+
+                df_columns_filtered_to_schema = df_columns.query(f"TABLE_SCHEMA == '{schema}'")
+
+                try:
+                    tables = df_columns_filtered_to_schema['TABLE_NAME'].unique().tolist()
+
+                    for table in tables:
+                        df_columns_filtered_to_table = df_columns_filtered_to_schema.query(f"TABLE_NAME == '{table}'")
+                        doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+                        doc += df_columns_filtered_to_table[["TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME", "COLUMN_NAME", "DATA_TYPE", "COMMENT"]].to_markdown()
+                    
+                        plan._plan.append(TrainingPlanItem(
+                            item_type=TrainingPlanItem.ITEM_TYPE_IS,
+                            item_group=f"{database}.{schema}",
+                            item_name=table,
+                            item_value=doc
+                        ))
+                
+                except Exception as e:
+                    print(e)
+                    pass
+        except Exception as e:
+            print(e)
+
+    # try:
+    #     print("Trying SHOW TABLES")
+    #     df_f = run_sql("SHOW TABLES")
+
+    #     for schema in df_f.schema_name.unique():
+    #         try:
+    #             print(f"Trying GET_DDL for {schema}")
+    #             ddl_df = run_sql(f"SELECT GET_DDL('schema', '{schema}')")
+
+    #             plan._plan.append(TrainingPlanItem(
+    #                 item_type=TrainingPlanItem.ITEM_TYPE_DDL,
+    #                 item_group=schema,
+    #                 item_name="All Tables",
+    #                 item_value=ddl_df.iloc[0, 0]
+    #             ))
+    #         except:
+    #             pass
+    # except:
+    #     try:
+    #         print("Trying INFORMATION_SCHEMA.TABLES")
+    #         df = run_sql("SELECT * FROM INFORMATION_SCHEMA.TABLES")
+
+    #         breakpoint()    
+
+        # try:
+        #     print("Trying SCHEMATA")
+        #     df_schemata = run_sql("SELECT * FROM region-us.INFORMATION_SCHEMA.SCHEMATA")
+
+        #     for schema in df_schemata.schema_name.unique():
+        #         df = run_sql(f"SELECT * FROM {schema}.information_schema.tables")
+
+        #         for table in df.table_name.unique():
+        #             plan._plan.append(TrainingPlanItem(
+        #                 item_type=TrainingPlanItem.ITEM_TYPE_IS,
+        #                 item_group=schema,
+        #                 item_name=table,
+        #                 item_value=None
+        #             ))
+
+        #         try:
+        #             ddl_df = run_sql(f"SELECT GET_DDL('schema', '{schema}')")
+
+        #             plan._plan.append(TrainingPlanItem(
+        #                 item_type=TrainingPlanItem.ITEM_TYPE_DDL,
+        #                 item_group=schema,
+        #                 item_name=None,
+        #                 item_value=ddl_df.iloc[0, 0]
+        #             ))
+        #         except:
+        #             pass
+        # except:
+        #     pass
+
+    return plan
+
+
+def train(question: str = None, sql: str = None, ddl: str = None, documentation: str = None, json_file: str = None,
+          sql_file: str = None, plan: TrainingPlan = None) -> bool:
     """
     **Example:**
     ```python
-    vn.train(
-        question="What is the average salary of employees?",
-        sql="SELECT AVG(salary) FROM employees"
-    )
+    vn.train()
     ```
 
-    Train Vanna.AI on a question and its corresponding SQL query. This is equivalent to calling [`add_sql()`][vanna.add_sql].
+    Train Vanna.AI on a question and its corresponding SQL query. 
+    If you call it with no arguments, it will check if you connected to a database and it will attempt to train on the metadata of that database.
+    If you call it with the sql argument, it's equivalent to [`add_sql()`][vanna.add_sql].
+    If you call it with the ddl argument, it's equivalent to [`add_ddl()`][vanna.add_ddl].
+    If you call it with the documentation argument, it's equivalent to [`add_documentation()`][vanna.add_documentation].
+    It can also accept a JSON file path or SQL file path to train on a batch of questions and SQL queries or a list of SQL queries respectively.
+    Additionally, you can pass a [`TrainingPlan`][vanna.TrainingPlan] object. Get a training plan with [`vn.get_training_plan_experimental()`][vanna.get_training_plan_experimental].
 
     Args:
         question (str): The question to train on.
@@ -525,7 +766,8 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         sql_file (str): The SQL file path.
         json_file (str): The JSON file path.
         ddl (str):  The DDL statement.
-        documentation (bool): Generate Documentaion for the SQL.
+        documentation (str): The documentation to train on.
+        plan (TrainingPlan): The training plan to train on.
     """
 
     if question and not sql:
@@ -533,26 +775,28 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         raise ValidationError(
             f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
 
+    if documentation:
+        print("Adding documentation....")
+        return add_documentation(sql)
+
     if sql:
-        if documentation:
-            logger.info("Adding documentation....")
-            return add_documentation(sql)
-        question = generate_question(sql)
-        logger.info("Question generated with sql:", Question, '\nAdding SQL...')
+        if question is None:
+            question = generate_question(sql)
+            print("Question generated with sql:", Question, '\nAdding SQL...')
         return add_sql(question=question, sql=sql)
 
     if ddl:
-        logger.info("Adding ddl:", ddl)
+        print("Adding ddl:", ddl)
         return add_ddl(sql)
 
     if json_file:
         validate_config_path(json_file)
         with open(json_file, 'r') as js_file:
             data = json.load(js_file)
-            logger.info("Adding Questions And SQLs using file:", json_file)
+            print("Adding Questions And SQLs using file:", json_file)
             for question in data:
                 if not add_sql(question=question['question'], sql=question['answer']):
-                    logger.warning(f"Not able to add sql for question: {question['question']} from {json_file}")
+                    print(f"Not able to add sql for question: {question['question']} from {json_file}")
                     return False
         return True
 
@@ -563,18 +807,33 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             for statement in sql_statements:
                 if 'CREATE TABLE' in statement:
                     if add_ddl(statement):
-                        logger.info("ddl Added!")
+                        print("ddl Added!")
                         return True
-                    logger.info("Not able to add DDL")
+                    print("Not able to add DDL")
                     return False
                 else:
                     question = generate_question(sql=statement)
                     if add_sql(question=question, sql=statement):
-                        logger.info("SQL added!")
+                        print("SQL added!")
                         return True
-                    logger.warning("Not able to add sql.")
+                    print("Not able to add sql.")
                     return False
         return False
+    
+    if plan:
+        for item in plan._plan:
+            if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
+                if not add_ddl(item.item_value):
+                    print(f"Not able to add ddl for {item.item_group}")
+                    return False
+            elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
+                if not add_documentation(item.item_value):
+                    print(f"Not able to add documentation for {item.item_group}.{item.item_name}")
+                    return False
+            elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
+                if not add_sql(question=item.item_name, sql=item.item_value):
+                    print(f"Not able to add sql for {item.item_group}.{item.item_name}")
+                    return False
 
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
@@ -845,14 +1104,18 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
     try:
         sql = generate_sql(question=question)
     except Exception as e:
-        logger.info(e)
+        print(e)
         return None, None, None, None
 
     if print_results:
-        logger.info(sql)
-
+        try:
+                Code = __import__('IPython.display', fromlist=['Code']).Code
+                display(Code(sql))
+        except Exception as e:
+            print(sql)
+        
     if run_sql is None:
-        logger.info("If you want to run the SQL query, provide a vn.run_sql function.")
+        print("If you want to run the SQL query, provide a vn.run_sql function.")
 
         if print_results:
             return None
@@ -867,7 +1130,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
                 display = __import__('IPython.display', fromlist=['display']).display
                 display(df)
             except Exception as e:
-                logger.info(df)
+                print(df)
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
@@ -876,14 +1139,28 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
             plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
             fig = get_plotly_figure(plotly_code=plotly_code, df=df)
             if print_results:
-                fig.show()
+                try:
+                    display = __import__('IPython.display', fromlist=['display']).display
+                    Image = __import__('IPython.display', fromlist=['Image']).Image
+                    img_bytes = fig.to_image(format="png", scale=2)
+                    display(Image(img_bytes))
+                except Exception as e:
+                    fig.show()
 
             if generate_followups:
                 followup_questions = generate_followup_questions(question=question, df=df)
                 if print_results and followup_questions is not None and len(followup_questions) > 0:
-                    logger.info("AI-generated follow-up questions:")
+                    md = "AI-generated follow-up questions:\n\n"
                     for followup_question in followup_questions:
-                        logger.info(followup_question)
+                        md += f"* {followup_question}\n"
+
+                    try:
+                        display = __import__('IPython.display', fromlist=['display']).display
+                        Markdown = __import__('IPython.display', fromlist=['Markdown']).Markdown
+                        display(Markdown(md))
+                    except Exception as e:
+                        print(md)
+
 
                 if print_results:
                     return None
@@ -898,14 +1175,14 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         except Exception as e:
             # Print stack trace
             traceback.print_exc()
-            logger.info("Couldn't run plotly code: ", e)
+            print("Couldn't run plotly code: ", e)
             if print_results:
                 return None
             else:
                 return sql, df, None, None
 
     except Exception as e:
-        logger.info("Couldn't run sql: ", e)
+        print("Couldn't run sql: ", e)
         if print_results:
             return None
         else:
@@ -1005,7 +1282,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
-    logger.info("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
+    print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
     warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
     cs.execute(f"USE DATABASE {default_database}")
@@ -1175,7 +1452,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
     """
 
     try:
-        import snowflake.connector as snowflake
+        snowflake = __import__('snowflake.connector')
     except ImportError:
         raise DependencyError("You need to install required dependencies to execute this method, run command:"
                                   " \npip install vanna[snowflake]")
