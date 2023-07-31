@@ -8,7 +8,7 @@
 
 ## An example
 
-A business user asks you **"who are the top 2 customers in each region?"** 
+A business user asks you **"who are the top 2 customers in each region?"**. Right in the middle of lunch. And they need it for a presentation this afternoon. :rage::rage::rage: 
 
 ### The old way :rage: :tired_face: :hankey:
 Simple question to ask, not so fun to answer. You spend over an hour a) finding the tables, b) figuring out out the joins, c) look up the syntax for ranking, d) putting this into a CTE, e) filtering by rank, and f) choosing the correct metrics. Finally, you come up with this ugly mess - 
