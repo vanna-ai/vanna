@@ -16,8 +16,11 @@ vn._unauthenticated_endpoint = endpoint_base + '/unauthenticated_rpc'
 def switch_to_user(user, monkeypatch):
     monkeypatch.setattr(sys, 'stdin', io.StringIO('DEBUG\n'))
 
-    api_key = vn.get_api_key(email=f'{user}@example.com')
-    vn.set_api_key(api_key)
+    try:
+        api_key = vn.get_api_key(email=f'{user}@example.com')
+        vn.set_api_key(api_key)
+    except Exception as e:
+        print(f"Error setting API key: {e}")
 
 ## Tests
 
@@ -73,6 +76,7 @@ def test_add_user_to_model(monkeypatch):
     switch_to_user('user2', monkeypatch)
     models = vn.get_models()
     assert models == ['demo-tpc-h', 'test_org']
+    assert 'user2@example.com' in models
 
 def test_update_model_visibility(monkeypatch):
     rv = vn.update_model_visibility(public=True)
