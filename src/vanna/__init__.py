@@ -1132,10 +1132,12 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
-
-        try:
-            plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
-            fig = get_plotly_figure(plotly_code=plotly_code, df=df)
+def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]], None]:
+    try:
+        plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
+        if not isinstance(plotly_code, str):
+            raise TypeError("plotly_code must be a string")
+        fig = get_plotly_figure(plotly_code=plotly_code, df=df)
             if print_results:
                 try:
                     display = __import__('IPython.display', fromlist=['display']).display
@@ -1252,9 +1254,11 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
     Returns:
         plotly.graph_objs.Figure: The Plotly figure.
-    """
-    ldict = {'df': df, 'px': px, 'go': go}
-    exec(plotly_code, globals(), ldict)
+    def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True) -> plotly.graph_objs.Figure:
+        if not isinstance(plotly_code, str):
+            raise TypeError("plotly_code must be a string")
+        ldict = {'df': df, 'px': px, 'go': go}
+        exec(plotly_code, globals(), ldict)
 
     fig = ldict.get('fig', None)
 
