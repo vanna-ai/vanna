@@ -25,7 +25,7 @@ For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn
 | Prefix | Definition | Examples |
 | --- | --- | --- |
 | `vn.set_` | Sets the variable for the current session | [`vn.set_model(...)`][vanna.set_model] <br> [`vn.set_api_key(...)`][vanna.set_api_key]  |
-| `vn.get_` | Performs a read-only operation | [`vn.get_model()`][vanna.get_models] |
+| `vn.get_` | Performs a read-only operation | [`vn.get_models()`][vanna.get_models] |
 | `vn.add_` | Adds something to the model | [`vn.add_sql(...)`][vanna.add_sql] <br> [`vn.add_ddl(...)`][vanna.add_ddl] |
 | `vn.generate_` | Generates something using AI based on the information in the model | [`vn.generate_sql(...)`][vanna.generate_sql] <br> [`vn.generate_explanation()`][vanna.generate_explanation] |
 | `vn.run_` | Runs code (SQL or Plotly) | [`vn.run_sql`][vanna.run_sql] |
