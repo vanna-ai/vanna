@@ -26,6 +26,6 @@ dependencies = [
 "Bug Tracker" = "https://github.com/vanna-ai/vanna-py/issues"
 
 [project.optional-dependencies]
-postgres = ["psycopg2==2.9.6", "db-dtypes==1.1.1"]
-bigqury = ["google-cloud-core==2.3.3", "google-cloud-bigquery==3.11.4"]
-snowflake = ["snowflake-connector-python==3.0.4"]
+postgres = ["psycopg2", "db-dtypes"]
+bigqury = ["google-cloud-bigquery"]
+snowflake = ["snowflake-connector-python"]
