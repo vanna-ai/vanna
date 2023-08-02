@@ -6,3 +6,4 @@ notebooks/.ipynb_checkpoints
 tests/__pycache__
 __pycache__/
 .idea
+docs/*.html
