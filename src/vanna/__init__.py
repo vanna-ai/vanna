@@ -91,10 +91,11 @@ from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId
 from typing import List, Union, Callable, Tuple
 from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OTPCodeError, SQLRemoveError, \
     ValidationError, APIError
-from .utils import validate_config_path
+from .utils import validate_config_path, sanitize_model_name
 import warnings
 import traceback
 import os
+import sqlite3
 
 api_key: Union[str, None] = None  # API key for Vanna.AI
 
@@ -280,7 +281,7 @@ def create_model(model: str, db_type: str) -> bool:
     global __org
     if __org is None:
         __org = 'demo-tpc-h'
-
+    model = sanitize_model_name(model)
     params = [NewOrganization(org_name=model, db_type=db_type)]
 
     d = __rpc_call(method="create_org", params=params)
@@ -407,7 +408,7 @@ def set_model(model: str):
             model = env_model
         else:
             raise ValidationError("Please replace 'my-model' with the name of your model")
-
+    dataset = sanitize_model_name(model)
     _set_org(org=model)
 
 
@@ -916,7 +917,7 @@ def remove_sql(question: str) -> bool:
     if 'result' not in d:
         raise Exception(f"Error removing SQL")
         return False
-    
+
     status = Status(**d['result'])
 
     if not status.success:
@@ -1425,6 +1426,37 @@ def get_training_data() -> pd.DataFrame:
 
     return df
 
+def connect_to_sqlite(url: str):
+    """
+    Connect to a SQLite database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
+
+    Args:
+        url (str): The URL of the database to connect to.
+
+    Returns:
+        None
+    """
+
+    # URL of the database to download
+
+    # Path to save the downloaded database
+    path = "tempdb.sqlite"
+
+    # Download the database if it doesn't exist
+    if not os.path.exists(path):
+        response = requests.get(url)
+        response.raise_for_status()  # Check that the request was successful
+        with open(path, 'wb') as f:
+            f.write(response.content)
+
+    # Connect to the database
+    conn = sqlite3.connect(path)
+
+    def run_sql_sqlite(sql: str):
+        return pd.read_sql_query(sql, conn)
+
+    global run_sql
+    run_sql = run_sql_sqlite
 
 def connect_to_snowflake(account: str, username: str, password: str, database: str, role: Union[str, None] = None):
     """

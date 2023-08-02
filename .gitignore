@@ -7,3 +7,4 @@ tests/__pycache__
 __pycache__/
 .idea
 .coverage
+docs/*.html
