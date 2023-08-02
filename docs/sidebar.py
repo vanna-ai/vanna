@@ -9,6 +9,8 @@ file_path = sys.argv[1]
 # Get the directory to search for the .ipynb files from the command line
 notebook_dir = sys.argv[2]
 
+# Get the output directory from the command line
+output_dir = sys.argv[3]
 
 def generate_html(sidebar_data, current_path: str):
     html = '<ul class="space-y-2">\n'
@@ -72,6 +74,6 @@ for notebook_file in notebook_files:
     (body, resources) = html_exporter.from_notebook_node(current_notebook)
 
     # Write body to file
-    with open(os.path.join(notebook_dir, f'{notebook_name}.html'), 'w') as file:
+    with open(os.path.join(output_dir, f'{notebook_name}.html'), 'w') as file:
         file.write(body.replace('<!-- NAV HERE -->', html_code))
 
