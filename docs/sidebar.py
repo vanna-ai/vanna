@@ -1,4 +1,14 @@
 import yaml
+import sys
+import nbformat
+from nbconvert import HTMLExporter
+
+# Get the yaml file path from the command line
+file_path = sys.argv[1]
+
+# Get the directory to search for the .ipynb files from the command line
+notebook_dir = sys.argv[2]
+
 
 def generate_html(sidebar_data, current_path: str):
     html = '<ul class="space-y-2">\n'
@@ -35,28 +45,33 @@ def read_yaml_file(file_path):
         yaml_data = file.read()
     return yaml_data
 
-file_path = 'sidebar.yaml'  # Replace this with the actual path to your YAML file
-
 yaml_data = read_yaml_file(file_path)
 
 # Parse YAML data
 sidebar_data = yaml.safe_load(yaml_data)
 
-# Generate HTML code
-html_code = generate_html(sidebar_data, 'vn-ask.html')
-print(html_code)
+# Get a list of all .ipynb files in the directory
+import os
+notebook_files = [file for file in os.listdir(notebook_dir) if file.endswith('.ipynb')]
 
-import nbformat
+for notebook_file in notebook_files:
+    # Get just the file name without the extension
+    notebook_name = os.path.splitext(notebook_file)[0]
 
-# Read notebook file
-current_notebook = nbformat.read('vn-ask.ipynb', as_version=4)
+    # Get the full path to the notebook
+    notebook_file_path = os.path.join(notebook_dir, notebook_file)
 
-from nbconvert import HTMLExporter
-html_exporter = HTMLExporter(template_name='blog')
+    # Generate HTML code
+    html_code = generate_html(sidebar_data, f'{notebook_name}.html')
 
-(body, resources) = html_exporter.from_notebook_node(current_notebook)
+    # Read notebook file
+    current_notebook = nbformat.read(notebook_file_path, as_version=4)
 
-# Write body to file
-with open('vn-ask.html', 'w') as file:
-    file.write(body.replace('<!-- NAV HERE -->', html_code))
+    html_exporter = HTMLExporter(template_name='nb-theme')
+
+    (body, resources) = html_exporter.from_notebook_node(current_notebook)
+
+    # Write body to file
+    with open(f'{notebook_name}.html', 'w') as file:
+        file.write(body.replace('<!-- NAV HERE -->', html_code))
 

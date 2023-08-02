@@ -21,7 +21,7 @@ jobs:
           path: .cache
           restore-keys: |
             vanna-docs-
-      - run: pip install mkdocs-material 
-      - run: pip install mkdocstrings[python]
+      - run: pip install PyYAML
+      - run: pip install nbconvert
       - run: pip install .
-      - run: mkdocs gh-deploy --force
+      - run: python docs/sidebar.py docs/sidebar.yaml docs
