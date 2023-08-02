@@ -23,5 +23,7 @@ jobs:
             vanna-docs-
       - run: pip install PyYAML
       - run: pip install nbconvert
+      - run: pip install ghp-import
       - run: pip install .
       - run: python docs/sidebar.py docs/sidebar.yaml docs
+      - run: ghp-import -n -p -f docs

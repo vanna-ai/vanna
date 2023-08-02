@@ -72,6 +72,6 @@ for notebook_file in notebook_files:
     (body, resources) = html_exporter.from_notebook_node(current_notebook)
 
     # Write body to file
-    with open(f'{notebook_name}.html', 'w') as file:
+    with open(os.path.join(notebook_dir, f'{notebook_name}.html'), 'w') as file:
         file.write(body.replace('<!-- NAV HERE -->', html_code))
 
