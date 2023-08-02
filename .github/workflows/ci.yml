@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - update-docs-2
+      - update-docs-3
 permissions:
   contents: write
 jobs:
