@@ -23,7 +23,7 @@ def generate_html(sidebar_data, current_path: str):
             html += f'<span class="flex-1 ml-3 text-left whitespace-nowrap">{entry["title"]}</span>\n'
             html += '<svg aria-hidden="true" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>\n'
             html += '</button>\n'
-            html += f'<ul id="dropdown-{entry["title"]}" class="hidden py-2 space-y-2">\n'
+            html += f'<ul id="dropdown-{entry["title"]}" class="py-2 space-y-2">\n'
             for sub_entry in entry['sub_entries']:
                 html += f'<li>\n'
                 highlighted = 'bg-indigo-100 dark:bg-indigo-700' if sub_entry['link'] == current_path else ''
