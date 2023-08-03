@@ -412,7 +412,7 @@ def set_model(model: str):
     _set_org(org=model)
 
 
-def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
+def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> Tuple[bool, str]:
     """
     Adds a question and its corresponding SQL query to the model's training data
 
@@ -440,15 +440,12 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
 
     d = __rpc_call(method="store_sql", params=params)
 
-    if 'result' not in d:
-        return False
-
     status = Status(**d['result'])
 
-    return status.success
+    return status.success, status.message
 
 
-def add_ddl(ddl: str) -> bool:
+def add_ddl(ddl: str) -> Tuple[bool, str]:
     """
     Adds a DDL statement to the model's training data
 
@@ -469,15 +466,12 @@ def add_ddl(ddl: str) -> bool:
 
     d = __rpc_call(method="store_ddl", params=params)
 
-    if 'result' not in d:
-        return False
-
     status = Status(**d['result'])
 
-    return status.success
+    return status.success, status.message
 
 
-def add_documentation(documentation: str) -> bool:
+def add_documentation(documentation: str) -> Tuple[bool, str]:
     """
     Adds documentation to the model's training data
 
@@ -498,12 +492,9 @@ def add_documentation(documentation: str) -> bool:
 
     d = __rpc_call(method="store_documentation", params=params)
 
-    if 'result' not in d:
-        return False
-
     status = Status(**d['result'])
 
-    return status.success
+    return status.success, status.message
 
 @dataclass
 class TrainingPlanItem:
@@ -840,17 +831,30 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
 
     if documentation:
         print("Adding documentation....")
-        return add_documentation(documentation)
+        success, error_message = add_documentation(sql)
+        if not success:
+            raise APIError(error_message)
+
+        return success
 
     if sql:
         if question is None:
             question = generate_question(sql)
             print("Question generated with sql:", Question, '\nAdding SQL...')
-        return add_sql(question=question, sql=sql)
+
+        success, error_message = add_sql(question=question, sql=sql)
+        if not success:
+            raise APIError(error_message)
+
+        return success
 
     if ddl:
         print("Adding ddl:", ddl)
-        return add_ddl(ddl)
+        success, error_message = add_ddl(ddl)
+        if not success:
+            raise APIError(error_message)
+
+        return success
 
     if json_file:
         validate_config_path(json_file)
@@ -858,9 +862,11 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             data = json.load(js_file)
             print("Adding Questions And SQLs using file:", json_file)
             for question in data:
-                if not add_sql(question=question['question'], sql=question['answer']):
+                success, error_message = add_sql(question=question['question'], sql=question['answer'])
+                if not success:
                     print(f"Not able to add sql for question: {question['question']} from {json_file}")
-                    return False
+                    raise APIError(error_message)
+
         return True
 
     if sql_file:
@@ -869,34 +875,45 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
             sql_statements = sqlparse.split(file.read())
             for statement in sql_statements:
                 if 'CREATE TABLE' in statement:
-                    if add_ddl(statement):
-                        print("ddl Added!")
-                        return True
-                    print("Not able to add DDL")
-                    return False
+                    success, error_message = add_ddl(statement)
+                    if not success:
+                        print("Not able to add DDL")
+                        raise APIError(error_message)
+
+                    print("ddl Added!")
+                    return success
+
                 else:
                     question = generate_question(sql=statement)
-                    if add_sql(question=question, sql=statement):
-                        print("SQL added!")
-                        return True
-                    print("Not able to add sql.")
-                    return False
+                    success, error_message = add_sql(question=question, sql=statement)
+                    if not success:
+                        print("Not able to add sql.")
+                        raise APIError(error_message)
+
+                    print("SQL added!")
+                    return success
+
         return False
-    
+
     if plan:
         for item in plan._plan:
             if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
-                if not add_ddl(item.item_value):
+                success, error_message = add_ddl(item.item_value)
+                if not success:
                     print(f"Not able to add ddl for {item.item_group}")
-                    return False
+                    raise APIError(error_message)
+
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
-                if not add_documentation(item.item_value):
+                success, error_message = add_documentation(item.item_value)
+                if not success:
                     print(f"Not able to add documentation for {item.item_group}.{item.item_name}")
-                    return False
+                    raise APIError(error_message)
+
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
-                if not add_sql(question=item.item_name, sql=item.item_value):
+                success, error_message = add_sql(question=item.item_name, sql=item.item_value)
+                if not success:
                     print(f"Not able to add sql for {item.item_group}.{item.item_name}")
-                    return False
+                    raise APIError(error_message)
 
 
 def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: Union[str, None] = None) -> bool:
