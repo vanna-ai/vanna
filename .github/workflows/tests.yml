@@ -25,6 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
         pip install .[postgres]
+        pip install .[bigquery]
         pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest

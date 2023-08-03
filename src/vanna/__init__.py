@@ -408,7 +408,7 @@ def set_model(model: str):
             model = env_model
         else:
             raise ValidationError("Please replace 'my-model' with the name of your model")
-    dataset = sanitize_model_name(model)
+
     _set_org(org=model)
 
 
@@ -1636,3 +1636,86 @@ def connect_to_postgres(host: str = None, dbname: str = None, user: str = None, 
 
     global run_sql
     run_sql = run_sql_postgres
+
+
+def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
+    """
+    Connect to gcs using the bigquery connector. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
+    **Example:**
+    ```python
+    import bigquery.Client
+    vn.connect_to_bigquery(
+        project_id="myprojectid",
+        cred_file_path="path/to/credentials.json",
+    )
+    ```
+    Args:
+        project_id (str): The gcs project id.
+        cred_file_path (str): The gcs credential file path
+    """
+
+    try:
+        from google.api_core.exceptions import GoogleAPIError
+        from google.cloud import bigquery
+        from google.oauth2 import service_account
+    except ImportError:
+        raise DependencyError("You need to install required dependencies to execute this method, run command:"
+                              " \npip install vanna[bigquery]")
+
+    if not project_id:
+        project_id = os.getenv('PROJECT_ID')
+
+    if not project_id:
+        raise ImproperlyConfigured("Please set your Google Cloud Project ID.")
+
+    import sys
+    if "google.colab" in sys.modules:
+        try:
+            from google.colab import auth
+            auth.authenticate_user()
+        except Exception as e:
+            raise ImproperlyConfigured(e)
+    else:
+        print("Not using Google Colab.")
+
+    conn = None
+
+    try:
+        conn = bigquery.Client()
+    except:
+        print("Could not found any google cloud implicit credentials")
+
+    if cred_file_path:
+        # Validate file path and pemissions
+        validate_config_path(cred_file_path)
+    else:
+        if not conn:
+            raise ValidationError("Pleae provide a service account credentials json file")
+
+    if not conn:
+        with open(cred_file_path, 'r') as f:
+            credentials = service_account.Credentials.from_service_account_info(
+                json.loads(f.read()),
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+
+        try:
+            conn = bigquery.Client(project=project_id, credentials=credentials)
+        except:
+            raise ImproperlyConfigured("Could not connect to bigquery please correct credentials")
+
+    def run_sql_bigquery(sql: str) -> Union[pd.DataFrame, None]:
+        if conn:
+            try:
+                job = conn.query(sql)
+                df = job.result().to_dataframe()
+                return df
+            except GoogleAPIError as error:
+                errors = []
+                for error in error.errors:
+                    errors.append(error["message"])
+                raise errors
+        return None
+
+    global run_sql
+    run_sql = run_sql_bigquery

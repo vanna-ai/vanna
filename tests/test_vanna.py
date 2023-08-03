@@ -3,6 +3,8 @@ import requests
 import sys
 import io
 import pandas as pd
+import contextlib
+import stat
 import os
 import pytest
 from vanna.exceptions import ValidationError, ImproperlyConfigured
@@ -431,3 +433,67 @@ def test_connect_to_postgres_validations(monkeypatch, params, none_param):
     with pytest.raises(ImproperlyConfigured) as exc:
         vn.connect_to_postgres(**params)
         assert f"Please set your postgres {none_param}" in exc.args[0]
+
+
+class Client:
+    def query(self, query):
+
+        pass
+
+
+@pytest.mark.parametrize("params", [
+    dict(project_id=None),
+])
+def test_connect_to_bigquery_validations(monkeypatch, params):
+    monkeypatch.setattr("google.cloud.bigquery.Client", Client)
+    with pytest.raises(ImproperlyConfigured) as exc:
+        vn.connect_to_bigquery(**params)
+        assert "Please set your Google Cloud Project ID." in exc.args[0]
+
+
+@pytest.mark.parametrize("params, expected_err", [
+    (
+        dict(
+            project_id="test-project",
+            cred_file_path="wrong/file/path.json"
+        ),
+        "No such configuration file: wrong/file/path.json"
+    ),
+    (
+        dict(
+            project_id="test-project",
+            cred_file_path="tests"
+        ),
+        "Config should be a file: tests"
+    )
+])
+def test_connect_to_bigquery_creds_path_validations(monkeypatch, params, expected_err):
+    monkeypatch.setattr("google.cloud.bigquery.Client", Client)
+    with pytest.raises(ImproperlyConfigured) as exc:
+        vn.connect_to_bigquery(**params)
+        assert expected_err in exc.args[0]
+
+
+@pytest.mark.parametrize("params", [
+    dict(
+        project_id="test-project",
+        cred_file_path="tests/test-creds.json"
+    ),
+])
+def test_connect_to_bigquery_creds_file_permissions(monkeypatch, params):
+    monkeypatch.setattr("google.cloud.bigquery.Client", Client)
+    with create_file(params["cred_file_path"]) as creds_path:
+        with pytest.raises(ImproperlyConfigured) as exc:
+            vn.connect_to_bigquery(**params)
+            assert f"Cannot read the config file. Please grant read privileges: {creds_path}" in exc.args[0]
+
+
+@contextlib.contextmanager
+def create_file(file_path):
+    with open(file_path, "w") as f:
+        pass
+    os.chmod(file_path, stat.S_IWUSR)
+    try:
+        yield file_path
+    finally:
+        os.remove(file_path)
