@@ -368,3 +368,66 @@ def test_set_model_validation(model_name):
     with pytest.raises(ValidationError) as exc:
         vn.set_model(model_name)
         assert "Please provide model name in string format" in exc.args[0]
+
+
+def mock_connector(host, dbname, user, password, port):
+    pass
+
+
+@pytest.mark.parametrize('params, none_param', [
+    (
+        dict(
+            host=None,
+            dbname="test-db",
+            user="test-user",
+            password="test-password",
+            port=5432
+        ),
+        "host"
+    ),
+    (
+        dict(
+            host="localhost",
+            dbname=None,
+            user="test-user",
+            password="test-password",
+            port=5432,
+        ),
+        "database"
+    ),
+    (
+        dict(
+            host="localhost",
+            dbname="test-db",
+            user=None,
+            password="test-password",
+            port=5432,
+        ),
+        "user"
+    ),
+    (
+        dict(
+            host="localhost",
+            dbname="test-db",
+            user="test-user",
+            password=None,
+            port=5432,
+        ),
+        "password",
+    ),
+    (
+        dict(
+            host="localhost",
+            dbname="test-db",
+            user="test-user",
+            password="test-password",
+            port=None,
+        ),
+        "port"
+    ),
+])
+def test_connect_to_postgres_validations(monkeypatch, params, none_param):
+    monkeypatch.setattr("psycopg2.connect", mock_connector)
+    with pytest.raises(ImproperlyConfigured) as exc:
+        vn.connect_to_postgres(**params)
+        assert f"Please set your postgres {none_param}" in exc.args[0]
