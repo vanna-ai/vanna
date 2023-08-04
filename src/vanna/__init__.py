@@ -1068,7 +1068,7 @@ def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
     params = [DataResult(
         question=question,
         sql=None,
-        table_markdown=df.head().to_markdown(),
+        table_markdown="",
         error=None,
         correction_attempts=0,
     )]
@@ -1258,7 +1258,7 @@ def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: 
     params = [DataResult(
         question=question,
         sql=sql,
-        table_markdown=df.head().to_markdown(),
+        table_markdown=str(df.dtypes),
         error=None,
         correction_attempts=0,
     )]
