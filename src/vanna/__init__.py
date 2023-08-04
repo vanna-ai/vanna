@@ -815,7 +815,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
 
     if documentation:
         print("Adding documentation....")
-        return add_documentation(sql)
+        return add_documentation(documentation)
 
     if sql:
         if question is None:
