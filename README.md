@@ -2,7 +2,7 @@
 
 | GitHub | PyPI | Colab | Documentation |
 | ------ | ---- | ----- | ------------- |
-| [![GitHub](https://img.shields.io/badge/GitHub-vanna--py-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna--py-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/vn-ask.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna--py-blue?logo=read-the-docs)](https://docs.vanna.ai) |
+| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/vn-ask.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://docs.vanna.ai) |
 
 # Vanna.AI - Personalized AI SQL Agent
 
