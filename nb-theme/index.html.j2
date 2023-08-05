@@ -18,8 +18,7 @@
   name="description"
   content="{{nb.metadata.get('description', '')}}"
 />
-{% if "google-analytics-id" in nb.metadata %}
-{% set ga_id = nb.metadata.get('google-analytics-id', '') %}
+{% set ga_id = "G-1YZ053XQJ4" %}
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ga_id}}">
 </script>
 <script>
@@ -29,7 +28,6 @@
 
   gtag("config", "{{ga_id}}");
 </script>
-{% endif %}
 {% set nb_title = nb.metadata.get('title', '') or resources['metadata']['name'] %}
 <title>{{nb_title}}</title>
 <script src="https://cdn.tailwindcss.com"></script>

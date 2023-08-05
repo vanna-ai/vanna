@@ -2,14 +2,14 @@
 
 | GitHub | PyPI | Colab | Documentation |
 | ------ | ---- | ----- | ------------- |
-| [![GitHub](https://img.shields.io/badge/GitHub-vanna--py-blue?logo=github)](https://github.com/vanna-ai/vanna-py) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna--py-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna-py/blob/main/notebooks/vn-ask.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna--py-blue?logo=read-the-docs)](https://docs.vanna.ai) |
+| [![GitHub](https://img.shields.io/badge/GitHub-vanna--py-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna--py-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/vn-ask.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna--py-blue?logo=read-the-docs)](https://docs.vanna.ai) |
 
 # Vanna.AI - Personalized AI SQL Agent
 
 **Let Vanna.AI write your nasty SQL for you**. Vanna is a Python based AI SQL agent trained on your schema that writes complex SQL in seconds. `pip install vanna` to get started now.
 
 
-https://github.com/vanna-ai/vanna-py/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f
+https://github.com/vanna-ai/vanna/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f
 
 
 ## An example
@@ -64,7 +64,7 @@ Vanna works in two easy steps - train a model on your data, and then ask questio
 2. **Ask questions**.
 
 When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
-<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna-py/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
+<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
 
 
 
