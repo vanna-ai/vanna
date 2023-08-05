@@ -22,8 +22,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/vanna-ai/vanna-py"
-"Bug Tracker" = "https://github.com/vanna-ai/vanna-py/issues"
+"Homepage" = "https://github.com/vanna-ai/vanna"
+"Bug Tracker" = "https://github.com/vanna-ai/vanna/issues"
 
 [project.optional-dependencies]
 postgres = ["psycopg2", "db-dtypes"]

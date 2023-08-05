@@ -3,7 +3,7 @@
 **Let Vanna.AI write your nasty SQL for you**. Vanna is a Python based AI SQL agent trained on your schema that writes complex SQL in seconds. `pip install vanna` to get started now.
 
 <video loop autoplay muted controls>
-    <source src="https://github.com/vanna-ai/vanna-py/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f">
+    <source src="https://github.com/vanna-ai/vanna/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f">
 </video>
 
 ## An example
@@ -58,7 +58,7 @@ Vanna works in two easy steps - train a model on your data, and then ask questio
 2. **Ask questions**.
 
 When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
-<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna-py/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
+<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
 
 
 
