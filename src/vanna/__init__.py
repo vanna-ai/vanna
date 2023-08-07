@@ -850,7 +850,7 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
 
     if ddl:
         print("Adding ddl:", ddl)
-        return add_ddl(sql)
+        return add_ddl(ddl)
 
     if json_file:
         validate_config_path(json_file)
