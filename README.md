@@ -228,22 +228,21 @@ AI-generated follow-up questions:
 ## Contributing
 ```bash
 git clone https://github.com/vanna-ai/vanna.git
-cd vanna
-python -m venv 
+cd vanna/
+
+python3 -m venv venv 
 source venv/bin/activate
 
-# default package installation
-pip install .[test]
+# install package in editable mode
+pip install -e '.[all]' tox pre-commit
 
-# all dependencies installation
-pip install .[all]
-
-# Install the git hook
+# Setup pre-commit hooks
 pre-commit install
 
-tox list envs
+# List dev targets
+tox list
 
-# run tests
+# Run tests
 tox -e py310
 ```
 
