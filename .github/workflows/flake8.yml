@@ -1,0 +1,25 @@
+name: flake8
+
+on:
+  pull_request: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        pip install tox
+    - name: Run flake8 with tox
+      run: |
+        tox -e flake8
