@@ -265,6 +265,12 @@ def test_double_train():
     training_data = vn.get_training_data()
     assert training_data.shape == (1, 4)
 
+def test_get_related_training_data():
+    data = vn.get_related_training_data(question="What's the data about student John Doe?")
+    assert data.questions[0]['question'] == 'What is the total sales for each product?'
+    assert data.questions[0]['sql'] == 'SELECT * FROM ...'
+    assert data.ddl == ['DDL here']
+    assert data.documentation == ['Documentation here']
 
 @pytest.mark.parametrize("params", [
     dict(

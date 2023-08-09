@@ -164,3 +164,9 @@ class StringData:
 @dataclass
 class DataFrameJSON:
     data: str
+
+@dataclass
+class TrainingData:
+    questions: List[dict]
+    ddl: List[str]
+    documentation: List[str]
