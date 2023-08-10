@@ -1,4 +1,4 @@
-name: Execute notebook
+name: Run notebooks
 
 on:
   pull_request: {}
@@ -10,7 +10,9 @@ jobs:
     - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
-    - uses: yaananth/run-notebook@v2
+
+    - name: Run notebooks
+      uses: yaananth/run-notebook@v2
       env:
         RUNNER: ${{ toJson(runner) }}
         SECRETS: ${{ toJson(secrets) }}
@@ -18,7 +20,8 @@ jobs:
       with:
         notebook: "notebooks/run-notebooks.ipynb"
         isReport: False
-        poll: True
+        poll: False
+
     - uses: actions/upload-artifact@v3
       if: always()
       with:
