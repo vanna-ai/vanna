@@ -12,14 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
+    - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
         pip install tox
+        pip install flake8
     - name: Run flake8 with tox
       run: |
-        tox -e flake8
+        flake8 src
