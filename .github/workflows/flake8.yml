@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install tox
-        pip install flake8
+        pip install flake8==6.1.0
     - name: Run flake8 with tox
       run: |
-        flake8 src
+        tox -e flake8
