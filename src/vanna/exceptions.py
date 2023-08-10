@@ -46,3 +46,8 @@ class APIError(BaseException):
 
     pass
 
+
+class SQLExecutionError(BaseException):
+    """Raise for sql execution errors"""
+
+    pass

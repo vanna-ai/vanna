@@ -1,3 +1,4 @@
 [flake8]
 exclude = tests/*
-ignore = E501, E722, W391, F821
+#ignore = E501, E722, W391, F821
+max_line_length = 120

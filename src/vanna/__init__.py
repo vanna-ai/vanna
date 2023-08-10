@@ -73,7 +73,7 @@ By default when you create a model it is private. You can add members or admins 
 
 
 # API Reference
-'''
+'''  # noqa: E501
 
 import requests
 import pandas as pd
@@ -90,7 +90,7 @@ from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, DataResult
     Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
 from typing import List, Union, Callable, Tuple
 from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OTPCodeError, SQLRemoveError, \
-    ValidationError, APIError
+    ValidationError, APIError, SQLExecutionError
 from .utils import validate_config_path, sanitize_model_name
 import warnings
 import traceback
@@ -109,7 +109,7 @@ vn.run_sql = lambda sql: pd.read_sql(sql, engine)
 Set the SQL to DataFrame function for Vanna.AI. This is used in the [`vn.ask(...)`][vanna.ask] function.
 Instead of setting this directly you can also use [`vn.connect_to_snowflake(...)`][vanna.connect_to_snowflake] to set this.
 
-"""
+"""  # noqa: E501
 
 __org: Union[str, None] = None  # Organization name for Vanna.AI
 
@@ -181,7 +181,7 @@ def get_api_key(email: str, otp_code: Union[str, None] = None) -> str:
 
     Returns:
         str: The API key.
-    """
+    """  # noqa: E501
     vanna_api_key = os.environ.get('VANNA_API_KEY', None)
 
     if vanna_api_key is not None:
@@ -234,7 +234,7 @@ def set_api_key(key: str) -> None:
 
     Args:
         key (str): The API key.
-    """
+    """  # noqa: E501
     global api_key
     api_key = key
 
@@ -256,7 +256,7 @@ def get_models() -> List[str]:
 
     Returns:
         List[str]: A list of model names.
-    """
+    """  # noqa: E501
     d = __rpc_call(method="list_orgs", params=[])
 
     if 'result' not in d:
@@ -282,7 +282,7 @@ def create_model(model: str, db_type: str) -> bool:
 
     Returns:
         bool: True if the model was created successfully, False otherwise.
-    """
+    """  # noqa: E501
     global __org
     if __org is None:
         __org = 'demo-tpc-h'
@@ -318,7 +318,7 @@ def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
 
     Returns:
         bool: True if the user was added successfully, False otherwise.
-    """
+    """  # noqa: E501
 
     params = [NewOrganizationMember(org_name=model, email=email, is_admin=is_admin)]
 
@@ -349,7 +349,7 @@ def update_model_visibility(public: bool) -> bool:
 
     Returns:
         bool: True if the model visibility was set successfully, False otherwise.
-    """
+    """  # noqa: E501
     params = [Visibility(visibility=public)]
 
     d = __rpc_call(method="set_org_visibility", params=params)
@@ -403,7 +403,7 @@ def set_model(model: str):
 
     Args:
         model (str): The name of the model to use.
-    """
+    """  # noqa: E501
     if type(model) is not str:
         raise ValidationError(f"Please provide model name in string format and not {type(model)}.")
 
@@ -437,7 +437,7 @@ def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained")
 
     Returns:
         bool: True if the question and SQL query were stored successfully, False otherwise.
-    """
+    """  # noqa: E501
     params = [QuestionSQLPair(
         question=question,
         sql=sql,
@@ -470,7 +470,7 @@ def add_ddl(ddl: str) -> bool:
 
     Returns:
         bool: True if the DDL statement was stored successfully, False otherwise.
-    """
+    """  # noqa: E501
     params = [StringData(data=ddl)]
 
     d = __rpc_call(method="store_ddl", params=params)
@@ -499,7 +499,7 @@ def add_documentation(documentation: str) -> bool:
 
     Returns:
         bool: True if the documentation string was stored successfully, False otherwise.
-    """
+    """  # noqa: E501
     params = [StringData(data=documentation)]
 
     d = __rpc_call(method="store_documentation", params=params)
@@ -543,7 +543,7 @@ class TrainingPlan:
     plan.get_summary()
     ```
 
-    """
+    """  # noqa: E501
     _plan: List[TrainingPlanItem]
 
     def __init__(self, plan: List[TrainingPlanItem]):
@@ -568,7 +568,7 @@ class TrainingPlan:
 
         Returns:
             List[str]: A list of strings describing the training plan.
-        """
+        """  # noqa: E501
 
         return [f"{item}" for item in self._plan]
 
@@ -585,7 +585,7 @@ class TrainingPlan:
 
         Args:
             item (str): The item to remove.
-        """
+        """  # noqa: E501
         for plan_item in self._plan:
             if str(plan_item) == item:
                 self._plan.remove(plan_item)
@@ -595,10 +595,10 @@ class TrainingPlan:
 def __get_databases() -> List[str]:
     try:
         df_databases = run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
-    except:
+    except SQLExecutionError:
         try:
             df_databases = run_sql("SHOW DATABASES")
-        except:
+        except SQLExecutionError:
             return []
 
     return df_databases['DATABASE_NAME'].unique().tolist()
@@ -609,8 +609,10 @@ def __get_information_schema_tables(database: str) -> pd.DataFrame:
     return df_tables
 
 
-
-def get_training_plan_experimental(filter_databases: Union[List[str], None] = None, filter_schemas: Union[List[str], None] = None, include_information_schema: bool = False, use_historical_queries: bool = True) -> TrainingPlan:
+def get_training_plan_experimental(filter_databases: Union[List[str], None] = None,
+                                   filter_schemas: Union[List[str], None] = None,
+                                   include_information_schema: bool = False,
+                                   use_historical_queries: bool = True) -> TrainingPlan:
     """
     **EXPERIMENTAL** : This method is experimental and may change in future versions.
 
@@ -622,7 +624,7 @@ def get_training_plan_experimental(filter_databases: Union[List[str], None] = No
 
     vn.train(plan=plan)
     ```
-    """
+    """  # noqa: E501
 
     plan = TrainingPlan([])
 
@@ -778,15 +780,16 @@ def train(question: str = None, sql: str = None, ddl: str = None, documentation:
         sql (str): The SQL query to train on.
         sql_file (str): The SQL file path.
         json_file (str): The JSON file path.
-        ddl (str):  The DDL statement.
+        ddl (str): The DDL statement.
         documentation (str): The documentation to train on.
         plan (TrainingPlan): The training plan to train on.
-    """
+    """  # noqa: E501
 
     if question and not sql:
         example_question = "What is the average salary of employees?"
         raise ValidationError(
-            f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}")
+            f"Please also provide a SQL query \n Example Question:  {example_question}\n "
+            f"Answer: {ask(question=example_question)}")
 
     if documentation:
         print("Adding documentation....")
@@ -864,7 +867,7 @@ def flag_sql_for_review(question: str, sql: Union[str, None] = None, error_msg: 
 
     Returns:
         bool: True if the question and SQL query were flagged successfully, False otherwise.
-    """
+    """  # noqa: E501
     params = [
         QuestionCategory(
             question=question,
@@ -921,7 +924,7 @@ def remove_sql(question: str) -> bool:
 
     Args:
         question (str): The question to remove.
-    """
+    """  # noqa: E501
     params = [Question(question=question)]
 
     d = __rpc_call(method="remove_sql", params=params)
@@ -949,7 +952,7 @@ def remove_training_data(id: str) -> bool:
 
     Args:
         id (str): The ID of the training data to remove.
-    """
+    """  # noqa: E501
     params = [StringData(data=id)]
 
     d = __rpc_call(method="remove_training_data", params=params)
@@ -980,7 +983,7 @@ def generate_sql(question: str) -> str:
 
     Returns:
         str or None: The SQL query, or None if an error occurred.
-    """
+    """  # noqa: E501
     params = [Question(question=question)]
 
     d = __rpc_call(method="generate_sql_from_question", params=params)
@@ -1009,7 +1012,7 @@ def generate_meta(question: str) -> str:
 
     Returns:
         str or None: The answer, or None if an error occurred.
-    """
+    """  # noqa: E501
     params = [Question(question=question)]
 
     d = __rpc_call(method="generate_meta_from_question", params=params)
@@ -1039,7 +1042,7 @@ def generate_followup_questions(question: str, df: pd.DataFrame) -> List[str]:
 
     Returns:
         List[str] or None: The follow-up questions, or None if an error occurred.
-    """
+    """  # noqa: E501
     params = [DataResult(
         question=question,
         sql=None,
@@ -1071,7 +1074,7 @@ def generate_questions() -> List[str]:
 
     Returns:
         List[str] or None: The questions, or None if an error occurred.
-    """
+    """  # noqa: E501
     d = __rpc_call(method="generate_questions", params=[])
 
     if 'result' not in d:
@@ -1083,7 +1086,17 @@ def generate_questions() -> List[str]:
     return question_string_list.questions
 
 
-def ask(question: Union[str, None] = None, print_results: bool = True, auto_train: bool = True, generate_followups: bool = True) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]], None]:
+def ask(
+        question: Union[str, None] = None,
+        print_results: bool = True,
+        auto_train: bool = True,
+        generate_followups: bool = True
+) -> Union[
+    Tuple[
+        Union[str, None], Union[pd.DataFrame, None], Union[plotly.graph_objs.Figure, None], Union[List[str], None]
+    ],
+    None
+]:
     """
     **Example:**
     ```python
@@ -1109,7 +1122,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
         pd.DataFrame or None: The results of the SQL query, or None if an error occurred.
         plotly.graph_objs.Figure or None: The Plotly figure, or None if an error occurred.
         List[str] or None: The follow-up questions, or None if an error occurred.
-    """
+    """  # noqa: E501
 
     if question is None:
         question = input("Enter a question: ")
@@ -1122,6 +1135,7 @@ def ask(question: Union[str, None] = None, print_results: bool = True, auto_trai
 
     if print_results:
         try:
+            display = __import__('IPython.display', fromlist=['display']).display
             Code = __import__('IPython.display', fromlist=['Code']).Code
             display(Code(sql))
         except Exception:
@@ -1223,7 +1237,7 @@ def generate_plotly_code(question: Union[str, None], sql: Union[str, None], df: 
 
     Returns:
         str or None: The Plotly code, or None if an error occurred.
-    """
+    """  # noqa: E501
     if chart_instructions is not None:
         if question is not None:
             question = question + " -- When plotting, follow these instructions: " + chart_instructions
@@ -1267,7 +1281,7 @@ def get_plotly_figure(plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
 
     Returns:
         plotly.graph_objs.Figure: The Plotly figure.
-    """
+    """  # noqa: E501
     ldict = {'df': df, 'px': px, 'go': go}
     exec(plotly_code, globals(), ldict)
 
@@ -1294,7 +1308,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: The results of the SQL query.
-    """
+    """  # noqa: E501
     print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
     warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
@@ -1327,7 +1341,7 @@ def generate_explanation(sql: str) -> str:
     Returns:
         str or None: The explanation, or None if an error occurred.
 
-    """
+    """  # noqa: E501
     params = [SQLAnswer(
         raw_answer="",
         prefix="",
@@ -1363,7 +1377,7 @@ def generate_question(sql: str) -> str:
     Returns:
         str or None: The question, or None if an error occurred.
 
-    """
+    """  # noqa: E501
     params = [SQLAnswer(
         raw_answer="",
         prefix="",
@@ -1394,7 +1408,7 @@ def get_all_questions() -> pd.DataFrame:
     Returns:
         pd.DataFrame or None: The list of questions, or None if an error occurred.
 
-    """
+    """  # noqa: E501
     # params = [Question(question="")]
     params = []
 
@@ -1423,7 +1437,7 @@ def get_training_data() -> pd.DataFrame:
     Returns:
         pd.DataFrame or None: The training data, or None if an error occurred.
 
-    """
+    """  # noqa: E501
     # params = [Question(question="")]
     params = []
 
@@ -1449,7 +1463,7 @@ def connect_to_sqlite(url: str):
 
     Returns:
         None
-    """
+    """  # noqa: E501
 
     # URL of the database to download
 
@@ -1496,7 +1510,7 @@ def connect_to_snowflake(account: str, username: str, password: str, database: s
         password (str): The Snowflake password.
         database (str): The default database to use.
         role (Union[str, None], optional): The role to use. Defaults to None.
-    """
+    """  # noqa: E501
 
     try:
         snowflake = __import__('snowflake.connector')
@@ -1583,7 +1597,7 @@ def connect_to_postgres(host: str = None, dbname: str = None, user: str = None, 
         user (str): The postgres user.
         password (str): The postgres password.
         port (int): The postgres Port.
-    """
+    """  # noqa: E501
 
     try:
         import psycopg2
@@ -1667,7 +1681,7 @@ def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
     Args:
         project_id (str): The gcs project id.
         cred_file_path (str): The gcs credential file path
-    """
+    """  # noqa: E501
 
     try:
         from google.api_core.exceptions import GoogleAPIError
@@ -1697,7 +1711,7 @@ def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
 
     try:
         conn = bigquery.Client()
-    except:
+    except ImproperlyConfigured:
         print("Could not found any google cloud implicit credentials")
 
     if cred_file_path:
@@ -1716,7 +1730,7 @@ def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
 
         try:
             conn = bigquery.Client(project=project_id, credentials=credentials)
-        except:
+        except Exception:
             raise ImproperlyConfigured("Could not connect to bigquery please correct credentials")
 
     def run_sql_bigquery(sql: str) -> Union[pd.DataFrame, None]:
