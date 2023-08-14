@@ -225,6 +225,27 @@ AI-generated follow-up questions:
 * What are the total sales for customers in Europe?
 * How many customers are there in each country?
 
+## Contributing
+```bash
+git clone https://github.com/vanna-ai/vanna.git
+cd vanna/
+
+python3 -m venv venv 
+source venv/bin/activate
+
+# install package in editable mode
+pip install -e '.[all]' tox pre-commit
+
+# Setup pre-commit hooks
+pre-commit install
+
+# List dev targets
+tox list
+
+# Run tests
+tox -e py310
+```
+
 ## More resources
  - [Full Documentation](https://docs.vanna.ai)
  - [Website](https://vanna.ai)
