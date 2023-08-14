@@ -9,3 +9,4 @@ __pycache__/
 .coverage
 docs/*.html
 .ipynb_checkpoints/
+.tox/
