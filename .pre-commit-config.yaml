@@ -1,0 +1,31 @@
+exclude: 'docs|node_modules|migrations|.git|.tox'
+default_stages: [ commit ]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: mixed-line-ending
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: [ "--profile", "black", "--filter-files" ]
+
+  - repo: https://github.com/odwyersoftware/brunette
+    rev: 238bead5ec5c58935d6bb12c70f435f70b2bf785
+    hooks:
+      - id: brunette
+        args: [ '--config=setup.cfg' ]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        args: [ '--config=setup.cfg' ]
