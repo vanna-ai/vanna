@@ -18,7 +18,7 @@ When you ask a question, we utilize a custom model for your dataset to generate 
 <img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
 
 ## Getting started
-You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/notebooks/vn-train/) or add manual training data.
+You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/vn-train.html) or add manual training data.
 
 ### Train with DDL Statements
 If you prefer to manually train, you do not need to connect to a database. You can use the train function with other parmaeters like ddl
@@ -152,27 +152,6 @@ vn.ask("What are the top 10 customers by sales?")
     - Start in a Jupyter Notebook. 
     - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin. 
     - Even integrate in your web app for customers.
-
-## Contributing
-```bash
-git clone https://github.com/vanna-ai/vanna.git
-cd vanna/
-
-python3 -m venv venv 
-source venv/bin/activate
-
-# install package in editable mode
-pip install -e '.[all]' tox pre-commit
-
-# Setup pre-commit hooks
-pre-commit install
-
-# List dev targets
-tox list
-
-# Run tests
-tox -e py310
-```
 
 ## More resources
  - [Full Documentation](https://docs.vanna.ai)
