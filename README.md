@@ -6,38 +6,6 @@
 
 # Vanna.AI - Personalized AI SQL Agent
 
-**Let Vanna.AI write your nasty SQL for you**. Vanna is a Python based AI SQL agent trained on your schema that writes complex SQL in seconds. `pip install vanna` to get started now.
-
-
-https://github.com/vanna-ai/vanna/assets/7146154/61f5f0bf-ce03-47e2-ab95-0750b8df7b6f
-
-
-## An example
-
-A business user asks you **"who are the top 2 customers in each region?"**. Right in the middle of lunch. And they need it for a presentation this afternoon. 😡😡😡
-
-### The old way 😡 😫 💩
-Simple question to ask, not so fun to answer. You spend over an hour a) finding the tables, b) figuring out out the joins, c) look up the syntax for ranking, d) putting this into a CTE, e) filtering by rank, and f) choosing the correct metrics. Finally, you come up with this ugly mess - 
-
-```sql
-with ranked_customers as (SELECT c.c_name as customer_name,
-  r.r_name as region_name,
-  row_number() OVER (PARTITION BY r.r_name
-     ORDER BY sum(l.l_quantity * l.l_extendedprice) desc) as rank	
-     FROM   snowflake_sample_data.tpch_sf1.customer c join snowflake_sample_data.tpch_sf1.orders o
-         ON c.c_custkey = o.o_custkey join snowflake_sample_data.tpch_sf1.lineitem l
-         ON o.o_orderkey = l.l_orderkey join snowflake_sample_data.tpch_sf1.nation n
-         ON c.c_nationkey = n.n_nationkey join snowflake_sample_data.tpch_sf1.region r
-         ON n.n_regionkey = r.r_regionkey
-             GROUP BY customer_name, region_name)
-SELECT region_name,
-       customer_name
-FROM   ranked_customers
-WHERE  rank <= 2;
-```
-
-And you had to skip your lunch. **HANGRY!**
-
 ### The Vanna way 😍 🌟 🚀
 With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
 
@@ -47,15 +15,13 @@ vn.set_model('your-model')
 vn.ask('who are the top 2 customers in each region?')
 ```
 
-Vanna generates that nasty SQL above for you, runs it (locally & securely) and gives you back a Dataframe in seconds:
+Vanna generates the SQL above for you, runs it (locally & securely) and gives you back a Dataframe in seconds:
 
 | region_name | customer_name | total_sales |
 | ----------- | ------------- | ----------- |
 | ASIA | Customer#000000001 |  68127.72 |
 | ASIA | Customer#000000002 |  65898.69 |
 ...
-
-And you ate your lunch in peace. **YUMMY!**
 
 ## How Vanna works
 Vanna works in two easy steps - train a model on your data, and then ask questions.
