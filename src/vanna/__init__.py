@@ -87,7 +87,7 @@ from dataclasses import dataclass
 
 from .types import SQLAnswer, Explanation, QuestionSQLPair, Question, QuestionId, DataResult, PlotlyResult, Status, \
     FullQuestionDocument, QuestionList, QuestionCategory, AccuracyStats, UserEmail, UserOTP, ApiKey, OrganizationList, \
-    Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON
+    Organization, NewOrganization, StringData, QuestionStringList, Visibility, NewOrganizationMember, DataFrameJSON, TrainingData
 from typing import List, Union, Callable, Tuple
 from .exceptions import ImproperlyConfigured, DependencyError, ConnectionError, OTPCodeError, SQLRemoveError, \
     ValidationError, APIError
@@ -1043,6 +1043,32 @@ def generate_sql(question: str) -> str:
 
     return sql_answer.sql
 
+def get_related_training_data(question: str) -> TrainingData:
+    """
+    **Example:**
+    ```python
+    training_data = vn.get_related_training_data(question="What is the average salary of employees?")
+    ```
+
+    Get the training data related to a question.
+
+    Args:
+        question (str): The question to get related training data for.
+
+    Returns:
+        TrainingData or None: The related training data, or None if an error occurred.
+    """
+    params = [Question(question=question)]
+
+    d = __rpc_call(method="get_related_training_data", params=params)
+
+    if 'result' not in d:
+        return None
+
+    # Load the result into a dataclass
+    training_data = TrainingData(**d['result'])
+
+    return training_data
 
 def generate_meta(question: str) -> str:
     """
