@@ -20,6 +20,21 @@ When you ask a question, we utilize a custom model for your dataset to generate 
 ## Getting started
 You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/vn-train.html) or add manual training data.
 
+### Install Vanna
+```
+pip install vanna
+```
+
+Depending on the database you're using, you can also install the associated database drivers
+```
+pip install 'vanna[snowflake]'
+```
+
+### Import Vanna
+```python
+import vanna as vn
+```
+
 ### Train with DDL Statements
 If you prefer to manually train, you do not need to connect to a database. You can use the train function with other parmaeters like ddl
 
