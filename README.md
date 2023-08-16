@@ -1,10 +1,12 @@
 ![](https://img.vanna.ai/vanna-github.svg)
 
-| GitHub | PyPI | Colab | Documentation |
-| ------ | ---- | ----- | ------------- |
-| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Colab](https://img.shields.io/badge/Colab-vanna-blue?logo=google-colab)](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/vn-ask.ipynb) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://docs.vanna.ai) |
+| GitHub | PyPI | Documentation |
+| ------ | ---- | ------------- |
+| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://docs.vanna.ai) |
 
 # Vanna.AI - Personalized AI SQL Agent
+
+https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a3b2ce
 
 ### The Vanna way 😍 🌟 🚀
 With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
