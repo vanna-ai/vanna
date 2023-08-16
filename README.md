@@ -8,23 +8,6 @@
 
 https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a3b2ce
 
-### The Vanna way 😍 🌟 🚀
-With Vanna, you train up a custom model on your data warehouse, and simply enter this in your Jupyter Notebook - 
-
-```python
-import vanna as vn
-vn.set_model('your-model')
-vn.ask('who are the top 2 customers in each region?')
-```
-
-Vanna generates the SQL above for you, runs it (locally & securely) and gives you back a Dataframe in seconds:
-
-| region_name | customer_name | total_sales |
-| ----------- | ------------- | ----------- |
-| ASIA | Customer#000000001 |  68127.72 |
-| ASIA | Customer#000000002 |  65898.69 |
-...
-
 ## How Vanna works
 Vanna works in two easy steps - train a model on your data, and then ask questions.
 
@@ -33,33 +16,6 @@ Vanna works in two easy steps - train a model on your data, and then ask questio
 
 When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
 <img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
-
-
-
-## Why Vanna?
-
-1. **High accuracy on complex datasets.**
-    - Vanna’s capabilities are tied to the training data you give it
-    - More training data means better accuracy for large and complex datasets
-2. **Secure and private.**
-    - Your database contents  are never sent to Vanna’s servers
-    - We only see the bare minimum - schemas & queries.
-3. **Isolated, custom model.**
-    - You train a custom model specific to your database and your schema.
-    - Nobody else can use your model or view your model’s training data unless you choose to add members to your model or make it public
-    - We use a combination of third-party foundational models (OpenAI, Google) and our own LLM.
-4. **Self learning.**
-    - As you use Vanna more, your model continuously improves as we augment your training data
-5. **Supports many databases.**
-    - We have out-of-the-box support Snowflake, BigQuery, Postgres
-    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/) 
-6. **Pretrained models.**
-    - If you’re a data provider you can publish your models for anyone to use
-    - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
-7. **Choose your front end.**
-    - Start in a Jupyter Notebook. 
-    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin. 
-    - Even integrate in your web app for customers.
 
 ## Getting started
 You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/notebooks/vn-train/) or add manual training data.
@@ -91,7 +47,6 @@ You can also add SQL queries to your training data. This is useful if you have s
 ```python
 vn.train(sql="SELECT * FROM my-table WHERE name = 'John Doe'")
 ```
-
 
 
 ## Asking questions
@@ -173,25 +128,30 @@ vn.ask("What are the top 10 customers by sales?")
 </table>
 </div>
 
+## Why Vanna?
 
-
-    
-![png](docs/notebooks/vn-ask_files/vn-ask_10_2.png)
-    
-
-
-
-AI-generated follow-up questions:
-
-* What is the country name for each of the top 10 customers by sales?
-* How many orders does each of the top 10 customers by sales have?
-* What is the total revenue for each of the top 10 customers by sales?
-* What are the customer names and total sales for customers in the United States?
-* Which customers in Africa have returned the most parts with a gross value?
-* What are the total sales for the top 3 customers?
-* What are the customer names and total sales for the top 5 customers?
-* What are the total sales for customers in Europe?
-* How many customers are there in each country?
+1. **High accuracy on complex datasets.**
+    - Vanna’s capabilities are tied to the training data you give it
+    - More training data means better accuracy for large and complex datasets
+2. **Secure and private.**
+    - Your database contents  are never sent to Vanna’s servers
+    - We only see the bare minimum - schemas & queries.
+3. **Isolated, custom model.**
+    - You train a custom model specific to your database and your schema.
+    - Nobody else can use your model or view your model’s training data unless you choose to add members to your model or make it public
+    - We use a combination of third-party foundational models (OpenAI, Google) and our own LLM.
+4. **Self learning.**
+    - As you use Vanna more, your model continuously improves as we augment your training data
+5. **Supports many databases.**
+    - We have out-of-the-box support Snowflake, BigQuery, Postgres
+    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/) 
+6. **Pretrained models.**
+    - If you’re a data provider you can publish your models for anyone to use
+    - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
+7. **Choose your front end.**
+    - Start in a Jupyter Notebook. 
+    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin. 
+    - Even integrate in your web app for customers.
 
 ## Contributing
 ```bash
