@@ -29,8 +29,8 @@ Here's a summary of our key findings -
 * [Using SQL examples](#using-sql-examples)
 * [Using contextually relevant examples](#using-contextually-relevant-examples)
 * [Analyzing the results](#analyzing-the-results)
-* [How automate accurate SQL generation](#how-automate-accurate-sql-generation)
-* [Try this on your data](#try-this-on-your-data)
+* [Next steps to getting accuracy even higher](#next-steps-to-getting-accuracy-even-higher)
+* [Use AI to write SQL for your dataset](#use-ai-to-write-sql-for-your-dataset)
 
 
 
