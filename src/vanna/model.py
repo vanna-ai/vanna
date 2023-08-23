@@ -3,7 +3,7 @@ import requests
 import json
 from .exceptions import ImproperlyConfigured
 import dataclasses
-from types import StringData, Status, QuestionSQLPair, APIError, SQLAnswer, Question, DataResult, PlotlyResult, DataFrameJSON
+from .types import StringData, Status, QuestionSQLPair, APIError, SQLAnswer, Question, DataResult, PlotlyResult, DataFrameJSON
 
 import plotly
 import plotly.express as px
