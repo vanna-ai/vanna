@@ -86,6 +86,20 @@ def is_runnable(notebook_name: str, sidebar_data: dict) -> bool:
 
     return False
 
+def get_title_from_sidebar_data(notebook_name: str, sidebar_data: dict) -> str:
+    # Check if the notebook is runnable
+    for entry in sidebar_data:
+        if 'link' in entry:
+            if entry['link'] == f'{notebook_name}.html':
+                return entry['title']
+            
+        if 'sub_entries' in entry:
+            for sub_entry in entry['sub_entries']:
+                if sub_entry['link'] == f'{notebook_name}.html':
+                    return sub_entry['title']
+
+    return ''
+
 for notebook_file in notebook_files:
     # Get just the file name without the extension
     notebook_name = os.path.splitext(notebook_file)[0]
@@ -103,12 +117,14 @@ for notebook_file in notebook_files:
 
     (body, resources) = html_exporter.from_notebook_node(current_notebook)
 
+    notebook_title = get_title_from_sidebar_data(notebook_name, sidebar_data)
+
     # Write body to file
     with open(os.path.join(output_dir, f'{notebook_name}.html'), 'w') as file:
         # From sidebar_data, see if there is a matching entry for the current notebook
         if is_runnable(notebook_name, sidebar_data):
-            file.write(body.replace('<!-- NAV HERE -->', html_code).replace('<!-- HEADER HERE -->', generate_header(notebook_name)))
+            file.write(body.replace('nb_title', f"Vanna Docs: {notebook_title}").replace('<!-- NAV HERE -->', html_code).replace('<!-- HEADER HERE -->', generate_header(notebook_name)))
         else:
-            file.write(body.replace('<!-- NAV HERE -->', html_code))
+            file.write(body.replace('nb_title', f"Vanna Docs: {notebook_title}").replace('<!-- NAV HERE -->', html_code))
 
 
