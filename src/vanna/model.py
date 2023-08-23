@@ -1,7 +1,7 @@
 from typing import Union, Callable
 import requests
 import json
-from exceptions import ImproperlyConfigured
+from .exceptions import ImproperlyConfigured
 import dataclasses
 from types import StringData, Status, QuestionSQLPair, APIError, SQLAnswer, Question, DataResult, PlotlyResult, DataFrameJSON
 
