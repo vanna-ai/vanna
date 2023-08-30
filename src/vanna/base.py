@@ -38,7 +38,7 @@ class VannaBase(ABC):
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
-    def generate_embedding(self, question: str, **kwargs) -> str:
+    def generate_embedding(self, data: str, **kwargs) -> str:
         pass
 
     # ----------------- Use Any Database to Store and Retrieve Context ----------------- #
