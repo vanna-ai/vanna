@@ -59,11 +59,11 @@ class VannaBase(ABC):
         ddl_list: list,
         doc_list: list,
         **kwargs,
-    ) -> str:
+    ):
         pass
 
     @abstractmethod
-    def submit_prompt(self, prompt: str, **kwargs) -> str:
+    def submit_prompt(self, prompt, **kwargs) -> str:
         pass
 
 

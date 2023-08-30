@@ -1,5 +1,3 @@
-import random
-
 from .chromadb_vector import ChromaDB_VectorStore
 from .openai_embeddings import OpenAI_Embeddings
 
@@ -17,15 +15,6 @@ class MockModel(ChromaDB_VectorStore):
         doc_list: list,
         **kwargs,
     ) -> str:
-        pass
-
-    def get_related_ddl_ids(self, embedding: str, **kwargs) -> list:
-        pass
-
-    def get_related_documentation_ids(self, embedding: str, **kwargs) -> list:
-        pass
-
-    def get_similar_question_sql_ids(self, embedding: str, **kwargs) -> list:
         pass
 
     def submit_prompt(self, prompt: str, **kwargs) -> str:

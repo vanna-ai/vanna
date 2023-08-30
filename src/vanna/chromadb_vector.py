@@ -79,7 +79,6 @@ class ChromaDB_VectorStore(VannaBase):
                 try:
                     documents = [json.loads(doc) for doc in documents[0]]
                 except Exception as e:
-                    print(e)
                     return documents[0]
 
             return documents
