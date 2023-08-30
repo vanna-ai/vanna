@@ -1,9 +1,18 @@
+import os
+import traceback
 from abc import ABC, abstractmethod
+from typing import List, Tuple, Union
+
+import pandas as pd
+import plotly
+
+from .exceptions import DependencyError, ImproperlyConfigured
 
 
 class VannaBase(ABC):
     def __init__(self, config=None):
         self.config = config
+        self.run_sql_is_set = False
 
     def generate_sql_from_question(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
@@ -65,6 +74,139 @@ class VannaBase(ABC):
     @abstractmethod
     def submit_prompt(self, prompt, **kwargs) -> str:
         pass
+
+    # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
+
+    def connect_to_snowflake(
+        self,
+        account: str,
+        username: str,
+        password: str,
+        database: str,
+        role: Union[str, None] = None,
+    ):
+        try:
+            snowflake = __import__("snowflake.connector")
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method, run command:"
+                " \npip install vanna[snowflake]"
+            )
+
+        if username == "my-username":
+            username_env = os.getenv("SNOWFLAKE_USERNAME")
+
+            if username_env is not None:
+                username = username_env
+            else:
+                raise ImproperlyConfigured("Please set your Snowflake username.")
+
+        if password == "my-password":
+            password_env = os.getenv("SNOWFLAKE_PASSWORD")
+
+            if password_env is not None:
+                password = password_env
+            else:
+                raise ImproperlyConfigured("Please set your Snowflake password.")
+
+        if account == "my-account":
+            account_env = os.getenv("SNOWFLAKE_ACCOUNT")
+
+            if account_env is not None:
+                account = account_env
+            else:
+                raise ImproperlyConfigured("Please set your Snowflake account.")
+
+        if database == "my-database":
+            database_env = os.getenv("SNOWFLAKE_DATABASE")
+
+            if database_env is not None:
+                database = database_env
+            else:
+                raise ImproperlyConfigured("Please set your Snowflake database.")
+
+        conn = snowflake.connector.connect(
+            user=username,
+            password=password,
+            account=account,
+            database=database,
+        )
+
+        def run_sql_snowflake(sql: str) -> pd.DataFrame:
+            cs = conn.cursor()
+
+            if role is not None:
+                cs.execute(f"USE ROLE {role}")
+            cs.execute(f"USE DATABASE {database}")
+
+            cur = cs.execute(sql)
+
+            results = cur.fetchall()
+
+            # Create a pandas dataframe from the results
+            df = pd.DataFrame(results, columns=[desc[0] for desc in cur.description])
+
+            return df
+
+        self.run_sql = run_sql_snowflake
+        self.run_sql_is_set = True
+
+    def run_sql(sql: str, **kwargs) -> pd.DataFrame:
+        raise NotImplementedError(
+            "You need to connect_to_snowflake or other database first."
+        )
+
+    def ask(
+        self,
+        question: Union[str, None] = None,
+        print_results: bool = True,
+        auto_train: bool = True,
+    ) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None]], None]:
+        if question is None:
+            question = input("Enter a question: ")
+
+        try:
+            sql = self.generate_sql_from_question(question=question)
+        except Exception as e:
+            print(e)
+            return None, None
+
+        if print_results:
+            try:
+                Code = __import__("IPython.display", fromlist=["Code"]).Code
+                display(Code(sql))
+            except Exception as e:
+                print(sql)
+
+        if self.run_sql_is_set is False:
+            print("If you want to run the SQL query, provide a run_sql function.")
+
+            if print_results:
+                return None
+            else:
+                return sql, None
+
+        try:
+            df = self.run_sql(sql)
+
+            if print_results:
+                try:
+                    display = __import__(
+                        "IPython.display", fromlist=["display"]
+                    ).display
+                    display(df)
+                except Exception as e:
+                    print(df)
+
+            if len(df) > 0 and auto_train:
+                self.store_question_sql(question=question, sql=sql)
+
+        except Exception as e:
+            print("Couldn't run sql: ", e)
+            if print_results:
+                return None
+            else:
+                return sql, None
 
 
 class SplitStorage(VannaBase):
