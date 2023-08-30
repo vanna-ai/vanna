@@ -6,11 +6,9 @@ class VannaBase(ABC):
         self.config = config
 
     def generate_sql_from_question(self, question: str, **kwargs) -> str:
-        embedding = self.generate_embedding(question, **kwargs)
-        self.store_question(question=question, embedding=embedding, **kwargs)
-        question_sql_list = self.get_similar_question_sql(embedding, **kwargs)
-        ddl_list = self.get_related_ddl(embedding, **kwargs)
-        doc_list = self.get_related_documentation(embedding, **kwargs)
+        question_sql_list = self.get_similar_question_sql(question, **kwargs)
+        ddl_list = self.get_related_ddl(question, **kwargs)
+        doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_prompt(
             question=question,
             question_sql_list=question_sql_list,
@@ -20,6 +18,58 @@ class VannaBase(ABC):
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
         return llm_response
+
+    # ----------------- Use Any Embeddings API ----------------- #
+    @abstractmethod
+    def generate_embedding(self, data: str, **kwargs) -> list[float]:
+        pass
+
+    # ----------------- Use Any Database to Store and Retrieve Context ----------------- #
+    @abstractmethod
+    def get_similar_question_sql(self, question: str, **kwargs) -> list:
+        pass
+
+    @abstractmethod
+    def get_related_ddl(self, question: str, **kwargs) -> list:
+        pass
+
+    @abstractmethod
+    def get_related_documentation(self, question: str, **kwargs) -> list:
+        pass
+
+    @abstractmethod
+    def store_question_sql(self, question: str, sql: str, **kwargs):
+        pass
+
+    @abstractmethod
+    def store_ddl(self, ddl: str, **kwargs):
+        pass
+
+    @abstractmethod
+    def store_documentation(self, doc: str, **kwargs):
+        pass
+
+    # ----------------- Use Any Language Model API ----------------- #
+
+    @abstractmethod
+    def get_prompt(
+        self,
+        question: str,
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list,
+        **kwargs,
+    ) -> str:
+        pass
+
+    @abstractmethod
+    def submit_prompt(self, prompt: str, **kwargs) -> str:
+        pass
+
+
+class SplitStorage(VannaBase):
+    def __init__(self, config=None):
+        VannaBase.__init__(self, config=config)
 
     def get_similar_question_sql(self, embedding: str, **kwargs) -> list:
         question_sql_ids = self.get_similar_question_sql_ids(embedding, **kwargs)
@@ -35,40 +85,6 @@ class VannaBase(ABC):
         doc_ids = self.get_related_documentation_ids(embedding, **kwargs)
         doc_list = self.get_documentation(doc_ids, **kwargs)
         return doc_list
-
-    # ----------------- Use Any Embeddings API ----------------- #
-    @abstractmethod
-    def generate_embedding(self, data: str, **kwargs) -> str:
-        pass
-
-    # ----------------- Use Any Database to Store and Retrieve Context ----------------- #
-    @abstractmethod
-    def store_question(self, question: str, embedding: str, **kwargs) -> None:
-        pass
-
-    @abstractmethod
-    def store_question_sql(self, question_sql: str, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def store_ddl(self, ddl: str, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def store_documentation(self, doc: str, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def get_question_sql(self, question_sql_ids: list, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_documentation(self, doc_ids: list, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_ddl(self, ddl_ids: list, **kwargs) -> list:
-        pass
 
     # ----------------- Use Any Vector Database to Store and Lookup Embedding Similarity ----------------- #
     @abstractmethod
@@ -95,19 +111,15 @@ class VannaBase(ABC):
     def get_related_documentation_ids(self, embedding: str, **kwargs) -> list:
         pass
 
-    # ----------------- Use Any Language Model API ----------------- #
-
+    # ----------------- Use Database to Retrieve the Documents from ID Lists ----------------- #
     @abstractmethod
-    def get_prompt(
-        self,
-        question: str,
-        question_sql_list: list,
-        ddl_list: list,
-        doc_list: list,
-        **kwargs,
-    ) -> str:
+    def get_question_sql(self, question_sql_ids: list, **kwargs) -> list:
         pass
 
     @abstractmethod
-    def submit_prompt(self, prompt: str, **kwargs) -> str:
+    def get_documentation(self, doc_ids: list, **kwargs) -> list:
+        pass
+
+    @abstractmethod
+    def get_ddl(self, ddl_ids: list, **kwargs) -> list:
         pass

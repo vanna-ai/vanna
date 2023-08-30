@@ -1,41 +1,13 @@
 import random
 
+from .chromadb_vector import ChromaDB_VectorStore
 from .openai_embeddings import OpenAI_Embeddings
 
 
-class MockModel(OpenAI_Embeddings):
+class MockModel(ChromaDB_VectorStore):
     def __init__(self, config=None):
-        OpenAI_Embeddings.__init__(self, config=config)
-
-    def store_question(self, question: str, embedding: str, **kwargs) -> None:
-        pass
-
-    def store_question_sql(self, question_sql: str, embedding: str, **kwargs) -> str:
-        pass
-
-    def store_ddl(self, ddl: str, embedding: str, **kwargs) -> str:
-        pass
-
-    def store_documentation(self, doc: str, embedding: str, **kwargs) -> str:
-        pass
-
-    def get_question_sql(self, question_sql_ids: list, **kwargs) -> list:
-        pass
-
-    def get_documentation(self, doc_ids: list, **kwargs) -> list:
-        pass
-
-    def get_ddl(self, ddl_ids: list, **kwargs) -> list:
-        pass
-
-    def store_question_sql_embedding(self, embedding: str, **kwargs) -> str:
-        pass
-
-    def store_ddl_embedding(self, embedding: str, **kwargs) -> str:
-        pass
-
-    def store_documentation_embedding(self, embedding: str, **kwargs) -> str:
-        pass
+        # OpenAI_Embeddings.__init__(self, config=config)
+        ChromaDB_VectorStore.__init__(self, config=config)
 
     def get_prompt(
         self,

@@ -11,3 +11,4 @@ __pycache__/
 docs/*.html
 .ipynb_checkpoints/
 .tox/
+notebooks/chroma.sqlite3
