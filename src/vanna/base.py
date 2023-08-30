@@ -7,6 +7,7 @@ import pandas as pd
 import plotly
 
 from .exceptions import DependencyError, ImproperlyConfigured
+from .types import TrainingPlan, TrainingPlanItem
 
 
 class VannaBase(ABC):
@@ -73,6 +74,10 @@ class VannaBase(ABC):
 
     @abstractmethod
     def submit_prompt(self, prompt, **kwargs) -> str:
+        pass
+
+    @abstractmethod
+    def generate_question(self, answer: str, **kwargs) -> str:
         pass
 
     # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
@@ -207,6 +212,149 @@ class VannaBase(ABC):
                 return None
             else:
                 return sql, None
+
+    def _get_databases(self) -> List[str]:
+        try:
+            df_databases = self.run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
+        except:
+            try:
+                df_databases = self.run_sql("SHOW DATABASES")
+            except:
+                return []
+
+        return df_databases["DATABASE_NAME"].unique().tolist()
+
+    def _get_information_schema_tables(self, database: str) -> pd.DataFrame:
+        df_tables = self.run_sql(f"SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES")
+
+        return df_tables
+
+    def get_training_plan_snowflake(
+        self,
+        filter_databases: Union[List[str], None] = None,
+        filter_schemas: Union[List[str], None] = None,
+        include_information_schema: bool = False,
+        use_historical_queries: bool = True,
+    ) -> TrainingPlan:
+        plan = TrainingPlan([])
+
+        if self.run_sql_is_set is False:
+            raise ImproperlyConfigured("Please connect to a database first.")
+
+        if use_historical_queries:
+            try:
+                print("Trying query history")
+                df_history = self.run_sql(
+                    """ select * from table(information_schema.query_history(result_limit => 5000)) order by start_time"""
+                )
+
+                df_history_filtered = df_history.query("ROWS_PRODUCED > 1")
+                if filter_databases is not None:
+                    mask = (
+                        df_history_filtered["QUERY_TEXT"]
+                        .str.lower()
+                        .apply(
+                            lambda x: any(
+                                s in x for s in [s.lower() for s in filter_databases]
+                            )
+                        )
+                    )
+                    df_history_filtered = df_history_filtered[mask]
+
+                if filter_schemas is not None:
+                    mask = (
+                        df_history_filtered["QUERY_TEXT"]
+                        .str.lower()
+                        .apply(
+                            lambda x: any(
+                                s in x for s in [s.lower() for s in filter_schemas]
+                            )
+                        )
+                    )
+                    df_history_filtered = df_history_filtered[mask]
+
+                for query in (
+                    df_history_filtered.sample(10)["QUERY_TEXT"].unique().tolist()
+                ):
+                    plan._plan.append(
+                        TrainingPlanItem(
+                            item_type=TrainingPlanItem.ITEM_TYPE_SQL,
+                            item_group="",
+                            item_name=self.generate_question(query),
+                            item_value=query,
+                        )
+                    )
+
+            except Exception as e:
+                print(e)
+
+        databases = self._get_databases()
+
+        for database in databases:
+            if filter_databases is not None and database not in filter_databases:
+                continue
+
+            try:
+                df_tables = self._get_information_schema_tables(database=database)
+
+                print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+                df_columns = self.run_sql(
+                    f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS"
+                )
+
+                for schema in df_tables["TABLE_SCHEMA"].unique().tolist():
+                    if filter_schemas is not None and schema not in filter_schemas:
+                        continue
+
+                    if (
+                        not include_information_schema
+                        and schema == "INFORMATION_SCHEMA"
+                    ):
+                        continue
+
+                    df_columns_filtered_to_schema = df_columns.query(
+                        f"TABLE_SCHEMA == '{schema}'"
+                    )
+
+                    try:
+                        tables = (
+                            df_columns_filtered_to_schema["TABLE_NAME"]
+                            .unique()
+                            .tolist()
+                        )
+
+                        for table in tables:
+                            df_columns_filtered_to_table = (
+                                df_columns_filtered_to_schema.query(
+                                    f"TABLE_NAME == '{table}'"
+                                )
+                            )
+                            doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+                            doc += df_columns_filtered_to_table[
+                                [
+                                    "TABLE_CATALOG",
+                                    "TABLE_SCHEMA",
+                                    "TABLE_NAME",
+                                    "COLUMN_NAME",
+                                    "DATA_TYPE",
+                                    "COMMENT",
+                                ]
+                            ].to_markdown()
+
+                            plan._plan.append(
+                                TrainingPlanItem(
+                                    item_type=TrainingPlanItem.ITEM_TYPE_IS,
+                                    item_group=f"{database}.{schema}",
+                                    item_name=table,
+                                    item_value=doc,
+                                )
+                            )
+
+                    except Exception as e:
+                        print(e)
+                        pass
+            except Exception as e:
+                print(e)
 
 
 class SplitStorage(VannaBase):

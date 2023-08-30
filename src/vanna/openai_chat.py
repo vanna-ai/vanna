@@ -74,6 +74,18 @@ class OpenAI_Chat(VannaBase):
 
         return message_log
 
+    def generate_question(self, answer: str, **kwargs) -> str:
+        response = self.submit_prompt(
+            [
+                self.system_message(
+                    "The user will give you SQL and you will try to guess what the business question this query is answering. Return just the question without any additional explanation. Do not reference the table name in the question."
+                ),
+                self.user_message(answer.sql),
+            ]
+        )
+
+        return response
+
     def submit_prompt(self, prompt, **kwargs) -> str:
         if prompt is None:
             raise Exception("Prompt is None")
