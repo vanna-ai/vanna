@@ -97,6 +97,7 @@ class VannaBase(ABC):
         password: str,
         database: str,
         role: Union[str, None] = None,
+        warehouse: Union[str, None] = None,
     ):
         try:
             snowflake = __import__("snowflake.connector")
@@ -150,6 +151,9 @@ class VannaBase(ABC):
 
             if role is not None:
                 cs.execute(f"USE ROLE {role}")
+
+            if warehouse is not None:
+                cs.execute(f"USE WAREHOUSE {warehouse}")
             cs.execute(f"USE DATABASE {database}")
 
             cur = cs.execute(sql)
