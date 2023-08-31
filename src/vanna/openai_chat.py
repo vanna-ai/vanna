@@ -82,7 +82,8 @@ class OpenAI_Chat(VannaBase):
                     "The user will give you SQL and you will try to guess what the business question this query is answering. Return just the question without any additional explanation. Do not reference the table name in the question."
                 ),
                 self.user_message(sql),
-            ]
+            ],
+            **kwargs,
         )
 
         return response
@@ -149,16 +150,27 @@ class OpenAI_Chat(VannaBase):
                 len(message["content"]) / 4
             )  # Use 4 as an approximation for the number of characters per token
 
-        if num_tokens > 3500:
-            model = "gpt-3.5-turbo-16k"
+        if "engine" in self.config:
+            print(
+                f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
+            )
+            response = openai.ChatCompletion.create(
+                engine=self.config["engine"],
+                messages=prompt,
+                max_tokens=500,
+                stop=None,
+                temperature=0.7,
+            )
         else:
-            model = "gpt-3.5-turbo"
+            if num_tokens > 3500:
+                model = "gpt-3.5-turbo-16k"
+            else:
+                model = "gpt-3.5-turbo"
 
-        print(f"Using model {model} for {num_tokens} tokens (approx)")
-
-        response = openai.ChatCompletion.create(
-            model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
-        )
+            print(f"Using model {model} for {num_tokens} tokens (approx)")
+            response = openai.ChatCompletion.create(
+                model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
+            )
 
         for (
             choice
