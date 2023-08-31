@@ -8,7 +8,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 
-from .exceptions import DependencyError, ImproperlyConfigured
+from .exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from .types import TrainingPlan, TrainingPlanItem
 
 
@@ -50,15 +50,15 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def store_question_sql(self, question: str, sql: str, **kwargs):
+    def add_question_sql(self, question: str, sql: str, **kwargs):
         pass
 
     @abstractmethod
-    def store_ddl(self, ddl: str, **kwargs):
+    def add_ddl(self, ddl: str, **kwargs):
         pass
 
     @abstractmethod
-    def store_documentation(self, doc: str, **kwargs):
+    def add_documentation(self, doc: str, **kwargs):
         pass
 
     # ----------------- Use Any Language Model API ----------------- #
@@ -219,7 +219,7 @@ class VannaBase(ABC):
                     print(df)
 
             if len(df) > 0 and auto_train:
-                self.store_question_sql(question=question, sql=sql)
+                self.add_question_sql(question=question, sql=sql)
 
             try:
                 plotly_code = self.generate_plotly_code(
@@ -253,6 +253,64 @@ class VannaBase(ABC):
                 return None
             else:
                 return sql, None, None
+
+    def train(
+        self,
+        question: str = None,
+        sql: str = None,
+        ddl: str = None,
+        documentation: str = None,
+        plan: TrainingPlan = None,
+    ) -> bool:
+        """
+        **Example:**
+        ```python
+        vn.train()
+        ```
+
+        Train Vanna.AI on a question and its corresponding SQL query.
+        If you call it with no arguments, it will check if you connected to a database and it will attempt to train on the metadata of that database.
+        If you call it with the sql argument, it's equivalent to [`add_sql()`][vanna.add_sql].
+        If you call it with the ddl argument, it's equivalent to [`add_ddl()`][vanna.add_ddl].
+        If you call it with the documentation argument, it's equivalent to [`add_documentation()`][vanna.add_documentation].
+        Additionally, you can pass a [`TrainingPlan`][vanna.TrainingPlan] object. Get a training plan with [`vn.get_training_plan_experimental()`][vanna.get_training_plan_experimental].
+
+        Args:
+            question (str): The question to train on.
+            sql (str): The SQL query to train on.
+            ddl (str):  The DDL statement.
+            documentation (str): The documentation to train on.
+            plan (TrainingPlan): The training plan to train on.
+        """
+
+        if question and not sql:
+            example_question = "What is the average salary of employees?"
+            raise ValidationError(
+                f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}"
+            )
+
+        if documentation:
+            print("Adding documentation....")
+            return self.add_documentation(documentation)
+
+        if sql:
+            if question is None:
+                question = self.generate_question(sql)
+                print("Question generated with sql:", question, "\nAdding SQL...")
+            return self.add_question_sql(question=question, sql=sql)
+
+        if ddl:
+            print("Adding ddl:", ddl)
+            return self.add_ddl(ddl)
+
+        if plan:
+            for item in plan._plan:
+                if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
+                    self.add_ddl(item.item_value)
+                elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
+                    self.add_documentation(item.item_value)
+                elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
+                    self.add_question_sql(question=item.item_name, sql=item.item_value)
 
     def _get_databases(self) -> List[str]:
         try:

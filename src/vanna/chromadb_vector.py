@@ -39,7 +39,7 @@ class ChromaDB_VectorStore(VannaBase):
             return embedding[0]
         return embedding
 
-    def store_question_sql(self, question: str, sql: str, **kwargs):
+    def add_question_sql(self, question: str, sql: str, **kwargs):
         question_sql_json = json.dumps(
             {
                 "question": question,
@@ -52,14 +52,14 @@ class ChromaDB_VectorStore(VannaBase):
             ids=str(uuid.uuid4()),
         )
 
-    def store_ddl(self, ddl: str, **kwargs):
+    def add_ddl(self, ddl: str, **kwargs):
         self.ddl_collection.add(
             documents=ddl,
             embeddings=self.generate_embedding(ddl),
             ids=str(uuid.uuid4()),
         )
 
-    def store_documentation(self, doc: str, **kwargs):
+    def add_documentation(self, doc: str, **kwargs):
         self.documentation_collection.add(
             documents=doc,
             embeddings=self.generate_embedding(doc),
