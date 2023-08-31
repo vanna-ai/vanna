@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 
 import openai
@@ -85,6 +86,54 @@ class OpenAI_Chat(VannaBase):
         )
 
         return response
+
+    def _extract_python_code(self, markdown_string: str) -> str:
+        # Regex pattern to match Python code blocks
+        pattern = r"```[\w\s]*python\n([\s\S]*?)```|```([\s\S]*?)```"
+
+        # Find all matches in the markdown string
+        matches = re.findall(pattern, markdown_string, re.IGNORECASE)
+
+        # Extract the Python code from the matches
+        python_code = []
+        for match in matches:
+            python = match[0] if match[0] else match[1]
+            python_code.append(python.strip())
+
+        if len(python_code) == 0:
+            return markdown_string
+
+        return python_code[0]
+
+    def _sanitize_plotly_code(self, raw_plotly_code: str) -> str:
+        # Remove the fig.show() statement from the plotly code
+        plotly_code = raw_plotly_code.replace("fig.show()", "")
+
+        return plotly_code
+
+    def generate_plotly_code(
+        self, question: str = None, sql: str = None, df_metadata: str = None, **kwargs
+    ) -> str:
+        if question is not None:
+            system_msg = f"The following is a pandas DataFrame that contains the results of the query that answers the question the user asked: '{question}'"
+        else:
+            system_msg = "The following is a pandas DataFrame "
+
+        if sql is not None:
+            system_msg += f"\n\nThe DataFrame was produced using this query using this query: {sql}\n\n"
+
+        system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
+
+        message_log = [
+            self.system_message(system_msg),
+            self.user_message(
+                "Can you generate the Python plotly code to chart the results of the dataframe? Assume the data is in a pandas dataframe called 'df'. If there is only one value in the dataframe, use an Indicator. Respond with only Python code. Do not answer with any explanations -- just the code."
+            ),
+        ]
+
+        plotly_code = self.submit_prompt(message_log, kwargs=kwargs)
+
+        return self._sanitize_plotly_code(self._extract_python_code(plotly_code))
 
     def submit_prompt(self, prompt, **kwargs) -> str:
         if prompt is None:

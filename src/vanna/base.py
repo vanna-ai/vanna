@@ -5,6 +5,8 @@ from typing import List, Tuple, Union
 
 import pandas as pd
 import plotly
+import plotly.express as px
+import plotly.graph_objects as go
 
 from .exceptions import DependencyError, ImproperlyConfigured
 from .types import TrainingPlan, TrainingPlanItem
@@ -78,6 +80,12 @@ class VannaBase(ABC):
 
     @abstractmethod
     def generate_question(self, answer: str, **kwargs) -> str:
+        pass
+
+    @abstractmethod
+    def generate_plotly_code(
+        self, question: str = None, sql: str = None, df_metadata: str = None, **kwargs
+    ) -> str:
         pass
 
     # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
@@ -166,7 +174,14 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
-    ) -> Union[Tuple[Union[str, None], Union[pd.DataFrame, None]], None]:
+    ) -> Union[
+        Tuple[
+            Union[str, None],
+            Union[pd.DataFrame, None],
+            Union[plotly.graph_objs.Figure, None],
+        ],
+        None,
+    ]:
         if question is None:
             question = input("Enter a question: ")
 
@@ -174,7 +189,7 @@ class VannaBase(ABC):
             sql = self.generate_sql_from_question(question=question)
         except Exception as e:
             print(e)
-            return None, None
+            return None, None, None
 
         if print_results:
             try:
@@ -189,7 +204,7 @@ class VannaBase(ABC):
             if print_results:
                 return None
             else:
-                return sql, None
+                return sql, None, None
 
         try:
             df = self.run_sql(sql)
@@ -206,12 +221,38 @@ class VannaBase(ABC):
             if len(df) > 0 and auto_train:
                 self.store_question_sql(question=question, sql=sql)
 
+            try:
+                plotly_code = self.generate_plotly_code(
+                    question=question,
+                    sql=sql,
+                    df_metadata=f"Running df.types gives: {df.dtypes}",
+                )
+                fig = self.get_plotly_figure(plotly_code=plotly_code, df=df)
+                if print_results:
+                    try:
+                        display = __import__(
+                            "IPython.display", fromlist=["display"]
+                        ).display
+                        Image = __import__("IPython.display", fromlist=["Image"]).Image
+                        img_bytes = fig.to_image(format="png", scale=2)
+                        display(Image(img_bytes))
+                    except Exception as e:
+                        fig.show()
+            except Exception as e:
+                # Print stack trace
+                traceback.print_exc()
+                print("Couldn't run plotly code: ", e)
+                if print_results:
+                    return None
+                else:
+                    return sql, df, None
+
         except Exception as e:
             print("Couldn't run sql: ", e)
             if print_results:
                 return None
             else:
-                return sql, None
+                return sql, None, None
 
     def _get_databases(self) -> List[str]:
         try:
@@ -355,6 +396,40 @@ class VannaBase(ABC):
                         pass
             except Exception as e:
                 print(e)
+
+    def get_plotly_figure(
+        self, plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
+    ) -> plotly.graph_objs.Figure:
+        """
+        **Example:**
+        ```python
+        fig = vn.get_plotly_figure(
+            plotly_code="fig = px.bar(df, x='name', y='salary')",
+            df=df
+        )
+        fig.show()
+        ```
+        Get a Plotly figure from a dataframe and Plotly code.
+
+        Args:
+            df (pd.DataFrame): The dataframe to use.
+            plotly_code (str): The Plotly code to use.
+
+        Returns:
+            plotly.graph_objs.Figure: The Plotly figure.
+        """
+        ldict = {"df": df, "px": px, "go": go}
+        exec(plotly_code, globals(), ldict)
+
+        fig = ldict.get("fig", None)
+
+        if fig is None:
+            return None
+
+        if dark_mode:
+            fig.update_layout(template="plotly_dark")
+
+        return fig
 
 
 class SplitStorage(VannaBase):
