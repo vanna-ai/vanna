@@ -79,7 +79,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def generate_question(self, answer: str, **kwargs) -> str:
+    def generate_question(self, sql: str, **kwargs) -> str:
         pass
 
     @abstractmethod
@@ -256,11 +256,15 @@ class VannaBase(ABC):
 
     def _get_databases(self) -> List[str]:
         try:
+            print("Trying INFORMATION_SCHEMA.DATABASES")
             df_databases = self.run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
-        except:
+        except Exception as e:
+            print(e)
             try:
+                print("Trying SHOW DATABASES")
                 df_databases = self.run_sql("SHOW DATABASES")
-            except:
+            except Exception as e:
+                print(e)
                 return []
 
         return df_databases["DATABASE_NAME"].unique().tolist()
@@ -314,9 +318,10 @@ class VannaBase(ABC):
                     )
                     df_history_filtered = df_history_filtered[mask]
 
-                for query in (
-                    df_history_filtered.sample(10)["QUERY_TEXT"].unique().tolist()
-                ):
+                if len(df_history_filtered) > 10:
+                    df_history_filtered = df_history_filtered.sample(10)
+
+                for query in df_history_filtered["QUERY_TEXT"].unique().tolist():
                     plan._plan.append(
                         TrainingPlanItem(
                             item_type=TrainingPlanItem.ITEM_TYPE_SQL,
@@ -396,6 +401,8 @@ class VannaBase(ABC):
                         pass
             except Exception as e:
                 print(e)
+
+        return plan
 
     def get_plotly_figure(
         self, plotly_code: str, df: pd.DataFrame, dark_mode: bool = True
