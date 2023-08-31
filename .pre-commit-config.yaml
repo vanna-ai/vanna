@@ -23,9 +23,3 @@ repos:
     hooks:
       - id: brunette
         args: [ '--config=setup.cfg' ]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args: [ '--config=setup.cfg' ]
