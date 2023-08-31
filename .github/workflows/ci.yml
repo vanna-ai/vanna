@@ -25,6 +25,7 @@ jobs:
       - run: pip install nbconvert
       - run: pip install ghp-import
       - run: pip install pdoc
+      - run: pip install chromadb
       - run: pip install .
       - run: pdoc vanna --logo https://img.vanna.ai/vanna-ref.svg --logo-link https://docs.vanna.ai --no-show-source --mermaid --docformat google -n -o docs
       - run: python docs/sidebar.py docs/sidebar.yaml notebooks docs
