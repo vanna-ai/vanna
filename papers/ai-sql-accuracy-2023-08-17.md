@@ -11,9 +11,9 @@ We also compare a few different LLMs - including Google Bison, GPT 3.5, GPT 4, a
 
 Finally, we show how you can use the methods demonstrated here to generate SQL for your database.
 
-Here's a summary of our key findings - 
+Here's a summary of our key findings -
 
-![](img/summary.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/summary.png)
 
 ## Table of Contents
 * [Why use AI to generate SQL?](#why-use-ai-to-generate-sql)
@@ -47,7 +47,7 @@ The number of people with both of the above is not only vanishingly small, but l
 
 **This process is painful** for both the business user (long lead times to get answers) and the analyst (distracts from their main projects), and leads to many potential insights being lost.
 
-![](img/question-flow.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/question-flow.png)
 
 **Enter generative AI!** LLMs potentially give the opportunity to business users to query the database in plain English (with the LLMs doing the SQL translation), and we have heard from dozens of companies that this would be a game changer for their data teams and even their businesses.
 
@@ -60,7 +60,7 @@ The number of people with both of the above is not only vanishingly small, but l
 
 First, we needed to define the architecture of the test. A rough outline is below, in a five step process, with _pseudo code_ below - 
 
-![](img/test-architecture.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/test-architecture.png)
 
 1. **Question** - We start with the business question.
 ```python
@@ -73,7 +73,7 @@ First, we needed to define the architecture of the test. A rough outline is belo
    {question}
    """
 ```
-3. **Generate SQL** - Using an API, we’ll send the prompt to the LLM and get back generated SQL. 
+3. **Generate SQL** - Using an API, we’ll send the prompt to the LLM and get back generated SQL.
 ```python
    sql = llm.api(api_key=api_key, prompt=prompt, parameters=parameters)
 ```
@@ -88,7 +88,7 @@ There are some shades of grey when it comes to the results so we did a manual ev
 
 Now that we have our experiment set up, we’ll need to figure out what levers would impact accuracy, and what our test set would be. We tried two levers (the LLMs and the training data used), and we ran on 20 questions that made up our test set. So we ran a total of 3 LLMs x 3 context strategies x 20 questions = 180 individual trials in this experiment.
 
-![](img/test-levers.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/test-levers.png)
 
 
 ### Choosing a dataset
@@ -146,7 +146,7 @@ This section is a bit unfair to ChatGPT, but it’s a helpful place to get start
 **Prompt**
 
 ```
-Write Snowflake SQL to answer the following question - 
+Write Snowflake SQL to answer the following question -
 
 What are the quarterly revenues by business segment for Alphabet?
 
@@ -178,7 +178,7 @@ ORDER BY
 
 Inevitably, when we try to run this, we hit an error, because it made up the table name since we didn't provide it - 
 
-![](img/sql-error.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/sql-error.png)
 
 Of course, we are being unfair to the LLMs - as magical as they are, they cannot (unfortunately? luckily?) possibly know what’s in our database - yet. So let’s hop into the tests where we give more context.
 
@@ -208,7 +208,7 @@ The results were, in a word, terrible. Of the 60 attempts (20 questions x 3 mode
 1. What are the top 10 measure descriptions by frequency?
 2. What are the distinct statements in the report attributes?
 
-![](img/accuracy-using-schema-only.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/accuracy-using-schema-only.png)
 
 It’s evident that by just using the schema, we don’t get close to meeting the bar of a helpful AI SQL agent, though it may be somewhat useful in being an analyst copilot.
 
@@ -223,40 +223,40 @@ Cybersyn, as with other data providers on the Snowflake marketplace, provides a 
 
 By providing just those 3 example queries, we see substantial improvements to the correctness of the SQL generated. However, this accuracy greatly varies by the underlying LLM. It seems that GPT-4 is the most able to generalize the example queries in a way that generates the most accurate SQL.
 
-![](img/accuracy-using-static-examples.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/accuracy-using-static-examples.png)
 
 ## Using contextually relevant examples
 
 Enterprise data warehouses often contain 100s (or even 1000s) of tables, and an order of magnitude more queries that cover all the use cases within their organizations. Given the limited size of the context windows of modern LLMs, we can’t just shove all the prior queries and schema definitions into the prompt.
 
-Our final approach to context is a more sophisticated ML approach - load embeddings of prior queries and the table schemas into a vector database, and only choose the most relevant queries / tables to the question asked. Here's a diagram of what we are doing - note the contextual relevance search in the red box - 
+Our final approach to context is a more sophisticated ML approach - load embeddings of prior queries and the table schemas into a vector database, and only choose the most relevant queries / tables to the question asked. Here's a diagram of what we are doing - note the contextual relevance search in the red box -
 
-![](img/using-contextually-relevant-examples.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/using-contextually-relevant-examples.png)
 
 By surfacing the most relevant examples of those SQL queries to the LLM, we can drastically improve performance of even the less capable LLMs. Here, we give the LLM the 10 most relevant SQL query examples for the question (from a list of 30 examples stored), and accuracy rates skyrocket.
 
-![](img/accuracy-using-contextual-examples.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/accuracy-using-contextual-examples.png)
 
-We can improve performance even more by maintaining a history of SQL statements that were executable and correctly answer actual questions that users have had. 
+We can improve performance even more by maintaining a history of SQL statements that were executable and correctly answer actual questions that users have had.
 
 
 ## Analyzing the results
 
 It’s clear that the biggest difference is not in the type of LLM, but rather in the strategy employed to give the appropriate context to the LLM (eg the “training data” used).
 
-![](img/summary-table.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/summary-table.png)
 
 When looking at SQL accuracy by context strategy, it’s clear that this is what makes the difference. We go from ~3% accurate using just the schema, to ~80% accurate when intelligently using contextual examples.
 
-![](img/summary.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/summary.png)
 
 There are still interesting trends with the LLMs themselves. While Bison starts out at the bottom of the heap in both the Schema and Static context strategies, it rockets to the top with a full Contextual strategy. Averaged across the three strategies, **GPT 4 takes the crown as the best LLM for SQL generation**.
 
-![](img/accuracy-by-llm.png)
+![](https://raw.githubusercontent.com/vanna-ai/vanna/main/papers/img/accuracy-by-llm.png)
 
 ## Next steps to getting accuracy even higher
 
-We'll soon do a follow up on this analysis to get even deeper into accurate SQL generation. Some next steps are - 
+We'll soon do a follow up on this analysis to get even deeper into accurate SQL generation. Some next steps are -
 
 1. **Use other datasets**: We'd love to try this on other, real world, enterprise datasets. What happens when you get to 100 tables? 1000 tables?
 2. **Add more training data**: While 30 queries is great, what happens when you 10x, 100x that number?
@@ -267,7 +267,7 @@ We have some anecdotal evidence for the above but we'll be expanding and refinin
 
 ## Use AI to write SQL for your dataset
 
-While the SEC data is a good start, you must be wondering whether this could be relevant for your data and your organization. We’re building a [Python package](https://vanna.ai) that can generate SQL for your database as well as additional functionality like being able to generate Plotly code for the charts, follow-up questions, and various other functions. 
+While the SEC data is a good start, you must be wondering whether this could be relevant for your data and your organization. We’re building a [Python package](https://vanna.ai) that can generate SQL for your database as well as additional functionality like being able to generate Plotly code for the charts, follow-up questions, and various other functions.
 
 Here's an overview of how it works
 ```python
@@ -294,7 +294,7 @@ vn.train(sql="SELECT ...")
 
 4. **Generating SQL**
 
-The easiest ways to use Vanna out of the box are `vn.ask(question="What are the ...")` which will return the SQL, table, and chart as you can see in this [example notebook](https://docs.vanna.ai/getting-started.html). `vn.ask` is a wrapper around `vn.generate_sql`, `vn.run_sql`, `vn.generate_plotly_code`, `vn.get_plotly_figure`, and `vn.generate_followup_questions`. This will use optimized context to generate SQL for your question where Vanna will call the LLM for you.
+The easiest ways to use Vanna out of the box are `vn.ask(question="What are the ...")` which will return the SQL, table, and chart as you can see in this [example notebook](https://vanna.ai/docs/getting-started.html). `vn.ask` is a wrapper around `vn.generate_sql`, `vn.run_sql`, `vn.generate_plotly_code`, `vn.get_plotly_figure`, and `vn.generate_followup_questions`. This will use optimized context to generate SQL for your question where Vanna will call the LLM for you.
 
 Alternately, you can use `vn.get_related_training_data(question="What are the ...")` as shown in this [notebook](https://github.com/vanna-ai/research/blob/main/notebooks/test-cybersyn-sec.ipynb) which will retrieve the most relevant context that you can use to construct your own prompt to send to any LLM.
 
@@ -307,5 +307,3 @@ This [notebook](https://github.com/vanna-ai/research/blob/main/notebooks/train-c
 
 ## Contact Us
 Ping us on [Slack](https://join.slack.com/t/vanna-ai/shared_invite/zt-1unu0ipog-iE33QCoimQiBDxf2o7h97w), [Discord](https://discord.com/invite/qUZYKHremx), or [set up a 1:1 call](https://calendly.com/d/y7j-yqq-yz4/meet-with-both-vanna-co-founders) if you have any issues.
-
-
