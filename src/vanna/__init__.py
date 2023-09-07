@@ -1,4 +1,7 @@
 r'''
+# Source Code
+View the source code on GitHub: [https://github.com/vanna-ai/vanna](https://github.com/vanna-ai/vanna)
+
 # Basic Usage
 
 ## Getting an API key
@@ -10,15 +13,34 @@ vn.set_api_key(api_key)
 
 ## Setting the model
 ```python
-vn.set_model('demo-tpc-h')
+vn.set_model('chinook')
 ```
 
 ## Asking a question
 ```python
-sql, df, fig, followup_questions = vn.ask(question='What are the top 10 customers by sales?')
+vn.ask(question='What are the top 10 artists by sales?')
+```
+`vn.ask(...)` is a convenience wrapper around `vn.generate_sql(...)`, `vn.run_sql(...)`, `vn.generate_plotly_code(...)`, `vn.get_plotly_figure(...)`, and `vn.generate_followup_questions(...)`.
+
+For a runnable notebook where you can ask questions, see [here](/docs/getting-started.html)
+
+## Training
+There are 3 main types of training data that you can add to a model: SQL, DDL, and documentation.
+```python
+# DDL Statements
+vn.train(ddl='CREATE TABLE employees (id INT, name VARCHAR(255), salary INT)')
+
+# Documentation
+vn.train(documentation='Our organization\'s definition of sales is the discount price of an item multiplied by the quantity sold.')
+
+# SQL
+vn.train(sql='SELECT AVG(salary) FROM employees')
 ```
 
-For a more comprehensive starting guide see the [Starter Notebook](/notebooks/vn-starter/).
+`vn.train(...)` is a convenience wrapper around `vn.add_sql(...)`, `vn.add_ddl(...)`, and `vn.add_documentation(...)`.
+
+For a runnable notebook where you can train a model, see [here](/docs/manual-train.html)
+
 
 # Nomenclature
 
@@ -70,6 +92,39 @@ By default when you create a model it is private. You can add members or admins 
     <td>✅</td>
   </tr>
 </table>
+
+# Open-Source and Extending
+
+Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](/docs/local.html).
+
+The following is an example of where various functions are implemented in the codebase when using the default "local" version of Vanna. `vanna.base.VannaBase` is the base class which provides a `vanna.base.VannaBase.ask` and `vanna.base.VannaBase.train` function. Those rely on abstract methods which are implemented in the subclasses `vanna.openai_chat.OpenAI_Chat` and `vanna.chromadb_vector.ChromaDB_VectorStore`. `vanna.openai_chat.OpenAI_Chat` uses the OpenAI API to generate SQL and Plotly code. `vanna.chromadb_vector.ChromaDB_VectorStore` uses ChromaDB to store training data and generate embeddings.
+
+If you want to use Vanna with other LLMs or databases, you can create your own subclass of `vanna.base.VannaBase` and implement the abstract methods.
+
+```mermaid
+flowchart
+    subgraph VannaBase
+        ask
+        train
+    end
+
+    subgraph OpenAI_Chat
+        get_prompt
+        submit_prompt
+        generate_question
+        generate_plotly_code
+    end
+
+    subgraph ChromaDB_VectorStore
+        generate_embedding
+        add_question_sql
+        add_ddl
+        add_documentation
+        get_similar_question_sql
+        get_related_ddl
+        get_related_documentation
+    end
+```
 
 
 # API Reference
@@ -414,7 +469,7 @@ def set_model(model: str):
 
 def add_sql(question: str, sql: str, tag: Union[str, None] = "Manually Trained") -> bool:
     """
-    Adds a question and its corresponding SQL query to the model's training data
+    Adds a question and its corresponding SQL query to the model's training data. The preferred way to call this is to use [`vn.train(sql=...)`][vanna.train].
 
     **Example:**
     ```python
