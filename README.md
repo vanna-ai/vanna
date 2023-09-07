@@ -2,7 +2,7 @@
 
 | GitHub | PyPI | Documentation |
 | ------ | ---- | ------------- |
-| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://docs.vanna.ai) |
+| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) |
 
 # Vanna.AI - Personalized AI SQL Agent
 
@@ -11,14 +11,14 @@ https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a
 ## How Vanna works
 Vanna works in two easy steps - train a model on your data, and then ask questions.
 
-1. **Train a model on your data**. 
+1. **Train a model on your data**.
 2. **Ask questions**.
 
-When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model. 
+When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model.
 <img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
 
 ## Getting started
-You can start by [automatically training Vanna (currently works for Snowflake)](https://docs.vanna.ai/vn-train.html) or add manual training data.
+You can start by [automatically training Vanna (currently works for Snowflake)](https://vanna.ai/docs/vn-train.html) or add manual training data.
 
 ### Install Vanna
 ```
@@ -159,17 +159,17 @@ vn.ask("What are the top 10 customers by sales?")
     - As you use Vanna more, your model continuously improves as we augment your training data
 5. **Supports many databases.**
     - We have out-of-the-box support Snowflake, BigQuery, Postgres
-    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/) 
+    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/)
 6. **Pretrained models.**
     - If you’re a data provider you can publish your models for anyone to use
     - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
 7. **Choose your front end.**
-    - Start in a Jupyter Notebook. 
-    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin. 
+    - Start in a Jupyter Notebook.
+    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin.
     - Even integrate in your web app for customers.
 
 ## More resources
- - [Full Documentation](https://docs.vanna.ai)
+ - [Full Documentation](https://vanna.ai/docs/)
  - [Website](https://vanna.ai)
  - [Slack channel for support](https://join.slack.com/t/vanna-ai/shared_invite/zt-1unu0ipog-iE33QCoimQiBDxf2o7h97w)
  - [LinkedIn](https://www.linkedin.com/company/vanna-ai/)
