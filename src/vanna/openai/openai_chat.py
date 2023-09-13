@@ -121,7 +121,7 @@ class OpenAI_Chat(VannaBase):
             system_msg = "The following is a pandas DataFrame "
 
         if sql is not None:
-            system_msg += f"\n\nThe DataFrame was produced using this query using this query: {sql}\n\n"
+            system_msg += f"\n\nThe DataFrame was produced using this query: {sql}\n\n"
 
         system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
 
