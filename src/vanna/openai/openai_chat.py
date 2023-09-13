@@ -161,6 +161,17 @@ class OpenAI_Chat(VannaBase):
                 stop=None,
                 temperature=0.7,
             )
+        elif "model" in self.config:
+            print(
+                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
+            )
+            response = openai.ChatCompletion.create(
+                model=self.config["model"],
+                messages=prompt,
+                max_tokens=500,
+                stop=None,
+                temperature=0.7,
+            )
         else:
             if num_tokens > 3500:
                 model = "gpt-3.5-turbo-16k"
