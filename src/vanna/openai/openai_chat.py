@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import openai
 
-from .base import VannaBase
+from ..base import VannaBase
 
 
 class OpenAI_Chat(VannaBase):

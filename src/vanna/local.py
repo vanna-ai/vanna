@@ -1,5 +1,5 @@
-from .chromadb_vector import ChromaDB_VectorStore
-from .openai_chat import OpenAI_Chat
+from .chromadb.chromadb_vector import ChromaDB_VectorStore
+from .openai.openai_chat import OpenAI_Chat
 
 
 class LocalContext_OpenAI(ChromaDB_VectorStore, OpenAI_Chat):

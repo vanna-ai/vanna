@@ -8,8 +8,8 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 
-from .exceptions import DependencyError, ImproperlyConfigured, ValidationError
-from .types import TrainingPlan, TrainingPlanItem
+from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
+from ..types import TrainingPlan, TrainingPlanItem
 
 
 class VannaBase(ABC):
