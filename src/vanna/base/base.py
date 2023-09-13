@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import traceback
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
@@ -7,6 +8,7 @@ import pandas as pd
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -168,6 +170,38 @@ class VannaBase(ABC):
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
+    def connect_to_sqlite(self, url: str):
+        """
+        Connect to a SQLite database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
+
+        Args:
+            url (str): The URL of the database to connect to.
+
+        Returns:
+            None
+        """
+
+        # URL of the database to download
+
+        # Path to save the downloaded database
+        path = "tempdb.sqlite"
+
+        # Download the database if it doesn't exist
+        if not os.path.exists(path):
+            response = requests.get(url)
+            response.raise_for_status()  # Check that the request was successful
+            with open(path, "wb") as f:
+                f.write(response.content)
+
+        # Connect to the database
+        conn = sqlite3.connect(path)
+
+        def run_sql_sqlite(sql: str):
+            return pd.read_sql_query(sql, conn)
+
+        self.run_sql = run_sql_sqlite
+        self.run_sql_is_set = True
+
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
             "You need to connect_to_snowflake or other database first."
@@ -203,7 +237,9 @@ class VannaBase(ABC):
                 print(sql)
 
         if self.run_sql_is_set is False:
-            print("If you want to run the SQL query, provide a run_sql function.")
+            print(
+                "If you want to run the SQL query, connect to a database first. See here: https://vanna.ai/docs/databases.html"
+            )
 
             if print_results:
                 return None
@@ -229,7 +265,7 @@ class VannaBase(ABC):
                 plotly_code = self.generate_plotly_code(
                     question=question,
                     sql=sql,
-                    df_metadata=f"Running df.types gives: {df.dtypes}",
+                    df_metadata=f"Running df.dtypes gives:\n {df.dtypes}",
                 )
                 fig = self.get_plotly_figure(plotly_code=plotly_code, df=df)
                 if print_results:
