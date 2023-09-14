@@ -54,15 +54,15 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_question_sql(self, question: str, sql: str, **kwargs):
+    def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         pass
 
     @abstractmethod
-    def add_ddl(self, ddl: str, **kwargs):
+    def add_ddl(self, ddl: str, **kwargs) -> str:
         pass
 
     @abstractmethod
-    def add_documentation(self, doc: str, **kwargs):
+    def add_documentation(self, doc: str, **kwargs) -> str:
         pass
 
     # ----------------- Use Any Language Model API ----------------- #
@@ -492,7 +492,7 @@ class VannaBase(ABC):
         ddl: str = None,
         documentation: str = None,
         plan: TrainingPlan = None,
-    ) -> bool:
+    ) -> str:
         """
         **Example:**
         ```python

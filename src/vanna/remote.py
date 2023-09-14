@@ -25,6 +25,7 @@ from .types import (
     QuestionStringList,
     SQLAnswer,
     Status,
+    StatusWithId,
     StringData,
     TrainingData,
     UserEmail,
@@ -90,7 +91,7 @@ class VannaDefault(VannaBase):
     def _dataclass_to_dict(self, obj):
         return dataclasses.asdict(obj)
 
-    def add_ddl(self, ddl: str, **kwargs) -> bool:
+    def add_ddl(self, ddl: str, **kwargs) -> str:
         """
         Adds a DDL statement to the model's training data
 
@@ -109,16 +110,16 @@ class VannaDefault(VannaBase):
         """
         params = [StringData(data=ddl)]
 
-        d = self._rpc_call(method="store_ddl", params=params)
+        d = self._rpc_call(method="add_ddl", params=params)
 
         if "result" not in d:
-            return False
+            raise Exception("Error adding DDL", d)
 
-        status = Status(**d["result"])
+        status = StatusWithId(**d["result"])
 
-        return status.success
+        return status.id
 
-    def add_documentation(self, documentation: str, **kwargs) -> bool:
+    def add_documentation(self, documentation: str, **kwargs) -> str:
         """
         Adds documentation to the model's training data
 
@@ -137,16 +138,16 @@ class VannaDefault(VannaBase):
         """
         params = [StringData(data=documentation)]
 
-        d = self._rpc_call(method="store_documentation", params=params)
+        d = self._rpc_call(method="add_documentation", params=params)
 
         if "result" not in d:
-            return False
+            raise Exception("Error adding documentation", d)
 
-        status = Status(**d["result"])
+        status = StatusWithId(**d["result"])
 
-        return status.success
+        return status.id
 
-    def add_question_sql(self, question: str, sql: str, **kwargs) -> bool:
+    def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         """
         Adds a question and its corresponding SQL query to the model's training data. The preferred way to call this is to use [`vn.train(sql=...)`][vanna.train].
 
@@ -173,14 +174,14 @@ class VannaDefault(VannaBase):
 
         params = [QuestionSQLPair(question=question, sql=sql, tag=tag)]
 
-        d = self._rpc_call(method="store_sql", params=params)
+        d = self._rpc_call(method="add_sql", params=params)
 
         if "result" not in d:
-            return False
+            raise Exception("Error adding question and SQL pair", d)
 
-        status = Status(**d["result"])
+        status = StatusWithId(**d["result"])
 
-        return status.success
+        return status.id
 
     def generate_embedding(self, data: str, **kwargs) -> list[float]:
         """
