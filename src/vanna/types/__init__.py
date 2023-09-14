@@ -11,6 +11,13 @@ class Status:
 
 
 @dataclass
+class StatusWithId:
+    success: bool
+    message: str
+    id: str
+
+
+@dataclass
 class QuestionList:
     questions: List[FullQuestionDocument]
 

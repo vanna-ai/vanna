@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import openai
 
-from .base import VannaBase
+from ..base import VannaBase
 
 
 class OpenAI_Chat(VannaBase):
@@ -121,7 +121,7 @@ class OpenAI_Chat(VannaBase):
             system_msg = "The following is a pandas DataFrame "
 
         if sql is not None:
-            system_msg += f"\n\nThe DataFrame was produced using this query using this query: {sql}\n\n"
+            system_msg += f"\n\nThe DataFrame was produced using this query: {sql}\n\n"
 
         system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
 
@@ -156,6 +156,17 @@ class OpenAI_Chat(VannaBase):
             )
             response = openai.ChatCompletion.create(
                 engine=self.config["engine"],
+                messages=prompt,
+                max_tokens=500,
+                stop=None,
+                temperature=0.7,
+            )
+        elif "model" in self.config:
+            print(
+                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
+            )
+            response = openai.ChatCompletion.create(
+                model=self.config["model"],
                 messages=prompt,
                 max_tokens=500,
                 stop=None,

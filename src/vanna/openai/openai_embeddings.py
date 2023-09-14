@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 import openai
 
-from .base import VannaBase
+from ..base import VannaBase
 
 
 class OpenAI_Embeddings(VannaBase):
@@ -27,7 +27,7 @@ class OpenAI_Embeddings(VannaBase):
     def generate_embedding(self, data: str, **kwargs) -> list[float]:
         if self.config is not None and "engine" in self.config:
             embedding = openai.Embedding.create(
-                engine="text-embedding-ada-002",
+                engine=self.config["engine"],
                 input=data,
             )
         else:
