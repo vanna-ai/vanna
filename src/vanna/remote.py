@@ -106,7 +106,7 @@ class VannaDefault(VannaBase):
             ddl (str): The DDL statement to store.
 
         Returns:
-            bool: True if the DDL statement was stored successfully, False otherwise.
+            str: The ID of the DDL statement.
         """
         params = [StringData(data=ddl)]
 
@@ -134,7 +134,7 @@ class VannaDefault(VannaBase):
             documentation (str): The documentation string to store.
 
         Returns:
-            bool: True if the documentation string was stored successfully, False otherwise.
+            str: The ID of the documentation string.
         """
         params = [StringData(data=documentation)]
 
@@ -165,7 +165,7 @@ class VannaDefault(VannaBase):
             tag (Union[str, None]): A tag to associate with the question and SQL query.
 
         Returns:
-            bool: True if the question and SQL query were stored successfully, False otherwise.
+            str: The ID of the question and SQL query.
         """
         if "tag" in kwargs:
             tag = kwargs["tag"]
