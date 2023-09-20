@@ -109,7 +109,7 @@ flowchart
     end
 
     subgraph OpenAI_Chat
-        get_prompt
+        get_sql_prompt
         submit_prompt
         generate_question
         generate_plotly_code

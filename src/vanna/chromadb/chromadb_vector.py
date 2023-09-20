@@ -5,6 +5,7 @@ from abc import abstractmethod
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
+import pandas as pd
 
 from ..base import VannaBase
 
@@ -49,22 +50,82 @@ class ChromaDB_VectorStore(VannaBase):
         self.sql_collection.add(
             documents=question_sql_json,
             embeddings=self.generate_embedding(question_sql_json),
-            ids=str(uuid.uuid4()),
+            ids=str(uuid.uuid4())+"-sql",
         )
 
     def add_ddl(self, ddl: str, **kwargs):
         self.ddl_collection.add(
             documents=ddl,
             embeddings=self.generate_embedding(ddl),
-            ids=str(uuid.uuid4()),
+            ids=str(uuid.uuid4())+"-ddl",
         )
 
     def add_documentation(self, doc: str, **kwargs):
         self.documentation_collection.add(
             documents=doc,
             embeddings=self.generate_embedding(doc),
-            ids=str(uuid.uuid4()),
+            ids=str(uuid.uuid4())+"-doc",
         )
+
+    def get_training_data(self, **kwargs) -> pd.DataFrame:
+        sql_data = self.sql_collection.get()
+
+        df = pd.DataFrame()
+
+        if sql_data is not None:
+            # Extract the documents and ids
+            documents = [json.loads(doc) for doc in sql_data['documents']]
+            ids = sql_data['ids']
+
+            # Create a DataFrame
+            df_sql = pd.DataFrame({
+                'id': ids,
+                'question': [doc['question'] for doc in documents],
+                'content': [doc['sql'] for doc in documents]
+            })
+
+            df_sql["training_data_type"] = "sql"
+
+            df = pd.concat([df, df_sql])
+
+        ddl_data = self.ddl_collection.get()
+
+        if ddl_data is not None:
+            # Extract the documents and ids
+            documents = [doc for doc in ddl_data['documents']]
+            ids = ddl_data['ids']
+
+            # Create a DataFrame
+            df_ddl = pd.DataFrame({
+                'id': ids,
+                'question': [None for doc in documents],
+                'content': [doc for doc in documents]
+            })
+
+            df_ddl["training_data_type"] = "ddl"
+
+            df = pd.concat([df, df_ddl])
+
+        doc_data = self.documentation_collection.get()
+
+        if doc_data is not None:
+            # Extract the documents and ids
+            documents = [doc for doc in doc_data['documents']]
+            ids = doc_data['ids']
+
+            # Create a DataFrame
+            df_doc = pd.DataFrame({
+                'id': ids,
+                'question': [None for doc in documents],
+                'content': [doc for doc in documents]
+            })
+
+            df_doc["training_data_type"] = "documentation"
+
+            df = pd.concat([df, df_doc])
+
+        return df
+
 
     # Static method to extract the documents from the results of a query
     @staticmethod

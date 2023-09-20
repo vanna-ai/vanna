@@ -3,6 +3,7 @@ import json
 from typing import Callable, List, Tuple, Union
 
 import requests
+import pandas as pd
 
 from .base import VannaBase
 from .types import (
@@ -90,6 +91,33 @@ class VannaDefault(VannaBase):
 
     def _dataclass_to_dict(self, obj):
         return dataclasses.asdict(obj)
+
+    def get_training_data(self, **kwargs) -> pd.DataFrame:
+        """
+        Get the training data for the current model
+
+        **Example:**
+        ```python
+        training_data = vn.get_training_data()
+        ```
+
+        Returns:
+            pd.DataFrame or None: The training data, or None if an error occurred.
+
+        """
+        params = []
+
+        d = self._rpc_call(method="get_training_data", params=params)
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        training_data = DataFrameJSON(**d["result"])
+
+        df = pd.read_json(training_data.data)
+
+        return df
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
         """
@@ -283,7 +311,7 @@ class VannaDefault(VannaBase):
 
         return question.question
 
-    def get_prompt(
+    def get_sql_prompt(
         self,
         question: str,
         question_sql_list: list,

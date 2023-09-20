@@ -25,7 +25,7 @@ class VannaBase(ABC):
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
-        prompt = self.get_prompt(
+        prompt = self.get_sql_prompt(
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
@@ -34,6 +34,19 @@ class VannaBase(ABC):
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
         return llm_response
+
+    def generate_questions(self, **kwargs) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_questions()
+        ```
+
+        Generate a list of questions that you can ask Vanna.AI.
+        """
+        question_sql = self.get_similar_question_sql(question="", **kwargs)
+
+        return [q['question'] for q in question_sql]
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
@@ -65,10 +78,14 @@ class VannaBase(ABC):
     def add_documentation(self, doc: str, **kwargs) -> str:
         pass
 
+    @abstractmethod
+    def get_training_data(self) -> pd.DataFrame:
+        pass
+
     # ----------------- Use Any Language Model API ----------------- #
 
     @abstractmethod
-    def get_prompt(
+    def get_sql_prompt(
         self,
         question: str,
         question_sql_list: list,

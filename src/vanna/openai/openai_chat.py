@@ -37,7 +37,7 @@ class OpenAI_Chat(VannaBase):
     def assistant_message(message: str) -> dict:
         return {"role": "assistant", "content": message}
 
-    def get_prompt(
+    def get_sql_prompt(
         self,
         question: str,
         question_sql_list: list,
