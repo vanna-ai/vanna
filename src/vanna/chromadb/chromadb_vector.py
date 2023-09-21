@@ -40,32 +40,39 @@ class ChromaDB_VectorStore(VannaBase):
             return embedding[0]
         return embedding
 
-    def add_question_sql(self, question: str, sql: str, **kwargs):
+    def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         question_sql_json = json.dumps(
             {
                 "question": question,
                 "sql": sql,
             }
         )
+        id = str(uuid.uuid4())+"-sql"
         self.sql_collection.add(
             documents=question_sql_json,
             embeddings=self.generate_embedding(question_sql_json),
-            ids=str(uuid.uuid4())+"-sql",
+            ids=id,
         )
 
-    def add_ddl(self, ddl: str, **kwargs):
+        return id
+
+    def add_ddl(self, ddl: str, **kwargs) -> str:
+        id = str(uuid.uuid4())+"-ddl"
         self.ddl_collection.add(
             documents=ddl,
             embeddings=self.generate_embedding(ddl),
-            ids=str(uuid.uuid4())+"-ddl",
+            ids=id,
         )
+        return id
 
-    def add_documentation(self, doc: str, **kwargs):
+    def add_documentation(self, doc: str, **kwargs) -> str:
+        id = str(uuid.uuid4())+"-doc"
         self.documentation_collection.add(
             documents=doc,
             embeddings=self.generate_embedding(doc),
-            ids=str(uuid.uuid4())+"-doc",
+            ids=id,
         )
+        return id
 
     def get_training_data(self, **kwargs) -> pd.DataFrame:
         sql_data = self.sql_collection.get()
@@ -126,6 +133,18 @@ class ChromaDB_VectorStore(VannaBase):
 
         return df
 
+    def remove_training_data(self, id: str, **kwargs) -> bool:
+        if id.endswith("-sql"):
+            self.sql_collection.delete(ids=id)
+            return True
+        elif id.endswith("-ddl"):
+            self.ddl_collection.delete(ids=id)
+            return True
+        elif id.endswith("-doc"):
+            self.documentation_collection.delete(ids=id)
+            return True
+        else:
+            return False
 
     # Static method to extract the documents from the results of a query
     @staticmethod

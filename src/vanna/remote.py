@@ -4,6 +4,7 @@ from typing import Callable, List, Tuple, Union
 
 import requests
 import pandas as pd
+from io import StringIO
 
 from .base import VannaBase
 from .types import (
@@ -115,9 +116,58 @@ class VannaDefault(VannaBase):
         # Load the result into a dataclass
         training_data = DataFrameJSON(**d["result"])
 
-        df = pd.read_json(training_data.data)
+        df = pd.read_json(StringIO(training_data.data))
 
         return df
+
+    def remove_training_data(self, id: str, **kwargs) -> bool:
+        """
+        Remove training data from the model
+
+        **Example:**
+        ```python
+        vn.remove_training_data(id="1-ddl")
+        ```
+
+        Args:
+            id (str): The ID of the training data to remove.
+        """
+        params = [StringData(data=id)]
+
+        d = self._rpc_call(method="remove_training_data", params=params)
+
+        if "result" not in d:
+            raise Exception(f"Error removing training data")
+
+        status = Status(**d["result"])
+
+        if not status.success:
+            raise Exception(f"Error removing training data: {status.message}")
+
+        return status.success
+
+    def generate_questions(self) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_questions()
+        # ['What is the average salary of employees?', 'What is the total salary of employees?', ...]
+        ```
+
+        Generate questions using the Vanna.AI API.
+
+        Returns:
+            List[str] or None: The questions, or None if an error occurred.
+        """
+        d = self._rpc_call(method="generate_questions", params=[])
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        question_string_list = QuestionStringList(**d["result"])
+
+        return question_string_list.questions
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
         """
@@ -343,7 +393,7 @@ class VannaDefault(VannaBase):
         Not necessary for remote models as related documentation is generated on the server side.
         """
 
-    def generate_sql_from_question(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, **kwargs) -> str:
         """
         **Example:**
         ```python

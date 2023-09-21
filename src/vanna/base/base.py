@@ -21,7 +21,7 @@ class VannaBase(ABC):
         self.config = config
         self.run_sql_is_set = False
 
-    def generate_sql_from_question(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
@@ -79,7 +79,11 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def get_training_data(self) -> pd.DataFrame:
+    def get_training_data(self, **kwargs) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def remove_training_data(id: str, **kwargs) -> bool:
         pass
 
     # ----------------- Use Any Language Model API ----------------- #
@@ -432,7 +436,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql_from_question(question=question)
+            sql = self.generate_sql(question=question)
         except Exception as e:
             print(e)
             return None, None, None
