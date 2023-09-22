@@ -3,6 +3,8 @@ import json
 from typing import Callable, List, Tuple, Union
 
 import requests
+import pandas as pd
+from io import StringIO
 
 from .base import VannaBase
 from .types import (
@@ -90,6 +92,82 @@ class VannaDefault(VannaBase):
 
     def _dataclass_to_dict(self, obj):
         return dataclasses.asdict(obj)
+
+    def get_training_data(self, **kwargs) -> pd.DataFrame:
+        """
+        Get the training data for the current model
+
+        **Example:**
+        ```python
+        training_data = vn.get_training_data()
+        ```
+
+        Returns:
+            pd.DataFrame or None: The training data, or None if an error occurred.
+
+        """
+        params = []
+
+        d = self._rpc_call(method="get_training_data", params=params)
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        training_data = DataFrameJSON(**d["result"])
+
+        df = pd.read_json(StringIO(training_data.data))
+
+        return df
+
+    def remove_training_data(self, id: str, **kwargs) -> bool:
+        """
+        Remove training data from the model
+
+        **Example:**
+        ```python
+        vn.remove_training_data(id="1-ddl")
+        ```
+
+        Args:
+            id (str): The ID of the training data to remove.
+        """
+        params = [StringData(data=id)]
+
+        d = self._rpc_call(method="remove_training_data", params=params)
+
+        if "result" not in d:
+            raise Exception(f"Error removing training data")
+
+        status = Status(**d["result"])
+
+        if not status.success:
+            raise Exception(f"Error removing training data: {status.message}")
+
+        return status.success
+
+    def generate_questions(self) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_questions()
+        # ['What is the average salary of employees?', 'What is the total salary of employees?', ...]
+        ```
+
+        Generate questions using the Vanna.AI API.
+
+        Returns:
+            List[str] or None: The questions, or None if an error occurred.
+        """
+        d = self._rpc_call(method="generate_questions", params=[])
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        question_string_list = QuestionStringList(**d["result"])
+
+        return question_string_list.questions
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
         """
@@ -283,9 +361,22 @@ class VannaDefault(VannaBase):
 
         return question.question
 
-    def get_prompt(
+    def get_sql_prompt(
         self,
         question: str,
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list,
+        **kwargs,
+    ):
+        """
+        Not necessary for remote models as prompts are generated on the server side.
+        """
+
+    def get_followup_questions_prompt(
+        self,
+        question: str,
+        df: pd.DataFrame,
         question_sql_list: list,
         ddl_list: list,
         doc_list: list,
@@ -315,7 +406,7 @@ class VannaDefault(VannaBase):
         Not necessary for remote models as related documentation is generated on the server side.
         """
 
-    def generate_sql_from_question(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, **kwargs) -> str:
         """
         **Example:**
         ```python
@@ -342,3 +433,40 @@ class VannaDefault(VannaBase):
         sql_answer = SQLAnswer(**d["result"])
 
         return sql_answer.sql
+
+    def generate_followup_questions(self, question: str, df: pd.DataFrame, **kwargs) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_followup_questions(question="What is the average salary of employees?", df=df)
+        # ['What is the average salary of employees in the Sales department?', 'What is the average salary of employees in the Engineering department?', ...]
+        ```
+
+        Generate follow-up questions using the Vanna.AI API.
+
+        Args:
+            question (str): The question to generate follow-up questions for.
+            df (pd.DataFrame): The DataFrame to generate follow-up questions for.
+
+        Returns:
+            List[str] or None: The follow-up questions, or None if an error occurred.
+        """
+        params = [
+            DataResult(
+                question=question,
+                sql=None,
+                table_markdown="",
+                error=None,
+                correction_attempts=0,
+            )
+        ]
+
+        d = self._rpc_call(method="generate_followup_questions", params=params)
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        question_string_list = QuestionStringList(**d["result"])
+
+        return question_string_list.questions        

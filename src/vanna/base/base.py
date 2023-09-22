@@ -10,6 +10,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import re
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -21,11 +22,11 @@ class VannaBase(ABC):
         self.config = config
         self.run_sql_is_set = False
 
-    def generate_sql_from_question(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
-        prompt = self.get_prompt(
+        prompt = self.get_sql_prompt(
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
@@ -34,6 +35,35 @@ class VannaBase(ABC):
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
         return llm_response
+
+    def generate_followup_questions(self, question: str, **kwargs) -> str:
+        question_sql_list = self.get_similar_question_sql(question, **kwargs)
+        ddl_list = self.get_related_ddl(question, **kwargs)
+        doc_list = self.get_related_documentation(question, **kwargs)
+        prompt = self.get_followup_questions_prompt(
+            question=question,
+            question_sql_list=question_sql_list,
+            ddl_list=ddl_list,
+            doc_list=doc_list,
+            **kwargs,
+        )
+        llm_response = self.submit_prompt(prompt, **kwargs)
+        
+        numbers_removed = re.sub(r'^\d+\.\s*', '', llm_response, flags=re.MULTILINE)
+        return numbers_removed.split("\n")
+
+    def generate_questions(self, **kwargs) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_questions()
+        ```
+
+        Generate a list of questions that you can ask Vanna.AI.
+        """
+        question_sql = self.get_similar_question_sql(question="", **kwargs)
+
+        return [q['question'] for q in question_sql]
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
@@ -65,16 +95,35 @@ class VannaBase(ABC):
     def add_documentation(self, doc: str, **kwargs) -> str:
         pass
 
+    @abstractmethod
+    def get_training_data(self, **kwargs) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def remove_training_data(id: str, **kwargs) -> bool:
+        pass
+
     # ----------------- Use Any Language Model API ----------------- #
 
     @abstractmethod
-    def get_prompt(
+    def get_sql_prompt(
         self,
         question: str,
         question_sql_list: list,
         ddl_list: list,
         doc_list: list,
         **kwargs,
+    ):
+        pass
+
+    @abstractmethod
+    def get_followup_questions_prompt(
+        self, 
+        question: str, 
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list, 
+        **kwargs
     ):
         pass
 
@@ -415,7 +464,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql_from_question(question=question)
+            sql = self.generate_sql(question=question)
         except Exception as e:
             print(e)
             return None, None, None
