@@ -373,6 +373,19 @@ class VannaDefault(VannaBase):
         Not necessary for remote models as prompts are generated on the server side.
         """
 
+    def get_followup_questions_prompt(
+        self,
+        question: str,
+        df: pd.DataFrame,
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list,
+        **kwargs,
+    ):
+        """
+        Not necessary for remote models as prompts are generated on the server side.
+        """
+
     def submit_prompt(self, prompt, **kwargs) -> str:
         """
         Not necessary for remote models as prompts are handled on the server side.
@@ -420,3 +433,40 @@ class VannaDefault(VannaBase):
         sql_answer = SQLAnswer(**d["result"])
 
         return sql_answer.sql
+
+    def generate_followup_questions(self, question: str, df: pd.DataFrame, **kwargs) -> list[str]:
+        """
+        **Example:**
+        ```python
+        vn.generate_followup_questions(question="What is the average salary of employees?", df=df)
+        # ['What is the average salary of employees in the Sales department?', 'What is the average salary of employees in the Engineering department?', ...]
+        ```
+
+        Generate follow-up questions using the Vanna.AI API.
+
+        Args:
+            question (str): The question to generate follow-up questions for.
+            df (pd.DataFrame): The DataFrame to generate follow-up questions for.
+
+        Returns:
+            List[str] or None: The follow-up questions, or None if an error occurred.
+        """
+        params = [
+            DataResult(
+                question=question,
+                sql=None,
+                table_markdown="",
+                error=None,
+                correction_attempts=0,
+            )
+        ]
+
+        d = self._rpc_call(method="generate_followup_questions", params=params)
+
+        if "result" not in d:
+            return None
+
+        # Load the result into a dataclass
+        question_string_list = QuestionStringList(**d["result"])
+
+        return question_string_list.questions        

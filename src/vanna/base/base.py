@@ -10,6 +10,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import re
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -34,6 +35,22 @@ class VannaBase(ABC):
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
         return llm_response
+
+    def generate_followup_questions(self, question: str, **kwargs) -> str:
+        question_sql_list = self.get_similar_question_sql(question, **kwargs)
+        ddl_list = self.get_related_ddl(question, **kwargs)
+        doc_list = self.get_related_documentation(question, **kwargs)
+        prompt = self.get_followup_questions_prompt(
+            question=question,
+            question_sql_list=question_sql_list,
+            ddl_list=ddl_list,
+            doc_list=doc_list,
+            **kwargs,
+        )
+        llm_response = self.submit_prompt(prompt, **kwargs)
+        
+        numbers_removed = re.sub(r'^\d+\.\s*', '', llm_response, flags=re.MULTILINE)
+        return numbers_removed.split("\n")
 
     def generate_questions(self, **kwargs) -> list[str]:
         """
@@ -96,6 +113,17 @@ class VannaBase(ABC):
         ddl_list: list,
         doc_list: list,
         **kwargs,
+    ):
+        pass
+
+    @abstractmethod
+    def get_followup_questions_prompt(
+        self, 
+        question: str, 
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list, 
+        **kwargs
     ):
         pass
 

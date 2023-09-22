@@ -2,6 +2,7 @@ import re
 from abc import abstractmethod
 
 import openai
+import pandas as pd
 
 from ..base import VannaBase
 
@@ -37,6 +38,43 @@ class OpenAI_Chat(VannaBase):
     def assistant_message(message: str) -> dict:
         return {"role": "assistant", "content": message}
 
+    @staticmethod
+    def str_to_approx_token_count(string: str) -> int:
+        return len(string) / 4
+
+    @staticmethod
+    def add_ddl_to_prompt(initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000) -> str:
+        if len(ddl_list) > 0:
+            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for ddl in ddl_list:
+                if OpenAI_Chat.str_to_approx_token_count(initial_prompt) + OpenAI_Chat.str_to_approx_token_count(ddl) < max_tokens:
+                    initial_prompt += f"{ddl}\n\n"
+
+        return initial_prompt
+
+    @staticmethod
+    def add_documentation_to_prompt(initial_prompt: str, documentation_list: list[str], max_tokens: int = 14000) -> str:
+        if len(documentation_list) > 0:
+            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for documentation in documentation_list:
+                if OpenAI_Chat.str_to_approx_token_count(initial_prompt) + OpenAI_Chat.str_to_approx_token_count(documentation) < max_tokens:
+                    initial_prompt += f"{documentation}\n\n"
+
+        return initial_prompt
+
+    @staticmethod
+    def add_sql_to_prompt(initial_prompt: str, sql_list: list[str], max_tokens: int = 14000) -> str:
+        if len(sql_list) > 0:
+            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for question in sql_list:
+                if OpenAI_Chat.str_to_approx_token_count(initial_prompt) + OpenAI_Chat.str_to_approx_token_count(question["sql"]) < max_tokens:
+                    initial_prompt += f"{question['question']}\n{question['sql']}\n\n"
+
+        return initial_prompt
+
     def get_sql_prompt(
         self,
         question: str,
@@ -44,22 +82,12 @@ class OpenAI_Chat(VannaBase):
         ddl_list: list,
         doc_list: list,
         **kwargs,
-    ) -> str:
+    ):
         initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
-        if len(ddl_list) > 0:
-            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+        initial_prompt = OpenAI_Chat.add_ddl_to_prompt(initial_prompt, ddl_list, max_tokens=14000)
 
-            for ddl in ddl_list:
-                if len(initial_prompt) < 50000:  # Add DDL if it fits
-                    initial_prompt += f"{ddl}\n\n"
-
-        if len(doc_list) > 0:
-            initial_prompt += f"The following information may or may not be useful in constructing the SQL to answer the question\n"
-
-            for doc in doc_list:
-                if len(initial_prompt) < 60000:  # Add Documentation if it fits
-                    initial_prompt += f"{doc}\n\n"
+        initial_prompt = OpenAI_Chat.add_documentation_to_prompt(initial_prompt, doc_list, max_tokens=14000)
 
         message_log = [OpenAI_Chat.system_message(initial_prompt)]
 
@@ -72,6 +100,28 @@ class OpenAI_Chat(VannaBase):
                     message_log.append(OpenAI_Chat.assistant_message(example["sql"]))
 
         message_log.append({"role": "user", "content": question})
+
+        return message_log
+
+    def get_followup_questions_prompt(
+        self, 
+        question: str, 
+        df: pd.DataFrame,
+        question_sql_list: list,
+        ddl_list: list,
+        doc_list: list, 
+        **kwargs
+    ):
+        initial_prompt = f"The user initially asked the question: '{question}': \n\n"
+
+        initial_prompt = OpenAI_Chat.add_ddl_to_prompt(initial_prompt, ddl_list, max_tokens=14000)
+
+        initial_prompt = OpenAI_Chat.add_documentation_to_prompt(initial_prompt, doc_list, max_tokens=14000)
+
+        initial_prompt = OpenAI_Chat.add_sql_to_prompt(initial_prompt, question_sql_list, max_tokens=14000)
+
+        message_log = [OpenAI_Chat.system_message(initial_prompt)]
+        message_log.append(OpenAI_Chat.user_message("Generate a list of followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions."))
 
         return message_log
 
@@ -150,7 +200,7 @@ class OpenAI_Chat(VannaBase):
                 len(message["content"]) / 4
             )  # Use 4 as an approximation for the number of characters per token
 
-        if "engine" in self.config:
+        if self.config is not None and "engine" in self.config:
             print(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
@@ -161,7 +211,7 @@ class OpenAI_Chat(VannaBase):
                 stop=None,
                 temperature=0.7,
             )
-        elif "model" in self.config:
+        elif self.config is not None and "model" in self.config:
             print(
                 f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
             )
