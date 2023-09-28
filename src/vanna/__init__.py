@@ -185,6 +185,8 @@ from .utils import sanitize_model_name, validate_config_path
 
 api_key: Union[str, None] = None  # API key for Vanna.AI
 
+fig_as_img: bool = False  # Whether or not to return Plotly figures as images
+
 run_sql: Union[
     Callable[[str], pd.DataFrame], None
 ] = None  # Function to convert SQL to a Pandas DataFrame
@@ -1467,18 +1469,26 @@ def ask(
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
 
         try:
-            plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
-            fig = get_plotly_figure(plotly_code=plotly_code, df=df)
-            if print_results:
-                try:
-                    display = __import__(
-                        "IPython.display", fromlist=["display"]
-                    ).display
-                    Image = __import__("IPython.display", fromlist=["Image"]).Image
-                    img_bytes = fig.to_image(format="png", scale=2)
-                    display(Image(img_bytes))
-                except Exception as e:
-                    fig.show()
+            if df is not None and len(df) > 1:
+                plotly_code = generate_plotly_code(question=question, sql=sql, df=df)
+                fig = get_plotly_figure(plotly_code=plotly_code, df=df, dark_mode=False)
+                if print_results:
+                    try:
+                        display = __import__(
+                            "IPython.display", fromlist=["display"]
+                        ).display
+
+                        global fig_as_img
+                        if fig_as_img:
+                            Image = __import__(
+                                "IPython.display", fromlist=["Image"]
+                            ).Image
+                            img_bytes = fig.to_image(format="png", scale=2)
+                            display(Image(img_bytes))
+                        else:
+                            fig.show()
+                    except Exception as e:
+                        fig.show()
 
             if generate_followups:
                 followup_questions = generate_followup_questions(
