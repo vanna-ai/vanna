@@ -2,8 +2,10 @@ import json
 import os
 import sqlite3
 import traceback
+
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
+from urllib.parse import urlparse
 
 import pandas as pd
 import plotly
