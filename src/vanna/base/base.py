@@ -2,8 +2,10 @@ import json
 import os
 import sqlite3
 import traceback
+
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
+from urllib.parse import urlparse
 
 import pandas as pd
 import plotly
@@ -235,17 +237,18 @@ class VannaBase(ABC):
         # URL of the database to download
 
         # Path to save the downloaded database
-        path = "tempdb.sqlite"
+        path = os.path.basename(urlparse(url).path)
 
         # Download the database if it doesn't exist
-        if not os.path.exists(path):
+        if not os.path.exists(url):
             response = requests.get(url)
             response.raise_for_status()  # Check that the request was successful
             with open(path, "wb") as f:
                 f.write(response.content)
+            url = path
 
         # Connect to the database
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(url)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
