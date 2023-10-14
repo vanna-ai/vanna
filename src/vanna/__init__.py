@@ -2008,19 +2008,19 @@ def connect_to_postgres(
         raise ValidationError(e)
 
     def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
-        if conn:
-            try:
-                cs = conn.cursor()
+        try:
+            with conn.cursor() as cs:  # Using a with statement to manage the cursor lifecycle
                 cs.execute(sql)
                 results = cs.fetchall()
-
-                # Create a pandas dataframe from the results
                 df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
-                return df
-
-            except psycopg2.Error as e:
-                conn.rollback()
-                raise ValidationError(e)
+            conn.commit()
+            return df
+        except psycopg2.Error as e:
+            conn.rollback()
+            raise ValidationError(e)
+        except Exception as e:
+            conn.rollback()
+            raise e
 
     global run_sql
     run_sql = run_sql_postgres
