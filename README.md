@@ -4,40 +4,60 @@
 | ------ | ---- | ------------- |
 | [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) |
 
-# Vanna.AI - Personalized AI SQL Agent
+# Vanna
+Vanna is an MIT-licensed open-source Python RAG (Retrieval-Augmented Generation) framework for SQL generation and related functionality.
 
 https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a3b2ce
 
 ## How Vanna works
-Vanna works in two easy steps - train a model on your data, and then ask questions.
+Vanna works in two easy steps - train a RAG "model" on your data, and then ask questions which will return SQL queries that can be set up to automatically run on your database.
 
-1. **Train a model on your data**.
+1. **Train a RAG "model" on your data**.
 2. **Ask questions**.
 
-When you ask a question, we utilize a custom model for your dataset to generate SQL, as seen below. Your model performance and accuracy depends on the quality and quantity of training data you use to train your model.
-<img width="1725" alt="how-vanna-works" src="https://github.com/vanna-ai/vanna/assets/7146154/5e2e2179-ed7a-4df4-92a2-1c017923a675">
+![](img/vanna-readme-diagram.png)
+
+If you don't know what RAG is, don't worry -- you don't need to know how this works under the hood to use it. You just need to know that you "train" a model, which stores some metadata and then use it to "ask" questions.
+
+See the [base class](src/vanna/base/base.py) for more details on how this works under the hood.
+
+## User Interfaces
+These are some of the user interfaces that we've built using Vanna. You can use these as-is or as a starting point for your own custom interface.
+
+- [Jupyter Notebook](https://github.com/vanna-ai/vanna/blob/main/notebooks/getting-started.ipynb)
+- [vanna-ai/vanna-streamlit](https://github.com/vanna-ai/vanna-streamlit)
+- [vanna-ai/vanna-flask](https://github.com/vanna-ai/vanna-flask)
+- [vanna-ai/vanna-slack](https://github.com/vanna-ai/vanna-slack)
+
 
 ## Getting started
-You can start by [automatically training Vanna (currently works for Snowflake)](https://vanna.ai/docs/vn-train.html) or add manual training data.
+See the [documentation](https://vanna.ai/docs/) for specifics on your desired database, LLM, etc.
 
-### Install Vanna
-```
+If you want to get a feel for how it works after training, you can try this [Colab notebook](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/getting-started.ipynb).
+
+
+### Install
+```bash
 pip install vanna
 ```
 
-Depending on the database you're using, you can also install the associated database drivers
-```
-pip install 'vanna[snowflake]'
-```
+There are a number of optional packages that can be installed so see the [documentation](https://vanna.ai/docs/) for more details.
 
-### Import Vanna
+### Import
+See the [documentation](https://vanna.ai/docs/) if you're customizing the LLM or vector database.
+
 ```python
 import vanna as vn
 ```
 
-### Train with DDL Statements
-If you prefer to manually train, you do not need to connect to a database. You can use the train function with other parmaeters like ddl
 
+## Training
+You may or may not need to run these `vn.train` commands depending on your use case. See the [documentation](https://vanna.ai/docs/) for more details.
+
+These statements are shown to give you a feel for how it works.
+
+### Train with DDL Statements
+DDL statements contain information about the table names, columns, data types, and relationships in your database.
 
 ```python
 vn.train(ddl="""
@@ -53,14 +73,14 @@ vn.train(ddl="""
 Sometimes you may want to add documentation about your business terminology or definitions.
 
 ```python
-vn.train(documentation="Our business defines OTIF score as the percentage of orders that are delivered on time and in full")
+vn.train(documentation="Our business defines XYZ as ...")
 ```
 
 ### Train with SQL
 You can also add SQL queries to your training data. This is useful if you have some queries already laying around. You can just copy and paste those from your editor to begin generating new SQL.
 
 ```python
-vn.train(sql="SELECT * FROM my-table WHERE name = 'John Doe'")
+vn.train(sql="SELECT name, age FROM my-table WHERE name = 'John Doe'")
 ```
 
 
@@ -69,16 +89,18 @@ vn.train(sql="SELECT * FROM my-table WHERE name = 'John Doe'")
 vn.ask("What are the top 10 customers by sales?")
 ```
 
-    SELECT c.c_name as customer_name,
-           sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales
-    FROM   snowflake_sample_data.tpch_sf1.lineitem l join snowflake_sample_data.tpch_sf1.orders o
-            ON l.l_orderkey = o.o_orderkey join snowflake_sample_data.tpch_sf1.customer c
-            ON o.o_custkey = c.c_custkey
-    GROUP BY customer_name
-    ORDER BY total_sales desc limit 10;
+You'll get SQL
+```sql
+SELECT c.c_name as customer_name,
+        sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales
+FROM   snowflake_sample_data.tpch_sf1.lineitem l join snowflake_sample_data.tpch_sf1.orders o
+        ON l.l_orderkey = o.o_orderkey join snowflake_sample_data.tpch_sf1.customer c
+        ON o.o_custkey = c.c_custkey
+GROUP BY customer_name
+ORDER BY total_sales desc limit 10;
+```
 
-
-
+If you've connected to a database, you'll get the table:
 <div>
 <table border="1" class="dataframe">
   <thead>
@@ -143,33 +165,43 @@ vn.ask("What are the top 10 customers by sales?")
 </table>
 </div>
 
+You'll also get an automated Plotly chart:
+![](img/top-10-customers.png)
+
+## RAG vs. Fine-Tuning
+RAG
+- Portable across LLMs
+- Easy to remove training data if any of it becomes obsolete
+- Much cheaper to run than fine-tuning
+- More future-proof -- if a better LLM comes out, you can just swap it out
+
+Fine-Tuning
+- Good if you need to minimize tokens in the prompt
+- Slow to get started
+- Expensive to train and run (generally)
+
 ## Why Vanna?
 
 1. **High accuracy on complex datasets.**
     - Vanna’s capabilities are tied to the training data you give it
     - More training data means better accuracy for large and complex datasets
 2. **Secure and private.**
-    - Your database contents  are never sent to Vanna’s servers
-    - We only see the bare minimum - schemas & queries.
-3. **Isolated, custom model.**
-    - You train a custom model specific to your database and your schema.
-    - Nobody else can use your model or view your model’s training data unless you choose to add members to your model or make it public
-    - We use a combination of third-party foundational models (OpenAI, Google) and our own LLM.
-4. **Self learning.**
-    - As you use Vanna more, your model continuously improves as we augment your training data
-5. **Supports many databases.**
-    - We have out-of-the-box support Snowflake, BigQuery, Postgres
-    - You can easily make a connector for any [database](https://docs.vanna.ai/databases/)
-6. **Pretrained models.**
-    - If you’re a data provider you can publish your models for anyone to use
-    - As part of our roadmap, we are in the process of pre-training models for common datasets (Google Ads, Facebook ads, etc)
-7. **Choose your front end.**
-    - Start in a Jupyter Notebook.
-    - Expose to business users via Slackbot, web app, Streamlit app, or Excel plugin.
-    - Even integrate in your web app for customers.
+    - Your database contents are never sent to the LLM or the vector database
+    - SQL execution happens in your local environment
+3. **Self learning.**
+    - If using via Jupyter, you can choose to "auto-train" it on the queries that were successfully executed
+    - If using via other interfaces, you can have the interface prompt the user to provide feedback on the results
+    - Correct question to SQL pairs are stored for future reference and make the future results more accurate
+4. **Supports any SQL database.**
+    - The package allows you to connect to any SQL database that you can otherwise connect to with Python
+5. **Choose your front end.**
+    - Most people start in a Jupyter Notebook.
+    - Expose to your end users via Slackbot, web app, Streamlit app, or a custom front end.
+
+## Extending Vanna
+Vanna is designed to connect to any database, LLM, and vector database. There's a [VannaBase](src/vanna/base/base.py) abstract base class that defines some basic functionality. The package provides implementations for use with OpenAI and ChromaDB. You can easily extend Vanna to use your own LLM or vector database. See the [documentation](https://vanna.ai/docs/) for more details.
 
 ## More resources
  - [Full Documentation](https://vanna.ai/docs/)
  - [Website](https://vanna.ai)
- - [Slack channel for support](https://join.slack.com/t/vanna-ai/shared_invite/zt-1unu0ipog-iE33QCoimQiBDxf2o7h97w)
- - [LinkedIn](https://www.linkedin.com/company/vanna-ai/)
+ - [Discord group for support](https://discord.gg/qUZYKHremx)
