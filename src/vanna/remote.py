@@ -197,7 +197,7 @@ class VannaDefault(VannaBase):
 
         return status.id
 
-    def add_documentation(self, documentation: str, **kwargs) -> str:
+    def add_documentation(self, doc: str, **kwargs) -> str:
         """
         Adds documentation to the model's training data
 
