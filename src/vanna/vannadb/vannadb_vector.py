@@ -12,6 +12,7 @@ from io import StringIO
 import pandas as pd
 import requests
 import json
+import dataclasses
 
 class VannaDB_VectorStore(VannaBase):
     def __init__(self, vanna_model: str, vanna_api_key: str, config=None):
@@ -67,6 +68,9 @@ class VannaDB_VectorStore(VannaBase):
 
         response = requests.post(self._endpoint, headers=headers, data=json.dumps(data))
         return response.json()
+
+    def _dataclass_to_dict(self, obj):
+        return dataclasses.asdict(obj)
 
     def generate_embedding(self, data: str, **kwargs) -> list[float]:
         # This is done server-side
