@@ -146,7 +146,7 @@ class VannaDB_VectorStore(VannaBase):
     def get_related_training_data_cached(self, question: str) -> TrainingData:
         params = [Question(question=question)]
 
-        d = self.__rpc_call(method="get_related_training_data", params=params)
+        d = self._rpc_call(method="get_related_training_data", params=params)
 
         if "result" not in d:
             return None
