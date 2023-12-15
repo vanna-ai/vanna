@@ -1,4 +1,6 @@
-## Contributing
+# Contributing
+
+## Setup
 ```bash
 git clone https://github.com/vanna-ai/vanna.git
 cd vanna/
@@ -18,3 +20,13 @@ tox list
 # Run tests
 tox -e py310
 ```
+
+## Do this before you submit a PR:
+
+Find the most relevant sample notebook and then replace the install command with:
+
+```bash
+%pip install 'git+https://github.com/vanna-ai/vanna@your-branch#egg=vanna[chromadb,snowflake,openai]'
+```
+
+Run the necessary cells and verify that it works as expected in a real-world scenario.
