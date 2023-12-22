@@ -823,9 +823,28 @@ class VannaBase(ABC):
             plotly.graph_objs.Figure: The Plotly figure.
         """
         ldict = {"df": df, "px": px, "go": go}
-        exec(plotly_code, globals(), ldict)
+        try:
+            exec(plotly_code, globals(), ldict)
 
-        fig = ldict.get("fig", None)
+            fig = ldict.get("fig", None)
+        except Exception as e:
+            # Inspect data types
+            numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+            categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+            
+            # Decision-making for plot type
+            if len(numeric_cols) >= 2:
+                # Use the first two numeric columns for a scatter plot
+                fig = px.scatter(df, x=numeric_cols[0], y=numeric_cols[1])
+            elif len(numeric_cols) == 1 and len(categorical_cols) >= 1:
+                # Use a bar plot if there's one numeric and one categorical column
+                fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
+            elif len(categorical_cols) >= 1 and df[categorical_cols[0]].nunique() < 10:
+                # Use a pie chart for categorical data with fewer unique values
+                fig = px.pie(df, names=categorical_cols[0])
+            else:
+                # Default to a simple line plot if above conditions are not met
+                fig = px.line(df)
 
         if fig is None:
             return None

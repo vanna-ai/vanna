@@ -5,6 +5,9 @@ import re
 
 class Mistral(VannaBase):
     def __init__(self, config=None):
+        if config is None:
+            raise ValueError("For Mistral, config must be provided with an api_key and model")
+
         if 'api_key' not in config:
             raise ValueError("config must contain a Mistral api_key")
         
@@ -158,7 +161,16 @@ class Mistral(VannaBase):
         message_log.append(ChatMessage(role="user", content=question))
         
         return message_log
-    
+
+    def generate_sql(self, question: str, **kwargs) -> str:
+        # Use the super generate_sql
+        sql = super().generate_sql(question, **kwargs)
+
+        # Replace "\_" with "_"
+        sql = sql.replace("\\_", "_")
+
+        return sql
+
     def submit_prompt(self, prompt, **kwargs) -> str:
         chat_response = self.client.chat(
             model=self.model,
