@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.0.30"
+version = "0.0.31"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -35,3 +35,4 @@ chromadb = ["chromadb"]
 openai = ["openai"]
 mistralai = ["mistralai"]
 gemini = ["google-generativeai"]
+marqo = ["marqo"]
