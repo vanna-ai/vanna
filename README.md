@@ -9,8 +9,7 @@ Vanna is an MIT-licensed open-source Python RAG (Retrieval-Augmented Generation)
 
 https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a3b2ce
 
-![vanna-animated](https://github.com/vanna-ai/vanna/assets/7146154/30ab1485-9c3a-44db-9c23-d0bdf54f58ef)![](https://img.vanna.ai/vanna-github.svg)
-
+![vanna-quadrants](https://github.com/vanna-ai/vanna/assets/7146154/1c7c88ba-c144-4ecf-a028-cf5ba7344ca2)
 
 ## How Vanna works
 Vanna works in two easy steps - train a RAG "model" on your data, and then ask questions which will return SQL queries that can be set up to automatically run on your database.
