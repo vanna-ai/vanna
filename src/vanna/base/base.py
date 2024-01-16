@@ -248,7 +248,7 @@ class VannaBase(ABC):
             url = path
 
         # Connect to the database
-        conn = sqlite3.connect(url)
+        conn = sqlite3.connect(url, check_same_thread=False)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
