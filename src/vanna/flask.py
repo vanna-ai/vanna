@@ -134,6 +134,9 @@ class VannaFlaskApp:
         @self.requires_cache(['sql'])
         def run_sql(id: str, sql: str):
             try:
+                if not vn.run_sql_is_set:
+                    return jsonify({"type": "error", "error": "Please connect to a database using vn.connect_to_... in order to run SQL queries."})
+
                 df = vn.run_sql(sql=sql)
 
                 cache.set(id=id, field='df', value=df)
