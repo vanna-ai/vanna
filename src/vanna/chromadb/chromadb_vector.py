@@ -3,9 +3,9 @@ import uuid
 from abc import abstractmethod
 
 import chromadb
+import pandas as pd
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
-import pandas as pd
 
 from ..base import VannaBase
 
@@ -47,7 +47,7 @@ class ChromaDB_VectorStore(VannaBase):
                 "sql": sql,
             }
         )
-        id = str(uuid.uuid4())+"-sql"
+        id = str(uuid.uuid4()) + "-sql"
         self.sql_collection.add(
             documents=question_sql_json,
             embeddings=self.generate_embedding(question_sql_json),
@@ -57,7 +57,7 @@ class ChromaDB_VectorStore(VannaBase):
         return id
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
-        id = str(uuid.uuid4())+"-ddl"
+        id = str(uuid.uuid4()) + "-ddl"
         self.ddl_collection.add(
             documents=ddl,
             embeddings=self.generate_embedding(ddl),
@@ -65,11 +65,11 @@ class ChromaDB_VectorStore(VannaBase):
         )
         return id
 
-    def add_documentation(self, doc: str, **kwargs) -> str:
-        id = str(uuid.uuid4())+"-doc"
+    def add_documentation(self, documentation: str, **kwargs) -> str:
+        id = str(uuid.uuid4()) + "-doc"
         self.documentation_collection.add(
-            documents=doc,
-            embeddings=self.generate_embedding(doc),
+            documents=documentation,
+            embeddings=self.generate_embedding(documentation),
             ids=id,
         )
         return id
@@ -81,15 +81,17 @@ class ChromaDB_VectorStore(VannaBase):
 
         if sql_data is not None:
             # Extract the documents and ids
-            documents = [json.loads(doc) for doc in sql_data['documents']]
-            ids = sql_data['ids']
+            documents = [json.loads(doc) for doc in sql_data["documents"]]
+            ids = sql_data["ids"]
 
             # Create a DataFrame
-            df_sql = pd.DataFrame({
-                'id': ids,
-                'question': [doc['question'] for doc in documents],
-                'content': [doc['sql'] for doc in documents]
-            })
+            df_sql = pd.DataFrame(
+                {
+                    "id": ids,
+                    "question": [doc["question"] for doc in documents],
+                    "content": [doc["sql"] for doc in documents],
+                }
+            )
 
             df_sql["training_data_type"] = "sql"
 
@@ -99,15 +101,17 @@ class ChromaDB_VectorStore(VannaBase):
 
         if ddl_data is not None:
             # Extract the documents and ids
-            documents = [doc for doc in ddl_data['documents']]
-            ids = ddl_data['ids']
+            documents = [doc for doc in ddl_data["documents"]]
+            ids = ddl_data["ids"]
 
             # Create a DataFrame
-            df_ddl = pd.DataFrame({
-                'id': ids,
-                'question': [None for doc in documents],
-                'content': [doc for doc in documents]
-            })
+            df_ddl = pd.DataFrame(
+                {
+                    "id": ids,
+                    "question": [None for doc in documents],
+                    "content": [doc for doc in documents],
+                }
+            )
 
             df_ddl["training_data_type"] = "ddl"
 
@@ -117,15 +121,17 @@ class ChromaDB_VectorStore(VannaBase):
 
         if doc_data is not None:
             # Extract the documents and ids
-            documents = [doc for doc in doc_data['documents']]
-            ids = doc_data['ids']
+            documents = [doc for doc in doc_data["documents"]]
+            ids = doc_data["ids"]
 
             # Create a DataFrame
-            df_doc = pd.DataFrame({
-                'id': ids,
-                'question': [None for doc in documents],
-                'content': [doc for doc in documents]
-            })
+            df_doc = pd.DataFrame(
+                {
+                    "id": ids,
+                    "question": [None for doc in documents],
+                    "content": [doc for doc in documents],
+                }
+            )
 
             df_doc["training_data_type"] = "documentation"
 

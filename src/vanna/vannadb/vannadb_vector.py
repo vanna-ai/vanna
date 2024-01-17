@@ -1,18 +1,21 @@
-from ..base import VannaBase
-from ..types import (
-    QuestionSQLPair, 
-    StatusWithId,
-    StringData,
-    DataFrameJSON,
-    Status,
-    TrainingData,
-    Question,
-)
+import dataclasses
+import json
 from io import StringIO
+
 import pandas as pd
 import requests
-import json
-import dataclasses
+
+from ..base import VannaBase
+from ..types import (
+    DataFrameJSON,
+    Question,
+    QuestionSQLPair,
+    Status,
+    StatusWithId,
+    StringData,
+    TrainingData,
+)
+
 
 class VannaDB_VectorStore(VannaBase):
     def __init__(self, vanna_model: str, vanna_api_key: str, config=None):
@@ -105,8 +108,8 @@ class VannaDB_VectorStore(VannaBase):
 
         return status.id
 
-    def add_documentation(self, doc: str, **kwargs) -> str:
-        params = [StringData(data=doc)]
+    def add_documentation(self, documentation: str, **kwargs) -> str:
+        params = [StringData(data=documentation)]
 
         d = self._rpc_call(method="add_documentation", params=params)
 
@@ -167,7 +170,7 @@ class VannaDB_VectorStore(VannaBase):
             training_data = self.related_training_data[question]
         else:
             training_data = self.get_related_training_data_cached(question)
-        
+
         return training_data.questions
 
     def get_related_ddl(self, question: str, **kwargs) -> list:
@@ -175,7 +178,7 @@ class VannaDB_VectorStore(VannaBase):
             training_data = self.related_training_data[question]
         else:
             training_data = self.get_related_training_data_cached(question)
-        
+
         return training_data.ddl
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
@@ -183,5 +186,5 @@ class VannaDB_VectorStore(VannaBase):
             training_data = self.related_training_data[question]
         else:
             training_data = self.get_related_training_data_cached(question)
-        
+
         return training_data.documentation
