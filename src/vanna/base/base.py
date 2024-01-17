@@ -23,6 +23,9 @@ class VannaBase(ABC):
         self.config = config
         self.run_sql_is_set = False
 
+    def log(self, message: str):
+        print(message)
+
     def generate_sql(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
@@ -35,7 +38,30 @@ class VannaBase(ABC):
             **kwargs,
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
+        return self.extract_sql(llm_response)
+
+    def extract_sql(self, llm_response: str) -> str:
+        # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
+        sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+            return sql.group(1)
+
+        sql = re.search(r"```(.*)```", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+            return sql.group(1)
+
         return llm_response
+
+    def is_sql_valid(self, sql: str) -> bool:
+        # This is a check to see the SQL is valid and should be run
+        # This simple function just checks if the SQL contains a SELECT statement
+
+        if "SELECT" in sql.upper():
+            return True
+        else:
+            return False
 
     def generate_followup_questions(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
@@ -489,6 +515,13 @@ class VannaBase(ABC):
                 return sql, None, None
 
         try:
+            if self.is_sql_valid(sql) is False:
+                print("SQL is not valid, please try again.")
+                if print_results:
+                    return None
+                else:
+                    return sql, None, None
+
             df = self.run_sql(sql)
 
             if print_results:
