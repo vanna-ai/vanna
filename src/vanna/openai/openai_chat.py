@@ -204,7 +204,7 @@ class OpenAI_Chat(VannaBase):
             print(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 engine=self.config["engine"],
                 messages=prompt,
                 max_tokens=500,
@@ -215,7 +215,7 @@ class OpenAI_Chat(VannaBase):
             print(
                 f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
             )
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model=self.config["model"],
                 messages=prompt,
                 max_tokens=500,
@@ -229,7 +229,7 @@ class OpenAI_Chat(VannaBase):
                 model = "gpt-3.5-turbo"
 
             print(f"Using model {model} for {num_tokens} tokens (approx)")
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
             )
 

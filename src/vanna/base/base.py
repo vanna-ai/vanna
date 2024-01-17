@@ -1,8 +1,8 @@
 import json
 import os
+import re
 import sqlite3
 import traceback
-
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 from urllib.parse import urlparse
@@ -12,7 +12,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-import re
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -50,8 +49,8 @@ class VannaBase(ABC):
             **kwargs,
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
-        
-        numbers_removed = re.sub(r'^\d+\.\s*', '', llm_response, flags=re.MULTILINE)
+
+        numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
 
     def generate_questions(self, **kwargs) -> list[str]:
@@ -65,7 +64,7 @@ class VannaBase(ABC):
         """
         question_sql = self.get_similar_question_sql(question="", **kwargs)
 
-        return [q['question'] for q in question_sql]
+        return [q["question"] for q in question_sql]
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
@@ -94,7 +93,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_documentation(self, doc: str, **kwargs) -> str:
+    def add_documentation(self, documentation: str, **kwargs) -> str:
         pass
 
     @abstractmethod
@@ -120,12 +119,12 @@ class VannaBase(ABC):
 
     @abstractmethod
     def get_followup_questions_prompt(
-        self, 
-        question: str, 
+        self,
+        question: str,
         question_sql_list: list,
         ddl_list: list,
-        doc_list: list, 
-        **kwargs
+        doc_list: list,
+        **kwargs,
     ):
         pass
 
@@ -248,7 +247,7 @@ class VannaBase(ABC):
             url = path
 
         # Connect to the database
-        conn = sqlite3.connect(url)
+        conn = sqlite3.connect(url, check_same_thread=False)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
@@ -612,6 +611,65 @@ class VannaBase(ABC):
 
         return df_tables
 
+    def get_training_plan_generic(self, df) -> TrainingPlan:
+        # For each of the following, we look at the df columns to see if there's a match:
+        database_column = df.columns[
+            df.columns.str.lower().str.contains("database")
+            | df.columns.str.lower().str.contains("table_catalog")
+        ].to_list()[0]
+        schema_column = df.columns[
+            df.columns.str.lower().str.contains("table_schema")
+        ].to_list()[0]
+        table_column = df.columns[
+            df.columns.str.lower().str.contains("table_name")
+        ].to_list()[0]
+        column_column = df.columns[
+            df.columns.str.lower().str.contains("column_name")
+        ].to_list()[0]
+        data_type_column = df.columns[
+            df.columns.str.lower().str.contains("data_type")
+        ].to_list()[0]
+
+        plan = TrainingPlan([])
+
+        for database in df[database_column].unique().tolist():
+            for schema in (
+                df.query(f'{database_column} == "{database}"')[schema_column]
+                .unique()
+                .tolist()
+            ):
+                for table in (
+                    df.query(
+                        f'{database_column} == "{database}" and {schema_column} == "{schema}"'
+                    )[table_column]
+                    .unique()
+                    .tolist()
+                ):
+                    df_columns_filtered_to_table = df.query(
+                        f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
+                    )
+                    doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+                    doc += df_columns_filtered_to_table[
+                        [
+                            database_column,
+                            schema_column,
+                            table_column,
+                            column_column,
+                            data_type_column,
+                        ]
+                    ].to_markdown()
+
+                    plan._plan.append(
+                        TrainingPlanItem(
+                            item_type=TrainingPlanItem.ITEM_TYPE_IS,
+                            item_group=f"{database}.{schema}",
+                            item_name=table,
+                            item_value=doc,
+                        )
+                    )
+
+        return plan
+
     def get_training_plan_snowflake(
         self,
         filter_databases: Union[List[str], None] = None,
@@ -764,9 +822,30 @@ class VannaBase(ABC):
             plotly.graph_objs.Figure: The Plotly figure.
         """
         ldict = {"df": df, "px": px, "go": go}
-        exec(plotly_code, globals(), ldict)
+        try:
+            exec(plotly_code, globals(), ldict)
 
-        fig = ldict.get("fig", None)
+            fig = ldict.get("fig", None)
+        except Exception as e:
+            # Inspect data types
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            categorical_cols = df.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
+
+            # Decision-making for plot type
+            if len(numeric_cols) >= 2:
+                # Use the first two numeric columns for a scatter plot
+                fig = px.scatter(df, x=numeric_cols[0], y=numeric_cols[1])
+            elif len(numeric_cols) == 1 and len(categorical_cols) >= 1:
+                # Use a bar plot if there's one numeric and one categorical column
+                fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
+            elif len(categorical_cols) >= 1 and df[categorical_cols[0]].nunique() < 10:
+                # Use a pie chart for categorical data with fewer unique values
+                fig = px.pie(df, names=categorical_cols[0])
+            else:
+                # Default to a simple line plot if above conditions are not met
+                fig = px.line(df)
 
         if fig is None:
             return None

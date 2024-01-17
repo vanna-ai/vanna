@@ -1065,7 +1065,7 @@ def train(
     if sql:
         if question is None:
             question = generate_question(sql)
-            print("Question generated with sql:", Question, "\nAdding SQL...")
+            print("Question generated with sql:", question, "\nAdding SQL...")
         return add_sql(question=question, sql=sql)
 
     if ddl:
@@ -1834,6 +1834,7 @@ def connect_to_snowflake(
     username: str,
     password: str,
     database: str,
+    schema: Union[str, None] = None,
     role: Union[str, None] = None,
 ):
     """
@@ -1857,6 +1858,7 @@ def connect_to_snowflake(
         username (str): The Snowflake username.
         password (str): The Snowflake password.
         database (str): The default database to use.
+        schema (Union[str, None], optional): The schema to use. Defaults to None.
         role (Union[str, None], optional): The role to use. Defaults to None.
     """
 
@@ -1913,6 +1915,9 @@ def connect_to_snowflake(
         if role is not None:
             cs.execute(f"USE ROLE {role}")
         cs.execute(f"USE DATABASE {database}")
+
+        if schema is not None:
+            cs.execute(f"USE SCHEMA {schema}")
 
         cur = cs.execute(sql)
 
