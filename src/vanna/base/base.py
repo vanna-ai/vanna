@@ -1,8 +1,8 @@
 import json
 import os
+import re
 import sqlite3
 import traceback
-
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 from urllib.parse import urlparse
@@ -12,7 +12,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-import re
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -50,8 +49,8 @@ class VannaBase(ABC):
             **kwargs,
         )
         llm_response = self.submit_prompt(prompt, **kwargs)
-        
-        numbers_removed = re.sub(r'^\d+\.\s*', '', llm_response, flags=re.MULTILINE)
+
+        numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
 
     def generate_questions(self, **kwargs) -> list[str]:
@@ -65,7 +64,7 @@ class VannaBase(ABC):
         """
         question_sql = self.get_similar_question_sql(question="", **kwargs)
 
-        return [q['question'] for q in question_sql]
+        return [q["question"] for q in question_sql]
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
@@ -94,7 +93,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_documentation(self, doc: str, **kwargs) -> str:
+    def add_documentation(self, documentation: str, **kwargs) -> str:
         pass
 
     @abstractmethod
@@ -120,12 +119,12 @@ class VannaBase(ABC):
 
     @abstractmethod
     def get_followup_questions_prompt(
-        self, 
-        question: str, 
+        self,
+        question: str,
         question_sql_list: list,
         ddl_list: list,
-        doc_list: list, 
-        **kwargs
+        doc_list: list,
+        **kwargs,
     ):
         pass
 
@@ -829,9 +828,11 @@ class VannaBase(ABC):
             fig = ldict.get("fig", None)
         except Exception as e:
             # Inspect data types
-            numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-            categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
-            
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            categorical_cols = df.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
+
             # Decision-making for plot type
             if len(numeric_cols) >= 2:
                 # Use the first two numeric columns for a scatter plot
