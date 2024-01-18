@@ -79,7 +79,7 @@ class VannaBase(ABC):
         numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
 
-    def generate_questions(self, **kwargs) -> list[str]:
+    def generate_questions(self, **kwargs) -> List[str]:
         """
         **Example:**
         ```python
@@ -94,7 +94,7 @@ class VannaBase(ABC):
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
-    def generate_embedding(self, data: str, **kwargs) -> list[float]:
+    def generate_embedding(self, data: str, **kwargs) -> List[float]:
         pass
 
     # ----------------- Use Any Database to Store and Retrieve Context ----------------- #

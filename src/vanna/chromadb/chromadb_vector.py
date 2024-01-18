@@ -1,4 +1,5 @@
 import json
+from typing import List
 import uuid
 from abc import abstractmethod
 
@@ -34,7 +35,7 @@ class ChromaDB_VectorStore(VannaBase):
             name="sql", embedding_function=default_ef
         )
 
-    def generate_embedding(self, data: str, **kwargs) -> list[float]:
+    def generate_embedding(self, data: str, **kwargs) -> List[float]:
         embedding = default_ef([data])
         if len(embedding) == 1:
             return embedding[0]
