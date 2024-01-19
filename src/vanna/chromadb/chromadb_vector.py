@@ -154,7 +154,36 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+    def reomove_collection(self, collection_name: str) -> bool:
+        """
+        This function can reset the collection to empty state. 
 
+        Args:
+            collection_name (str): sql or ddl or documentation
+
+        Returns:
+            bool: True if collection is deleted, False otherwise
+        """
+        if collection_name == "sql":
+            self.chroma_client.delete_collection(name="sql")
+            self.sql_collection = self.chroma_client.get_or_create_collection(
+                name="sql", embedding_function=self.embedding_function
+            )
+            return True
+        elif collection_name == "ddl":
+            self.chroma_client.delete_collection(name="ddl")
+            self.ddl_collection = self.chroma_client.get_or_create_collection(
+                name="ddl", embedding_function=self.embedding_function
+            )
+            return True
+        elif collection_name == "documentation":
+            self.chroma_client.delete_collection(name="documentation")
+            self.documentation_collection = self.chroma_client.get_or_create_collection(
+                name="documentation", embedding_function=self.embedding_function
+            )
+            return True
+        else:
+            return False
     # Static method to extract the documents from the results of a query
     @staticmethod
     def _extract_documents(query_results) -> list:
