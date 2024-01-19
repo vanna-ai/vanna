@@ -17,26 +17,28 @@ class ChromaDB_VectorStore(VannaBase):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 
-        if config is not None and "path" in config:
-            path = config["path"]
+        if config is not None:
+            path = config.get("path", ".")
+            self.embedding_function = config.get("embedding_function", default_ef)
         else:
             path = "."
+            self.embedding_function = default_ef
 
         self.chroma_client = chromadb.PersistentClient(
             path=path, settings=Settings(anonymized_telemetry=False)
         )
         self.documentation_collection = self.chroma_client.get_or_create_collection(
-            name="documentation", embedding_function=default_ef
+            name="documentation", embedding_function=self.embedding_function
         )
         self.ddl_collection = self.chroma_client.get_or_create_collection(
-            name="ddl", embedding_function=default_ef
+            name="ddl", embedding_function=self.embedding_function
         )
         self.sql_collection = self.chroma_client.get_or_create_collection(
-            name="sql", embedding_function=default_ef
+            name="sql", embedding_function=self.embedding_function
         )
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
-        embedding = default_ef([data])
+        embedding = self.embedding_function([data])
         if len(embedding) == 1:
             return embedding[0]
         return embedding
