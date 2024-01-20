@@ -488,20 +488,26 @@ class VannaBase(ABC):
                 " run command: \npip install vanna[duckdb]"
             )
         # URL of the database to download
-
-        # Path to save the downloaded database
-        path = os.path.basename(urlparse(url).path)
-
-        # Download the database if it doesn't exist
-        if not os.path.exists(url):
-            response = requests.get(url)
-            response.raise_for_status()  # Check that the request was successful
-            with open(path, "wb") as f:
-                f.write(response.content)
-            url = path
+        if url==":memory:" or url=="":
+            path=":memory:"
+        else:
+            # Path to save the downloaded database
+            print(os.path.exists(url))
+            if os.path.exists(url):
+                path=url
+            else:
+                path = os.path.basename(urlparse(url).path)
+                # Download the database if it doesn't exist
+                if not os.path.exists(path):
+                    response = requests.get(url)
+                    response.raise_for_status()  # Check that the request was successful
+                    with open(path, "wb") as f:
+                        f.write(response.content)
 
         # Connect to the database
-        conn = duckdb.connect(url)
+        conn = duckdb.connect(path)
+        if init_sql:
+            conn.query(init_sql)
 
         def run_sql_duckdb(sql: str):
             return conn.query(sql).to_df()
