@@ -138,6 +138,7 @@ import traceback
 import warnings
 from dataclasses import dataclass
 from typing import Callable, List, Tuple, Union
+from urllib.parse import urlparse
 
 import pandas as pd
 import plotly
@@ -2148,7 +2149,7 @@ def connect_to_duckdb(url: str="memory", init_sql: str = None):
         if os.path.exists(url):
             path=url
         else:
-            path = "tempdb.db"
+            path = os.path.basename(urlparse(url).path)
             # Download the database if it doesn't exist
             if not os.path.exists(path):
                 response = requests.get(url)
