@@ -22,4 +22,6 @@ trim_trailing_whitespace = true
 max_line_length = 79
 
 # Set end of line format to LF
-end_of_line = lf
+
+# Exclude specific files or directories
+exclude = 'docs|node_modules|migrations|.git|.tox'
