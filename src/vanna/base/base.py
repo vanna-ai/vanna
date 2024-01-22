@@ -469,7 +469,51 @@ class VannaBase(ABC):
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+    def connect_to_duckdb(self, url: str, init_sql: str = None):
+        """
+        Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
 
+        Args:
+            url (str): The URL of the database to connect to.
+            init_sql (str, optional): SQL to run when connecting to the database. Defaults to None.
+
+        Returns:
+            None
+        """
+        try:
+            import duckdb
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install vanna[duckdb]"
+            )
+        # URL of the database to download
+        if url==":memory:" or url=="":
+            path=":memory:"
+        else:
+            # Path to save the downloaded database
+            print(os.path.exists(url))
+            if os.path.exists(url):
+                path=url
+            else:
+                path = os.path.basename(urlparse(url).path)
+                # Download the database if it doesn't exist
+                if not os.path.exists(path):
+                    response = requests.get(url)
+                    response.raise_for_status()  # Check that the request was successful
+                    with open(path, "wb") as f:
+                        f.write(response.content)
+
+        # Connect to the database
+        conn = duckdb.connect(path)
+        if init_sql:
+            conn.query(init_sql)
+
+        def run_sql_duckdb(sql: str):
+            return conn.query(sql).to_df()
+
+        self.run_sql = run_sql_duckdb
+        self.run_sql_is_set = True
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
             "You need to connect_to_snowflake or other database first."
