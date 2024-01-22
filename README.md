@@ -203,6 +203,10 @@ Fine-Tuning
 ## Extending Vanna
 Vanna is designed to connect to any database, LLM, and vector database. There's a [VannaBase](src/vanna/base/base.py) abstract base class that defines some basic functionality. The package provides implementations for use with OpenAI and ChromaDB. You can easily extend Vanna to use your own LLM or vector database. See the [documentation](https://vanna.ai/docs/) for more details.
 
+## Vanna in 100 Seconds
+
+https://github.com/vanna-ai/vanna/assets/7146154/eb90ee1e-aa05-4740-891a-4fc10e611cab
+
 ## More resources
  - [Full Documentation](https://vanna.ai/docs/)
  - [Website](https://vanna.ai)
