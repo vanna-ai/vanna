@@ -1,4 +1,5 @@
 import json
+from typing import List
 import uuid
 from abc import abstractmethod
 
@@ -16,26 +17,28 @@ class ChromaDB_VectorStore(VannaBase):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 
-        if config is not None and "path" in config:
-            path = config["path"]
+        if config is not None:
+            path = config.get("path", ".")
+            self.embedding_function = config.get("embedding_function", default_ef)
         else:
             path = "."
+            self.embedding_function = default_ef
 
         self.chroma_client = chromadb.PersistentClient(
             path=path, settings=Settings(anonymized_telemetry=False)
         )
         self.documentation_collection = self.chroma_client.get_or_create_collection(
-            name="documentation", embedding_function=default_ef
+            name="documentation", embedding_function=self.embedding_function
         )
         self.ddl_collection = self.chroma_client.get_or_create_collection(
-            name="ddl", embedding_function=default_ef
+            name="ddl", embedding_function=self.embedding_function
         )
         self.sql_collection = self.chroma_client.get_or_create_collection(
-            name="sql", embedding_function=default_ef
+            name="sql", embedding_function=self.embedding_function
         )
 
-    def generate_embedding(self, data: str, **kwargs) -> list[float]:
-        embedding = default_ef([data])
+    def generate_embedding(self, data: str, **kwargs) -> List[float]:
+        embedding = self.embedding_function([data])
         if len(embedding) == 1:
             return embedding[0]
         return embedding
@@ -151,7 +154,36 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+    def reomove_collection(self, collection_name: str) -> bool:
+        """
+        This function can reset the collection to empty state. 
 
+        Args:
+            collection_name (str): sql or ddl or documentation
+
+        Returns:
+            bool: True if collection is deleted, False otherwise
+        """
+        if collection_name == "sql":
+            self.chroma_client.delete_collection(name="sql")
+            self.sql_collection = self.chroma_client.get_or_create_collection(
+                name="sql", embedding_function=self.embedding_function
+            )
+            return True
+        elif collection_name == "ddl":
+            self.chroma_client.delete_collection(name="ddl")
+            self.ddl_collection = self.chroma_client.get_or_create_collection(
+                name="ddl", embedding_function=self.embedding_function
+            )
+            return True
+        elif collection_name == "documentation":
+            self.chroma_client.delete_collection(name="documentation")
+            self.documentation_collection = self.chroma_client.get_or_create_collection(
+                name="documentation", embedding_function=self.embedding_function
+            )
+            return True
+        else:
+            return False
     # Static method to extract the documents from the results of a query
     @staticmethod
     def _extract_documents(query_results) -> list:

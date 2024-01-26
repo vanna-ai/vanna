@@ -1,43 +1,24 @@
-import os
 import re
-from abc import abstractmethod
-
+from typing import List
 import pandas as pd
-from openai import OpenAI
-
+from zhipuai import ZhipuAI
 from ..base import VannaBase
+import re
+from typing import List
+import pandas as pd
 
-
-class OpenAI_Chat(VannaBase):
-    def __init__(self, client=None, config=None):
+class ZhipuAI_Chat(VannaBase):
+    def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
-
-        if client is not None:
-            self.client = client
+        if config is None:
             return
+        if "api_key" not in config:
+            raise Exception("Missing api_key in config")
+        self.api_key = config["api_key"]
+        self.model = config["model"] if "model" in config else "glm-4"
+        self.api_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
-        if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            return
-
-        if "api_type" in config:
-            raise Exception(
-                "Passing api_type is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_base" in config:
-            raise Exception(
-                "Passing api_base is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_version" in config:
-            raise Exception(
-                "Passing api_version is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_key" in config:
-            self.client = OpenAI(api_key=config["api_key"])
-
+    # Static methods similar to those in ZhipuAI_Chat for message formatting and utility
     @staticmethod
     def system_message(message: str) -> dict:
         return {"role": "system", "content": message}
@@ -56,15 +37,15 @@ class OpenAI_Chat(VannaBase):
 
     @staticmethod
     def add_ddl_to_prompt(
-        initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
+        initial_prompt: str, ddl_list: List[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
             initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
-                    OpenAI_Chat.str_to_approx_token_count(initial_prompt)
-                    + OpenAI_Chat.str_to_approx_token_count(ddl)
+                    ZhipuAI_Chat.str_to_approx_token_count(initial_prompt)
+                    + ZhipuAI_Chat.str_to_approx_token_count(ddl)
                     < max_tokens
                 ):
                     initial_prompt += f"{ddl}\n\n"
@@ -73,15 +54,15 @@ class OpenAI_Chat(VannaBase):
 
     @staticmethod
     def add_documentation_to_prompt(
-        initial_prompt: str, documentation_list: list[str], max_tokens: int = 14000
+        initial_prompt: str, documentation_List: List[str], max_tokens: int = 14000
     ) -> str:
-        if len(documentation_list) > 0:
+        if len(documentation_List) > 0:
             initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
-            for documentation in documentation_list:
+            for documentation in documentation_List:
                 if (
-                    OpenAI_Chat.str_to_approx_token_count(initial_prompt)
-                    + OpenAI_Chat.str_to_approx_token_count(documentation)
+                    ZhipuAI_Chat.str_to_approx_token_count(initial_prompt)
+                    + ZhipuAI_Chat.str_to_approx_token_count(documentation)
                     < max_tokens
                 ):
                     initial_prompt += f"{documentation}\n\n"
@@ -90,15 +71,15 @@ class OpenAI_Chat(VannaBase):
 
     @staticmethod
     def add_sql_to_prompt(
-        initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
+        initial_prompt: str, sql_List: List[str], max_tokens: int = 14000
     ) -> str:
-        if len(sql_list) > 0:
+        if len(sql_List) > 0:
             initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
-            for question in sql_list:
+            for question in sql_List:
                 if (
-                    OpenAI_Chat.str_to_approx_token_count(initial_prompt)
-                    + OpenAI_Chat.str_to_approx_token_count(question["sql"])
+                    ZhipuAI_Chat.str_to_approx_token_count(initial_prompt)
+                    + ZhipuAI_Chat.str_to_approx_token_count(question["sql"])
                     < max_tokens
                 ):
                     initial_prompt += f"{question['question']}\n{question['sql']}\n\n"
@@ -108,30 +89,30 @@ class OpenAI_Chat(VannaBase):
     def get_sql_prompt(
         self,
         question: str,
-        question_sql_list: list,
-        ddl_list: list,
-        doc_list: list,
+        question_sql_list: List,
+        ddl_list: List,
+        doc_list: List,
         **kwargs,
     ):
         initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
-        initial_prompt = OpenAI_Chat.add_ddl_to_prompt(
+        initial_prompt = ZhipuAI_Chat.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
         )
 
-        initial_prompt = OpenAI_Chat.add_documentation_to_prompt(
+        initial_prompt = ZhipuAI_Chat.add_documentation_to_prompt(
             initial_prompt, doc_list, max_tokens=14000
         )
 
-        message_log = [OpenAI_Chat.system_message(initial_prompt)]
+        message_log = [ZhipuAI_Chat.system_message(initial_prompt)]
 
         for example in question_sql_list:
             if example is None:
                 print("example is None")
             else:
                 if example is not None and "question" in example and "sql" in example:
-                    message_log.append(OpenAI_Chat.user_message(example["question"]))
-                    message_log.append(OpenAI_Chat.assistant_message(example["sql"]))
+                    message_log.append(ZhipuAI_Chat.user_message(example["question"]))
+                    message_log.append(ZhipuAI_Chat.assistant_message(example["sql"]))
 
         message_log.append({"role": "user", "content": question})
 
@@ -141,29 +122,29 @@ class OpenAI_Chat(VannaBase):
         self,
         question: str,
         df: pd.DataFrame,
-        question_sql_list: list,
-        ddl_list: list,
-        doc_list: list,
+        question_sql_list: List,
+        ddl_list: List,
+        doc_list: List,
         **kwargs,
     ):
         initial_prompt = f"The user initially asked the question: '{question}': \n\n"
 
-        initial_prompt = OpenAI_Chat.add_ddl_to_prompt(
+        initial_prompt = ZhipuAI_Chat.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
         )
 
-        initial_prompt = OpenAI_Chat.add_documentation_to_prompt(
+        initial_prompt = ZhipuAI_Chat.add_documentation_to_prompt(
             initial_prompt, doc_list, max_tokens=14000
         )
 
-        initial_prompt = OpenAI_Chat.add_sql_to_prompt(
+        initial_prompt = ZhipuAI_Chat.add_sql_to_prompt(
             initial_prompt, question_sql_list, max_tokens=14000
         )
 
-        message_log = [OpenAI_Chat.system_message(initial_prompt)]
+        message_log = [ZhipuAI_Chat.system_message(initial_prompt)]
         message_log.append(
-            OpenAI_Chat.user_message(
-                "Generate a list of followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions."
+            ZhipuAI_Chat.user_message(
+                "Generate a List of followup questions that the user might ask about this data. Respond with a List of questions, one per line. Do not answer with any explanations -- just the questions."
             )
         )
 
@@ -230,61 +211,28 @@ class OpenAI_Chat(VannaBase):
 
         return self._sanitize_plotly_code(self._extract_python_code(plotly_code))
 
-    def submit_prompt(self, prompt, **kwargs) -> str:
+    def submit_prompt(
+        self, prompt, max_tokens=500, temperature=0.7, top_p=0.7, stop=None, **kwargs
+    ):
         if prompt is None:
             raise Exception("Prompt is None")
 
         if len(prompt) == 0:
             raise Exception("Prompt is empty")
 
-        # Count the number of tokens in the message log
-        num_tokens = 0
-        for message in prompt:
-            num_tokens += (
-                len(message["content"]) / 4
-            )  # Use 4 as an approximation for the number of characters per token
+        client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
+        response = client.chat.completions.create(
+            model="glm-4",  # 填写需要调用的模型名称
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stop=stop,
+            messages=prompt,
+        )
+        # print(prompt)
 
-        if self.config is not None and "engine" in self.config:
-            print(
-                f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                engine=self.config["engine"],
-                messages=prompt,
-                max_tokens=500,
-                stop=None,
-                temperature=0.7,
-            )
-        elif self.config is not None and "model" in self.config:
-            print(
-                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                model=self.config["model"],
-                messages=prompt,
-                max_tokens=500,
-                stop=None,
-                temperature=0.7,
-            )
-        else:
-            if num_tokens > 3500:
-                model = "gpt-3.5-turbo-16k"
-            else:
-                model = "gpt-3.5-turbo"
+        # print(response)
 
-            print(f"Using model {model} for {num_tokens} tokens (approx)")
-            response = self.client.chat.completions.create(
-                model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
-            )
+        # print(f"Cost {response.usage.total_tokens} token")
 
-        for (
-            choice
-        ) in (
-            response.choices
-        ):  # Find the first response from the chatbot that has text in it (some responses may not have text)
-            if "text" in choice:
-                return choice.text
-
-        return response.choices[
-            0
-        ].message.content  # If no response with text is found, return the first response's content (which may be empty)
+        return response.choices[0].message.content

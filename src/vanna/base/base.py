@@ -79,7 +79,7 @@ class VannaBase(ABC):
         numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
 
-    def generate_questions(self, **kwargs) -> list[str]:
+    def generate_questions(self, **kwargs) -> List[str]:
         """
         **Example:**
         ```python
@@ -94,7 +94,7 @@ class VannaBase(ABC):
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
-    def generate_embedding(self, data: str, **kwargs) -> list[float]:
+    def generate_embedding(self, data: str, **kwargs) -> List[float]:
         pass
 
     # ----------------- Use Any Database to Store and Retrieve Context ----------------- #
@@ -469,7 +469,51 @@ class VannaBase(ABC):
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+    def connect_to_duckdb(self, url: str, init_sql: str = None):
+        """
+        Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
 
+        Args:
+            url (str): The URL of the database to connect to.
+            init_sql (str, optional): SQL to run when connecting to the database. Defaults to None.
+
+        Returns:
+            None
+        """
+        try:
+            import duckdb
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install vanna[duckdb]"
+            )
+        # URL of the database to download
+        if url==":memory:" or url=="":
+            path=":memory:"
+        else:
+            # Path to save the downloaded database
+            print(os.path.exists(url))
+            if os.path.exists(url):
+                path=url
+            else:
+                path = os.path.basename(urlparse(url).path)
+                # Download the database if it doesn't exist
+                if not os.path.exists(path):
+                    response = requests.get(url)
+                    response.raise_for_status()  # Check that the request was successful
+                    with open(path, "wb") as f:
+                        f.write(response.content)
+
+        # Connect to the database
+        conn = duckdb.connect(path)
+        if init_sql:
+            conn.query(init_sql)
+
+        def run_sql_duckdb(sql: str):
+            return conn.query(sql).to_df()
+
+        self.run_sql = run_sql_duckdb
+        self.run_sql_is_set = True
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
             "You need to connect_to_snowflake or other database first."
@@ -480,6 +524,7 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
+        visualize: bool = True, # if False, will not generate plotly code
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -499,7 +544,7 @@ class VannaBase(ABC):
 
         if print_results:
             try:
-                Code = __import__("IPython.display", fromlist=["Code"]).Code
+                Code = __import__("IPython.display", fromList=["Code"]).Code
                 display(Code(sql))
             except Exception as e:
                 print(sql)
@@ -515,19 +560,12 @@ class VannaBase(ABC):
                 return sql, None, None
 
         try:
-            if self.is_sql_valid(sql) is False:
-                print("SQL is not valid, please try again.")
-                if print_results:
-                    return None
-                else:
-                    return sql, None, None
-
             df = self.run_sql(sql)
 
             if print_results:
                 try:
                     display = __import__(
-                        "IPython.display", fromlist=["display"]
+                        "IPython.display", fromList=["display"]
                     ).display
                     display(df)
                 except Exception as e:
@@ -535,32 +573,33 @@ class VannaBase(ABC):
 
             if len(df) > 0 and auto_train:
                 self.add_question_sql(question=question, sql=sql)
-
-            try:
-                plotly_code = self.generate_plotly_code(
-                    question=question,
-                    sql=sql,
-                    df_metadata=f"Running df.dtypes gives:\n {df.dtypes}",
-                )
-                fig = self.get_plotly_figure(plotly_code=plotly_code, df=df)
-                if print_results:
-                    try:
-                        display = __import__(
-                            "IPython.display", fromlist=["display"]
-                        ).display
-                        Image = __import__("IPython.display", fromlist=["Image"]).Image
-                        img_bytes = fig.to_image(format="png", scale=2)
-                        display(Image(img_bytes))
-                    except Exception as e:
-                        fig.show()
-            except Exception as e:
-                # Print stack trace
-                traceback.print_exc()
-                print("Couldn't run plotly code: ", e)
-                if print_results:
-                    return None
-                else:
-                    return sql, df, None
+            # Only generate plotly code if visualize is True
+            if visualize:
+                try:
+                    plotly_code = self.generate_plotly_code(
+                        question=question,
+                        sql=sql,
+                        df_metadata=f"Running df.dtypes gives:\n {df.dtypes}",
+                    )
+                    fig = self.get_plotly_figure(plotly_code=plotly_code, df=df)
+                    if print_results:
+                        try:
+                            display = __import__(
+                                "IPython.display", fromlist=["display"]
+                            ).display
+                            Image = __import__("IPython.display", fromlist=["Image"]).Image
+                            img_bytes = fig.to_image(format="png", scale=2)
+                            display(Image(img_bytes))
+                        except Exception as e:
+                            fig.show()
+                except Exception as e:
+                    # Print stack trace
+                    traceback.print_exc()
+                    print("Couldn't run plotly code: ", e)
+                    if print_results:
+                        return None
+                    else:
+                        return sql, df, None
 
         except Exception as e:
             print("Couldn't run sql: ", e)
