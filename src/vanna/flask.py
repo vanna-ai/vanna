@@ -251,7 +251,7 @@ class VannaFlaskApp:
                 {
                     "type": "df",
                     "id": "training_data",
-                    "df": df.tail(25).to_json(orient="records"),
+                    "df": df.to_json(orient="records"),
                 }
             )
 
