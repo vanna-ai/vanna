@@ -37,7 +37,9 @@ class VannaBase(ABC):
             doc_list=doc_list,
             **kwargs,
         )
+        self.log(prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
+        self.log(llm_response)
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
@@ -133,6 +135,68 @@ class VannaBase(ABC):
     # ----------------- Use Any Language Model API ----------------- #
 
     @abstractmethod
+    def system_message(self, message: str) -> any:
+        pass
+
+    @abstractmethod
+    def user_message(self, message: str) -> any:
+        pass
+
+    @abstractmethod
+    def assistant_message(self, message: str) -> any:
+        pass
+
+    def str_to_approx_token_count(self, string: str) -> int:
+        return len(string) / 4
+
+    def add_ddl_to_prompt(
+        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
+    ) -> str:
+        if len(ddl_list) > 0:
+            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for ddl in ddl_list:
+                if (
+                    self.str_to_approx_token_count(initial_prompt)
+                    + self.str_to_approx_token_count(ddl)
+                    < max_tokens
+                ):
+                    initial_prompt += f"{ddl}\n\n"
+
+        return initial_prompt
+
+    def add_documentation_to_prompt(
+        self, initial_prompt: str, documentation_list: list[str], max_tokens: int = 14000
+    ) -> str:
+        if len(documentation_list) > 0:
+            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for documentation in documentation_list:
+                if (
+                    self.str_to_approx_token_count(initial_prompt)
+                    + self.str_to_approx_token_count(documentation)
+                    < max_tokens
+                ):
+                    initial_prompt += f"{documentation}\n\n"
+
+        return initial_prompt
+
+    def add_sql_to_prompt(
+        self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
+    ) -> str:
+        if len(sql_list) > 0:
+            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+
+            for question in sql_list:
+                if (
+                    self.str_to_approx_token_count(initial_prompt)
+                    + self.str_to_approx_token_count(question["sql"])
+                    < max_tokens
+                ):
+                    initial_prompt += f"{question['question']}\n{question['sql']}\n\n"
+
+        return initial_prompt
+
     def get_sql_prompt(
         self,
         question: str,
@@ -141,9 +205,30 @@ class VannaBase(ABC):
         doc_list: list,
         **kwargs,
     ):
-        pass
+        initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
-    @abstractmethod
+        initial_prompt = self.add_ddl_to_prompt(
+            initial_prompt, ddl_list, max_tokens=14000
+        )
+
+        initial_prompt = self.add_documentation_to_prompt(
+            initial_prompt, doc_list, max_tokens=14000
+        )
+
+        message_log = [self.system_message(initial_prompt)]
+
+        for example in question_sql_list:
+            if example is None:
+                print("example is None")
+            else:
+                if example is not None and "question" in example and "sql" in example:
+                    message_log.append(self.user_message(example["question"]))
+                    message_log.append(self.assistant_message(example["sql"]))
+
+        message_log.append(self.user_message(question))
+
+        return message_log
+
     def get_followup_questions_prompt(
         self,
         question: str,
@@ -151,22 +236,94 @@ class VannaBase(ABC):
         ddl_list: list,
         doc_list: list,
         **kwargs,
-    ):
-        pass
+    ) -> list:
+        initial_prompt = f"The user initially asked the question: '{question}': \n\n"
+
+        initial_prompt = self.add_ddl_to_prompt(
+            initial_prompt, ddl_list, max_tokens=14000
+        )
+
+        initial_prompt = self.add_documentation_to_prompt(
+            initial_prompt, doc_list, max_tokens=14000
+        )
+
+        initial_prompt = self.add_sql_to_prompt(
+            initial_prompt, question_sql_list, max_tokens=14000
+        )
+
+        message_log = [self.system_message(initial_prompt)]
+        message_log.append(
+            self.user_message(
+                "Generate a list of followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions."
+            )
+        )
+
+        return message_log
 
     @abstractmethod
     def submit_prompt(self, prompt, **kwargs) -> str:
         pass
 
-    @abstractmethod
     def generate_question(self, sql: str, **kwargs) -> str:
-        pass
+        response = self.submit_prompt(
+            [
+                self.system_message(
+                    "The user will give you SQL and you will try to guess what the business question this query is answering. Return just the question without any additional explanation. Do not reference the table name in the question."
+                ),
+                self.user_message(sql),
+            ],
+            **kwargs,
+        )
 
-    @abstractmethod
+        return response
+
+    def _extract_python_code(self, markdown_string: str) -> str:
+        # Regex pattern to match Python code blocks
+        pattern = r"```[\w\s]*python\n([\s\S]*?)```|```([\s\S]*?)```"
+
+        # Find all matches in the markdown string
+        matches = re.findall(pattern, markdown_string, re.IGNORECASE)
+
+        # Extract the Python code from the matches
+        python_code = []
+        for match in matches:
+            python = match[0] if match[0] else match[1]
+            python_code.append(python.strip())
+
+        if len(python_code) == 0:
+            return markdown_string
+
+        return python_code[0]
+
+    def _sanitize_plotly_code(self, raw_plotly_code: str) -> str:
+        # Remove the fig.show() statement from the plotly code
+        plotly_code = raw_plotly_code.replace("fig.show()", "")
+
+        return plotly_code
+
     def generate_plotly_code(
         self, question: str = None, sql: str = None, df_metadata: str = None, **kwargs
     ) -> str:
-        pass
+        if question is not None:
+            system_msg = f"The following is a pandas DataFrame that contains the results of the query that answers the question the user asked: '{question}'"
+        else:
+            system_msg = "The following is a pandas DataFrame "
+
+        if sql is not None:
+            system_msg += f"\n\nThe DataFrame was produced using this query: {sql}\n\n"
+
+        system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
+
+        message_log = [
+            self.system_message(system_msg),
+            self.user_message(
+                "Can you generate the Python plotly code to chart the results of the dataframe? Assume the data is in a pandas dataframe called 'df'. If there is only one value in the dataframe, use an Indicator. Respond with only Python code. Do not answer with any explanations -- just the code."
+            ),
+        ]
+
+        plotly_code = self.submit_prompt(message_log, kwargs=kwargs)
+
+        return self._sanitize_plotly_code(self._extract_python_code(plotly_code))
 
     # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
 
@@ -469,6 +626,7 @@ class VannaBase(ABC):
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+
     def connect_to_duckdb(self, url: str, init_sql: str = None):
         """
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
@@ -514,9 +672,10 @@ class VannaBase(ABC):
 
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
+
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
-            "You need to connect_to_snowflake or other database first."
+            "You need to connect to a database first by running vn.connect_to_snowflake(), vn.connect_to_sqlite(), vn.connect_to_postgres(), vn.connect_to_bigquery(), or vn.connect_to_duckdb()"
         )
 
     def ask(
@@ -533,6 +692,24 @@ class VannaBase(ABC):
         ],
         None,
     ]:
+        """
+        **Example:**
+        ```python
+        vn.ask("What are the top 10 customers by sales?")
+        ```
+
+        Ask Vanna.AI a question and get the SQL query that answers it.
+
+        Args:
+            question (str): The question to ask.
+            print_results (bool): Whether to print the results of the SQL query.
+            auto_train (bool): Whether to automatically train Vanna.AI on the question and SQL query.
+            visualize (bool): Whether to generate plotly code and display the plotly figure.
+
+        Returns:
+            Tuple[str, pd.DataFrame, plotly.graph_objs.Figure]: The SQL query, the results of the SQL query, and the plotly figure.
+        """
+
         if question is None:
             question = input("Enter a question: ")
 
@@ -927,60 +1104,3 @@ class VannaBase(ABC):
 
         return fig
 
-
-class SplitStorage(VannaBase):
-    def __init__(self, config=None):
-        VannaBase.__init__(self, config=config)
-
-    def get_similar_question_sql(self, embedding: str, **kwargs) -> list:
-        question_sql_ids = self.get_similar_question_sql_ids(embedding, **kwargs)
-        question_sql_list = self.get_question_sql(question_sql_ids, **kwargs)
-        return question_sql_list
-
-    def get_related_ddl(self, embedding: str, **kwargs) -> list:
-        ddl_ids = self.get_related_ddl_ids(embedding, **kwargs)
-        ddl_list = self.get_ddl(ddl_ids, **kwargs)
-        return ddl_list
-
-    def get_related_documentation(self, embedding: str, **kwargs) -> list:
-        doc_ids = self.get_related_documentation_ids(embedding, **kwargs)
-        doc_list = self.get_documentation(doc_ids, **kwargs)
-        return doc_list
-
-    # ----------------- Use Any Vector Database to Store and Lookup Embedding Similarity ----------------- #
-    @abstractmethod
-    def store_question_sql_embedding(self, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def store_ddl_embedding(self, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def store_documentation_embedding(self, embedding: str, **kwargs) -> str:
-        pass
-
-    @abstractmethod
-    def get_similar_question_sql_ids(self, embedding: str, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_related_ddl_ids(self, embedding: str, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_related_documentation_ids(self, embedding: str, **kwargs) -> list:
-        pass
-
-    # ----------------- Use Database to Retrieve the Documents from ID Lists ----------------- #
-    @abstractmethod
-    def get_question_sql(self, question_sql_ids: list, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_documentation(self, doc_ids: list, **kwargs) -> list:
-        pass
-
-    @abstractmethod
-    def get_ddl(self, ddl_ids: list, **kwargs) -> list:
-        pass
