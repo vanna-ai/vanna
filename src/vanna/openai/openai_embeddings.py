@@ -8,8 +8,7 @@ from ..base import VannaBase
 class OpenAI_Embeddings(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
-        
-       if client is not None:
+        if client is not None:
             self.client = client
             return
 
