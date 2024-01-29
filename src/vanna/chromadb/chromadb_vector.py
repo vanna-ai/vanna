@@ -44,7 +44,7 @@ class ChromaDB_VectorStore(VannaBase):
         return embedding
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
-        question_sql_json = json.dumps(
+        question_sql_json = str(
             {
                 "question": question,
                 "sql": sql,
@@ -154,9 +154,10 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+
     def reomove_collection(self, collection_name: str) -> bool:
         """
-        This function can reset the collection to empty state. 
+        This function can reset the collection to empty state.
 
         Args:
             collection_name (str): sql or ddl or documentation
@@ -184,6 +185,7 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+
     # Static method to extract the documents from the results of a query
     @staticmethod
     def _extract_documents(query_results) -> list:
