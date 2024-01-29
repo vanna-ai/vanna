@@ -154,7 +154,7 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
-    def reomove_collection(self, collection_name: str) -> bool:
+    def remove_collection(self, collection_name: str) -> bool:
         """
         This function can reset the collection to empty state. 
 
