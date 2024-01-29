@@ -154,6 +154,7 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+    
     def remove_collection(self, collection_name: str) -> bool:
         """
         This function can reset the collection to empty state. 
@@ -184,9 +185,18 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
-    # Static method to extract the documents from the results of a query
+    
     @staticmethod
     def _extract_documents(query_results) -> list:
+        """
+        Static method to extract the documents from the results of a query.
+
+        Args:
+            query_results (pd.DataFrame): The dataframe to use.
+        
+        Returns:
+            List[str] or None: The extracted documents, or an empty list or single document if an error occurred.
+        """
         if query_results is None:
             return []
 
