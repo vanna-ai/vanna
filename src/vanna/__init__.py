@@ -233,18 +233,18 @@ def __rpc_call(method, params):
         raise ImproperlyConfigured(
             "model not set. Use vn.set_model(...) to set the model to use."
         )
-
-    if method != "list_orgs":
+    
+    if method == "list_orgs":
         headers = {
             "Content-Type": "application/json",
             "Vanna-Key": api_key,
-            "Vanna-Org": __org,
+            "Vanna-Org": "demo-tpc-h",
         }
     else:
         headers = {
             "Content-Type": "application/json",
             "Vanna-Key": api_key,
-            "Vanna-Org": "demo-tpc-h",
+            "Vanna-Org": __org,
         }
 
     data = {"method": method, "params": [__dataclass_to_dict(obj) for obj in params]}
