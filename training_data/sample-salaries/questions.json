@@ -1,6 +1,6 @@
 [
     {
-      "question":"What is the engineer to product manager ratio in Facebook, Amaon, Google ? ",
+      "question":"What is the engineer to product manager ratio in Facebook, Amazon, Google ? ",
       "answer":"SELECT company,\n       count(case when title like '%Engineer%' then 1\n                  else null end) as engineer_count,\n       count(case when title like '%Product Manager%' then 1\n                  else null end) as product_manager_count,\n       count(case when title like '%Engineer%' then 1\n                  else null end) \/ count(case when title like '%Product Manager%' then 1\n                  else null end) as ratio\nFROM   salaries_data\nWHERE  company in ('Facebook', 'Amazon', 'Google')\nGROUP BY company;"
     },
     {
@@ -84,7 +84,7 @@
       "answer":"SELECT company,\n       count(case when race = 'Asian' then 1\n                  else null end) * 100.0 \/ count(*) as asian_percentage\nFROM   salaries_data\nWHERE  company in (SELECT company\n                   FROM   salaries_data\n                   GROUP BY company\n                   ORDER BY count(*) desc limit 20)\nGROUP BY company\nORDER BY asian_percentage desc limit 7;"
     },
     {
-      "question":"compare the correlation between yearsofexperience and basesalary and yearsatcompany and basesalary ",
+      "question":"compare the correlation between years of experience and base salary and years at company and basesalary ",
       "answer":"SELECT corr(yearsofexperience, basesalary) as correlation_experience_salary,\n       corr(yearsatcompany, basesalary) as correlation_years_salary\nFROM   salaries_data;"
     },
     {

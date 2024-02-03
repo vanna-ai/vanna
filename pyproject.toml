@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.0.36"
+version = "0.0.38"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
