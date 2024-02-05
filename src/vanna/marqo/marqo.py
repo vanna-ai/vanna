@@ -7,6 +7,10 @@ import pandas as pd
 
 from ..base import VannaBase
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
 
 class Marqo_VectorStore(VannaBase):
     def __init__(self, config=None):
@@ -28,8 +32,7 @@ class Marqo_VectorStore(VannaBase):
             try:
                 self.mq.create_index(index, model=marqo_model)
             except Exception as e:
-                print(e)
-                print(f"Marqo index {index} already exists")
+                _logger.error(f"Marqo index {index} already exists: {e}")
                 pass
 
     def generate_embedding(self, data: str, **kwargs) -> list[float]:

@@ -3,6 +3,11 @@ from mistralai.models.chat_completion import ChatMessage
 from ..base import VannaBase
 import re
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
+
 class Mistral(VannaBase):
     def __init__(self, config=None):
         if config is None:
@@ -152,7 +157,7 @@ class Mistral(VannaBase):
         
         for example in question_sql_list:
             if example is None:
-                print("example is None")
+                _logger.info("example is None")
             else:
                 if example is not None and "question" in example and "sql" in example:
                     message_log.append(Mistral.user_message(example["question"]))

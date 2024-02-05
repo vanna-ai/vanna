@@ -3,6 +3,11 @@ from zhipuai import ZhipuAI
 from chromadb import Documents, EmbeddingFunction, Embeddings
 from ..base import VannaBase
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
+
 class ZhipuAI_Embeddings(VannaBase):
     """
     [future functionality] This function is used to generate embeddings from ZhipuAI.
@@ -60,7 +65,7 @@ class ZhipuAIEmbeddingFunction(EmbeddingFunction[Documents]):
         # Replace newlines, which can negatively affect performance.
         input = [t.replace("\n", " ") for t in input]
         all_embeddings = []
-        print(f"Generating embeddings for {len(input)} documents")
+        _logger.info(f"Generating embeddings for {len(input)} documents")
 
         # Iterating over each document for individual API calls
         for document in input:
@@ -69,10 +74,8 @@ class ZhipuAIEmbeddingFunction(EmbeddingFunction[Documents]):
                     model=self.model_name,
                     input=document
                 )
-                # print(response)
                 embedding = response.data[0].embedding
                 all_embeddings.append(embedding)
-                # print(f"Cost required: {response.usage.total_tokens}")
             except Exception as e:
                 raise ValueError(f"Error generating embedding for document: {e}")
 

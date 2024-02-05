@@ -7,6 +7,11 @@ import re
 from typing import List
 import pandas as pd
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
+
 class ZhipuAI_Chat(VannaBase):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
@@ -108,7 +113,7 @@ class ZhipuAI_Chat(VannaBase):
 
         for example in question_sql_list:
             if example is None:
-                print("example is None")
+                _logger.info("Example is None")
             else:
                 if example is not None and "question" in example and "sql" in example:
                     message_log.append(ZhipuAI_Chat.user_message(example["question"]))
@@ -220,19 +225,14 @@ class ZhipuAI_Chat(VannaBase):
         if len(prompt) == 0:
             raise Exception("Prompt is empty")
 
-        client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
+        client = ZhipuAI(api_key=self.api_key)  # set your own API key
         response = client.chat.completions.create(
-            model="glm-4",  # 填写需要调用的模型名称
+            model="glm-4",  # set your own model name
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
             stop=stop,
             messages=prompt,
         )
-        # print(prompt)
-
-        # print(response)
-
-        # print(f"Cost {response.usage.total_tokens} token")
 
         return response.choices[0].message.content

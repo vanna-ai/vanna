@@ -17,6 +17,10 @@ from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
 
 class VannaBase(ABC):
     def __init__(self, config=None):
@@ -24,7 +28,7 @@ class VannaBase(ABC):
         self.run_sql_is_set = False
 
     def log(self, message: str):
-        print(message)
+        _logger.info(message)
 
     def generate_sql(self, question: str, **kwargs) -> str:
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
@@ -422,14 +426,14 @@ class VannaBase(ABC):
             except Exception as e:
                 raise ImproperlyConfigured(e)
         else:
-            print("Not using Google Colab.")
+            _logger.info("Not using Google Colab.")
 
         conn = None
 
         try:
             conn = bigquery.Client(project=project_id)
         except:
-            print("Could not found any google cloud implicit credentials")
+            _logger.error("Could not found any google cloud implicit credentials")
 
         if cred_file_path:
             # Validate file path and pemissions
@@ -492,7 +496,7 @@ class VannaBase(ABC):
             path=":memory:"
         else:
             # Path to save the downloaded database
-            print(os.path.exists(url))
+            _logger.info(os.path.exists(url))
             if os.path.exists(url):
                 path=url
             else:
@@ -539,7 +543,7 @@ class VannaBase(ABC):
         try:
             sql = self.generate_sql(question=question)
         except Exception as e:
-            print(e)
+            _logger.error(e)
             return None, None, None
 
         if print_results:
@@ -547,10 +551,10 @@ class VannaBase(ABC):
                 Code = __import__("IPython.display", fromList=["Code"]).Code
                 display(Code(sql))
             except Exception as e:
-                print(sql)
+                _logger.error(sql)
 
-        if self.run_sql_is_set is False:
-            print(
+        if not self.run_sql_is_set:
+            _logger.info(
                 "If you want to run the SQL query, connect to a database first. See here: https://vanna.ai/docs/databases.html"
             )
 
@@ -569,7 +573,7 @@ class VannaBase(ABC):
                     ).display
                     display(df)
                 except Exception as e:
-                    print(df)
+                    _logger.error(df)
 
             if len(df) > 0 and auto_train:
                 self.add_question_sql(question=question, sql=sql)
@@ -594,15 +598,17 @@ class VannaBase(ABC):
                             fig.show()
                 except Exception as e:
                     # Print stack trace
-                    traceback.print_exc()
-                    print("Couldn't run plotly code: ", e)
+                    _logger.info(traceback.print_exc())
+                    _logger.error(f"Couldn't run plotly code: {e}")
+
                     if print_results:
                         return None
                     else:
                         return sql, df, None
 
         except Exception as e:
-            print("Couldn't run sql: ", e)
+            _logger.error("Couldn't run sql: {e}")
+
             if print_results:
                 return None
             else:
@@ -642,17 +648,17 @@ class VannaBase(ABC):
             raise ValidationError(f"Please also provide a SQL query")
 
         if documentation:
-            print("Adding documentation....")
+            _logger.info("Adding documentation....")
             return self.add_documentation(documentation)
 
         if sql:
             if question is None:
                 question = self.generate_question(sql)
-                print("Question generated with sql:", question, "\nAdding SQL...")
+                _logger.info("Question generated with sql:", question, "\nAdding SQL...")
             return self.add_question_sql(question=question, sql=sql)
 
         if ddl:
-            print("Adding ddl:", ddl)
+            _logger.info("Adding ddl:", ddl)
             return self.add_ddl(ddl)
 
         if plan:
@@ -666,15 +672,15 @@ class VannaBase(ABC):
 
     def _get_databases(self) -> List[str]:
         try:
-            print("Trying INFORMATION_SCHEMA.DATABASES")
+            _logger.info("Trying INFORMATION_SCHEMA.DATABASES")
             df_databases = self.run_sql("SELECT * FROM INFORMATION_SCHEMA.DATABASES")
         except Exception as e:
-            print(e)
+            _logger.error(e)
             try:
-                print("Trying SHOW DATABASES")
+                _logger.info("Trying SHOW DATABASES")
                 df_databases = self.run_sql("SHOW DATABASES")
             except Exception as e:
-                print(e)
+                _logger.error(e)
                 return []
 
         return df_databases["DATABASE_NAME"].unique().tolist()
@@ -757,7 +763,7 @@ class VannaBase(ABC):
 
         if use_historical_queries:
             try:
-                print("Trying query history")
+                _logger.info("Trying query history")
                 df_history = self.run_sql(
                     """ select * from table(information_schema.query_history(result_limit => 5000)) order by start_time"""
                 )
@@ -801,7 +807,7 @@ class VannaBase(ABC):
                     )
 
             except Exception as e:
-                print(e)
+                _logger.error(e)
 
         databases = self._get_databases()
 
@@ -812,7 +818,7 @@ class VannaBase(ABC):
             try:
                 df_tables = self._get_information_schema_tables(database=database)
 
-                print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+                _logger.info(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
                 df_columns = self.run_sql(
                     f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS"
                 )
@@ -866,10 +872,10 @@ class VannaBase(ABC):
                             )
 
                     except Exception as e:
-                        print(e)
+                        _logger.error(e)
                         pass
             except Exception as e:
-                print(e)
+                _logger.error(e)
 
         return plan
 

@@ -184,6 +184,10 @@ from .types import (
 )
 from .utils import sanitize_model_name, validate_config_path
 
+from .logger import get_logger
+
+_logger = get_logger()
+
 api_key: Union[str, None] = None  # API key for Vanna.AI
 
 fig_as_img: bool = False  # Whether or not to return Plotly figures as images
@@ -424,7 +428,7 @@ def add_user_to_model(model: str, email: str, is_admin: bool) -> bool:
     status = Status(**d["result"])
 
     if not status.success:
-        print(status.message)
+        _logger.error(status.message)
 
     return status.success
 
@@ -860,7 +864,7 @@ def get_training_plan_experimental(
 
     if use_historical_queries:
         try:
-            print("Trying query history")
+            _logger.info("Trying query history")
             df_history = run_sql(
                 """ select * from table(information_schema.query_history(result_limit => 5000)) order by start_time"""
             )
@@ -901,7 +905,7 @@ def get_training_plan_experimental(
                 )
 
         except Exception as e:
-            print(e)
+            _logger.error(e)
 
     databases = __get_databases()
 
@@ -912,7 +916,7 @@ def get_training_plan_experimental(
         try:
             df_tables = __get_information_schema_tables(database=database)
 
-            print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+            _logger.info(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
             df_columns = run_sql(f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS")
 
             for schema in df_tables["TABLE_SCHEMA"].unique().tolist():
@@ -959,18 +963,18 @@ def get_training_plan_experimental(
                         )
 
                 except Exception as e:
-                    print(e)
+                    _logger.error(e)
                     pass
         except Exception as e:
-            print(e)
+            _logger.error(e)
 
     # try:
-    #     print("Trying SHOW TABLES")
+    #     _logger.info("Trying SHOW TABLES")
     #     df_f = run_sql("SHOW TABLES")
 
     #     for schema in df_f.schema_name.unique():
     #         try:
-    #             print(f"Trying GET_DDL for {schema}")
+    #             _logger.info(f"Trying GET_DDL for {schema}")
     #             ddl_df = run_sql(f"SELECT GET_DDL('schema', '{schema}')")
 
     #             plan._plan.append(TrainingPlanItem(
@@ -983,13 +987,13 @@ def get_training_plan_experimental(
     #             pass
     # except:
     #     try:
-    #         print("Trying INFORMATION_SCHEMA.TABLES")
+    #         _logger.info("Trying INFORMATION_SCHEMA.TABLES")
     #         df = run_sql("SELECT * FROM INFORMATION_SCHEMA.TABLES")
 
     #         breakpoint()
 
     # try:
-    #     print("Trying SCHEMATA")
+    #     _logger.info("Trying SCHEMATA")
     #     df_schemata = run_sql("SELECT * FROM region-us.INFORMATION_SCHEMA.SCHEMATA")
 
     #     for schema in df_schemata.schema_name.unique():
@@ -1060,27 +1064,27 @@ def train(
         )
 
     if documentation:
-        print("Adding documentation....")
+        _logger.info("Adding documentation....")
         return add_documentation(documentation)
 
     if sql:
         if question is None:
             question = generate_question(sql)
-            print("Question generated with sql:", question, "\nAdding SQL...")
+            _logger.info("Question generated with sql:", question, "\nAdding SQL...")
         return add_sql(question=question, sql=sql)
 
     if ddl:
-        print("Adding ddl:", ddl)
+        _logger.info("Adding ddl:", ddl)
         return add_ddl(ddl)
 
     if json_file:
         validate_config_path(json_file)
         with open(json_file, "r") as js_file:
             data = json.load(js_file)
-            print("Adding Questions And SQLs using file:", json_file)
+            _logger.info("Adding Questions And SQLs using file:", json_file)
             for question in data:
                 if not add_sql(question=question["question"], sql=question["answer"]):
-                    print(
+                    _logger.info(
                         f"Not able to add sql for question: {question['question']} from {json_file}"
                     )
                     return False
@@ -1093,16 +1097,16 @@ def train(
             for statement in sql_statements:
                 if "CREATE TABLE" in statement:
                     if add_ddl(statement):
-                        print("ddl Added!")
+                        _logger.info("ddl Added!")
                         return True
-                    print("Not able to add DDL")
+                    _logger.info("Not able to add DDL")
                     return False
                 else:
                     question = generate_question(sql=statement)
                     if add_sql(question=question, sql=statement):
-                        print("SQL added!")
+                        _logger.info("SQL added!")
                         return True
-                    print("Not able to add sql.")
+                    _logger.info("Not able to add sql.")
                     return False
         return False
 
@@ -1110,17 +1114,17 @@ def train(
         for item in plan._plan:
             if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
                 if not add_ddl(item.item_value):
-                    print(f"Not able to add ddl for {item.item_group}")
+                    _logger.info(f"Not able to add ddl for {item.item_group}")
                     return False
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                 if not add_documentation(item.item_value):
-                    print(
+                    _logger.info(
                         f"Not able to add documentation for {item.item_group}.{item.item_name}"
                     )
                     return False
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
                 if not add_sql(question=item.item_name, sql=item.item_value):
-                    print(f"Not able to add sql for {item.item_group}.{item.item_name}")
+                    _logger.info(f"Not able to add sql for {item.item_group}.{item.item_name}")
                     return False
 
 
@@ -1438,7 +1442,7 @@ def ask(
     try:
         sql = generate_sql(question=question)
     except Exception as e:
-        print(e)
+        _logger.error(e)
         return None, None, None, None
 
     if print_results:
@@ -1446,10 +1450,10 @@ def ask(
             Code = __import__("IPython.display", fromlist=["Code"]).Code
             display(Code(sql))
         except Exception as e:
-            print(sql)
+            _logger.error(sql)
 
     if run_sql is None:
-        print("If you want to run the SQL query, provide a vn.run_sql function.")
+        _logger.info("If you want to run the SQL query, provide a vn.run_sql function.")
 
         if print_results:
             return None
@@ -1464,7 +1468,7 @@ def ask(
                 display = __import__("IPython.display", fromlist=["display"]).display
                 display(df)
             except Exception as e:
-                print(df)
+                _logger.error(df)
 
         if len(df) > 0 and auto_train:
             add_sql(question=question, sql=sql, tag=types.QuestionCategory.SQL_RAN)
@@ -1513,7 +1517,7 @@ def ask(
                         ).Markdown
                         display(Markdown(md))
                     except Exception as e:
-                        print(md)
+                        _logger.error(md)
 
                 if print_results:
                     return None
@@ -1526,16 +1530,17 @@ def ask(
                 return sql, df, fig, None
 
         except Exception as e:
-            # Print stack trace
-            traceback.print_exc()
-            print("Couldn't run plotly code: ", e)
+            _logger.error(traceback.print_exc())
+            _logger.error(f"Couldn't run plotly code: {e}")
+
             if print_results:
                 return None
             else:
                 return sql, df, None, None
 
     except Exception as e:
-        print("Couldn't run sql: ", e)
+        _logger.error(f"Couldn't run sql: {e}")
+
         if print_results:
             return None
         else:
@@ -1648,7 +1653,7 @@ def get_results(cs, default_database: str, sql: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The results of the SQL query.
     """
-    print("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
+    _logger.warning("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
     warnings.warn("`vn.get_results()` is deprecated. Use `vn.run_sql()` instead.")
 
     cs.execute(f"USE DATABASE {default_database}")
@@ -2074,14 +2079,14 @@ def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
         except Exception as e:
             raise ImproperlyConfigured(e)
     else:
-        print("Not using Google Colab.")
+        _logger.info("Not using Google Colab.")
 
     conn = None
 
     try:
         conn = bigquery.Client(project=project_id)
     except:
-        print("Could not found any google cloud implicit credentials")
+        _logger.error("Could not found any google cloud implicit credentials")
 
     if cred_file_path:
         # Validate file path and pemissions
@@ -2145,7 +2150,7 @@ def connect_to_duckdb(url: str="memory", init_sql: str = None):
         path=":memory:"
     else:
         # Path to save the downloaded database
-        print(os.path.exists(url))
+        _logger.info(os.path.exists(url))
         if os.path.exists(url):
             path=url
         else:

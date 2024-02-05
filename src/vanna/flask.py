@@ -1,4 +1,5 @@
 import logging
+import traceback
 import uuid
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -6,6 +7,10 @@ from functools import wraps
 import flask
 import requests
 from flask import Flask, Response, jsonify, request
+
+from .logger import get_logger
+
+_logger = get_logger()
 
 
 class Cache(ABC):
@@ -236,10 +241,7 @@ class VannaFlaskApp:
                     }
                 )
             except Exception as e:
-                # Print the stack trace
-                import traceback
-
-                traceback.print_exc()
+                _logger.error(traceback.print_exc())
 
                 return jsonify({"type": "error", "error": str(e)})
 
@@ -284,7 +286,7 @@ class VannaFlaskApp:
 
                 return jsonify({"id": id})
             except Exception as e:
-                print("TRAINING ERROR", e)
+                _logger.error(f"Training error: {e}")
                 return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/generate_followup_questions", methods=["GET"])
@@ -416,9 +418,8 @@ class VannaFlaskApp:
             output.serve_kernel_port_as_window(8084)
             from google.colab.output import eval_js
 
-            print("Your app is running at:")
-            print(eval_js("google.colab.kernel.proxyPort(8084)"))
-        except:
-            print("Your app is running at:")
-            print("http://localhost:8084")
+            _logger.info(f"Your app is running at: {eval_js('google.colab.kernel.proxyPort(8084)')}")
+        except Exception:
+            _logger.info(f"Your app is running at: https://localhost:8084")
+        
         self.flask_app.run(host="0.0.0.0", port=8084, debug=False)

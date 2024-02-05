@@ -7,6 +7,10 @@ from openai import OpenAI
 
 from ..base import VannaBase
 
+from ..logger import get_logger
+
+_logger = get_logger()
+
 
 class OpenAI_Chat(VannaBase):
     def __init__(self, client=None, config=None):
@@ -127,7 +131,7 @@ class OpenAI_Chat(VannaBase):
 
         for example in question_sql_list:
             if example is None:
-                print("example is None")
+                _logger.info("example is None")
             else:
                 if example is not None and "question" in example and "sql" in example:
                     message_log.append(OpenAI_Chat.user_message(example["question"]))
@@ -245,7 +249,7 @@ class OpenAI_Chat(VannaBase):
             )  # Use 4 as an approximation for the number of characters per token
 
         if self.config is not None and "engine" in self.config:
-            print(
+            _logger.info(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
@@ -256,7 +260,7 @@ class OpenAI_Chat(VannaBase):
                 temperature=0.7,
             )
         elif self.config is not None and "model" in self.config:
-            print(
+            _logger.info(
                 f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
@@ -272,7 +276,7 @@ class OpenAI_Chat(VannaBase):
             else:
                 model = "gpt-3.5-turbo"
 
-            print(f"Using model {model} for {num_tokens} tokens (approx)")
+            _logger.info(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
                 model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
             )
