@@ -1,13 +1,16 @@
-import vanna as vn
-import requests
-import sys
-import io
-import pandas as pd
 import contextlib
-import stat
+import io
 import os
+import stat
+import sys
+
+import pandas as pd
 import pytest
-from vanna.exceptions import ValidationError, ImproperlyConfigured
+import requests
+
+import vanna as vn
+from vanna.base.base import VannaBase
+from vanna.exceptions import ImproperlyConfigured, ValidationError
 
 endpoint_base = os.environ.get('VANNA_ENDPOINT', 'https://debug.vanna.ai')
 
@@ -325,6 +328,52 @@ def test_get_related_training_data():
 def test_train_success(monkeypatch, params):
     vn.set_model('test-org')
     assert vn.train(**params)
+
+
+@pytest.mark.parametrize("params, expected_exc_class", [
+    (
+        dict(
+            question="What's the data about student John Doe?",
+            sql=None,
+            documentation=None,
+            ddl=None,
+        ),
+        ValidationError
+    ),
+    (
+        dict(
+            question=None,
+            sql="SELECT * FROM employees;",
+            documentation=None,
+            ddl=None,
+        ),
+        None
+    ),
+    (
+        dict(
+            question=None,
+            sql=None,
+            documentation="The 'employees' table contains the employee names",
+            ddl="[EmployeeId] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL",
+        ),
+        ValidationError
+    ),
+    (
+        dict(
+            question="What's the data about student John Doe?",
+            sql="SELECT * FROM employees;",
+            documentation="The 'employees' table contains the employee names",
+            ddl=None,
+        ),
+        ValidationError
+    )])
+def test_validate_train_args(params, expected_exc_class):
+    if expected_exc_class:
+        with pytest.raises(expected_exc_class):
+            VannaBase._validate_train_args(**params)
+    else:
+        # If no exception is expected, just call the function to see if it runs without errors
+        VannaBase._validate_train_args(**params)
 
 
 @pytest.mark.parametrize("params, expected_exc_class", [
