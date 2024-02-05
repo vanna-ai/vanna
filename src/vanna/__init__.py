@@ -156,7 +156,7 @@ from .exceptions import (
     SQLRemoveError,
     ValidationError,
 )
-from .logger import initialize_logger
+from .logger import initialize_logger, setVerbosity
 from .types import (
     AccuracyStats,
     ApiKey,
