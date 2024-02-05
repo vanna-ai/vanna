@@ -10,7 +10,7 @@ def initialize_logger():
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] [%(filename)s:%(lineno)d] %(levelname)s - %(message)s",
-        handlers=logging.StreamHandler(stream=sys.stdout)
+        handlers=[logging.StreamHandler(stream=sys.stdout)],
     )
 
     return get_logger()
