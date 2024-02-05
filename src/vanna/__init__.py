@@ -147,6 +147,7 @@ import plotly.graph_objects as go
 import requests
 import sqlparse
 
+from .base import VannaBase
 from .exceptions import (
     APIError,
     ConnectionError,
@@ -188,9 +189,9 @@ api_key: Union[str, None] = None  # API key for Vanna.AI
 
 fig_as_img: bool = False  # Whether or not to return Plotly figures as images
 
-run_sql: Union[
-    Callable[[str], pd.DataFrame], None
-] = None  # Function to convert SQL to a Pandas DataFrame
+run_sql: Union[Callable[[str], pd.DataFrame], None] = (
+    None  # Function to convert SQL to a Pandas DataFrame
+)
 """
 **Example**
 ```python
@@ -233,7 +234,7 @@ def __rpc_call(method, params):
         raise ImproperlyConfigured(
             "model not set. Use vn.set_model(...) to set the model to use."
         )
-    
+
     if method == "list_orgs":
         headers = {
             "Content-Type": "application/json",
@@ -1053,11 +1054,7 @@ def train(
         plan (TrainingPlan): The training plan to train on.
     """
 
-    if question and not sql:
-        example_question = "What is the average salary of employees?"
-        raise ValidationError(
-            f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: {ask(question=example_question)}"
-        )
+    VannaBase._validate_train_args(question, sql, ddl, documentation)
 
     if documentation:
         print("Adding documentation....")
@@ -2015,7 +2012,9 @@ def connect_to_postgres(
 
     def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
         try:
-            with conn.cursor() as cs:  # Using a with statement to manage the cursor lifecycle
+            with (
+                conn.cursor() as cs
+            ):  # Using a with statement to manage the cursor lifecycle
                 cs.execute(sql)
                 results = cs.fetchall()
                 df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
@@ -2122,7 +2121,8 @@ def connect_to_bigquery(cred_file_path: str = None, project_id: str = None):
     global run_sql
     run_sql = run_sql_bigquery
 
-def connect_to_duckdb(url: str="memory", init_sql: str = None):
+
+def connect_to_duckdb(url: str = "memory", init_sql: str = None):
     """
     Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
 
@@ -2141,13 +2141,13 @@ def connect_to_duckdb(url: str="memory", init_sql: str = None):
             " run command: \npip install vanna[duckdb]"
         )
     # URL of the database to download
-    if url==":memory:" or url=="":
-        path=":memory:"
+    if url == ":memory:" or url == "":
+        path = ":memory:"
     else:
         # Path to save the downloaded database
         print(os.path.exists(url))
         if os.path.exists(url):
-            path=url
+            path = url
         else:
             path = os.path.basename(urlparse(url).path)
             # Download the database if it doesn't exist

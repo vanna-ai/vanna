@@ -642,7 +642,10 @@ class VannaBase(ABC):
             )
 
         if question and not sql:
-            raise ValidationError(f"Please also provide a SQL query")
+            example_question = "What is the average salary of employees?"
+            raise ValidationError(
+                f"Please also provide a SQL query \n Example Question:  {example_question}\n Answer: ...?"
+            )
 
     def train(
         self,
