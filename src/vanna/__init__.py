@@ -1073,17 +1073,17 @@ def train(
         return add_sql(question=question, sql=sql)
 
     if ddl:
-        _logger.info("Adding ddl:", ddl)
+        _logger.info(f"Adding ddl: {ddl}")
         return add_ddl(ddl)
 
     if json_file:
         validate_config_path(json_file)
         with open(json_file, "r") as js_file:
             data = json.load(js_file)
-            _logger.info("Adding Questions And SQLs using file:", json_file)
+            _logger.info(f"Adding Questions And SQLs using file: {json_file}")
             for question in data:
                 if not add_sql(question=question["question"], sql=question["answer"]):
-                    _logger.info(
+                    _logger.error(
                         f"Not able to add sql for question: {question['question']} from {json_file}"
                     )
                     return False
@@ -1098,14 +1098,14 @@ def train(
                     if add_ddl(statement):
                         _logger.info("ddl Added!")
                         return True
-                    _logger.info("Not able to add DDL")
+                    _logger.error("Not able to add DDL")
                     return False
                 else:
                     question = generate_question(sql=statement)
                     if add_sql(question=question, sql=statement):
                         _logger.info("SQL added!")
                         return True
-                    _logger.info("Not able to add sql.")
+                    _logger.error("Not able to add sql.")
                     return False
         return False
 
@@ -1113,17 +1113,17 @@ def train(
         for item in plan._plan:
             if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
                 if not add_ddl(item.item_value):
-                    _logger.info(f"Not able to add ddl for {item.item_group}")
+                    _logger.error(f"Not able to add ddl for {item.item_group}")
                     return False
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                 if not add_documentation(item.item_value):
-                    _logger.info(
+                    _logger.error(
                         f"Not able to add documentation for {item.item_group}.{item.item_name}"
                     )
                     return False
             elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
                 if not add_sql(question=item.item_name, sql=item.item_value):
-                    _logger.info(
+                    _logger.error(
                         f"Not able to add sql for {item.item_group}.{item.item_name}"
                     )
                     return False

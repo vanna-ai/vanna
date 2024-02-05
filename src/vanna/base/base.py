@@ -14,10 +14,9 @@ import plotly.graph_objects as go
 import requests
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
+from ..logger import get_logger
 from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
-
-from ..logger import get_logger
 
 _logger = get_logger()
 
@@ -473,6 +472,7 @@ class VannaBase(ABC):
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+
     def connect_to_duckdb(self, url: str, init_sql: str = None):
         """
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
@@ -492,13 +492,13 @@ class VannaBase(ABC):
                 " run command: \npip install vanna[duckdb]"
             )
         # URL of the database to download
-        if url==":memory:" or url=="":
-            path=":memory:"
+        if url == ":memory:" or url == "":
+            path = ":memory:"
         else:
             # Path to save the downloaded database
             _logger.info(os.path.exists(url))
             if os.path.exists(url):
-                path=url
+                path = url
             else:
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
@@ -518,6 +518,7 @@ class VannaBase(ABC):
 
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
+
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
             "You need to connect_to_snowflake or other database first."
@@ -528,7 +529,7 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
-        visualize: bool = True, # if False, will not generate plotly code
+        visualize: bool = True,  # if False, will not generate plotly code
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -591,14 +592,15 @@ class VannaBase(ABC):
                             display = __import__(
                                 "IPython.display", fromlist=["display"]
                             ).display
-                            Image = __import__("IPython.display", fromlist=["Image"]).Image
+                            Image = __import__(
+                                "IPython.display", fromlist=["Image"]
+                            ).Image
                             img_bytes = fig.to_image(format="png", scale=2)
                             display(Image(img_bytes))
                         except Exception as e:
                             fig.show()
                 except Exception as e:
-                    # Print stack trace
-                    _logger.info(traceback.print_exc())
+                    _logger.error(traceback.print_exc())
                     _logger.error(f"Couldn't run plotly code: {e}")
 
                     if print_results:
@@ -654,11 +656,11 @@ class VannaBase(ABC):
         if sql:
             if question is None:
                 question = self.generate_question(sql)
-                _logger.info("Question generated with sql:", question, "\nAdding SQL...")
+                _logger.info(f"Question generated with sql: {question}\nAdding SQL...")
             return self.add_question_sql(question=question, sql=sql)
 
         if ddl:
-            _logger.info("Adding ddl:", ddl)
+            _logger.info(f"Adding ddl: {ddl}")
             return self.add_ddl(ddl)
 
         if plan:

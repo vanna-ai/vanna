@@ -418,8 +418,10 @@ class VannaFlaskApp:
             output.serve_kernel_port_as_window(8084)
             from google.colab.output import eval_js
 
-            _logger.info(f"Your app is running at: {eval_js('google.colab.kernel.proxyPort(8084)')}")
+            _logger.info(
+                f"Your app is running at: {eval_js('google.colab.kernel.proxyPort(8084)')}"
+            )
         except Exception:
-            _logger.info(f"Your app is running at: https://localhost:8084")
-        
+            _logger.info(f"Your app is running at: http://localhost:8084")
+
         self.flask_app.run(host="0.0.0.0", port=8084, debug=False)
