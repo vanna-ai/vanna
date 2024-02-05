@@ -1069,7 +1069,7 @@ def train(
     if sql:
         if question is None:
             question = generate_question(sql)
-            _logger.info("Question generated with sql:", question, "\nAdding SQL...")
+            _logger.info(f"Question generated with sql: {question}\nAdding SQL...")
         return add_sql(question=question, sql=sql)
 
     if ddl:
