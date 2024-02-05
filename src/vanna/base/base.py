@@ -4,7 +4,8 @@ import re
 import sqlite3
 import traceback
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union
+from itertools import compress
+from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -469,6 +470,7 @@ class VannaBase(ABC):
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+
     def connect_to_duckdb(self, url: str, init_sql: str = None):
         """
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.run_sql]
@@ -488,13 +490,13 @@ class VannaBase(ABC):
                 " run command: \npip install vanna[duckdb]"
             )
         # URL of the database to download
-        if url==":memory:" or url=="":
-            path=":memory:"
+        if url == ":memory:" or url == "":
+            path = ":memory:"
         else:
             # Path to save the downloaded database
             print(os.path.exists(url))
             if os.path.exists(url):
-                path=url
+                path = url
             else:
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
@@ -514,6 +516,7 @@ class VannaBase(ABC):
 
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
+
     def run_sql(sql: str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError(
             "You need to connect_to_snowflake or other database first."
@@ -524,7 +527,7 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
-        visualize: bool = True, # if False, will not generate plotly code
+        visualize: bool = True,  # if False, will not generate plotly code
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -587,7 +590,9 @@ class VannaBase(ABC):
                             display = __import__(
                                 "IPython.display", fromlist=["display"]
                             ).display
-                            Image = __import__("IPython.display", fromlist=["Image"]).Image
+                            Image = __import__(
+                                "IPython.display", fromlist=["Image"]
+                            ).Image
                             img_bytes = fig.to_image(format="png", scale=2)
                             display(Image(img_bytes))
                         except Exception as e:
@@ -608,6 +613,36 @@ class VannaBase(ABC):
             else:
                 return sql, None, None
         return sql, df, None
+
+    @staticmethod
+    def _validate_train_args(
+        question: Optional[str] = None,
+        sql: Optional[str] = None,
+        ddl: Optional[str] = None,
+        documentation: Optional[str] = None,
+        plan: Optional[TrainingPlan] = None,
+    ):
+        """Validates arguments for `.train()`."""
+        training_items = {
+            "question, sql": (question, sql),
+            "ddl": ddl,
+            "documentation": documentation,
+            "plan": plan,
+        }
+        non_none_names = list(
+            compress(
+                training_items.keys(),
+                (item is not None for item in training_items.values()),
+            )
+        )
+        if len(non_none_names) > 1:
+            raise ValidationError(
+                f"Only one element can be provided for training ({training_items.keys()}). "
+                f"Multiple were provided: {non_none_names}"
+            )
+
+        if question and not sql:
+            raise ValidationError(f"Please also provide a SQL query")
 
     def train(
         self,
@@ -638,8 +673,7 @@ class VannaBase(ABC):
             plan (TrainingPlan): The training plan to train on.
         """
 
-        if question and not sql:
-            raise ValidationError(f"Please also provide a SQL query")
+        self._validate_train_args(question, sql, ddl, documentation, plan)
 
         if documentation:
             print("Adding documentation....")
