@@ -28,12 +28,13 @@ def initialize_logger():
     return get_logger()
 
 
-def setVerbosity(level: int = 1):
+def setVerbosity(level: str = "INFO"):
     """
     Method that sets the logging level.
 
     Args:
-        level (int): Which logging level to set. Set 0 for Ignore, 1 for Info, 2 for Debug, and 3 for Error.
+        level (str): Which logging level to set. Defaults to "INFO". Supports the same values as the python logging class.
+        Supported values are: "NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL".
 
     Returns:
         logging: Updated logger
