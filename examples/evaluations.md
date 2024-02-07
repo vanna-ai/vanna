@@ -13,3 +13,13 @@
 
 ### Overview of test results across multiple metrics
 ![alt text](images/trulens-3.png)
+
+### Examining the inputs & outputs of context relevance metrics
+
+- **Agreement to truth**: the response SQL is compared to the ground truth SQL.
+- **Groundedness**: How much overlap there is in meaning, between a context item and the response SQL
+    - **sql**: The final SQL, and a question-sql pair retrieved from the vector store. An average of all example SQL-question pair scores (this is using just n=1)
+    - **ddl**: The final SQL, and a DDL pair retrieved from the vector store.
+    - **document**: The final SQL, and a document retrieved from the vector store.
+
+![alt text](images/trulens-4.png)

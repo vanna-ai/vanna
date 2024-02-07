@@ -231,7 +231,7 @@ def _load_metrics(prompts: List[dict], config: dict) -> List[Feedback]:
     # A Evaluation model customised for sql table matching evaluation
     provider = StandAloneProvider(
         ground_truth_prompts=prompts,
-        model_engine="ollama/mistralreranker",
+        model_engine=config["evaluation"]["model"],
         possible_table_names=config["database"]["table_names"],
         dbpath=config["database"]["path"],
     )
@@ -241,8 +241,13 @@ def _load_metrics(prompts: List[dict], config: dict) -> List[Feedback]:
         ground_truth=prompts, provider=provider
     )
     f_groundtruth_agreement_measure = Feedback(
-        ground_truth_collection.agreement_measure, name="Agreement measure"
+        ground_truth_collection.agreement_measure, name="Agreement-to-truth measure"
     ).on_input_output()
+    # Note: the above could have a newly synthesized response from a superior model in place of the ground truth;
+    #   This is different to query-statement relevance. This takes the apps response to a query,
+    #   and compares that response to a newly generated response to the same question. So, no ground
+    #   truth data is used. Only checking whether the app performs similarly to another independent
+    #   LLM. Useful to give confidence that the app is as-performant as an independent "SOTA model"
 
     # For evaluating each retrieved context
     f_qs_relevance_documentation = (
@@ -275,15 +280,24 @@ def _load_metrics(prompts: List[dict], config: dict) -> List[Feedback]:
         f_qs_relevance_sql,
     ]
 
-    # For checking if retrieved context is relevant to the response (sql queries, table schemas, DDL or documentation)
+    # For checking if retrieved context is relevant to the response (sql queries, table schemas, DDL or documentation).
+    # it looks for information overlap between retrieved documents, and the llms response.
     grounded = Groundedness(provider)
-    f_groundedness = (
-        Feedback(grounded.groundedness_measure)
-        .on(
-            Select.Record.app.combine_documents_chain._call.args.inputs.input_documents[
-                :
-            ].page_content  # See note below
-        )
+    f_groundedness_sql = (
+        Feedback(grounded.groundedness_measure, name="groundedness_sql")
+        .on(statement=Select.RecordCalls.get_similar_question_sql.rets[:])
+        .on_output()
+        .aggregate(grounded.grounded_statements_aggregator)
+    )
+    f_groundedness_ddl = (
+        Feedback(grounded.groundedness_measure, name="groundedness_ddl")
+        .on(Select.RecordCalls.get_related_ddl.rets[:])
+        .on_output()
+        .aggregate(grounded.grounded_statements_aggregator)
+    )
+    f_groundedness_document = (
+        Feedback(grounded.groundedness_measure, name="groundedness_document")
+        .on(Select.RecordCalls.get_related_documentation.rets[:])
         .on_output()
         .aggregate(grounded.grounded_statements_aggregator)
     )
@@ -297,9 +311,12 @@ def _load_metrics(prompts: List[dict], config: dict) -> List[Feedback]:
             ).on_input_output()
         )
 
+    # Note: some metrics use the LLM to perform the scoring. Consumes tokens / cost.
     return [
-        # f_groundtruth_agreement_measure,
-        # f_groundedness,
+        f_groundtruth_agreement_measure,
+        f_groundedness_ddl,
+        f_groundedness_sql,
+        f_groundedness_document,
         *context_relevance_metrics,
         *retrieval_metrics,
     ]
@@ -337,7 +354,7 @@ def init_vanna_training(vn: ChromaDB_VectorStore, config):
     )
 
 
-def run(vn: OllamaLocalDB, prompts: List[dict], config: dict):
+def run(vn: OllamaLocalDB, prompts: List[dict], config: dict, app_id=None):
     """creates metrics to evaluate the vanna pipeline, instruments the app with them, then runs some test prompts."""
 
     evaluation_metrics = _load_metrics(prompts, config)
@@ -345,7 +362,7 @@ def run(vn: OllamaLocalDB, prompts: List[dict], config: dict):
         vn,
         feedbacks=evaluation_metrics,
         tru=tru,
-        app_id="mistral 4B : OllamaLocalDB",
+        app_id=app_id if app_id else f"{config['model']}",
     )
 
     for i, prompt in enumerate(prompts):
@@ -374,7 +391,10 @@ if __name__ == "__main__":
             # list all table names here, so response SQL calls can be checked against them.
             "table_names": ["employees", "artists", "customers"],
         },
-        "evaluation": {"retrieval": {"metrics": ["hamming_loss"]}},
+        "evaluation": {
+            "retrieval": {"metrics": ["hamming_loss"]},
+            "model": "ollama/mistralreranker",
+        },
     }
 
     # Evaluate the app with These prompts and their known ground truth answers.
@@ -399,10 +419,10 @@ if __name__ == "__main__":
 
     vn = OllamaLocalDB(config=config)
     init_vanna_training(vn, config)
-    run(vn, test_prompts, config)
+    run(vn, test_prompts, config, app_id="Mistral 7B : OllamaLocalDB")
 
     # Add a challenger app, that uses a different LLM
     config["model"] = "llama2reranker"
     vn = OllamaLocalDB(config=config)
     init_vanna_training(vn, config)
-    run(vn, test_prompts, config)
+    run(vn, test_prompts, config, app_id="Llama2 7B : OllamaLocalDB")
