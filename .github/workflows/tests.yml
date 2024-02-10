@@ -12,10 +12,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
-      env:
-        VANNA_API_KEY: ${{ secrets.VANNA_API_KEY }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
@@ -24,4 +20,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
     - name: Run tests
+      env:
+        VANNA_API_KEY: ${{ secrets.VANNA_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
       run: tox -e py310
