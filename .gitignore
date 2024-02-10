@@ -2,8 +2,7 @@ build
 **.egg-info
 venv
 .DS_Store
-notebooks/.ipynb_checkpoints
-notebooks/test*.ipynb
+notebooks/*
 tests/__pycache__
 __pycache__/
 .idea
@@ -13,3 +12,5 @@ docs/*.html
 .tox/
 notebooks/chroma.sqlite3
 dist
+.env
+*.sqlite
