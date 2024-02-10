@@ -67,6 +67,7 @@ def __unauthenticated_rpc_call(method, params):
     return response.json()
 
 
+
 def __dataclass_to_dict(obj):
     return dataclasses.asdict(obj)
 

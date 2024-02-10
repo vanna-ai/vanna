@@ -995,6 +995,7 @@ class VannaBase(ABC):
                 return None
             else:
                 return sql, None, None
+        return sql, df, None
 
     def train(
         self,
