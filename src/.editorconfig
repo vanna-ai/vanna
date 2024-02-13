@@ -1,0 +1,27 @@
+# top-most EditorConfig file
+root = true
+
+# Python files
+[*.py]
+# Indentation style: space
+indent_style = space
+
+# Indentation size: Use 2 spaces
+indent_size = 2
+
+# Newline character at the end of file
+insert_final_newline = true
+
+# Charset: utf-8
+charset = utf-8
+
+# Trim trailing whitespace
+trim_trailing_whitespace = true
+
+# Max line length: 79 characters as per PEP 8 guidelines
+max_line_length = 79
+
+# Set end of line format to LF
+
+# Exclude specific files or directories
+exclude = 'docs|node_modules|migrations|.git|.tox'
