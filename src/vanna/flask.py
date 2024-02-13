@@ -247,11 +247,19 @@ class VannaFlaskApp:
         def get_training_data():
             df = vn.get_training_data()
 
+            if df is None or len(df) == 0:
+                return jsonify(
+                    {
+                        "type": "error",
+                        "error": "No training data found. Please add some training data first.",
+                    }
+                )
+
             return jsonify(
                 {
                     "type": "df",
                     "id": "training_data",
-                    "df": df.tail(25).to_json(orient="records"),
+                    "df": df.to_json(orient="records"),
                 }
             )
 
