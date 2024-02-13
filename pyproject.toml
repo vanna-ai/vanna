@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.0.38"
+version = "0.1.0"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -30,7 +30,7 @@ postgres = ["psycopg2-binary", "db-dtypes"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
-all = ["psycopg2-binary", "db-dtypes", "google-cloud-bigquery", "snowflake-connector-python","duckdb"]
+all = ["psycopg2-binary", "db-dtypes", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
