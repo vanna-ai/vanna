@@ -93,6 +93,15 @@ class VannaDefault(VannaBase):
     def _dataclass_to_dict(self, obj):
         return dataclasses.asdict(obj)
 
+    def system_message(self, message: str) -> any:
+        pass
+
+    def user_message(self, message: str) -> any:
+        pass
+
+    def assistant_message(self, message: str) -> any:
+        pass
+
     def get_training_data(self, **kwargs) -> pd.DataFrame:
         """
         Get the training data for the current model
