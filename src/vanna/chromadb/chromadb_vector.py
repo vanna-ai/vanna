@@ -48,7 +48,8 @@ class ChromaDB_VectorStore(VannaBase):
             {
                 "question": question,
                 "sql": sql,
-            }
+            },
+            ensure_ascii=False,
         )
         id = str(uuid.uuid4()) + "-sql"
         self.sql_collection.add(
@@ -154,10 +155,10 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
-    
+
     def remove_collection(self, collection_name: str) -> bool:
         """
-        This function can reset the collection to empty state. 
+        This function can reset the collection to empty state.
 
         Args:
             collection_name (str): sql or ddl or documentation
@@ -185,7 +186,7 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
-    
+
     @staticmethod
     def _extract_documents(query_results) -> list:
         """
@@ -193,7 +194,7 @@ class ChromaDB_VectorStore(VannaBase):
 
         Args:
             query_results (pd.DataFrame): The dataframe to use.
-        
+
         Returns:
             List[str] or None: The extracted documents, or an empty list or single document if an error occurred.
         """
