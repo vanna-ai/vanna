@@ -30,7 +30,7 @@ See the [base class](src/vanna/base/base.py) for more details on how this works 
 ## User Interfaces
 These are some of the user interfaces that we've built using Vanna. You can use these as-is or as a starting point for your own custom interface.
 
-- [Jupyter Notebook](https://github.com/vanna-ai/vanna/blob/main/notebooks/getting-started.ipynb)
+- [Jupyter Notebook](https://vanna.ai/docs/postgres-openai-vanna-vannadb/)
 - [vanna-ai/vanna-streamlit](https://github.com/vanna-ai/vanna-streamlit)
 - [vanna-ai/vanna-flask](https://github.com/vanna-ai/vanna-flask)
 - [vanna-ai/vanna-slack](https://github.com/vanna-ai/vanna-slack)
@@ -39,7 +39,7 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 ## Getting started
 See the [documentation](https://vanna.ai/docs/) for specifics on your desired database, LLM, etc.
 
-If you want to get a feel for how it works after training, you can try this [Colab notebook](https://colab.research.google.com/github/vanna-ai/vanna/blob/main/notebooks/getting-started.ipynb).
+If you want to get a feel for how it works after training, you can try this [Colab notebook](https://vanna.ai/docs/app/).
 
 
 ### Install
