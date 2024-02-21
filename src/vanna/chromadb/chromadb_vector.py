@@ -34,8 +34,10 @@ class ChromaDB_VectorStore(VannaBase):
             self.chroma_client = chromadb.EphemeralClient(
                 settings=Settings(anonymized_telemetry=False)
             )
+        elif isinstance(curr_client, chromadb.api.client.Client):  # allow providing client directly
+            self.chroma_client = curr_client
         else:
-            raise ValueError(f"Unsupported client type provided: {curr_client}. Please choose either 'persistent' or 'in-memory'.")
+            raise ValueError(f"Unsupported client type provided: {curr_client}. Please choose 'persistent', 'in-memory', or chroma client directly.")
 
         self.documentation_collection = self.chroma_client.get_or_create_collection(
             name="documentation", embedding_function=self.embedding_function
