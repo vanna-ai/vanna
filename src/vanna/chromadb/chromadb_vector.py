@@ -31,7 +31,7 @@ class ChromaDB_VectorStore(VannaBase):
                 path=path, settings=Settings(anonymized_telemetry=False)
             )
         elif curr_client == "in-memory":
-            self.chroma = chromadb.EphemeralClient(
+            self.chroma_client = chromadb.EphemeralClient(
                 settings=Settings(anonymized_telemetry=False)
             )
         else:
