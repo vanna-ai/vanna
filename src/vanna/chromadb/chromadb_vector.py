@@ -20,13 +20,23 @@ class ChromaDB_VectorStore(VannaBase):
         if config is not None:
             path = config.get("path", ".")
             self.embedding_function = config.get("embedding_function", default_ef)
+            curr_client = config.get("client", "persistent")  # will default to "persistent" if key does not exist
         else:
             path = "."
             self.embedding_function = default_ef
+            curr_client = "persistent"  # defaults to persistent storage
 
-        self.chroma_client = chromadb.PersistentClient(
-            path=path, settings=Settings(anonymized_telemetry=False)
-        )
+        if curr_client == "persistent":
+            self.chroma_client = chromadb.PersistentClient(
+                path=path, settings=Settings(anonymized_telemetry=False)
+            )
+        elif curr_client == "in-memory":
+            self.chroma = chromadb.EphemeralClient(
+                settings=Settings(anonymized_telemetry=False)
+            )
+        else:
+            raise ValueError(f"Unsupported client type provided: {curr_client}. Please choose either 'persistent' or 'in-memory'.")
+
         self.documentation_collection = self.chroma_client.get_or_create_collection(
             name="documentation", embedding_function=self.embedding_function
         )
