@@ -37,7 +37,7 @@ class ChromaDB_VectorStore(VannaBase):
         elif isinstance(curr_client, chromadb.api.client.Client):  # allow providing client directly
             self.chroma_client = curr_client
         else:
-            raise ValueError(f"Unsupported client type provided: {curr_client}. Please choose 'persistent', 'in-memory', or chroma client directly.")
+            raise ValueError(f"Unsupported client was set in config: {curr_client}")
 
         self.documentation_collection = self.chroma_client.get_or_create_collection(
             name="documentation", embedding_function=self.embedding_function
