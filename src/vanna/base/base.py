@@ -731,6 +731,10 @@ class VannaBase(ABC):
                 except psycopg2.Error as e:
                     conn.rollback()
                     raise ValidationError(e)
+                
+                except Exception as e:
+                    conn.rollback()
+                    raise e
 
         self.run_sql_is_set = True
         self.run_sql = run_sql_postgres
@@ -829,7 +833,7 @@ class VannaBase(ABC):
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
         Args:
-            url (str): The URL of the database to connect to.
+            url (str): The URL of the database to connect to. Use :memory: to create an in-memory database. Use md: or motherduck: to use the MotherDuck database.
             init_sql (str, optional): SQL to run when connecting to the database. Defaults to None.
 
         Returns:
@@ -850,6 +854,8 @@ class VannaBase(ABC):
             print(os.path.exists(url))
             if os.path.exists(url):
                 path=url
+            elif url.startswith("md") or url.startswith("motherduck"):
+                path = url
             else:
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
@@ -868,6 +874,49 @@ class VannaBase(ABC):
             return conn.query(sql).to_df()
 
         self.run_sql = run_sql_duckdb
+        self.run_sql_is_set = True
+
+    def connect_to_mssql(self, odbc_conn_str: str):
+        """
+        Connect to a Microsoft SQL Server database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+
+        Args:
+            odbc_conn_str (str): The ODBC connection string.
+
+        Returns:
+            None
+        """
+        try:
+            import pyodbc
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: pip install pyodbc"
+            )
+
+        try:
+            from sqlalchemy.engine import URL
+            import sqlalchemy as sa
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: pip install sqlalchemy"
+            )
+
+        connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": odbc_conn_str})
+
+        from sqlalchemy import create_engine
+        engine = create_engine(connection_url)
+
+        def run_sql_mssql(sql: str):
+            # Execute the SQL statement and return the result as a pandas DataFrame
+            with engine.begin() as conn:
+                df = pd.read_sql_query(sa.text(sql), conn)
+                return df
+            
+            raise Exception("Couldn't run sql")
+
+        self.run_sql = run_sql_mssql
         self.run_sql_is_set = True
 
     def run_sql(self, sql: str, **kwargs) -> pd.DataFrame:

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask"
+    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "sqlalchemy"
 ]
 
 [project.urls]
