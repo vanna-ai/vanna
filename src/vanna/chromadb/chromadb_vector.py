@@ -19,9 +19,7 @@ class ChromaDB_VectorStore(VannaBase):
         if config is not None:
             path = config.get("path", ".")
             self.embedding_function = config.get("embedding_function", default_ef)
-            curr_client = config.get(
-                "client", "persistent"
-            )  # will default to "persistent"
+            curr_client = config.get("client", "persistent")
         else:
             path = "."
             self.embedding_function = default_ef
@@ -35,9 +33,8 @@ class ChromaDB_VectorStore(VannaBase):
             self.chroma_client = chromadb.EphemeralClient(
                 settings=Settings(anonymized_telemetry=False)
             )
-        elif isinstance(
-            curr_client, chromadb.api.client.Client
-        ):  # allow providing client directly
+        elif isinstance(curr_client, chromadb.api.client.Client):
+            # allow providing client directly
             self.chroma_client = curr_client
         else:
             raise ValueError(f"Unsupported client was set in config: {curr_client}")
