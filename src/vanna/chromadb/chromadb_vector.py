@@ -20,7 +20,7 @@ class ChromaDB_VectorStore(VannaBase):
         if config is not None:
             path = config.get("path", ".")
             self.embedding_function = config.get("embedding_function", default_ef)
-            curr_client = config.get("client", "persistent")  # will default to "persistent" if key does not exist
+            curr_client = config.get("client", "persistent")  # will default to "persistent"
         else:
             path = "."
             self.embedding_function = default_ef
@@ -208,7 +208,8 @@ class ChromaDB_VectorStore(VannaBase):
             query_results (pd.DataFrame): The dataframe to use.
 
         Returns:
-            List[str] or None: The extracted documents, or an empty list or single document if an error occurred.
+            List[str] or None: The extracted documents, or an empty list or
+            single document if an error occurred.
         """
         if query_results is None:
             return []
