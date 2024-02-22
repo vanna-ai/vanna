@@ -1,6 +1,6 @@
 import json
-from typing import List
 import uuid
+from typing import List
 
 import chromadb
 import pandas as pd
