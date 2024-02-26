@@ -1,8 +1,5 @@
 import os
-import re
-from abc import abstractmethod
 
-import pandas as pd
 from openai import OpenAI
 
 from ..base import VannaBase
