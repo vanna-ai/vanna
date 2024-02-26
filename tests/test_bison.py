@@ -1,3 +1,4 @@
+from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.palm.palm import Palm
 
 
@@ -11,12 +12,14 @@ def test_bison_model():
         "model": "chat-bison@001",  # Which model to use, e.g., Bison
     }
 
-    palm_client = Palm(
-        client=None,
-        config=config,
-    )
+    class MyVanna(ChromaDB_VectorStore, Palm):
+        def __init__(self, config=None):
+            ChromaDB_VectorStore.__init__(self, config=config)
+            Palm.__init__(self, config=config)
 
-    response = palm_client.generate_sql("How many chocolates are there?")
+    vn = MyVanna(config=config)
+
+    response = vn.generate_sql("How many chocolates are there?")
 
     print(f"Response from Model: {response.text}")
 
