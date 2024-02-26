@@ -7,6 +7,12 @@ from ..base import VannaBase
 
 class Palm(VannaBase):
     def __init__(self, client=None, config=None):
+        VannaBase.__init__(self, config=config)
+
+        if client is not None:
+            self.client = client
+            return
+
         # default values for params
         self.temperature = 0.7
         self.max_tokens = 500
