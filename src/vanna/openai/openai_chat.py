@@ -91,14 +91,10 @@ class OpenAI_Chat(VannaBase):
                 model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
             )
 
-        for (
-            choice
-        ) in (
-            response.choices
-        ):  # Find the first response from the chatbot that has text in it (some responses may not have text)
+        # Find the first response from the chatbot that has text in it (some responses may not have text)
+        for choice in response.choices:
             if "text" in choice:
                 return choice.text
 
-        return response.choices[
-            0
-        ].message.content  # If no response with text is found, return the first response's content (which may be empty)
+        # If no response with text is found, return the first response's content (which may be empty)
+        return response.choices[0].message.content
