@@ -62,9 +62,9 @@ class OpenAI_Chat(VannaBase):
             raise Exception("Prompt is empty")
 
         # Count the number of tokens in the message log
+        # Use 4 as an approximation for the number of characters per token
         num_tokens = 0
         for message in prompt:
-            # Use 4 as an approximation for the number of characters per token
             num_tokens += len(message["content"]) / 4
 
         if self.config is not None and "engine" in self.config:
