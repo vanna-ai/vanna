@@ -1,3 +1,5 @@
+from vertexai.language_models import ChatModel
+
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.palm.palm import Palm
 
@@ -10,6 +12,7 @@ def test_bison_model():
         "top_p": 0.96,  # Tokens are selected from most probable to least until the sum of their probabilities equals the top_p value.
         "top_k": 40,  # A top_k of 1 means the selected token is the most probable among all tokens.
         "model": "chat-bison@001",  # Which model to use, e.g., Bison
+        "client": ChatModel("chat-bison@001"),
     }
 
     class MyVanna(ChromaDB_VectorStore, Palm):
