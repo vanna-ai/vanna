@@ -231,6 +231,7 @@ class ChromaDB_VectorStore(VannaBase):
         return ChromaDB_VectorStore._extract_documents(
             self.sql_collection.query(
                 query_texts=[question],
+                n_results=self.n_results,
             )
         )
 
