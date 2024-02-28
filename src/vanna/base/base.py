@@ -57,6 +57,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 from urllib.parse import urlparse
 
+
 import pandas as pd
 import plotly
 import plotly.express as px
@@ -635,6 +636,7 @@ class VannaBase(ABC):
         self.run_sql = run_sql_sqlite
         self.run_sql_is_set = True
 
+    @contextmanager
     def connect_to_postgres(
         self,
         host: str = None,
@@ -705,18 +707,22 @@ class VannaBase(ABC):
         conn = None
 
         try:
-            conn = psycopg2.connect(
-                host=host,
-                dbname=dbname,
-                user=user,
-                password=password,
-                port=port,
-            )
+             conn = psycopg2.connect(
+                    host=self.host, 
+                    dbname=self.dbname, 
+                    user=self.user, 
+                    password=self.password, 
+                    port=self.port
+             )
+             yield conn
+        finally: 
+             conn.close()
+
         except psycopg2.Error as e:
             raise ValidationError(e)
 
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
+          with self.postgres_connection() as conn:
                 try:
                     cs = conn.cursor()
                     cs.execute(sql)
