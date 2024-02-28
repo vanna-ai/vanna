@@ -56,7 +56,7 @@ import traceback
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 from urllib.parse import urlparse
-
+from contextlib import contextmanager
 
 import pandas as pd
 import plotly
