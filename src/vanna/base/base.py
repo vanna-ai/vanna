@@ -707,14 +707,13 @@ class VannaBase(ABC):
         conn = None
 
         try:
-             conn = psycopg2.connect(
-                    host=self.host, 
-                    dbname=self.dbname, 
-                    user=self.user, 
-                    password=self.password, 
-                    port=self.port
-             )
-             yield conn
+            conn = psycopg2.connect(
+                host=host,
+                dbname=dbname,
+                user=user,
+                password=password,
+                port=port,
+            )
         except psycopg2.Error as e:
             raise ValidationError(e)
         finally: 
