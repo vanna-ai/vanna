@@ -715,11 +715,12 @@ class VannaBase(ABC):
                     port=self.port
              )
              yield conn
-        finally: 
-             conn.close()
 
         except psycopg2.Error as e:
             raise ValidationError(e)
+        finally: 
+          if conn:
+             conn.close()  
 
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
           with self.postgres_connection() as conn:
