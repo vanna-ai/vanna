@@ -715,7 +715,6 @@ class VannaBase(ABC):
                     port=self.port
              )
              yield conn
-
         except psycopg2.Error as e:
             raise ValidationError(e)
         finally: 
