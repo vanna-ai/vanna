@@ -714,8 +714,6 @@ class VannaBase(ABC):
                 password=password,
                 port=port,
             )
-        except psycopg2.Error as e:
-            raise ValidationError(e)
         finally: 
           if conn:
              conn.close()  
