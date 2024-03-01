@@ -721,6 +721,7 @@ class VannaBase(ABC):
              conn.close()  
 
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
+                conn = None 
                 try: 
                   with self.connect_to_postgres(host='haroldwaste-db-demo-do-user-7032271-0.c.db.ondigitalocean.com', dbname='haroldwaste-db-demo-pool', user='doadmin', password='AVNS_EnFaUaOOP6-CwcUDyEv', port='25061') as conn:
                 
