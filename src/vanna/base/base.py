@@ -721,8 +721,9 @@ class VannaBase(ABC):
              conn.close()  
 
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
-          with self.connect_to_postgres() as conn:
-                try:
+               try: 
+                 with self.connect_to_postgres() as conn:
+                
                     cs = conn.cursor()
                     cs.execute(sql)
                     results = cs.fetchall()
