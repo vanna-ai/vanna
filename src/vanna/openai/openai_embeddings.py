@@ -1,5 +1,3 @@
-from abc import abstractmethod
-
 from openai import OpenAI
 
 from ..base import VannaBase
