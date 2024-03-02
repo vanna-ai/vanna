@@ -7,6 +7,8 @@ import flask
 import requests
 from flask import Flask, Response, jsonify, request
 
+from .assets import css_content, html_content, js_content
+
 
 class Cache(ABC):
     @abstractmethod
@@ -92,10 +94,11 @@ class VannaFlaskApp:
 
         return decorator
 
-    def __init__(self, vn, cache: Cache = MemoryCache()):
+    def __init__(self, vn, cache: Cache = MemoryCache(), allow_llm_to_see_data=False):
         self.flask_app = Flask(__name__)
         self.vn = vn
         self.cache = cache
+        self.allow_llm_to_see_data = allow_llm_to_see_data
 
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
@@ -296,23 +299,55 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/generate_followup_questions", methods=["GET"])
+        @self.requires_cache(["df", "question", "sql"])
+        def generate_followup_questions(id: str, df, question, sql):
+            if self.allow_llm_to_see_data:
+                followup_questions = vn.generate_followup_questions(
+                    question=question, sql=sql, df=df
+                )
+                if followup_questions is not None and len(followup_questions) > 5:
+                    followup_questions = followup_questions[:5]
+
+                cache.set(id=id, field="followup_questions", value=followup_questions)
+
+                return jsonify(
+                    {
+                        "type": "question_list",
+                        "id": id,
+                        "questions": followup_questions,
+                        "header": "Here are some potential followup questions:",
+                    }
+                )
+            else:
+                return jsonify(
+                    {
+                        "type": "question_list",
+                        "id": id,
+                        "questions": [],
+                        "header": "Followup Questions can be enabled if you set allow_llm_to_see_data=True",
+                    }
+                )
+
+        @self.flask_app.route("/api/v0/generate_summary", methods=["GET"])
         @self.requires_cache(["df", "question"])
-        def generate_followup_questions(id: str, df, question):
-            followup_questions = []
-            # followup_questions = vn.generate_followup_questions(question=question, df=df)
-            # if followup_questions is not None and len(followup_questions) > 5:
-            #     followup_questions = followup_questions[:5]
-
-            cache.set(id=id, field="followup_questions", value=followup_questions)
-
-            return jsonify(
-                {
-                    "type": "question_list",
-                    "id": id,
-                    "questions": followup_questions,
-                    "header": "Followup Questions can be enabled in a future version if you allow the LLM to 'see' your query results.",
-                }
-            )
+        def generate_summary(id: str, df, question):
+            if self.allow_llm_to_see_data:
+                summary = vn.generate_summary(question=question, df=df)
+                return jsonify(
+                    {
+                        "type": "text",
+                        "id": id,
+                        "text": summary,
+                    }
+                )
+            else:
+                return jsonify(
+                    {
+                        "type": "text",
+                        "id": id,
+                        "text": "Summarization can be enabled if you set allow_llm_to_see_data=True",
+                    }
+                )
 
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
         @self.requires_cache(
@@ -352,25 +387,14 @@ class VannaFlaskApp:
 
         @self.flask_app.route("/assets/<path:filename>")
         def proxy_assets(filename):
-            remote_url = f"https://vanna.ai/assets/{filename}"
-            response = requests.get(remote_url, stream=True)
+            if ".css" in filename:
+                return Response(css_content, mimetype="text/css")
 
-            # Check if the request to the remote URL was successful
-            if response.status_code == 200:
-                excluded_headers = [
-                    "content-encoding",
-                    "content-length",
-                    "transfer-encoding",
-                    "connection",
-                ]
-                headers = [
-                    (name, value)
-                    for (name, value) in response.raw.headers.items()
-                    if name.lower() not in excluded_headers
-                ]
-                return Response(response.content, response.status_code, headers)
-            else:
-                return "Error fetching file from remote server", response.status_code
+            if ".js" in filename:
+                return Response(js_content, mimetype="text/javascript")
+
+            # Return 404
+            return "File not found", 404
 
         # Proxy the /vanna.svg file to the remote server
         @self.flask_app.route("/vanna.svg")
@@ -398,24 +422,7 @@ class VannaFlaskApp:
         @self.flask_app.route("/", defaults={"path": ""})
         @self.flask_app.route("/<path:path>")
         def hello(path: str):
-            return """
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vanna.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@350&display=swap" rel="stylesheet">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js" type="text/javascript"></script>
-    <title>Vanna.AI</title>
-    <script type="module" crossorigin src="/assets/index-d29524f4.js"></script>
-    <link rel="stylesheet" href="/assets/index-b1a5a2f1.css">
-  </head>
-  <body class="bg-white dark:bg-slate-900">
-    <div id="app"></div>
-  </body>
-</html>
-"""
+            return html_content
 
     def run(self):
         try:
