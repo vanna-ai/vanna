@@ -851,6 +851,7 @@ class VannaBase(ABC):
                                    user=user,
                                    password=password,
                                    database=dbname,
+                                   port=port,
                                    cursorclass=pymysql.cursors.DictCursor)
         except pymysql.Error as e:
             raise ValidationError(e)
