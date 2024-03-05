@@ -27,6 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary", "db-dtypes"]
+mysql = ["PyMySQL"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
