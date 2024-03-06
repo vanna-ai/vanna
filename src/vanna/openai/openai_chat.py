@@ -9,14 +9,6 @@ class OpenAI_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
-        if client is not None:
-            self.client = client
-            return
-
-        if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            return
-
         # default parameters - can be overrided using config
         self.temperature = 0.7
         self.max_tokens = 500
@@ -42,6 +34,14 @@ class OpenAI_Chat(VannaBase):
                 "Passing api_version is now deprecated. Please pass an OpenAI client instead."
             )
 
+        if client is not None:
+            self.client = client
+            return
+
+        if config is None and client is None:
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            return
+      
         if "api_key" in config:
             self.client = OpenAI(api_key=config["api_key"])
 
