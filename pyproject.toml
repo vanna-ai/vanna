@@ -27,10 +27,11 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary", "db-dtypes"]
+mysql = ["PyMySQL"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
-all = ["psycopg2-binary", "db-dtypes", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
