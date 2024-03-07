@@ -103,10 +103,12 @@ class VannaBase(ABC):
         Returns:
             str: The SQL query that answers the question.
         """
+        initial_prompt = self.config.get("initial_prompt", None)
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
+            initial_prompt=initial_prompt,
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
@@ -405,6 +407,7 @@ class VannaBase(ABC):
 
     def get_sql_prompt(
         self,
+        initial_prompt : str,
         question: str,
         question_sql_list: list,
         ddl_list: list,
@@ -434,7 +437,9 @@ class VannaBase(ABC):
         Returns:
             any: The prompt for the LLM to generate SQL.
         """
-        initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
+
+        if initial_prompt is None:
+            initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
         initial_prompt = self.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
