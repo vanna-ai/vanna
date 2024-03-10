@@ -353,7 +353,7 @@ class VannaBase(ABC):
         return len(string) / 4
 
     def add_ddl_to_prompt(
-        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 100000
     ) -> str:
         if len(ddl_list) > 0:
             initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -372,7 +372,7 @@ class VannaBase(ABC):
         self,
         initial_prompt: str,
         documentation_list: list[str],
-        max_tokens: int = 14000,
+        max_tokens: int = 100000,
     ) -> str:
         if len(documentation_list) > 0:
             initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -388,7 +388,7 @@ class VannaBase(ABC):
         return initial_prompt
 
     def add_sql_to_prompt(
-        self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, sql_list: list[str], max_tokens: int = 100000
     ) -> str:
         if len(sql_list) > 0:
             initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -437,14 +437,14 @@ class VannaBase(ABC):
         initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=100000
         )
 
         if self.static_documentation != "":
             doc_list.append(self.static_documentation)
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=100000
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -472,15 +472,15 @@ class VannaBase(ABC):
         initial_prompt = f"The user initially asked the question: '{question}': \n\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=100000
         )
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=100000
         )
 
         initial_prompt = self.add_sql_to_prompt(
-            initial_prompt, question_sql_list, max_tokens=14000
+            initial_prompt, question_sql_list, max_tokens=100000
         )
 
         message_log = [self.system_message(initial_prompt)]
