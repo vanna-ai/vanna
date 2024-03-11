@@ -5,7 +5,7 @@ import anthropic
 from ..base import VannaBase
 
 
-class Claude_Chat(VannaBase):
+class Anthropic_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
