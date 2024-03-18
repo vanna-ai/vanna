@@ -1307,6 +1307,10 @@ class VannaBase(ABC):
         data_type_column = df.columns[
             df.columns.str.lower().str.contains("data_type")
         ].to_list()[0]
+        comment_column = df.columns[
+            df.columns.str.lower().str.contains("comment")
+        ].to_list()[0]
+
 
         plan = TrainingPlan([])
 
@@ -1334,6 +1338,7 @@ class VannaBase(ABC):
                             table_column,
                             column_column,
                             data_type_column,
+                            comment_column,
                         ]
                     ].to_markdown()
 
