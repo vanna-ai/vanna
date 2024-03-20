@@ -72,6 +72,7 @@ class VannaBase(ABC):
     def __init__(self, config=None):
         self.config = config
         self.run_sql_is_set = False
+        self.static_documentation = ""
 
     def log(self, message: str):
         print(message)
@@ -102,10 +103,12 @@ class VannaBase(ABC):
         Returns:
             str: The SQL query that answers the question.
         """
+        initial_prompt = self.config.get("initial_prompt", None)
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
+            initial_prompt=initial_prompt,
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
@@ -140,18 +143,35 @@ class VannaBase(ABC):
         else:
             return False
 
-    def generate_followup_questions(self, question: str, **kwargs) -> str:
-        question_sql_list = self.get_similar_question_sql(question, **kwargs)
-        ddl_list = self.get_related_ddl(question, **kwargs)
-        doc_list = self.get_related_documentation(question, **kwargs)
-        prompt = self.get_followup_questions_prompt(
-            question=question,
-            question_sql_list=question_sql_list,
-            ddl_list=ddl_list,
-            doc_list=doc_list,
-            **kwargs,
-        )
-        llm_response = self.submit_prompt(prompt, **kwargs)
+    def generate_followup_questions(
+        self, question: str, sql: str, df: pd.DataFrame, **kwargs
+    ) -> list:
+        """
+        **Example:**
+        ```python
+        vn.generate_followup_questions("What are the top 10 customers by sales?", df)
+        ```
+
+        Generate a list of followup questions that you can ask Vanna.AI.
+
+        Args:
+            question (str): The question that was asked.
+            df (pd.DataFrame): The results of the SQL query.
+
+        Returns:
+            list: A list of followup questions that you can ask Vanna.AI.
+        """
+
+        message_log = [
+            self.system_message(
+                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
+            ),
+            self.user_message(
+                "Generate a list of followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query."
+            ),
+        ]
+
+        llm_response = self.submit_prompt(message_log, **kwargs)
 
         numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
@@ -169,6 +189,36 @@ class VannaBase(ABC):
 
         return [q["question"] for q in question_sql]
 
+    def generate_summary(self, question: str, df: pd.DataFrame, **kwargs) -> str:
+        """
+        **Example:**
+        ```python
+        vn.generate_summary("What are the top 10 customers by sales?", df)
+        ```
+
+        Generate a summary of the results of a SQL query.
+
+        Args:
+            question (str): The question that was asked.
+            df (pd.DataFrame): The results of the SQL query.
+
+        Returns:
+            str: The summary of the results of the SQL query.
+        """
+
+        message_log = [
+            self.system_message(
+                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
+            ),
+            self.user_message(
+                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary."
+            ),
+        ]
+
+        summary = self.submit_prompt(message_log, **kwargs)
+
+        return summary
+
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
@@ -184,7 +234,7 @@ class VannaBase(ABC):
             question (str): The question to get similar questions and their corresponding SQL statements for.
 
         Returns:
-            list: A list of similar questions and their corresponding SQL statements.            
+            list: A list of similar questions and their corresponding SQL statements.
         """
         pass
 
@@ -224,7 +274,7 @@ class VannaBase(ABC):
             sql (str): The SQL query to add.
 
         Returns:
-            str: The ID of the training data that was added.       
+            str: The ID of the training data that was added.
         """
         pass
 
@@ -232,7 +282,7 @@ class VannaBase(ABC):
     def add_ddl(self, ddl: str, **kwargs) -> str:
         """
         This method is used to add a DDL statement to the training data.
-        
+
         Args:
             ddl (str): The DDL statement to add.
 
@@ -265,7 +315,7 @@ class VannaBase(ABC):
         This method is used to get all the training data from the retrieval layer.
 
         Returns:
-            pd.DataFrame: The training data.        
+            pd.DataFrame: The training data.
         """
         pass
 
@@ -321,7 +371,10 @@ class VannaBase(ABC):
         return initial_prompt
 
     def add_documentation_to_prompt(
-        self, initial_prompt: str, documentation_list: list[str], max_tokens: int = 14000
+        self,
+        initial_prompt: str,
+        documentation_list: list[str],
+        max_tokens: int = 14000,
     ) -> str:
         if len(documentation_list) > 0:
             initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -354,6 +407,7 @@ class VannaBase(ABC):
 
     def get_sql_prompt(
         self,
+        initial_prompt : str,
         question: str,
         question_sql_list: list,
         ddl_list: list,
@@ -383,11 +437,16 @@ class VannaBase(ABC):
         Returns:
             any: The prompt for the LLM to generate SQL.
         """
-        initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
+
+        if initial_prompt is None:
+            initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
         initial_prompt = self.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
         )
+
+        if self.static_documentation != "":
+            doc_list.append(self.static_documentation)
 
         initial_prompt = self.add_documentation_to_prompt(
             initial_prompt, doc_list, max_tokens=14000
@@ -599,6 +658,7 @@ class VannaBase(ABC):
 
             return df
 
+        self.static_documentation = "This is a Snowflake database"
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
@@ -632,6 +692,7 @@ class VannaBase(ABC):
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
 
+        self.static_documentation = "This is a SQLite database"
         self.run_sql = run_sql_sqlite
         self.run_sql_is_set = True
 
@@ -731,13 +792,99 @@ class VannaBase(ABC):
                 except psycopg2.Error as e:
                     conn.rollback()
                     raise ValidationError(e)
-                
+
+                except Exception as e:
+                    conn.rollback()
+                    raise e
+
+        self.static_documentation = "This is a Postgres database"
+        self.run_sql_is_set = True
+        self.run_sql = run_sql_postgres
+
+
+    def connect_to_mysql(
+            self,
+            host: str = None,
+            dbname: str = None,
+            user: str = None,
+            password: str = None,
+            port: int = None,
+    ):
+
+        try:
+            import pymysql.cursors
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install PyMySQL"
+            )
+
+        if not host:
+            host = os.getenv("HOST")
+
+        if not host:
+            raise ImproperlyConfigured("Please set your MySQL host")
+
+        if not dbname:
+            dbname = os.getenv("DATABASE")
+
+        if not dbname:
+            raise ImproperlyConfigured("Please set your MySQL database")
+
+        if not user:
+            user = os.getenv("USER")
+
+        if not user:
+            raise ImproperlyConfigured("Please set your MySQL user")
+
+        if not password:
+            password = os.getenv("PASSWORD")
+
+        if not password:
+            raise ImproperlyConfigured("Please set your MySQL password")
+
+        if not port:
+            port = os.getenv("PORT")
+
+        if not port:
+            raise ImproperlyConfigured("Please set your MySQL port")
+
+        conn = None
+
+        try:
+            conn = pymysql.connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   database=dbname,
+                                   port=port,
+                                   cursorclass=pymysql.cursors.DictCursor)
+        except pymysql.Error as e:
+            raise ValidationError(e)
+
+        def run_sql_mysql(sql: str) -> Union[pd.DataFrame, None]:
+            if conn:
+                try:
+                    cs = conn.cursor()
+                    cs.execute(sql)
+                    results = cs.fetchall()
+
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(
+                        results, columns=[desc[0] for desc in cs.description]
+                    )
+                    return df
+
+                except pymysql.Error as e:
+                    conn.rollback()
+                    raise ValidationError(e)
+
                 except Exception as e:
                     conn.rollback()
                     raise e
 
         self.run_sql_is_set = True
-        self.run_sql = run_sql_postgres
+        self.run_sql = run_sql_mysql
+
 
     def connect_to_bigquery(self, cred_file_path: str = None, project_id: str = None):
         """
@@ -825,6 +972,7 @@ class VannaBase(ABC):
                     raise errors
             return None
 
+        self.static_documentation = "This is a BigQuery database"
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
 
@@ -847,13 +995,13 @@ class VannaBase(ABC):
                 " run command: \npip install vanna[duckdb]"
             )
         # URL of the database to download
-        if url==":memory:" or url=="":
-            path=":memory:"
+        if url == ":memory:" or url == "":
+            path = ":memory:"
         else:
             # Path to save the downloaded database
             print(os.path.exists(url))
             if os.path.exists(url):
-                path=url
+                path = url
             elif url.startswith("md") or url.startswith("motherduck"):
                 path = url
             else:
@@ -873,6 +1021,7 @@ class VannaBase(ABC):
         def run_sql_duckdb(sql: str):
             return conn.query(sql).to_df()
 
+        self.static_documentation = "This is a DuckDB database"
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
 
@@ -895,17 +1044,20 @@ class VannaBase(ABC):
             )
 
         try:
-            from sqlalchemy.engine import URL
             import sqlalchemy as sa
+            from sqlalchemy.engine import URL
         except ImportError:
             raise DependencyError(
                 "You need to install required dependencies to execute this method,"
                 " run command: pip install sqlalchemy"
             )
 
-        connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": odbc_conn_str})
+        connection_url = URL.create(
+            "mssql+pyodbc", query={"odbc_connect": odbc_conn_str}
+        )
 
         from sqlalchemy import create_engine
+
         engine = create_engine(connection_url)
 
         def run_sql_mssql(sql: str):
@@ -913,9 +1065,10 @@ class VannaBase(ABC):
             with engine.begin() as conn:
                 df = pd.read_sql_query(sa.text(sql), conn)
                 return df
-            
+
             raise Exception("Couldn't run sql")
 
+        self.static_documentation = "This is a Microsoft SQL Server database"
         self.run_sql = run_sql_mssql
         self.run_sql_is_set = True
 
@@ -943,7 +1096,7 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
-        visualize: bool = True, # if False, will not generate plotly code
+        visualize: bool = True,  # if False, will not generate plotly code
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -1024,7 +1177,9 @@ class VannaBase(ABC):
                             display = __import__(
                                 "IPython.display", fromlist=["display"]
                             ).display
-                            Image = __import__("IPython.display", fromlist=["Image"]).Image
+                            Image = __import__(
+                                "IPython.display", fromlist=["Image"]
+                            ).Image
                             img_bytes = fig.to_image(format="png", scale=2)
                             display(Image(img_bytes))
                         except Exception as e:
@@ -1377,4 +1532,3 @@ class VannaBase(ABC):
             fig.update_layout(template="plotly_dark")
 
         return fig
-

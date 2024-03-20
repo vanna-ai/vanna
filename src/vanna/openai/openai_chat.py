@@ -1,8 +1,5 @@
 import os
-import re
-from abc import abstractmethod
 
-import pandas as pd
 from openai import OpenAI
 
 from ..base import VannaBase
@@ -12,13 +9,15 @@ class OpenAI_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
-        if client is not None:
-            self.client = client
-            return
+        # default parameters - can be overrided using config
+        self.temperature = 0.7
+        self.max_tokens = 500
 
-        if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            return
+        if "temperature" in config:
+            self.temperature = config["temperature"]
+
+        if "max_tokens" in config:
+            self.max_tokens = config["max_tokens"]
 
         if "api_type" in config:
             raise Exception(
@@ -35,6 +34,14 @@ class OpenAI_Chat(VannaBase):
                 "Passing api_version is now deprecated. Please pass an OpenAI client instead."
             )
 
+        if client is not None:
+            self.client = client
+            return
+
+        if config is None and client is None:
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            return
+      
         if "api_key" in config:
             self.client = OpenAI(api_key=config["api_key"])
 
@@ -55,11 +62,10 @@ class OpenAI_Chat(VannaBase):
             raise Exception("Prompt is empty")
 
         # Count the number of tokens in the message log
+        # Use 4 as an approximation for the number of characters per token
         num_tokens = 0
         for message in prompt:
-            num_tokens += (
-                len(message["content"]) / 4
-            )  # Use 4 as an approximation for the number of characters per token
+            num_tokens += len(message["content"]) / 4
 
         if self.config is not None and "engine" in self.config:
             print(
@@ -68,9 +74,9 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 engine=self.config["engine"],
                 messages=prompt,
-                max_tokens=500,
+                max_tokens=self.max_tokens,
                 stop=None,
-                temperature=0.7,
+                temperature=self.temperature,
             )
         elif self.config is not None and "model" in self.config:
             print(
@@ -79,9 +85,9 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 model=self.config["model"],
                 messages=prompt,
-                max_tokens=500,
+                max_tokens=self.max_tokens,
                 stop=None,
-                temperature=0.7,
+                temperature=self.temperature,
             )
         else:
             if num_tokens > 3500:
@@ -91,17 +97,17 @@ class OpenAI_Chat(VannaBase):
 
             print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
-                model=model, messages=prompt, max_tokens=500, stop=None, temperature=0.7
+                model=model,
+                messages=prompt,
+                max_tokens=self.max_tokens,
+                stop=None,
+                temperature=self.temperature,
             )
 
-        for (
-            choice
-        ) in (
-            response.choices
-        ):  # Find the first response from the chatbot that has text in it (some responses may not have text)
+        # Find the first response from the chatbot that has text in it (some responses may not have text)
+        for choice in response.choices:
             if "text" in choice:
                 return choice.text
 
-        return response.choices[
-            0
-        ].message.content  # If no response with text is found, return the first response's content (which may be empty)
+        # If no response with text is found, return the first response's content (which may be empty)
+        return response.choices[0].message.content

@@ -52,3 +52,24 @@ def test_vn_default():
     sql = vn_default.generate_sql("What are the top 6 customers by sales?")
     df = vn_default.run_sql(sql)
     assert len(df) == 6
+
+from vanna.openai.openai_chat import OpenAI_Chat
+from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+
+class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+vn_chroma = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
+vn_chroma.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_chroma():
+    df_ddl = vn_chroma.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+
+    for ddl in df_ddl['sql'].to_list():
+        vn_chroma.train(ddl=ddl)
+
+    sql = vn_chroma.generate_sql("What are the top 7 customers by sales?")
+    df = vn_chroma.run_sql(sql)
+    assert len(df) == 7

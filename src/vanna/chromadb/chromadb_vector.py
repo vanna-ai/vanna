@@ -20,10 +20,12 @@ class ChromaDB_VectorStore(VannaBase):
             path = config.get("path", ".")
             self.embedding_function = config.get("embedding_function", default_ef)
             curr_client = config.get("client", "persistent")
+            self.n_results = config.get("n_results", 10)
         else:
             path = "."
             self.embedding_function = default_ef
             curr_client = "persistent"  # defaults to persistent storage
+            self.n_results = 10  # defaults to 10 documents
 
         if curr_client == "persistent":
             self.chroma_client = chromadb.PersistentClient(
@@ -229,6 +231,7 @@ class ChromaDB_VectorStore(VannaBase):
         return ChromaDB_VectorStore._extract_documents(
             self.sql_collection.query(
                 query_texts=[question],
+                n_results=self.n_results,
             )
         )
 
