@@ -319,6 +319,7 @@ class VannaFlaskApp:
                     }
                 )
             else:
+                cache.set(id=id, field="followup_questions", value=[])
                 return jsonify(
                     {
                         "type": "question_list",
