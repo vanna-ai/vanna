@@ -144,7 +144,7 @@ class VannaBase(ABC):
             return False
 
     def generate_followup_questions(
-        self, question: str, sql: str, df: pd.DataFrame, **kwargs
+        self, question: str, sql: str, df: pd.DataFrame, n_questions: int = 5, **kwargs
     ) -> list:
         """
         **Example:**
@@ -158,6 +158,7 @@ class VannaBase(ABC):
             question (str): The question that was asked.
             sql (str): The LLM-generated SQL query.
             df (pd.DataFrame): The results of the SQL query.
+            n_questions (int): Number of follow-up questions to generate.
 
         Returns:
             list: A list of followup questions that you can ask Vanna.AI.
@@ -168,7 +169,7 @@ class VannaBase(ABC):
                 f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
             ),
             self.user_message(
-                "Generate a list of followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query."
+                f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query."
             ),
         ]
 
