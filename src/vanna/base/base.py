@@ -149,13 +149,14 @@ class VannaBase(ABC):
         """
         **Example:**
         ```python
-        vn.generate_followup_questions("What are the top 10 customers by sales?", df)
+        vn.generate_followup_questions("What are the top 10 customers by sales?", sql, df)
         ```
 
         Generate a list of followup questions that you can ask Vanna.AI.
 
         Args:
             question (str): The question that was asked.
+            sql (str): The LLM-generated SQL query.
             df (pd.DataFrame): The results of the SQL query.
 
         Returns:
