@@ -1,4 +1,4 @@
-exclude: 'docs|node_modules|migrations|.git|.tox'
+exclude: 'docs|node_modules|migrations|.git|.tox|assets.py'
 default_stages: [ commit ]
 fail_fast: true
 

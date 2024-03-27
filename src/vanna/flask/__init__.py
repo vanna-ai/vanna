@@ -75,7 +75,9 @@ class VannaFlaskApp:
                 id = request.args.get("id")
 
                 if id is None:
-                    return jsonify({"type": "error", "error": "No id provided"})
+                    id = request.json.get("id")
+                    if id is None:
+                        return jsonify({"type": "error", "error": "No id provided"})
 
                 for field in fields:
                     if self.cache.get(id=id, field=field) is None:
@@ -94,14 +96,93 @@ class VannaFlaskApp:
 
         return decorator
 
-    def __init__(self, vn, cache: Cache = MemoryCache(), allow_llm_to_see_data=False):
+    def __init__(self, vn, cache: Cache = MemoryCache(),
+                    allow_llm_to_see_data=False,
+                    logo="https://img.vanna.ai/vanna-flask.svg",
+                    title="Welcome to Vanna.AI",
+                    subtitle="Your AI-powered copilot for SQL queries.",
+                    show_training_data=True,
+                    suggested_questions=True,
+                    sql=True,
+                    table=True,
+                    csv_download=True,
+                    chart=True,
+                    redraw_chart=True,
+                    auto_fix_sql=True,
+                    ask_results_correct=True,
+                    followup_questions=True,
+                    summarization=True
+                 ):
+        """
+        Expose a Flask app that can be used to interact with a Vanna instance.
+
+        Args:
+            vn: The Vanna instance to interact with.
+            cache: The cache to use. Defaults to MemoryCache, which uses an in-memory cache. You can also pass in a custom cache that implements the Cache interface.
+            allow_llm_to_see_data: Whether to allow the LLM to see data. Defaults to False.
+            logo: The logo to display in the UI. Defaults to the Vanna logo.
+            title: The title to display in the UI. Defaults to "Welcome to Vanna.AI".
+            subtitle: The subtitle to display in the UI. Defaults to "Your AI-powered copilot for SQL queries.".
+            show_training_data: Whether to show the training data in the UI. Defaults to True.
+            suggested_questions: Whether to show suggested questions in the UI. Defaults to True.
+            sql: Whether to show the SQL input in the UI. Defaults to True.
+            table: Whether to show the table output in the UI. Defaults to True.
+            csv_download: Whether to allow downloading the table output as a CSV file. Defaults to True.
+            chart: Whether to show the chart output in the UI. Defaults to True.
+            redraw_chart: Whether to allow redrawing the chart. Defaults to True.
+            auto_fix_sql: Whether to allow auto-fixing SQL errors. Defaults to True.
+            ask_results_correct: Whether to ask the user if the results are correct. Defaults to True.
+            followup_questions: Whether to show followup questions. Defaults to True.
+            summarization: Whether to show summarization. Defaults to True.
+
+        Returns:
+            None
+        """
         self.flask_app = Flask(__name__)
         self.vn = vn
         self.cache = cache
         self.allow_llm_to_see_data = allow_llm_to_see_data
+        self.logo = logo
+        self.title = title
+        self.subtitle = subtitle
+        self.show_training_data = show_training_data
+        self.suggested_questions = suggested_questions
+        self.sql = sql
+        self.table = table
+        self.csv_download = csv_download
+        self.chart = chart
+        self.redraw_chart = redraw_chart
+        self.auto_fix_sql = auto_fix_sql
+        self.ask_results_correct = ask_results_correct
+        self.followup_questions = followup_questions
+        self.summarization = summarization
 
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
+
+        @self.flask_app.route("/api/v0/get_config", methods=["GET"])
+        def get_config():
+            return jsonify(
+                {
+                    "type": "config",
+                    "config": {
+                        "logo": self.logo,
+                        "title": self.title,
+                        "subtitle": self.subtitle,
+                        "show_training_data": self.show_training_data,
+                        "suggested_questions": self.suggested_questions,
+                        "sql": self.sql,
+                        "table": self.table,
+                        "csv_download": self.csv_download,
+                        "chart": self.chart,
+                        "redraw_chart": self.redraw_chart,
+                        "auto_fix_sql": self.auto_fix_sql,
+                        "ask_results_correct": self.ask_results_correct,
+                        "followup_questions": self.followup_questions,
+                        "summarization": self.summarization,
+                    },
+                }
+            )
 
         @self.flask_app.route("/api/v0/generate_questions", methods=["GET"])
         def generate_questions():
@@ -199,12 +280,52 @@ class VannaFlaskApp:
                     {
                         "type": "df",
                         "id": id,
-                        "df": df.head(10).to_json(orient="records"),
+                        "df": df.head(10).to_json(orient='records', date_format='iso'),
                     }
                 )
 
             except Exception as e:
-                return jsonify({"type": "error", "error": str(e)})
+                return jsonify({"type": "sql_error", "error": str(e)})
+
+        @self.flask_app.route("/api/v0/fix_sql", methods=["POST"])
+        @self.requires_cache(["question", "sql"])
+        def fix_sql(id: str, question:str, sql: str):
+            error = flask.request.json.get("error")
+
+            if error is None:
+                return jsonify({"type": "error", "error": "No error provided"})
+
+            question = f"I have an error: {error}\n\nHere is the SQL I tried to run: {sql}\n\nThis is the question I was trying to answer: {question}\n\nCan you rewrite the SQL to fix the error?"
+
+            fixed_sql = vn.generate_sql(question=question)
+
+            self.cache.set(id=id, field="sql", value=fixed_sql)
+
+            return jsonify(
+                {
+                    "type": "sql",
+                    "id": id,
+                    "text": fixed_sql,
+                }
+            )
+
+
+        @self.flask_app.route('/api/v0/update_sql', methods=['POST'])
+        @self.requires_cache([])
+        def update_sql(id: str):
+            sql = flask.request.json.get('sql')
+
+            if sql is None:
+                return jsonify({"type": "error", "error": "No sql provided"})
+
+            cache.set(id=id, field='sql', value=sql)
+
+            return jsonify(
+                {
+                    "type": "sql",
+                    "id": id,
+                    "text": sql,
+                })
 
         @self.flask_app.route("/api/v0/download_csv", methods=["GET"])
         @self.requires_cache(["df"])
@@ -220,6 +341,11 @@ class VannaFlaskApp:
         @self.flask_app.route("/api/v0/generate_plotly_figure", methods=["GET"])
         @self.requires_cache(["df", "question", "sql"])
         def generate_plotly_figure(id: str, df, question, sql):
+            chart_instructions = flask.request.args.get('chart_instructions')
+
+            if chart_instructions is not None:
+                question = f"{question}. When generating the chart, use these special instructions: {chart_instructions}"
+
             try:
                 code = vn.generate_plotly_code(
                     question=question,
@@ -352,9 +478,9 @@ class VannaFlaskApp:
 
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
         @self.requires_cache(
-            ["question", "sql", "df", "fig_json", "followup_questions"]
+            ["question", "sql", "df", "fig_json"]
         )
-        def load_question(id: str, question, sql, df, fig_json, followup_questions):
+        def load_question(id: str, question, sql, df, fig_json):
             try:
                 return jsonify(
                     {
@@ -364,7 +490,6 @@ class VannaFlaskApp:
                         "sql": sql,
                         "df": df.head(10).to_json(orient="records"),
                         "fig": fig_json,
-                        "followup_questions": followup_questions,
                     }
                 )
 
@@ -425,16 +550,31 @@ class VannaFlaskApp:
         def hello(path: str):
             return html_content
 
-    def run(self):
-        try:
-            from google.colab import output
+    def run(self, *args, **kwargs):
+        """
+        Run the Flask app.
 
-            output.serve_kernel_port_as_window(8084)
-            from google.colab.output import eval_js
+        Args:
+            *args: Arguments to pass to Flask's run method.
+            **kwargs: Keyword arguments to pass to Flask's run method.
 
-            print("Your app is running at:")
-            print(eval_js("google.colab.kernel.proxyPort(8084)"))
-        except:
-            print("Your app is running at:")
-            print("http://localhost:8084")
-        self.flask_app.run(host="0.0.0.0", port=8084, debug=False)
+        Returns:
+            None
+        """
+        if args or kwargs:
+            self.flask_app.run(*args, **kwargs)
+
+        else:
+            try:
+                from google.colab import output
+
+                output.serve_kernel_port_as_window(8084)
+                from google.colab.output import eval_js
+
+                print("Your app is running at:")
+                print(eval_js("google.colab.kernel.proxyPort(8084)"))
+            except:
+                print("Your app is running at:")
+                print("http://localhost:8084")
+
+            self.flask_app.run(host="0.0.0.0", port=8084, debug=False)
