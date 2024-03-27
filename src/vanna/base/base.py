@@ -103,7 +103,10 @@ class VannaBase(ABC):
         Returns:
             str: The SQL query that answers the question.
         """
-        initial_prompt = self.config.get("initial_prompt", None)
+        if self.config is not None:
+            initial_prompt = self.config.get("initial_prompt", None)
+        else:
+            initial_prompt = None
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
