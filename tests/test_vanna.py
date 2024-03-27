@@ -1,10 +1,10 @@
-from vanna.openai.openai_chat import OpenAI_Chat
-from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
-from vanna.mistral.mistral import Mistral
-from vanna.remote import VannaDefault
-
-
 import os
+
+from vanna.anthropic.anthropic_chat import Anthropic_Chat
+from vanna.mistral.mistral import Mistral
+from vanna.openai.openai_chat import OpenAI_Chat
+from vanna.remote import VannaDefault
+from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
 
 try:
     print("Trying to load .env")
@@ -15,9 +15,11 @@ except Exception as e:
     pass
 
 MY_VANNA_MODEL = 'chinook'
+ANTHROPIC_Model = 'claude-3-sonnet-20240229'
 MY_VANNA_API_KEY = os.environ['VANNA_API_KEY']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 MISTRAL_API_KEY = os.environ['MISTRAL_API_KEY']
+ANTHROPIC_API_KEY = os.environ['ANTHROPIC_API_KEY']
 
 class VannaOpenAI(VannaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
@@ -53,8 +55,9 @@ def test_vn_default():
     df = vn_default.run_sql(sql)
     assert len(df) == 6
 
-from vanna.openai.openai_chat import OpenAI_Chat
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+from vanna.openai.openai_chat import OpenAI_Chat
+
 
 class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
@@ -73,3 +76,19 @@ def test_vn_chroma():
     sql = vn_chroma.generate_sql("What are the top 7 customers by sales?")
     df = vn_chroma.run_sql(sql)
     assert len(df) == 7
+
+
+class VannaClaude(VannaDB_VectorStore, Anthropic_Chat):
+    def __init__(self, config=None):
+        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        Anthropic_Chat.__init__(self, config={'api_key': ANTHROPIC_API_KEY, 'model': ANTHROPIC_Model})
+
+
+vn_claude = VannaClaude()
+vn_claude.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+
+def test_vn_claude():
+    sql = vn_claude.generate_sql("What are the top 5 customers by sales?")
+    df = vn_claude.run_sql(sql)
+    assert len(df) == 5
