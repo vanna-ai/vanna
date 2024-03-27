@@ -118,8 +118,22 @@ class VannaFlaskApp:
 
         Args:
             vn: The Vanna instance to interact with.
-            cache: The cache to use. Defaults to MemoryCache.
+            cache: The cache to use. Defaults to MemoryCache, which uses an in-memory cache. You can also pass in a custom cache that implements the Cache interface.
             allow_llm_to_see_data: Whether to allow the LLM to see data. Defaults to False.
+            logo: The logo to display in the UI. Defaults to the Vanna logo.
+            title: The title to display in the UI. Defaults to "Welcome to Vanna.AI".
+            subtitle: The subtitle to display in the UI. Defaults to "Your AI-powered copilot for SQL queries.".
+            show_training_data: Whether to show the training data in the UI. Defaults to True.
+            suggested_questions: Whether to show suggested questions in the UI. Defaults to True.
+            sql: Whether to show the SQL input in the UI. Defaults to True.
+            table: Whether to show the table output in the UI. Defaults to True.
+            csv_download: Whether to allow downloading the table output as a CSV file. Defaults to True.
+            chart: Whether to show the chart output in the UI. Defaults to True.
+            redraw_chart: Whether to allow redrawing the chart. Defaults to True.
+            auto_fix_sql: Whether to allow auto-fixing SQL errors. Defaults to True.
+            ask_results_correct: Whether to ask the user if the results are correct. Defaults to True.
+            followup_questions: Whether to show followup questions. Defaults to True.
+            summarization: Whether to show summarization. Defaults to True.
 
         Returns:
             None
