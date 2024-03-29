@@ -1,11 +1,11 @@
 import re
 from typing import List
+
 import pandas as pd
 from zhipuai import ZhipuAI
+
 from ..base import VannaBase
-import re
-from typing import List
-import pandas as pd
+
 
 class ZhipuAI_Chat(VannaBase):
     def __init__(self, config=None):
