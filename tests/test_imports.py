@@ -2,7 +2,9 @@
 
 def test_regular_imports():
     from vanna.anthropic.anthropic_chat import Anthropic_Chat
+    from vanna.base.base import VannaBase
     from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+    from vanna.local import LocalContext_OpenAI
     from vanna.marqo.marqo import Marqo_VectorStore
     from vanna.mistral.mistral import Mistral
     from vanna.ollama.ollama import Ollama
@@ -17,12 +19,12 @@ def test_regular_imports():
 
 def test_shortcut_imports():
     from vanna.anthropic import Anthropic_Chat
+    from vanna.base import VannaBase
     from vanna.chromadb import ChromaDB_VectorStore
     from vanna.marqo import Marqo_VectorStore
     from vanna.mistral import Mistral
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
-    from vanna.remote import VannaDefault
     from vanna.vannadb import VannaDB_VectorStore
 
     # from vanna.ZhipuAI import ZhipuAI_Chat
