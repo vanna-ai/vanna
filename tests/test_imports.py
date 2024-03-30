@@ -12,9 +12,8 @@ def test_regular_imports():
     from vanna.openai.openai_embeddings import OpenAI_Embeddings
     from vanna.remote import VannaDefault
     from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
-
-    # from vanna.ZhipuAI.ZhipuAI_Chat import ZhipuAI_Chat
-    # from vanna.ZhipuAI.ZhipuAI_embeddings import ZhipuAI_Embeddings
+    from vanna.ZhipuAI.ZhipuAI_Chat import ZhipuAI_Chat
+    from vanna.ZhipuAI.ZhipuAI_embeddings import ZhipuAI_Embeddings
 
 
 def test_shortcut_imports():
@@ -26,6 +25,4 @@ def test_shortcut_imports():
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
     from vanna.vannadb import VannaDB_VectorStore
-
-    # from vanna.ZhipuAI import ZhipuAI_Chat
-    # from vanna.ZhipuAI import ZhipuAI_Embeddings
+    from vanna.ZhipuAI import ZhipuAI_Chat, ZhipuAI_Embeddings
