@@ -7,5 +7,5 @@ from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
 from vanna.remote import VannaDefault
 from vanna.vannadb import VannaDB_VectorStore
 
-#from vanna.ZhipuAI import ZhipuAI_Chat
-#from vanna.ZhipuAI import ZhipuAI_Embeddings
+# from vanna.ZhipuAI import ZhipuAI_Chat
+# from vanna.ZhipuAI import ZhipuAI_Embeddings
