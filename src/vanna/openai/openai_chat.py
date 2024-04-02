@@ -68,22 +68,24 @@ class OpenAI_Chat(VannaBase):
             num_tokens += len(message["content"]) / 4
 
         if kwargs.get("model", None) is not None:
+            model = kwargs.get("model", None)
             print(
-                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
+                f"Using model {model} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
-                model=kwargs.get("model", None),
+                model=model,
                 messages=prompt,
                 max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
         elif kwargs.get("engine", None) is not None:
+            engine = kwargs.get("engine", None)
             print(
-                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
+                f"Using model {engine} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
-                engine=kwargs.get("engine", None),
+                engine=engine,
                 messages=prompt,
                 max_tokens=self.max_tokens,
                 stop=None,
