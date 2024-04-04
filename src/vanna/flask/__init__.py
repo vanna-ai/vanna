@@ -8,27 +8,47 @@ import requests
 from flask import Flask, Response, jsonify, request
 
 from .assets import css_content, html_content, js_content
+from .auth import AuthInterface, NoAuth
 
 
 class Cache(ABC):
+    """
+    Define the interface for a cache that can be used to store data in a Flask app.
+    """
+
     @abstractmethod
     def generate_id(self, *args, **kwargs):
+        """
+        Generate a unique ID for the cache.
+        """
         pass
 
     @abstractmethod
     def get(self, id, field):
+        """
+        Get a value from the cache.
+        """
         pass
 
     @abstractmethod
     def get_all(self, field_list) -> list:
+        """
+        Get all values from the cache.
+        """
         pass
 
     @abstractmethod
     def set(self, id, field, value):
+        """
+        Set a value in the cache.
+        """
         pass
 
     @abstractmethod
     def delete(self, id):
+        """
+        Delete a value from the cache.
+        """
         pass
 
 
@@ -64,7 +84,6 @@ class MemoryCache(Cache):
         if id in self.cache:
             del self.cache[id]
 
-
 class VannaFlaskApp:
     flask_app = None
 
@@ -96,7 +115,21 @@ class VannaFlaskApp:
 
         return decorator
 
+    def requires_auth(self, f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            user = self.auth.get_user(flask.request)
+
+            if not self.auth.is_logged_in(user):
+                return jsonify({"type": "not_logged_in", "html": self.auth.login_form()})
+
+            # Pass the user to the function
+            return f(*args, user=user, **kwargs)
+
+        return decorated
+
     def __init__(self, vn, cache: Cache = MemoryCache(),
+                    auth: AuthInterface = NoAuth(),
                     allow_llm_to_see_data=False,
                     logo="https://img.vanna.ai/vanna-flask.svg",
                     title="Welcome to Vanna.AI",
@@ -119,6 +152,7 @@ class VannaFlaskApp:
         Args:
             vn: The Vanna instance to interact with.
             cache: The cache to use. Defaults to MemoryCache, which uses an in-memory cache. You can also pass in a custom cache that implements the Cache interface.
+            auth: The authentication method to use. Defaults to NoAuth, which doesn't require authentication. You can also pass in a custom authentication method that implements the AuthInterface interface.
             allow_llm_to_see_data: Whether to allow the LLM to see data. Defaults to False.
             logo: The logo to display in the UI. Defaults to the Vanna logo.
             title: The title to display in the UI. Defaults to "Welcome to Vanna.AI".
@@ -140,6 +174,7 @@ class VannaFlaskApp:
         """
         self.flask_app = Flask(__name__)
         self.vn = vn
+        self.auth = auth
         self.cache = cache
         self.allow_llm_to_see_data = allow_llm_to_see_data
         self.logo = logo
@@ -160,27 +195,44 @@ class VannaFlaskApp:
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
 
+        @self.flask_app.route("/auth/login", methods=["POST"])
+        def login():
+            return self.auth.login_handler(flask.request)
+
+        @self.flask_app.route("/auth/callback", methods=["GET"])
+        def callback():
+            return self.auth.callback_handler(flask.request)
+
+        @self.flask_app.route("/auth/logout", methods=["GET"])
+        def logout():
+            return self.auth.logout_handler(flask.request)
+
         @self.flask_app.route("/api/v0/get_config", methods=["GET"])
-        def get_config():
+        @self.requires_auth
+        def get_config(user: any):
+            config = {
+                "logo": self.logo,
+                "title": self.title,
+                "subtitle": self.subtitle,
+                "show_training_data": self.show_training_data,
+                "suggested_questions": self.suggested_questions,
+                "sql": self.sql,
+                "table": self.table,
+                "csv_download": self.csv_download,
+                "chart": self.chart,
+                "redraw_chart": self.redraw_chart,
+                "auto_fix_sql": self.auto_fix_sql,
+                "ask_results_correct": self.ask_results_correct,
+                "followup_questions": self.followup_questions,
+                "summarization": self.summarization,
+            }
+
+            config = self.auth.override_config_for_user(user, config)
+
             return jsonify(
                 {
                     "type": "config",
-                    "config": {
-                        "logo": self.logo,
-                        "title": self.title,
-                        "subtitle": self.subtitle,
-                        "show_training_data": self.show_training_data,
-                        "suggested_questions": self.suggested_questions,
-                        "sql": self.sql,
-                        "table": self.table,
-                        "csv_download": self.csv_download,
-                        "chart": self.chart,
-                        "redraw_chart": self.redraw_chart,
-                        "auto_fix_sql": self.auto_fix_sql,
-                        "ask_results_correct": self.ask_results_correct,
-                        "followup_questions": self.followup_questions,
-                        "summarization": self.summarization,
-                    },
+                    "config": config
                 }
             )
 
