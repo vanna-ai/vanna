@@ -15,3 +15,5 @@ dist
 .env
 *.sqlite
 htmlcov
+chroma.sqlite3
+*.bin

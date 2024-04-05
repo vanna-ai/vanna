@@ -85,7 +85,7 @@ class ChromaDB_VectorStore(VannaBase):
         return id
 
     def add_documentation(self, documentation: str, **kwargs) -> str:
-        id = str(uuid.uuid4()) + "-doc"
+        id = deterministic_uuid(documentation) + "-doc"
         self.documentation_collection.add(
             documents=documentation,
             embeddings=self.generate_embedding(documentation),
