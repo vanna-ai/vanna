@@ -1306,12 +1306,14 @@ class VannaBase(ABC):
         table_column = df.columns[
             df.columns.str.lower().str.contains("table_name")
         ].to_list()[0]
-        column_column = df.columns[
-            df.columns.str.lower().str.contains("column_name")
-        ].to_list()[0]
-        data_type_column = df.columns[
-            df.columns.str.lower().str.contains("data_type")
-        ].to_list()[0]
+        columns = [database_column,
+                    schema_column,
+                    table_column]
+        candidates = ["column_name",
+                      "data_type",
+                      "comment"]
+        matches = df.columns.str.lower().str.contains("|".join(candidates), regex=True)
+        columns += df.columns[matches].to_list()
 
         plan = TrainingPlan([])
 
@@ -1332,15 +1334,7 @@ class VannaBase(ABC):
                         f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
                     )
                     doc = f"The following columns are in the {table} table in the {database} database:\n\n"
-                    doc += df_columns_filtered_to_table[
-                        [
-                            database_column,
-                            schema_column,
-                            table_column,
-                            column_column,
-                            data_type_column,
-                        ]
-                    ].to_markdown()
+                    doc += df_columns_filtered_to_table[columns].to_markdown()
 
                     plan._plan.append(
                         TrainingPlanItem(
