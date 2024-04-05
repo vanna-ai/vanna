@@ -41,7 +41,7 @@ class OpenAI_Chat(VannaBase):
         if config is None and client is None:
             self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             return
-      
+
         if "api_key" in config:
             self.client = OpenAI(api_key=config["api_key"])
 
@@ -67,7 +67,31 @@ class OpenAI_Chat(VannaBase):
         for message in prompt:
             num_tokens += len(message["content"]) / 4
 
-        if self.config is not None and "engine" in self.config:
+        if kwargs.get("model", None) is not None:
+            model = kwargs.get("model", None)
+            print(
+                f"Using model {model} for {num_tokens} tokens (approx)"
+            )
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=prompt,
+                max_tokens=self.max_tokens,
+                stop=None,
+                temperature=self.temperature,
+            )
+        elif kwargs.get("engine", None) is not None:
+            engine = kwargs.get("engine", None)
+            print(
+                f"Using model {engine} for {num_tokens} tokens (approx)"
+            )
+            response = self.client.chat.completions.create(
+                engine=engine,
+                messages=prompt,
+                max_tokens=self.max_tokens,
+                stop=None,
+                temperature=self.temperature,
+            )
+        elif self.config is not None and "engine" in self.config:
             print(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
