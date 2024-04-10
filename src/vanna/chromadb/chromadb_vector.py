@@ -1,7 +1,6 @@
 import json
-from typing import List
 import uuid
-from abc import abstractmethod
+from typing import List
 
 import chromadb
 import pandas as pd
@@ -16,25 +15,30 @@ default_ef = embedding_functions.DefaultEmbeddingFunction()
 class ChromaDB_VectorStore(VannaBase):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
+        if config is None:
+            config = {}
 
-        if config is not None:
-            path = config.get("path", ".")
-            self.embedding_function = config.get("embedding_function", default_ef)
-        else:
-            path = "."
-            self.embedding_function = default_ef
+        path = config.get("path", ".")
+        self.embedding_function = config.get("embedding_function", default_ef)
+        collection_metadata = config.get("collection_metadata", None)
 
         self.chroma_client = chromadb.PersistentClient(
             path=path, settings=Settings(anonymized_telemetry=False)
         )
         self.documentation_collection = self.chroma_client.get_or_create_collection(
-            name="documentation", embedding_function=self.embedding_function
+            name="documentation",
+            embedding_function=self.embedding_function,
+            metadata=collection_metadata,
         )
         self.ddl_collection = self.chroma_client.get_or_create_collection(
-            name="ddl", embedding_function=self.embedding_function
+            name="ddl",
+            embedding_function=self.embedding_function,
+            metadata=collection_metadata,
         )
         self.sql_collection = self.chroma_client.get_or_create_collection(
-            name="sql", embedding_function=self.embedding_function
+            name="sql",
+            embedding_function=self.embedding_function,
+            metadata=collection_metadata,
         )
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
@@ -154,9 +158,10 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+
     def reomove_collection(self, collection_name: str) -> bool:
         """
-        This function can reset the collection to empty state. 
+        This function can reset the collection to empty state.
 
         Args:
             collection_name (str): sql or ddl or documentation
@@ -184,6 +189,7 @@ class ChromaDB_VectorStore(VannaBase):
             return True
         else:
             return False
+
     # Static method to extract the documents from the results of a query
     @staticmethod
     def _extract_documents(query_results) -> list:
