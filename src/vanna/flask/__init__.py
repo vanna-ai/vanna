@@ -525,7 +525,7 @@ class VannaFlaskApp:
         # Proxy the /vanna.svg file to the remote server
         @self.flask_app.route("/vanna.svg")
         def proxy_vanna_svg():
-            remote_url = f"https://vanna.ai/img/vanna.svg"
+            remote_url = "https://vanna.ai/img/vanna.svg"
             response = requests.get(remote_url, stream=True)
 
             # Check if the request to the remote URL was successful
