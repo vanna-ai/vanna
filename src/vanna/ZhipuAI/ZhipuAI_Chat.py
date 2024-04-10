@@ -1,11 +1,11 @@
 import re
 from typing import List
+
 import pandas as pd
 from zhipuai import ZhipuAI
+
 from ..base import VannaBase
-import re
-from typing import List
-import pandas as pd
+
 
 class ZhipuAI_Chat(VannaBase):
     def __init__(self, config=None):
@@ -220,19 +220,14 @@ class ZhipuAI_Chat(VannaBase):
         if len(prompt) == 0:
             raise Exception("Prompt is empty")
 
-        client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
+        client = ZhipuAI(api_key=self.api_key)
         response = client.chat.completions.create(
-            model="glm-4",  # 填写需要调用的模型名称
+            model="glm-4",
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
             stop=stop,
             messages=prompt,
         )
-        # print(prompt)
-
-        # print(response)
-
-        # print(f"Cost {response.usage.total_tokens} token")
 
         return response.choices[0].message.content

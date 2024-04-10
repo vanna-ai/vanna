@@ -1,4 +1,4 @@
-exclude: 'docs|node_modules|migrations|.git|.tox'
+exclude: 'docs|node_modules|migrations|.git|.tox|assets.py'
 default_stages: [ commit ]
 fail_fast: true
 
@@ -17,9 +17,3 @@ repos:
     hooks:
       - id: isort
         args: [ "--profile", "black", "--filter-files" ]
-
-  - repo: https://github.com/odwyersoftware/brunette
-    rev: 238bead5ec5c58935d6bb12c70f435f70b2bf785
-    hooks:
-      - id: brunette
-        args: [ '--config=setup.cfg' ]
