@@ -124,6 +124,18 @@ class VannaBase(ABC):
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
+        # If the llm_response is not markdown formatted, extract sql by finding select and ; in the response
+        sql = re.search(r"SELECT.*?;", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}"
+            )
+            return sql.group(0)
+
+        # If the llm_response contains a CTE (with clause), extract the sql bewteen WITH and ;
+        sql = re.search(r"WITH.*?;", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}")
+            return sql.group(0)
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
         sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
         if sql:
@@ -363,7 +375,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
@@ -382,7 +394,7 @@ class VannaBase(ABC):
         max_tokens: int = 14000,
     ) -> str:
         if len(documentation_list) > 0:
-            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for documentation in documentation_list:
                 if (
@@ -398,7 +410,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(sql_list) > 0:
-            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for question in sql_list:
                 if (
@@ -1238,7 +1250,7 @@ class VannaBase(ABC):
         """
 
         if question and not sql:
-            raise ValidationError(f"Please also provide a SQL query")
+            raise ValidationError("Please also provide a SQL query")
 
         if documentation:
             print("Adding documentation....")

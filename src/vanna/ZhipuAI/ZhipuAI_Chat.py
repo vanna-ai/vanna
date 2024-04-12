@@ -40,7 +40,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, ddl_list: List[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
@@ -57,7 +57,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, documentation_List: List[str], max_tokens: int = 14000
     ) -> str:
         if len(documentation_List) > 0:
-            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for documentation in documentation_List:
                 if (
@@ -74,7 +74,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, sql_List: List[str], max_tokens: int = 14000
     ) -> str:
         if len(sql_List) > 0:
-            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for question in sql_List:
                 if (
