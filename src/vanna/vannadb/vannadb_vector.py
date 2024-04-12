@@ -7,13 +7,13 @@ import requests
 
 from ..base import VannaBase
 from ..types import (
-    DataFrameJSON,
-    Question,
-    QuestionSQLPair,
-    Status,
-    StatusWithId,
-    StringData,
-    TrainingData,
+  DataFrameJSON,
+  Question,
+  QuestionSQLPair,
+  Status,
+  StatusWithId,
+  StringData,
+  TrainingData,
 )
 
 
@@ -141,7 +141,7 @@ class VannaDB_VectorStore(VannaBase):
         d = self._rpc_call(method="remove_training_data", params=params)
 
         if "result" not in d:
-            raise Exception(f"Error removing training data")
+            raise Exception("Error removing training data")
 
         status = Status(**d["result"])
 

@@ -124,6 +124,18 @@ class VannaBase(ABC):
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
+        # If the llm_response is not markdown formatted, extract sql by finding select and ; in the response
+        sql = re.search(r"SELECT.*?;", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}"
+            )
+            return sql.group(0)
+
+        # If the llm_response contains a CTE (with clause), extract the sql bewteen WITH and ;
+        sql = re.search(r"WITH.*?;", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}")
+            return sql.group(0)
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
         sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
         if sql:
@@ -363,7 +375,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
@@ -382,7 +394,7 @@ class VannaBase(ABC):
         max_tokens: int = 14000,
     ) -> str:
         if len(documentation_list) > 0:
-            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for documentation in documentation_list:
                 if (
@@ -398,7 +410,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(sql_list) > 0:
-            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for question in sql_list:
                 if (
@@ -890,6 +902,94 @@ class VannaBase(ABC):
         self.run_sql_is_set = True
         self.run_sql = run_sql_mysql
 
+    def connect_to_oracle(
+    self,
+    user: str = None,
+    password: str = None,
+    dsn: str = None,
+    ):
+
+        """
+        Connect to an Oracle db using oracledb package. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+        **Example:**
+        ```python
+        vn.connect_to_oracle(
+        user="username",
+        password="password",
+        dns="host:port/sid",
+        )
+        ```
+        Args:
+            USER (str): Oracle db user name.
+            PASSWORD (str): Oracle db user password.
+            DSN (str): Oracle db host ip - host:port/sid.
+        """
+
+        try:
+            import oracledb
+        except ImportError:
+
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install oracledb"
+            )
+
+        if not dsn:
+            dsn = os.getenv("DSN")
+
+        if not dsn:
+            raise ImproperlyConfigured("Please set your Oracle dsn which should include host:port/sid")
+
+        if not user:
+            user = os.getenv("USER")
+
+        if not user:
+            raise ImproperlyConfigured("Please set your Oracle db user")
+
+        if not password:
+            password = os.getenv("PASSWORD")
+
+        if not password:
+            raise ImproperlyConfigured("Please set your Oracle db password")
+
+        conn = None
+
+        try:
+            conn = oracledb.connect(
+                user=user,
+                password=password,
+                dsn=dsn,
+                )
+        except oracledb.Error as e:
+            raise ValidationError(e)
+
+        def run_sql_oracle(sql: str) -> Union[pd.DataFrame, None]:
+            if conn:
+                try:
+                    sql = sql.rstrip()
+                    if sql.endswith(';'): #fix for a known problem with Oracle db where an extra ; will cause an error.
+                        sql = sql[:-1]
+
+                    cs = conn.cursor()
+                    cs.execute(sql)
+                    results = cs.fetchall()
+
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(
+                        results, columns=[desc[0] for desc in cs.description]
+                    )
+                    return df
+
+                except oracledb.Error as e:
+                    conn.rollback()
+                    raise ValidationError(e)
+
+                except Exception as e:
+                    conn.rollback()
+                    raise e
+
+        self.run_sql_is_set = True
+        self.run_sql = run_sql_oracle
 
     def connect_to_bigquery(self, cred_file_path: str = None, project_id: str = None):
         """
@@ -1238,7 +1338,7 @@ class VannaBase(ABC):
         """
 
         if question and not sql:
-            raise ValidationError(f"Please also provide a SQL query")
+            raise ValidationError("Please also provide a SQL query")
 
         if documentation:
             print("Adding documentation....")
