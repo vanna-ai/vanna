@@ -62,7 +62,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-from snowflake.connector.connection import SnowflakeConnection
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -650,7 +649,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake database.")
 
-        conn:SnowflakeConnection = snowflake.connector.connect(
+        conn = snowflake.connector.connect(
             user=username,
             password=password,
             account=account,
