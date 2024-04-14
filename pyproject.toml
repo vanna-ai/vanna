@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "vanna"
 version = "0.3.4"
 authors = [
-  { name="Zain Hoda", email="zain@vanna.ai" },
+    { name = "Zain Hoda", email = "zain@vanna.ai" },
 ]
 
 description = "Generate SQL queries from natural language"
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "sqlalchemy"
+    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "sqlalchemy", "httpx"
 ]
 
 [project.urls]
@@ -31,7 +31,7 @@ mysql = ["PyMySQL"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
-all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "ollama"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
@@ -40,3 +40,4 @@ anthropic = ["anthropic"]
 gemini = ["google-generativeai"]
 marqo = ["marqo"]
 zhipuai = ["zhipuai"]
+ollama = ["ollama"]
