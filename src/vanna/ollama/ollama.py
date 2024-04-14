@@ -88,6 +88,6 @@ class Ollama(VannaBase):
                                             options=self.ollama_options,
                                             keep_alive=self.keep_alive)
 
-    self.log(str(response_dict))
+    self.log(f"Ollama Response:\n{str(response_dict)}")
 
     return response_dict['message']['content']
