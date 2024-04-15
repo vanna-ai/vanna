@@ -20,6 +20,9 @@ MY_VANNA_API_KEY = os.environ['VANNA_API_KEY']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 MISTRAL_API_KEY = os.environ['MISTRAL_API_KEY']
 ANTHROPIC_API_KEY = os.environ['ANTHROPIC_API_KEY']
+SNOWFLAKE_ACCOUNT = os.environ['SNOWFLAKE_ACCOUNT']
+SNOWFLAKE_USERNAME = os.environ['SNOWFLAKE_USERNAME']
+SNOWFLAKE_PASSWORD = os.environ['SNOWFLAKE_PASSWORD']
 
 class VannaOpenAI(VannaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
@@ -92,3 +95,18 @@ def test_vn_claude():
     sql = vn_claude.generate_sql("What are the top 5 customers by sales?")
     df = vn_claude.run_sql(sql)
     assert len(df) == 5
+
+def test_training_plan():
+    vn_dummy = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
+
+    vn_dummy.connect_to_snowflake(
+        account=SNOWFLAKE_ACCOUNT,
+        username=SNOWFLAKE_USERNAME,
+        password=SNOWFLAKE_PASSWORD,
+        database='SNOWFLAKE_SAMPLE_DATA',
+    )
+
+    df_information_schema = vn_dummy.run_sql("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = 'TPCH_SF1' ")
+
+    plan = vn_dummy.get_training_plan_generic(df_information_schema)
+    assert len(plan._plan) == 8

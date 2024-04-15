@@ -40,7 +40,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, ddl_list: List[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
@@ -57,7 +57,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, documentation_List: List[str], max_tokens: int = 14000
     ) -> str:
         if len(documentation_List) > 0:
-            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for documentation in documentation_List:
                 if (
@@ -74,7 +74,7 @@ class ZhipuAI_Chat(VannaBase):
         initial_prompt: str, sql_List: List[str], max_tokens: int = 14000
     ) -> str:
         if len(sql_List) > 0:
-            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for question in sql_List:
                 if (
@@ -220,19 +220,14 @@ class ZhipuAI_Chat(VannaBase):
         if len(prompt) == 0:
             raise Exception("Prompt is empty")
 
-        client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
+        client = ZhipuAI(api_key=self.api_key)
         response = client.chat.completions.create(
-            model="glm-4",  # 填写需要调用的模型名称
+            model="glm-4",
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
             stop=stop,
             messages=prompt,
         )
-        # print(prompt)
-
-        # print(response)
-
-        # print(f"Cost {response.usage.total_tokens} token")
 
         return response.choices[0].message.content
