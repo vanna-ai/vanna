@@ -56,7 +56,7 @@ class Ollama(VannaBase):
     llm_response = llm_response.replace("\\", "")
 
     # Regular expression to find 'select, with and ```sql' (ignoring case) and capture until ';', '```', [ (this happens in case of mistral) or end of string
-    pattern = re.compile(r'(?:select|with|```sql).*?(?:;|```|(\[)|$)',
+    pattern = re.compile(r'(?:select|with|```sql).*?(?=;|\[|```|$)',
                          re.IGNORECASE | re.DOTALL)
 
     match = pattern.search(llm_response)
