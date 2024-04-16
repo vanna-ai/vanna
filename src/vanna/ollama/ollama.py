@@ -55,14 +55,19 @@ class Ollama(VannaBase):
     llm_response = llm_response.replace("\\_", "_")
     llm_response = llm_response.replace("\\", "")
 
-    # Regular expression to find 'select, with and ```sql' (ignoring case) and capture until ';', '```', [ (this happens in case of mistral) or end of string
-    pattern = re.compile(r'(?:select|with|```sql).*?(?=;|\[|```|$)',
-                         re.IGNORECASE | re.DOTALL)
-
-    match = pattern.search(llm_response)
-    if match:
-      # Remove three backticks from the matched string if they exist
-      return match.group(0).replace("```", "")
+    # Regular expression to find ```sql' and capture until '```'
+    sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
+    # Regular expression to find 'select, with (ignoring case) and capture until ';', [ (this happens in case of mistral) or end of string
+    select_with = re.search(r'(?:select|with).*?(?=;|\[|$)', llm_response,
+                            re.IGNORECASE | re.DOTALL)
+    if sql:
+      self.log(
+        f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+      return sql.group(1).replace("```", "")
+    elif select_with:
+      self.log(
+        f"Output from LLM: {llm_response} \nExtracted SQL: {select_with.group(1)}")
+      return select_with.group(1)
     else:
       return llm_response
 
