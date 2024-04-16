@@ -1,6 +1,7 @@
 import os
 
 from vanna.anthropic.anthropic_chat import Anthropic_Chat
+from vanna.google import GoogleGeminiChat
 from vanna.mistral.mistral import Mistral
 from vanna.openai.openai_chat import OpenAI_Chat
 from vanna.remote import VannaDefault
@@ -125,9 +126,22 @@ vn_claude.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
 
 
 def test_vn_claude():
-    sql = vn_claude.generate_sql("What are the top 5 customers by sales?")
+    sql = vn_claude.generate_sql("What are the top 8 customers by sales?")
     df = vn_claude.run_sql(sql)
-    assert len(df) == 5
+    assert len(df) == 8
+
+class VannaGemini(VannaDB_VectorStore, GoogleGeminiChat):
+    def __init__(self, config=None):
+        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        GoogleGeminiChat.__init__(self, config=config)
+
+vn_gemini = VannaGemini(config={'api_key': os.environ['GEMINI_API_KEY']})
+vn_gemini.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_gemini():
+    sql = vn_gemini.generate_sql("What are the top 9 customers by sales?")
+    df = vn_gemini.run_sql(sql)
+    assert len(df) == 9
 
 def test_training_plan():
     vn_dummy = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
