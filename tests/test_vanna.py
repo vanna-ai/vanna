@@ -59,6 +59,31 @@ def test_vn_default():
     df = vn_default.run_sql(sql)
     assert len(df) == 6
 
+from vanna.qdrant import Qdrant_VectorStore
+
+
+class VannaQdrant(Qdrant_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        Qdrant_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+from qdrant_client import QdrantClient
+
+qdrant_memory_client = QdrantClient(":memory:")
+
+vn_qdrant = VannaQdrant(config={'client': qdrant_memory_client, 'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
+vn_qdrant.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_qdrant():
+    df_ddl = vn_qdrant.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+
+    for ddl in df_ddl['sql'].to_list():
+        vn_qdrant.train(ddl=ddl)
+
+    sql = vn_qdrant.generate_sql("What are the top 7 customers by sales?")
+    df = vn_qdrant.run_sql(sql)
+    assert len(df) == 7
+
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.openai.openai_chat import OpenAI_Chat
 
@@ -72,6 +97,11 @@ vn_chroma = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'}
 vn_chroma.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
 
 def test_vn_chroma():
+    existing_training_data = vn_chroma.get_training_data()
+    if len(existing_training_data) > 0:
+        for _, training_data in existing_training_data.iterrows():
+            vn_chroma.remove_training_data(training_data['id'])
+
     df_ddl = vn_chroma.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
 
     for ddl in df_ddl['sql'].to_list():

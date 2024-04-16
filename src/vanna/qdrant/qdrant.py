@@ -52,7 +52,7 @@ class Qdrant_VectorStore(VannaBase):
         VannaBase.__init__(self, config=config)
         client = config.get("client")
 
-        if client in None:
+        if client is None:
             self._client = QdrantClient(
                 location=config.get("location", None),
                 url=config.get("url", None),
@@ -286,7 +286,7 @@ class Qdrant_VectorStore(VannaBase):
     def _setup_collections(self):
         if not self._client.collection_exists(SQL_COLLECTION_NAME):
             self._client.create_collection(
-                name=SQL_COLLECTION_NAME,
+                collection_name=SQL_COLLECTION_NAME,
                 vectors_config=models.VectorParams(
                     size=self.embeddings_dimension,
                     distance=self.distance_metric,
@@ -296,7 +296,7 @@ class Qdrant_VectorStore(VannaBase):
 
         if not self._client.collection_exists(DDL_COLLECTION_NAME):
             self._client.create_collection(
-                name=DDL_COLLECTION_NAME,
+                collection_name=DDL_COLLECTION_NAME,
                 vectors_config=models.VectorParams(
                     size=self.embeddings_dimension,
                     distance=self.distance_metric,
@@ -305,7 +305,7 @@ class Qdrant_VectorStore(VannaBase):
             )
         if not self._client.collection_exists(DOCUMENTATION_COLLECTION_NAME):
             self._client.create_collection(
-                name=DOCUMENTATION_COLLECTION_NAME,
+                collection_name=DOCUMENTATION_COLLECTION_NAME,
                 vectors_config=models.VectorParams(
                     size=self.embeddings_dimension,
                     distance=self.distance_metric,
@@ -314,7 +314,7 @@ class Qdrant_VectorStore(VannaBase):
             )
 
     def _format_point_id(self, id: str, collection_name: str) -> str:
-        return format("{0}-{1}", id, ID_SUFFIXES[collection_name])
+        return "{0}-{1}".format(id, ID_SUFFIXES[collection_name])
 
     def _parse_point_id(self, id: str) -> Tuple[str, str]:
         id, suffix = id.rsplit("-", 1)
