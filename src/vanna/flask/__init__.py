@@ -87,7 +87,7 @@ class MemoryCache(Cache):
 class VannaFlaskApp:
     flask_app = None
 
-    def requires_cache(self, fields):
+    def requires_cache(self, required_fields, optional_fields=[]):
         def decorator(f):
             @wraps(f)
             def decorated(*args, **kwargs):
@@ -98,13 +98,16 @@ class VannaFlaskApp:
                     if id is None:
                         return jsonify({"type": "error", "error": "No id provided"})
 
-                for field in fields:
+                for field in required_fields:
                     if self.cache.get(id=id, field=field) is None:
                         return jsonify({"type": "error", "error": f"No {field} found"})
 
                 field_values = {
-                    field: self.cache.get(id=id, field=field) for field in fields
+                    field: self.cache.get(id=id, field=field) for field in required_fields
                 }
+
+                for field in optional_fields:
+                    field_values[field] = self.cache.get(id=id, field=field)
 
                 # Add the id to the field_values
                 field_values["id"] = id
@@ -237,7 +240,8 @@ class VannaFlaskApp:
             )
 
         @self.flask_app.route("/api/v0/generate_questions", methods=["GET"])
-        def generate_questions():
+        @self.requires_auth
+        def generate_questions(user: any):
             # If self has an _model attribute and model=='chinook'
             if hasattr(self.vn, "_model") and self.vn._model == "chinook":
                 return jsonify(
@@ -292,7 +296,8 @@ class VannaFlaskApp:
                 )
 
         @self.flask_app.route("/api/v0/generate_sql", methods=["GET"])
-        def generate_sql():
+        @self.requires_auth
+        def generate_sql(user: any):
             question = flask.request.args.get("question")
 
             if question is None:
@@ -313,8 +318,9 @@ class VannaFlaskApp:
             )
 
         @self.flask_app.route("/api/v0/run_sql", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(["sql"])
-        def run_sql(id: str, sql: str):
+        def run_sql(user: any, id: str, sql: str):
             try:
                 if not vn.run_sql_is_set:
                     return jsonify(
@@ -326,7 +332,7 @@ class VannaFlaskApp:
 
                 df = vn.run_sql(sql=sql)
 
-                cache.set(id=id, field="df", value=df)
+                self.cache.set(id=id, field="df", value=df)
 
                 return jsonify(
                     {
@@ -340,8 +346,9 @@ class VannaFlaskApp:
                 return jsonify({"type": "sql_error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/fix_sql", methods=["POST"])
+        @self.requires_auth
         @self.requires_cache(["question", "sql"])
-        def fix_sql(id: str, question:str, sql: str):
+        def fix_sql(user: any, id: str, question:str, sql: str):
             error = flask.request.json.get("error")
 
             if error is None:
@@ -363,14 +370,15 @@ class VannaFlaskApp:
 
 
         @self.flask_app.route('/api/v0/update_sql', methods=['POST'])
+        @self.requires_auth
         @self.requires_cache([])
-        def update_sql(id: str):
+        def update_sql(user: any, id: str):
             sql = flask.request.json.get('sql')
 
             if sql is None:
                 return jsonify({"type": "error", "error": "No sql provided"})
 
-            cache.set(id=id, field='sql', value=sql)
+            self.cache.set(id=id, field='sql', value=sql)
 
             return jsonify(
                 {
@@ -380,8 +388,9 @@ class VannaFlaskApp:
                 })
 
         @self.flask_app.route("/api/v0/download_csv", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(["df"])
-        def download_csv(id: str, df):
+        def download_csv(user: any, id: str, df):
             csv = df.to_csv()
 
             return Response(
@@ -391,8 +400,9 @@ class VannaFlaskApp:
             )
 
         @self.flask_app.route("/api/v0/generate_plotly_figure", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(["df", "question", "sql"])
-        def generate_plotly_figure(id: str, df, question, sql):
+        def generate_plotly_figure(user: any, id: str, df, question, sql):
             chart_instructions = flask.request.args.get('chart_instructions')
 
             if chart_instructions is not None:
@@ -407,7 +417,7 @@ class VannaFlaskApp:
                 fig = vn.get_plotly_figure(plotly_code=code, df=df, dark_mode=False)
                 fig_json = fig.to_json()
 
-                cache.set(id=id, field="fig_json", value=fig_json)
+                self.cache.set(id=id, field="fig_json", value=fig_json)
 
                 return jsonify(
                     {
@@ -425,7 +435,8 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/get_training_data", methods=["GET"])
-        def get_training_data():
+        @self.requires_auth
+        def get_training_data(user: any):
             df = vn.get_training_data()
 
             if df is None or len(df) == 0:
@@ -445,7 +456,8 @@ class VannaFlaskApp:
             )
 
         @self.flask_app.route("/api/v0/remove_training_data", methods=["POST"])
-        def remove_training_data():
+        @self.requires_auth
+        def remove_training_data(user: any):
             # Get id from the JSON body
             id = flask.request.json.get("id")
 
@@ -460,7 +472,8 @@ class VannaFlaskApp:
                 )
 
         @self.flask_app.route("/api/v0/train", methods=["POST"])
-        def add_training_data():
+        @self.requires_auth
+        def add_training_data(user: any):
             question = flask.request.json.get("question")
             sql = flask.request.json.get("sql")
             ddl = flask.request.json.get("ddl")
@@ -477,8 +490,9 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/generate_followup_questions", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(["df", "question", "sql"])
-        def generate_followup_questions(id: str, df, question, sql):
+        def generate_followup_questions(user: any, id: str, df, question, sql):
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
                     question=question, sql=sql, df=df
@@ -486,7 +500,7 @@ class VannaFlaskApp:
                 if followup_questions is not None and len(followup_questions) > 5:
                     followup_questions = followup_questions[:5]
 
-                cache.set(id=id, field="followup_questions", value=followup_questions)
+                self.cache.set(id=id, field="followup_questions", value=followup_questions)
 
                 return jsonify(
                     {
@@ -497,7 +511,7 @@ class VannaFlaskApp:
                     }
                 )
             else:
-                cache.set(id=id, field="followup_questions", value=[])
+                self.cache.set(id=id, field="followup_questions", value=[])
                 return jsonify(
                     {
                         "type": "question_list",
@@ -508,10 +522,14 @@ class VannaFlaskApp:
                 )
 
         @self.flask_app.route("/api/v0/generate_summary", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(["df", "question"])
-        def generate_summary(id: str, df, question):
+        def generate_summary(user: any, id: str, df, question):
             if self.allow_llm_to_see_data:
                 summary = vn.generate_summary(question=question, df=df)
+
+                self.cache.set(id=id, field="summary", value=summary)
+
                 return jsonify(
                     {
                         "type": "text",
@@ -529,10 +547,12 @@ class VannaFlaskApp:
                 )
 
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
+        @self.requires_auth
         @self.requires_cache(
-            ["question", "sql", "df", "fig_json"]
+            ["question", "sql", "df", "fig_json"],
+            optional_fields=["summary"]
         )
-        def load_question(id: str, question, sql, df, fig_json):
+        def load_question(user: any, id: str, question, sql, df, fig_json, summary):
             try:
                 return jsonify(
                     {
@@ -540,8 +560,9 @@ class VannaFlaskApp:
                         "id": id,
                         "question": question,
                         "sql": sql,
-                        "df": df.head(10).to_json(orient="records"),
+                        "df": df.head(10).to_json(orient="records", date_format="iso"),
                         "fig": fig_json,
+                        "summary": summary,
                     }
                 )
 
@@ -549,7 +570,8 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/get_question_history", methods=["GET"])
-        def get_question_history():
+        @self.requires_auth
+        def get_question_history(user: any):
             return jsonify(
                 {
                     "type": "question_history",
