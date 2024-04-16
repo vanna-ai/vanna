@@ -61,15 +61,15 @@ class Ollama(VannaBase):
     select_with = re.search(r'(?:select|with).*?(?=;|\[|$)', llm_response,
                             re.IGNORECASE | re.DOTALL)
     if sql:
-      self.log(
-        f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
-      return sql.group(1).replace("```", "")
+        self.log(
+            f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+        return sql.group(1).replace("```", "")
     elif select_with:
-      self.log(
-        f"Output from LLM: {llm_response} \nExtracted SQL: {select_with.group(1)}")
-      return select_with.group(1)
+        self.log(
+            f"Output from LLM: {llm_response} \nExtracted SQL: {select_with.group(0)}")
+        return select_with.group(0)
     else:
-      return llm_response
+        return llm_response
 
   def __pull_model_if_ne(self, ):
     model_response = self.ollama_client.list()
