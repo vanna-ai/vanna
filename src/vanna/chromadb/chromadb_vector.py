@@ -22,7 +22,9 @@ class ChromaDB_VectorStore(VannaBase):
         self.embedding_function = config.get("embedding_function", default_ef)
         curr_client = config.get("client", "persistent")
         collection_metadata = config.get("collection_metadata", None)
-        self.n_results = config.get("n_results", 10)
+        self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
+        self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
+        self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
 
         if curr_client == "persistent":
             self.chroma_client = chromadb.PersistentClient(
@@ -234,7 +236,7 @@ class ChromaDB_VectorStore(VannaBase):
         return ChromaDB_VectorStore._extract_documents(
             self.sql_collection.query(
                 query_texts=[question],
-                n_results=self.n_results,
+                n_results=self.n_results_sql,
             )
         )
 
@@ -242,6 +244,7 @@ class ChromaDB_VectorStore(VannaBase):
         return ChromaDB_VectorStore._extract_documents(
             self.ddl_collection.query(
                 query_texts=[question],
+                n_results=self.n_results_ddl,
             )
         )
 
@@ -249,5 +252,6 @@ class ChromaDB_VectorStore(VannaBase):
         return ChromaDB_VectorStore._extract_documents(
             self.documentation_collection.query(
                 query_texts=[question],
+                n_results=self.n_results_documentation,
             )
         )
