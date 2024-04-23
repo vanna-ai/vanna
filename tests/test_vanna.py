@@ -1,6 +1,7 @@
 import os
 
 from vanna.anthropic.anthropic_chat import Anthropic_Chat
+from vanna.google import GoogleGeminiChat
 from vanna.mistral.mistral import Mistral
 from vanna.openai.openai_chat import OpenAI_Chat
 from vanna.remote import VannaDefault
@@ -58,6 +59,31 @@ def test_vn_default():
     df = vn_default.run_sql(sql)
     assert len(df) == 6
 
+from vanna.qdrant import Qdrant_VectorStore
+
+
+class VannaQdrant(Qdrant_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        Qdrant_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+from qdrant_client import QdrantClient
+
+qdrant_memory_client = QdrantClient(":memory:")
+
+vn_qdrant = VannaQdrant(config={'client': qdrant_memory_client, 'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
+vn_qdrant.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_qdrant():
+    df_ddl = vn_qdrant.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+
+    for ddl in df_ddl['sql'].to_list():
+        vn_qdrant.train(ddl=ddl)
+
+    sql = vn_qdrant.generate_sql("What are the top 7 customers by sales?")
+    df = vn_qdrant.run_sql(sql)
+    assert len(df) == 7
+
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.openai.openai_chat import OpenAI_Chat
 
@@ -71,6 +97,11 @@ vn_chroma = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'}
 vn_chroma.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
 
 def test_vn_chroma():
+    existing_training_data = vn_chroma.get_training_data()
+    if len(existing_training_data) > 0:
+        for _, training_data in existing_training_data.iterrows():
+            vn_chroma.remove_training_data(training_data['id'])
+
     df_ddl = vn_chroma.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
 
     for ddl in df_ddl['sql'].to_list():
@@ -80,6 +111,39 @@ def test_vn_chroma():
     df = vn_chroma.run_sql(sql)
     assert len(df) == 7
 
+class VannaNumResults(ChromaDB_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+vn_chroma_n_results = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results': 1})
+vn_chroma_n_results_ddl = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_ddl': 2})
+vn_chroma_n_results_sql = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_sql': 3})
+vn_chroma_n_results_documentation = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_documentation': 4})
+
+def test_n_results():
+    for i in range(1, 10):
+        vn_chroma.train(question=f"What are the total sales for customer {i}?", sql=f"SELECT SUM(sales) FROM example_sales WHERE customer_id = {i}")
+
+    for i in range(1, 10):
+        vn_chroma.train(documentation=f"Sample documentation {i}")
+
+    question = "Whare are the top 5 customers by sales?"
+    assert len(vn_chroma_n_results.get_related_ddl(question)) == 1
+    assert len(vn_chroma_n_results.get_related_documentation(question)) == 1
+    assert len(vn_chroma_n_results.get_similar_question_sql(question)) == 1
+
+    assert len(vn_chroma_n_results_ddl.get_related_ddl(question)) == 2
+    assert len(vn_chroma_n_results_ddl.get_related_documentation(question)) != 2
+    assert len(vn_chroma_n_results_ddl.get_similar_question_sql(question)) != 2
+
+    assert len(vn_chroma_n_results_sql.get_related_ddl(question)) != 3
+    assert len(vn_chroma_n_results_sql.get_related_documentation(question)) != 3
+    assert len(vn_chroma_n_results_sql.get_similar_question_sql(question)) == 3
+
+    assert len(vn_chroma_n_results_documentation.get_related_ddl(question)) != 4
+    assert len(vn_chroma_n_results_documentation.get_related_documentation(question)) == 4
+    assert len(vn_chroma_n_results_documentation.get_similar_question_sql(question)) != 4
 
 class VannaClaude(VannaDB_VectorStore, Anthropic_Chat):
     def __init__(self, config=None):
@@ -92,9 +156,22 @@ vn_claude.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
 
 
 def test_vn_claude():
-    sql = vn_claude.generate_sql("What are the top 5 customers by sales?")
+    sql = vn_claude.generate_sql("What are the top 8 customers by sales?")
     df = vn_claude.run_sql(sql)
-    assert len(df) == 5
+    assert len(df) == 8
+
+class VannaGemini(VannaDB_VectorStore, GoogleGeminiChat):
+    def __init__(self, config=None):
+        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        GoogleGeminiChat.__init__(self, config=config)
+
+vn_gemini = VannaGemini(config={'api_key': os.environ['GEMINI_API_KEY']})
+vn_gemini.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_gemini():
+    sql = vn_gemini.generate_sql("What are the top 9 customers by sales?")
+    df = vn_gemini.run_sql(sql)
+    assert len(df) == 9
 
 def test_training_plan():
     vn_dummy = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)

@@ -124,6 +124,11 @@ class VannaBase(ABC):
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
+        # If the llm_response contains a CTE (with clause), extract the sql bewteen WITH and ;
+        sql = re.search(r"WITH.*?;", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}")
+            return sql.group(0)  
         # If the llm_response is not markdown formatted, extract sql by finding select and ; in the response
         sql = re.search(r"SELECT.*?;", llm_response, re.DOTALL)
         if sql:
@@ -131,11 +136,6 @@ class VannaBase(ABC):
             )
             return sql.group(0)
 
-        # If the llm_response contains a CTE (with clause), extract the sql bewteen WITH and ;
-        sql = re.search(r"WITH.*?;", llm_response, re.DOTALL)
-        if sql:
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}")
-            return sql.group(0)
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
         sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
         if sql:

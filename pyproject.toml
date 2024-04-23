@@ -4,9 +4,9 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.3.4"
+version = "0.4.3"
 authors = [
-    { name = "Zain Hoda", email = "zain@vanna.ai" },
+  { name="Zain Hoda", email="zain@vanna.ai" },
 ]
 
 description = "Generate SQL queries from natural language"
@@ -31,7 +31,8 @@ mysql = ["PyMySQL"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
-all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "ollama", "httpx"]
+google = ["google-generativeai", "google-cloud-aiplatform"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
@@ -41,3 +42,4 @@ gemini = ["google-generativeai"]
 marqo = ["marqo"]
 zhipuai = ["zhipuai"]
 ollama = ["ollama", "httpx"]
+qdrant = ["qdrant-client"]
