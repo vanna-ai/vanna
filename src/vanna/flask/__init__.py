@@ -304,7 +304,7 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": "No question provided"})
 
             id = self.cache.generate_id(question=question)
-            sql = vn.generate_sql(question=question)
+            sql = vn.generate_sql(question=question, allow_llm_to_see_data=self.allow_llm_to_see_data)
 
             self.cache.set(id=id, field="question", value=question)
             self.cache.set(id=id, field="sql", value=sql)

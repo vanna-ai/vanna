@@ -73,11 +73,12 @@ class VannaBase(ABC):
         self.config = config
         self.run_sql_is_set = False
         self.static_documentation = ""
+        self.dialect = "SQL"
 
     def log(self, message: str):
         print(message)
 
-    def generate_sql(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, allow_llm_to_see_data=False, **kwargs) -> str:
         """
         Example:
         ```python
@@ -99,6 +100,7 @@ class VannaBase(ABC):
 
         Args:
             question (str): The question to generate a SQL query for.
+            allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
             str: The SQL query that answers the question.
@@ -121,31 +123,61 @@ class VannaBase(ABC):
         self.log(prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
         self.log(llm_response)
+
+        if 'intermediate_sql' in llm_response:
+            if not allow_llm_to_see_data:
+                return "The LLM is not allowed to see the data in your database. Your question requires database introspection to generate the necessary SQL. Please set allow_llm_to_see_data=True to enable this."
+
+            if allow_llm_to_see_data:
+                intermediate_sql = self.extract_sql(llm_response)
+
+                try:
+                    df = self.run_sql(intermediate_sql)
+
+                    prompt = self.get_sql_prompt(
+                        initial_prompt=initial_prompt,
+                        question=question,
+                        question_sql_list=question_sql_list,
+                        ddl_list=ddl_list,
+                        doc_list=doc_list+[f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n" + df.to_markdown()],
+                        **kwargs,
+                    )
+                    self.log(prompt)
+                    llm_response = self.submit_prompt(prompt, **kwargs)
+                    self.log(llm_response)
+                except Exception as e:
+                    return f"Error running intermediate SQL: {e}"
+
+
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
-        # If the llm_response contains a CTE (with clause), extract the sql bewteen WITH and ;
-        sql = re.search(r"WITH.*?;", llm_response, re.DOTALL)
-        if sql:
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}")
-            return sql.group(0)  
-        # If the llm_response is not markdown formatted, extract sql by finding select and ; in the response
-        sql = re.search(r"SELECT.*?;", llm_response, re.DOTALL)
-        if sql:
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(0)}"
-            )
-            return sql.group(0)
+        # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
+        sqls = re.findall(r"WITH.*?;", llm_response, re.DOTALL)
+        if sqls:
+            sql = sqls[-1]
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            return sql
 
-        # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
-        sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
-        if sql:
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
-            return sql.group(1)
+        # If the llm_response is not markdown formatted, extract last sql by finding select and ; in the response
+        sqls = re.findall(r"SELECT.*?;", llm_response, re.DOTALL)
+        if sqls:
+            sql = sqls[-1]
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            return sql
 
-        sql = re.search(r"```(.*)```", llm_response, re.DOTALL)
-        if sql:
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
-            return sql.group(1)
+        # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
+        sqls = re.findall(r"```sql\n(.*)```", llm_response, re.DOTALL)
+        if sqls:
+            sql = sqls[-1]
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            return sql
+
+        sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
+        if sqls:
+            sql = sqls[-1]
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            return sql
 
         return llm_response
 
@@ -375,7 +407,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += "\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\n===Tables \n"
 
             for ddl in ddl_list:
                 if (
@@ -394,7 +426,7 @@ class VannaBase(ABC):
         max_tokens: int = 14000,
     ) -> str:
         if len(documentation_list) > 0:
-            initial_prompt += "\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\n===Additional Context \n\n"
 
             for documentation in documentation_list:
                 if (
@@ -410,7 +442,7 @@ class VannaBase(ABC):
         self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
     ) -> str:
         if len(sql_list) > 0:
-            initial_prompt += "\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
+            initial_prompt += "\n===Question-SQL Pairs\n\n"
 
             for question in sql_list:
                 if (
@@ -456,7 +488,8 @@ class VannaBase(ABC):
         """
 
         if initial_prompt is None:
-            initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
+            initial_prompt = f"You are a {self.dialect} expert. "
+            "Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions. "
 
         initial_prompt = self.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
@@ -467,6 +500,15 @@ class VannaBase(ABC):
 
         initial_prompt = self.add_documentation_to_prompt(
             initial_prompt, doc_list, max_tokens=14000
+        )
+
+        initial_prompt += (
+            "===Response Guidelines \n"
+            "1. If the provided context is sufficient, please generate a valid SQL query without any explanations for the question. \n"
+            "2. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql \n"
+            "3. If the provided context is insufficient, please explain why it can't be generated. \n"
+            "4. Please use the most relevant table(s). \n"
+            "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -676,7 +718,7 @@ class VannaBase(ABC):
 
             return df
 
-        self.static_documentation = "This is a Snowflake database"
+        self.dialect = "Snowflake SQL"
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
@@ -710,7 +752,7 @@ class VannaBase(ABC):
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
 
-        self.static_documentation = "This is a SQLite database"
+        self.dialect = "SQLite"
         self.run_sql = run_sql_sqlite
         self.run_sql_is_set = True
 
@@ -815,7 +857,7 @@ class VannaBase(ABC):
                     conn.rollback()
                     raise e
 
-        self.static_documentation = "This is a Postgres database"
+        self.dialect = "PostgreSQL"
         self.run_sql_is_set = True
         self.run_sql = run_sql_postgres
 
@@ -1078,7 +1120,7 @@ class VannaBase(ABC):
                     raise errors
             return None
 
-        self.static_documentation = "This is a BigQuery database"
+        self.dialect = "BigQuery SQL"
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
 
@@ -1127,7 +1169,7 @@ class VannaBase(ABC):
         def run_sql_duckdb(sql: str):
             return conn.query(sql).to_df()
 
-        self.static_documentation = "This is a DuckDB database"
+        self.dialect = "DuckDB SQL"
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
 
@@ -1174,7 +1216,7 @@ class VannaBase(ABC):
 
             raise Exception("Couldn't run sql")
 
-        self.static_documentation = "This is a Microsoft SQL Server database"
+        self.dialect = "T-SQL / Microsoft SQL Server"
         self.run_sql = run_sql_mssql
         self.run_sql_is_set = True
 
