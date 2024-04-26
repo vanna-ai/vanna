@@ -62,6 +62,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import sqlparse
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -70,13 +71,23 @@ from ..utils import validate_config_path
 
 class VannaBase(ABC):
     def __init__(self, config=None):
+        if config is None:
+            config = {}
+
         self.config = config
         self.run_sql_is_set = False
         self.static_documentation = ""
-        self.dialect = "SQL"
+        self.dialect = self.config.get("dialect", "SQL")
+        self.language = self.config.get("language", None)
 
-    def log(self, message: str):
+    def log(self, message: str, title: str = "Info"):
         print(message)
+
+    def _response_language(self) -> str:
+        if self.language is None:
+            return ""
+
+        return f"Respond in the {self.language} language."
 
     def generate_sql(self, question: str, allow_llm_to_see_data=False, **kwargs) -> str:
         """
@@ -120,9 +131,9 @@ class VannaBase(ABC):
             doc_list=doc_list,
             **kwargs,
         )
-        self.log(prompt)
+        self.log(title="SQL Prompt", message=prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
-        self.log(llm_response)
+        self.log(title="LLM Response", message=llm_response)
 
         if 'intermediate_sql' in llm_response:
             if not allow_llm_to_see_data:
@@ -132,6 +143,7 @@ class VannaBase(ABC):
                 intermediate_sql = self.extract_sql(llm_response)
 
                 try:
+                    self.log(title="Running Intermediate SQL", message=intermediate_sql)
                     df = self.run_sql(intermediate_sql)
 
                     prompt = self.get_sql_prompt(
@@ -142,9 +154,9 @@ class VannaBase(ABC):
                         doc_list=doc_list+[f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n" + df.to_markdown()],
                         **kwargs,
                     )
-                    self.log(prompt)
+                    self.log(title="Final SQL Prompt", message=prompt)
                     llm_response = self.submit_prompt(prompt, **kwargs)
-                    self.log(llm_response)
+                    self.log(title="LLM Response", message=llm_response)
                 except Exception as e:
                     return f"Error running intermediate SQL: {e}"
 
@@ -152,43 +164,96 @@ class VannaBase(ABC):
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
+        """
+        Example:
+        ```python
+        vn.extract_sql("Here's the SQL query in a code block: ```sql\nSELECT * FROM customers\n```")
+        ```
+
+        Extracts the SQL query from the LLM response. This is useful in case the LLM response contains other information besides the SQL query.
+        Override this function if your LLM responses need custom extraction logic.
+
+        Args:
+            llm_response (str): The LLM response.
+
+        Returns:
+            str: The extracted SQL query.
+        """
+
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
         sqls = re.findall(r"WITH.*?;", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            self.log(title="Extracted SQL", message=f"{sql}")
             return sql
 
         # If the llm_response is not markdown formatted, extract last sql by finding select and ; in the response
         sqls = re.findall(r"SELECT.*?;", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            self.log(title="Extracted SQL", message=f"{sql}")
             return sql
 
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
         sqls = re.findall(r"```sql\n(.*)```", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            self.log(title="Extracted SQL", message=f"{sql}")
             return sql
 
         sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
-            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql}")
+            self.log(title="Extracted SQL", message=f"{sql}")
             return sql
 
         return llm_response
 
     def is_sql_valid(self, sql: str) -> bool:
-        # This is a check to see the SQL is valid and should be run
-        # This simple function just checks if the SQL contains a SELECT statement
+        """
+        Example:
+        ```python
+        vn.is_sql_valid("SELECT * FROM customers")
+        ```
+        Checks if the SQL query is valid. This is usually used to check if we should run the SQL query or not.
+        By default it checks if the SQL query is a SELECT statement. You can override this method to enable running other types of SQL queries.
 
-        if "SELECT" in sql.upper():
+        Args:
+            sql (str): The SQL query to check.
+
+        Returns:
+            bool: True if the SQL query is valid, False otherwise.
+        """
+
+        parsed = sqlparse.parse(sql)
+
+        for statement in parsed:
+            if statement.get_type() == 'SELECT':
+                return True
+
+        return False
+
+    def should_generate_chart(self, df: pd.DataFrame) -> bool:
+        """
+        Example:
+        ```python
+        vn.should_generate_chart(df)
+        ```
+
+        Checks if a chart should be generated for the given DataFrame. By default, it checks if the DataFrame has more than one row and has numerical columns.
+        You can override this method to customize the logic for generating charts.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to check.
+
+        Returns:
+            bool: True if a chart should be generated, False otherwise.
+        """
+
+        if len(df) > 1 and df.select_dtypes(include=['number']).shape[1] > 0:
             return True
-        else:
-            return False
+
+        return False
 
     def generate_followup_questions(
         self, question: str, sql: str, df: pd.DataFrame, n_questions: int = 5, **kwargs
@@ -216,7 +281,8 @@ class VannaBase(ABC):
                 f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
             ),
             self.user_message(
-                f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query."
+                f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query." +
+                self._response_language()
             ),
         ]
 
@@ -260,7 +326,8 @@ class VannaBase(ABC):
                 f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
             ),
             self.user_message(
-                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary."
+                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary." +
+                self._response_language()
             ),
         ]
 
