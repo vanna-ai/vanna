@@ -1,1 +1,1 @@
-from .vllm import vllm
+from .vllm import Vllm

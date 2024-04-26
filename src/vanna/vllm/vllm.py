@@ -5,7 +5,7 @@ import requests
 from ..base import VannaBase
 
 
-class vllm(VannaBase):
+class Vllm(VannaBase):
     def __init__(self, config=None):
         if config is None or "vllm_host" not in config:
             self.host = "http://localhost:8000"
