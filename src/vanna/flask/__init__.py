@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import uuid
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -204,6 +205,10 @@ class VannaFlaskApp:
 
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
+
+        if "google.colab" in sys.modules:
+            self.debug = False
+            print("Google Colab doesn't support running websocket servers. Disabling debug mode.")
 
         if self.debug:
             def log(message, title="Info"):
