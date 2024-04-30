@@ -1,4 +1,6 @@
+import json
 import logging
+import sys
 import uuid
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -6,6 +8,7 @@ from functools import wraps
 import flask
 import requests
 from flask import Flask, Response, jsonify, request
+from flask_sock import Sock
 
 from .assets import css_content, html_content, js_content
 from .auth import AuthInterface, NoAuth
@@ -133,6 +136,7 @@ class VannaFlaskApp:
 
     def __init__(self, vn, cache: Cache = MemoryCache(),
                     auth: AuthInterface = NoAuth(),
+                    debug=True,
                     allow_llm_to_see_data=False,
                     logo="https://img.vanna.ai/vanna-flask.svg",
                     title="Welcome to Vanna.AI",
@@ -156,6 +160,7 @@ class VannaFlaskApp:
             vn: The Vanna instance to interact with.
             cache: The cache to use. Defaults to MemoryCache, which uses an in-memory cache. You can also pass in a custom cache that implements the Cache interface.
             auth: The authentication method to use. Defaults to NoAuth, which doesn't require authentication. You can also pass in a custom authentication method that implements the AuthInterface interface.
+            debug: Show the debug console. Defaults to True.
             allow_llm_to_see_data: Whether to allow the LLM to see data. Defaults to False.
             logo: The logo to display in the UI. Defaults to the Vanna logo.
             title: The title to display in the UI. Defaults to "Welcome to Vanna.AI".
@@ -176,7 +181,10 @@ class VannaFlaskApp:
             None
         """
         self.flask_app = Flask(__name__)
+        self.sock = Sock(self.flask_app)
+        self.ws_clients = []
         self.vn = vn
+        self.debug = debug
         self.auth = auth
         self.cache = cache
         self.allow_llm_to_see_data = allow_llm_to_see_data
@@ -198,6 +206,16 @@ class VannaFlaskApp:
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
 
+        if "google.colab" in sys.modules:
+            self.debug = False
+            print("Google Colab doesn't support running websocket servers. Disabling debug mode.")
+
+        if self.debug:
+            def log(message, title="Info"):
+                [ws.send(json.dumps({'message': message, 'title': title})) for ws in self.ws_clients]
+
+            self.vn.log = log
+
         @self.flask_app.route("/auth/login", methods=["POST"])
         def login():
             return self.auth.login_handler(flask.request)
@@ -214,6 +232,7 @@ class VannaFlaskApp:
         @self.requires_auth
         def get_config(user: any):
             config = {
+                "debug": self.debug,
                 "logo": self.logo,
                 "title": self.title,
                 "subtitle": self.subtitle,
@@ -304,18 +323,27 @@ class VannaFlaskApp:
                 return jsonify({"type": "error", "error": "No question provided"})
 
             id = self.cache.generate_id(question=question)
-            sql = vn.generate_sql(question=question)
+            sql = vn.generate_sql(question=question, allow_llm_to_see_data=self.allow_llm_to_see_data)
 
             self.cache.set(id=id, field="question", value=question)
             self.cache.set(id=id, field="sql", value=sql)
 
-            return jsonify(
-                {
-                    "type": "sql",
-                    "id": id,
-                    "text": sql,
-                }
-            )
+            if vn.is_sql_valid(sql=sql):
+                return jsonify(
+                    {
+                        "type": "sql",
+                        "id": id,
+                        "text": sql,
+                    }
+                )
+            else:
+                return jsonify(
+                    {
+                        "type": "text",
+                        "id": id,
+                        "text": sql,
+                    }
+                )
 
         @self.flask_app.route("/api/v0/run_sql", methods=["GET"])
         @self.requires_auth
@@ -339,6 +367,7 @@ class VannaFlaskApp:
                         "type": "df",
                         "id": id,
                         "df": df.head(10).to_json(orient='records', date_format='iso'),
+                        "should_generate_chart": self.chart and vn.should_generate_chart(df),
                     }
                 )
 
@@ -619,6 +648,18 @@ class VannaFlaskApp:
             else:
                 return "Error fetching file from remote server", response.status_code
 
+        if self.debug:
+            @self.sock.route("/api/v0/log")
+            def sock_log(ws):
+                self.ws_clients.append(ws)
+
+                try:
+                    while True:
+                        message = ws.receive()  # This example just reads and ignores to keep the socket open
+                finally:
+                    self.ws_clients.remove(ws)
+
+
         @self.flask_app.route("/", defaults={"path": ""})
         @self.flask_app.route("/<path:path>")
         def hello(path: str):
@@ -651,4 +692,4 @@ class VannaFlaskApp:
                 print("Your app is running at:")
                 print("http://localhost:8084")
 
-            self.flask_app.run(host="0.0.0.0", port=8084, debug=False)
+            self.flask_app.run(host="0.0.0.0", port=8084, debug=self.debug)
