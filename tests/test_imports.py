@@ -10,6 +10,7 @@ def test_regular_imports():
     from vanna.ollama.ollama import Ollama
     from vanna.openai.openai_chat import OpenAI_Chat
     from vanna.openai.openai_embeddings import OpenAI_Embeddings
+    from vanna.opensearch.opensearch_vector import OpenSearch_VectorStore
     from vanna.remote import VannaDefault
     from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
     from vanna.ZhipuAI.ZhipuAI_Chat import ZhipuAI_Chat
@@ -23,6 +24,7 @@ def test_shortcut_imports():
     from vanna.mistral import Mistral
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
+    from vanna.opensearch import OpenSearch_VectorStore
     from vanna.vannadb import VannaDB_VectorStore
     from vanna.vllm import Vllm
     from vanna.ZhipuAI import ZhipuAI_Chat, ZhipuAI_Embeddings
