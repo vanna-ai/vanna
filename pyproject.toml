@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.4.3"
+version = "0.4.3.1"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -43,3 +43,4 @@ marqo = ["marqo"]
 zhipuai = ["zhipuai"]
 qdrant = ["qdrant-client"]
 vllm = ["vllm"]
+opensearch = ["opensearch-py", "opensearch-dsl"]
