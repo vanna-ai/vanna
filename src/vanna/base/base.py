@@ -1279,6 +1279,7 @@ class VannaBase(ABC):
             # Execute the SQL statement and return the result as a pandas DataFrame
             with engine.begin() as conn:
                 df = pd.read_sql_query(sa.text(sql), conn)
+                conn.close()
                 return df
 
             raise Exception("Couldn't run sql")
