@@ -25,7 +25,7 @@ Vanna works in two easy steps - train a RAG "model" on your data, and then ask q
 
 If you don't know what RAG is, don't worry -- you don't need to know how this works under the hood to use it. You just need to know that you "train" a model, which stores some metadata and then use it to "ask" questions.
 
-See the [base class](src/vanna/base/base.py) for more details on how this works under the hood.
+See the [base class](https://github.com/vanna-ai/vanna/blob/main/src/vanna/base/base.py) for more details on how this works under the hood.
 
 ## User Interfaces
 These are some of the user interfaces that we've built using Vanna. You can use these as-is or as a starting point for your own custom interface.
@@ -218,7 +218,7 @@ Fine-Tuning
     - Expose to your end users via Slackbot, web app, Streamlit app, or a custom front end.
 
 ## Extending Vanna
-Vanna is designed to connect to any database, LLM, and vector database. There's a [VannaBase](src/vanna/base/base.py) abstract base class that defines some basic functionality. The package provides implementations for use with OpenAI and ChromaDB. You can easily extend Vanna to use your own LLM or vector database. See the [documentation](https://vanna.ai/docs/) for more details.
+Vanna is designed to connect to any database, LLM, and vector database. There's a [VannaBase](https://github.com/vanna-ai/vanna/blob/main/src/vanna/base/base.py) abstract base class that defines some basic functionality. The package provides implementations for use with OpenAI and ChromaDB. You can easily extend Vanna to use your own LLM or vector database. See the [documentation](https://vanna.ai/docs/) for more details.
 
 ## Vanna in 100 Seconds
 
