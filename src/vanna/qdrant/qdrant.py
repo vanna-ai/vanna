@@ -79,7 +79,7 @@ class Qdrant_VectorStore(VannaBase):
         self._setup_collections()
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
-        question_answer = format("Question: {0}\n\nSQL: {1}", question, sql)
+        question_answer = "Question: {0}\n\nSQL: {1}".format(question, sql)
         id = deterministic_uuid(question_answer)
 
         self._client.upsert(
