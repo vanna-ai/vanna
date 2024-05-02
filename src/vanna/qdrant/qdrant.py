@@ -157,7 +157,7 @@ class Qdrant_VectorStore(VannaBase):
         if ddl_data := self._get_all_points(DDL_COLLECTION_NAME):
             ddl_list = [data.payload["ddl"] for data in ddl_data]
             id_list = [
-                self._format_point_id(data.id, DDL_COLLECTION_NAME) for data in sql_data
+                self._format_point_id(data.id, DDL_COLLECTION_NAME) for data in ddl_data
             ]
 
             df_ddl = pd.DataFrame(
@@ -171,8 +171,6 @@ class Qdrant_VectorStore(VannaBase):
             df_ddl["training_data_type"] = "ddl"
 
             df = pd.concat([df, df_ddl])
-
-        doc_data = self.documentation_collection.get()
 
         if doc_data := self._get_all_points(DOCUMENTATION_COLLECTION_NAME):
             document_list = [data.payload["documentation"] for data in doc_data]
