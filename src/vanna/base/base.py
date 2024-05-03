@@ -1146,19 +1146,14 @@ class VannaBase(ABC):
 
         conn = None
 
-        try:
-            conn = bigquery.Client(project=project_id)
-        except:
-            print("Could not found any google cloud implicit credentials")
-
-        if cred_file_path:
+        if not cred_file_path:
+            try:
+                conn = bigquery.Client(project=project_id)
+            except:
+                print("Could not found any google cloud implicit credentials")
+        else:
             # Validate file path and pemissions
             validate_config_path(cred_file_path)
-        else:
-            if not conn:
-                raise ValidationError(
-                    "Pleae provide a service account credentials json file"
-                )
 
         if not conn:
             with open(cred_file_path, "r") as f:
