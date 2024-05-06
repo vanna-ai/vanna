@@ -1299,27 +1299,27 @@ class VannaBase(ABC):
       protocol: str = 'https',
       requests_kwargs: dict = None
     ):
-       """
-          Connect to a Presto database using the specified parameters.
+      """
+        Connect to a Presto database using the specified parameters.
 
-          Args:
-              host (str): The host address of the Presto database.
-              catalog (str): The catalog to use in the Presto environment.
-              schema (str): The schema to use in the Presto environment.
-              user (str): The username for authentication.
-              password (str): The password for authentication.
-              port (int): The port number for the Presto connection.
-              combined_pem_path (str): The path to the combined pem file for SSL connection.
-              protocol (str): The protocol to use for the connection (default is 'https').
-              requests_kwargs (dict): Additional keyword arguments for requests.
+        Args:
+            host (str): The host address of the Presto database.
+            catalog (str): The catalog to use in the Presto environment.
+            schema (str): The schema to use in the Presto environment.
+            user (str): The username for authentication.
+            password (str): The password for authentication.
+            port (int): The port number for the Presto connection.
+            combined_pem_path (str): The path to the combined pem file for SSL connection.
+            protocol (str): The protocol to use for the connection (default is 'https').
+            requests_kwargs (dict): Additional keyword arguments for requests.
 
-          Raises:
-              DependencyError: If required dependencies are not installed.
-              ImproperlyConfigured: If essential configuration settings are missing.
+        Raises:
+            DependencyError: If required dependencies are not installed.
+            ImproperlyConfigured: If essential configuration settings are missing.
 
-          Returns:
-              None
-          """
+        Returns:
+            None
+      """
       try:
         from pyhive import presto
       except ImportError:
