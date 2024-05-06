@@ -1383,11 +1383,11 @@ class VannaBase(ABC):
           return df
 
         except hive.Error as e:
-          conn.rollback()
+          print(e)
           raise ValidationError(e)
 
         except Exception as e:
-          conn.rollback()
+          print(e)
           raise e
 
     self.run_sql_is_set = True
