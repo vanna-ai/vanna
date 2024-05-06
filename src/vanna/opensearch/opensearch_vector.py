@@ -31,8 +31,8 @@ class OpenSearch_VectorStore(VannaBase):
     document_index_settings = {
       "settings": {
         "index": {
-          "number_of_shards": 3,
-          "number_of_replicas": 3
+          "number_of_shards": 6,
+          "number_of_replicas": 2
         }
       },
       "mappings": {
@@ -50,8 +50,8 @@ class OpenSearch_VectorStore(VannaBase):
     ddl_index_settings = {
       "settings": {
         "index": {
-          "number_of_shards": 3,
-          "number_of_replicas": 3
+          "number_of_shards": 6,
+          "number_of_replicas": 2
         }
       },
       "mappings": {
@@ -69,8 +69,8 @@ class OpenSearch_VectorStore(VannaBase):
     question_sql_index_settings = {
       "settings": {
         "index": {
-          "number_of_shards": 3,
-          "number_of_replicas": 3
+          "number_of_shards": 6,
+          "number_of_replicas": 2
         }
       },
       "mappings": {
