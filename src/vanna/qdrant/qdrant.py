@@ -329,8 +329,8 @@ class Qdrant_VectorStore(VannaBase):
         return "{0}-{1}".format(id, self.id_suffixes[collection_name])
 
     def _parse_point_id(self, id: str) -> Tuple[str, str]:
-        id, suffix = id.rsplit("-", 1)
+        id, curr_suffix = id.rsplit("-", 1)
         for collection_name, suffix in self.id_suffixes.items():
-            if type == suffix:
+            if curr_suffix == suffix:
                 return id, collection_name
         raise ValueError(f"Invalid id {id}")
