@@ -1349,9 +1349,6 @@ class VannaBase(ABC):
       if not password:
         password = os.getenv("PRESTO_PASSWORD")
 
-      if not password:
-        raise ImproperlyConfigured("Please set your presto password")
-
       if not port:
         port = os.getenv("PRESTO_PORT")
 
