@@ -24,7 +24,7 @@ class Ollama(VannaBase):
       raise ValueError("config must contain at least Ollama model")
     self.host = config.get("ollama_host", "http://localhost:11434")
     self.model = config["model"]
-    if ":" in self.model:
+    if ":" not in self.model:
       self.model += ":latest"
 
     self.ollama_client = ollama.Client(self.host, timeout=Timeout(240.0))
