@@ -1481,21 +1481,21 @@ class VannaBase(ABC):
       port: int = None,
       auth: str = 'CUSTOM'
     ):
-        """
-          Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
-          Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+      """
+        Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+        Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
-          Args:
-              host (str): The host of the Hive database.
-              dbname (str): The name of the database to connect to.
-              user (str): The username to use for authentication.
-              password (str): The password to use for authentication.
-              port (int): The port to use for the connection.
-              auth (str): The authentication method to use.
+        Args:
+            host (str): The host of the Hive database.
+            dbname (str): The name of the database to connect to.
+            user (str): The username to use for authentication.
+            password (str): The password to use for authentication.
+            port (int): The port to use for the connection.
+            auth (str): The authentication method to use.
 
-          Returns:
-              None
-          """
+        Returns:
+            None
+      """
 
       try:
         from pyhive import hive
