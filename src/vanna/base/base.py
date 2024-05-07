@@ -1012,6 +1012,85 @@ class VannaBase(ABC):
         self.run_sql_is_set = True
         self.run_sql = run_sql_mysql
 
+    def connect_to_clickhouse(
+            self,
+            host: str = None,
+            dbname: str = None,
+            user: str = None,
+            password: str = None,
+            port: int = None,
+    ):
+
+        try:
+            from clickhouse_driver import connect
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install clickhouse-driver"
+            )
+
+        if not host:
+            host = os.getenv("HOST")
+
+        if not host:
+            raise ImproperlyConfigured("Please set your ClickHouse host")
+
+        if not dbname:
+            dbname = os.getenv("DATABASE")
+
+        if not dbname:
+            raise ImproperlyConfigured("Please set your ClickHouse database")
+
+        if not user:
+            user = os.getenv("USER")
+
+        if not user:
+            raise ImproperlyConfigured("Please set your ClickHouse user")
+
+        if not password:
+            password = os.getenv("PASSWORD")
+
+        if not password:
+            raise ImproperlyConfigured("Please set your ClickHouse password")
+
+        if not port:
+            port = os.getenv("PORT")
+
+        if not port:
+            raise ImproperlyConfigured("Please set your ClickHouse port")
+
+        conn = None
+
+        try:
+            conn = connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   database=dbname,
+                                   port=port,
+                                  )
+            print(conn)
+        except Exception as e:
+            raise ValidationError(e)
+
+        def run_sql_clickhouse(sql: str) -> Union[pd.DataFrame, None]:
+            if conn:
+                try:
+                  cs = conn.cursor()
+                  cs.execute(sql)
+                  results = cs.fetchall()
+
+                  # Create a pandas dataframe from the results
+                  df = pd.DataFrame(
+                    results, columns=[desc[0] for desc in cs.description]
+                  )
+                  return df
+
+                except Exception as e:
+                    raise e
+
+        self.run_sql_is_set = True
+        self.run_sql = run_sql_clickhouse
+
     def connect_to_oracle(
     self,
     user: str = None,
