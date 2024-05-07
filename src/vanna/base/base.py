@@ -1372,6 +1372,10 @@ class VannaBase(ABC):
       def run_sql_presto(sql: str) -> Union[pd.DataFrame, None]:
         if conn:
           try:
+            sql = sql.rstrip()
+            # fix for a known problem with presto db where an extra ; will cause an error.
+            if sql.endswith(';'):
+                sql = sql[:-1]
             cs = conn.cursor()
             cs.execute(sql)
             results = cs.fetchall()
