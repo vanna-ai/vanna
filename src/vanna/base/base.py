@@ -1393,6 +1393,102 @@ class VannaBase(ABC):
       self.run_sql_is_set = True
       self.run_sql = run_sql_presto
 
+    def connect_to_hive(
+      self,
+      host: str = None,
+      dbname: str = 'default',
+      user: str = None,
+      password: str = None,
+      port: int = None,
+      auth: str = 'CUSTOM'
+    ):
+        """
+          Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+          Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
+
+          Args:
+              host (str): The host of the Hive database.
+              dbname (str): The name of the database to connect to.
+              user (str): The username to use for authentication.
+              password (str): The password to use for authentication.
+              port (int): The port to use for the connection.
+              auth (str): The authentication method to use.
+
+          Returns:
+              None
+          """
+
+      try:
+        from pyhive import hive
+      except ImportError:
+        raise DependencyError(
+          "You need to install required dependencies to execute this method,"
+          " run command: \npip install pyhive"
+        )
+
+      if not host:
+        host = os.getenv("HIVE_HOST")
+
+      if not host:
+        raise ImproperlyConfigured("Please set your hive host")
+
+      if not dbname:
+        dbname = os.getenv("HIVE_DATABASE")
+
+      if not dbname:
+        raise ImproperlyConfigured("Please set your hive database")
+
+      if not user:
+        user = os.getenv("HIVE_USER")
+
+      if not user:
+        raise ImproperlyConfigured("Please set your hive user")
+
+      if not password:
+        password = os.getenv("HIVE_PASSWORD")
+
+      if not port:
+        port = os.getenv("HIVE_PORT")
+
+      if not port:
+        raise ImproperlyConfigured("Please set your hive port")
+
+      conn = None
+
+      try:
+        conn = hive.Connection(host=host,
+                               username=user,
+                               password=password,
+                               database=dbname,
+                               port=port,
+                               auth=auth)
+      except hive.Error as e:
+        raise ValidationError(e)
+
+      def run_sql_hive(sql: str) -> Union[pd.DataFrame, None]:
+        if conn:
+          try:
+            cs = conn.cursor()
+            cs.execute(sql)
+            results = cs.fetchall()
+
+            # Create a pandas dataframe from the results
+            df = pd.DataFrame(
+              results, columns=[desc[0] for desc in cs.description]
+            )
+            return df
+
+          except hive.Error as e:
+            print(e)
+            raise ValidationError(e)
+
+          except Exception as e:
+            print(e)
+            raise e
+
+      self.run_sql_is_set = True
+      self.run_sql = run_sql_hive
+
     def run_sql(self, sql: str, **kwargs) -> pd.DataFrame:
         """
         Example:
