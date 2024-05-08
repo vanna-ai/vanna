@@ -82,7 +82,7 @@ class PineconeDB_VectorStore(VannaBase):
     def _set_index_host(self, host: str) -> None:
         self.Index = self._client.Index(host=host)
 
-    def _setup_index(self):
+    def _setup_index(self) -> None:
         existing_indexes = self._get_indexes()
         if self.index_name not in existing_indexes and self.server_type == "serverless":
             self._client.create_index(
@@ -106,7 +106,7 @@ class PineconeDB_VectorStore(VannaBase):
             pinecone_index_host = self._client.describe_index(self.index_name)["host"]
             self._set_index_host(pinecone_index_host)
 
-    def _get_indexes(self):
+    def _get_indexes(self) -> list:
         return [index["name"] for index in self._client.list_indexes()]
 
     def _check_if_embedding_exists(self, id: str, namespace: str) -> bool:
