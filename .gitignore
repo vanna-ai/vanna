@@ -12,8 +12,8 @@ docs/*.html
 .tox/
 notebooks/chroma.sqlite3
 dist
+.env
 *.sqlite
 htmlcov
 chroma.sqlite3
 *.bin
-env
