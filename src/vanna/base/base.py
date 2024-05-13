@@ -129,6 +129,7 @@ class VannaBase(ABC):
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
             doc_list=doc_list,
+            allow_llm_to_see_data=allow_llm_to_see_data,
             **kwargs,
         )
         self.log(title="SQL Prompt", message=prompt)
@@ -152,6 +153,7 @@ class VannaBase(ABC):
                         question_sql_list=question_sql_list,
                         ddl_list=ddl_list,
                         doc_list=doc_list+[f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n" + df.to_markdown()],
+                        allow_llm_to_see_data=allow_llm_to_see_data,
                         **kwargs,
                     )
                     self.log(title="Final SQL Prompt", message=prompt)
@@ -528,6 +530,7 @@ class VannaBase(ABC):
         question_sql_list: list,
         ddl_list: list,
         doc_list: list,
+        allow_llm_to_see_data: bool = False,
         **kwargs,
     ):
         """
@@ -538,6 +541,7 @@ class VannaBase(ABC):
             question_sql_list=[{"question": "What are the top 10 customers by sales?", "sql": "SELECT * FROM customers ORDER BY sales DESC LIMIT 10"}],
             ddl_list=["CREATE TABLE customers (id INT, name TEXT, sales DECIMAL)"],
             doc_list=["The customers table contains information about customers and their sales."],
+            allow_llm_to_see_data=True
         )
 
         ```
@@ -549,6 +553,7 @@ class VannaBase(ABC):
             question_sql_list (list): A list of questions and their corresponding SQL statements.
             ddl_list (list): A list of DDL statements.
             doc_list (list): A list of documentation.
+            allow_llm_to_see_data (bool, optional): Whether the LLM should see the data. Defaults to False.allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
             any: The prompt for the LLM to generate SQL.
@@ -572,11 +577,15 @@ class VannaBase(ABC):
         initial_prompt += (
             "===Response Guidelines \n"
             "1. If the provided context is sufficient, please generate a valid SQL query without any explanations for the question. \n"
-            "2. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql \n"
-            "3. If the provided context is insufficient, please explain why it can't be generated. \n"
-            "4. Please use the most relevant table(s). \n"
-            "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
+            "2. If the provided context is insufficient, please explain why it can't be generated. \n"
+            "3. Please use the most relevant table(s). \n"
+            "4. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
         )
+
+        if allow_llm_to_see_data:
+            initial_prompt += (
+               "5. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql \n"
+            )
 
         message_log = [self.system_message(initial_prompt)]
 
