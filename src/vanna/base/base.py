@@ -560,7 +560,7 @@ class VannaBase(ABC):
         """
 
         if initial_prompt is None:
-            initial_prompt = f"You are a {self.dialect} expert. "
+            initial_prompt = f"You are a {self.dialect} expert. " + \
             "Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions. "
 
         initial_prompt = self.add_ddl_to_prompt(
@@ -1710,7 +1710,7 @@ class VannaBase(ABC):
                 return None
             else:
                 return sql, None, None
-        return sql, df, None
+        return sql, df, fig
 
     def train(
         self,
