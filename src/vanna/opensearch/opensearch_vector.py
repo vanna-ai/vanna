@@ -6,7 +6,7 @@ import pandas as pd
 from opensearchpy import OpenSearch
 
 from ..base import VannaBase
-
+from ..utils import deterministic_uuid
 
 class OpenSearch_VectorStore(VannaBase):
   def __init__(self, config=None):
@@ -56,6 +56,12 @@ class OpenSearch_VectorStore(VannaBase):
       },
       "mappings": {
         "properties": {
+          "engine": {
+            "type": "keyword",
+          },
+          "table": {
+            "type": "keyword",
+          },
           "ddl": {
             "type": "text",
           },
@@ -231,10 +237,24 @@ class OpenSearch_VectorStore(VannaBase):
       print(f"Error creating index: {index_name} ", e)
       return False
 
-  def add_ddl(self, ddl: str, **kwargs) -> str:
+  def calculate_md5(self, string: str) -> str:
+    # 将字符串编码为 bytes
+    string_bytes = self.encode('utf-8')
+    # 计算 MD5 哈希值
+    md5_hash = hashlib.md5(string_bytes)
+    # 获取十六进制表示的哈希值
+    md5_hex = md5_hash.hexdigest()
+    return md5_hex
+
+  def add_ddl(self, ddl: str, table: str = None, engine: str = None, **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
-    id = str(uuid.uuid4()) + "-ddl"
+    if table is not None and engine is not None:
+      id = deterministic_uuid(engine + "-" + table) + "-ddl"
+    else:
+      id = str(uuid.uuid4()) + "-ddl"
     ddl_dict = {
+      "engine": engine,
+      "table": table,
       "ddl": ddl
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
@@ -315,7 +335,6 @@ class OpenSearch_VectorStore(VannaBase):
       body={"query": {"match_all": {}}},
       size=1000
     )
-    print(query)
     # records = [hit['_source'] for hit in response['hits']['hits']]
     for hit in response['hits']['hits']:
       data.append(
