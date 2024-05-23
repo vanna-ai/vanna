@@ -81,7 +81,7 @@ class VannaBase(ABC):
         self.language = self.config.get("language", None)
 
     def log(self, message: str, title: str = "Info"):
-        print(message)
+        print(f"{title}: {message}")
 
     def _response_language(self) -> str:
         if self.language is None:
