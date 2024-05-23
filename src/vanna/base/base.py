@@ -1628,7 +1628,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql(question=question)
+            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data)
         except Exception as e:
             print(e)
             return None, None, None
