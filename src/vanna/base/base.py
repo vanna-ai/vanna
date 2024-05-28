@@ -53,6 +53,8 @@ import os
 import re
 import sqlite3
 import traceback
+import dbutils
+import dbutils.pooled_db
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 from urllib.parse import urlparse
@@ -975,42 +977,60 @@ class VannaBase(ABC):
 
         if not port:
             raise ImproperlyConfigured("Please set your MySQL port")
-
-        conn = None
-
         try:
-            conn = pymysql.connect(host=host,
-                                   user=user,
-                                   password=password,
-                                   database=dbname,
-                                   port=port,
-                                   cursorclass=pymysql.cursors.DictCursor)
-        except pymysql.Error as e:
-            raise ValidationError(e)
+            self.pool = dbutils.pooled_db.PooledDB(
+                creator=pymysql,
+                maxconnections=10,  # Adjust based on your needs
+                host=host,
+                user=user,
+                password=password,
+                port=port,
+                database=dbname,
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            # Test connection
+            test_conn = self.pool.connection()
+            with test_conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            test_conn.close()
+            print("connect success!")
+        except Exception as e:
+            print(f"connect fail：{e}")
+            raise
 
-        def run_sql_mysql(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
-                try:
-                    cs = conn.cursor()
-                    cs.execute(sql)
-                    results = cs.fetchall()
+        self.run_sql_is_set = True
+        self.run_sql = self.run_sql_mysql
 
+    def run_sql_mysql(self, sql: str) -> Union[pd.DataFrame, None]:
+            conn = None
+            try:
+                    conn = self.pool.connection()
+                    print(f"原始SQL语句为：{sql},准备执行sql")
+                    with conn.cursor() as cs:
+                        cs.execute(sql)
+                        results = cs.fetchall()
+                        print(f"SQL执行完毕，原始返回结果为：{results}")
                     # Create a pandas dataframe from the results
                     df = pd.DataFrame(
                         results, columns=[desc[0] for desc in cs.description]
                     )
                     return df
 
-                except pymysql.Error as e:
-                    conn.rollback()
-                    raise ValidationError(e)
+            except Exception as e:
+                    print(f"sql fail：{e}")
+                    if conn and conn.open:
+                        conn.rollback()
+                    # Attempt to reconnect and rerun the query
+                    return self.reconnect_and_rerun_query(sql)
 
-                except Exception as e:
-                    conn.rollback()
-                    raise e
+            finally:
+                    if conn:
+                        conn.close()
 
-        self.run_sql_is_set = True
-        self.run_sql = run_sql_mysql
+
+    def reconnect_and_rerun_query(self, sql: str) -> Union[pd.DataFrame, None]:
+        self.connect_to_mysql()
+        return self.run_sql_mysql(sql)
 
     def connect_to_clickhouse(
             self,
