@@ -368,6 +368,22 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
+    def get_similar_tables_metadata(self, table: str = None, ddl: str = None, engine: str = None, size: int = 10, **kwargs) -> list:
+        """
+        This method is used to get similar tables metadata.
+
+        Args:
+            table (str): The table to get similar tables metadata for.
+            ddl (str): The DDL statement of the table.
+            engine (str): The database engine of the table.
+            size (int): The number of similar tables metadata to return.
+
+        Returns:
+            list: A list of similar tables metadata.
+        """
+        pass
+
+    @abstractmethod
     def get_related_documentation(self, question: str, **kwargs) -> list:
         """
         This method is used to get related documentation to a question.

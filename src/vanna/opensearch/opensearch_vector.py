@@ -8,6 +8,7 @@ from opensearchpy import OpenSearch
 from ..base import VannaBase
 from ..utils import deterministic_uuid
 
+
 class OpenSearch_VectorStore(VannaBase):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
@@ -97,6 +98,8 @@ class OpenSearch_VectorStore(VannaBase):
       ddl_index_settings = config["es_ddl_index_settings"]
     if config is not None and "es_question_sql_index_settings" in config:
       question_sql_index_settings = config["es_question_sql_index_settings"]
+
+    self.n_results = config.get("n_results", 10)
 
     self.document_index_settings = document_index_settings
     self.ddl_index_settings = ddl_index_settings
@@ -246,7 +249,8 @@ class OpenSearch_VectorStore(VannaBase):
     md5_hex = md5_hash.hexdigest()
     return md5_hex
 
-  def add_ddl(self, ddl: str, table: str = None, engine: str = None, **kwargs) -> str:
+  def add_ddl(self, ddl: str, table: str = None, engine: str = None,
+              **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
     if table is not None and engine is not None:
       id = deterministic_uuid(engine + "-" + table) + "-ddl"
@@ -290,7 +294,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "ddl": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.ddl_index, body=query,
@@ -303,7 +308,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "doc": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.document_index,
@@ -317,7 +323,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "question": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.question_sql_index,
@@ -325,6 +332,34 @@ class OpenSearch_VectorStore(VannaBase):
                                   **kwargs)
     return [(hit['_source']['question'], hit['_source']['sql']) for hit in
             response['hits']['hits']]
+
+  def get_similar_tables_metadata(self, table: str = None, ddl: str = None,
+                                  engine: str = None, size: int = 10,
+                                  **kwargs) -> list:
+    # Assume you have some vector search mechanism associated with your data
+    if table is None and ddl is None and engine is None:
+      query = {
+        "query": {
+          "match_all": {}
+        },
+        "size": size
+      }
+    else:
+      query = {
+        "size": size
+      }
+
+      if table is not None:
+        query["query"]["match"]["table"] = table
+
+      if ddl is not None:
+        query["query"]["match"]["ddl"] = ddl
+
+      if engine is not None:
+        query["query"]["match"]["engine"] = engine
+    print(query)
+    response = self.client.search(index=self.ddl_index, body=query, **kwargs)
+    return [hit['_source'] for hit in response['hits']['hits']]
 
   def get_training_data(self, **kwargs) -> pd.DataFrame:
     # This will be a simple example pulling all data from an index
