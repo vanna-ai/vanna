@@ -1022,11 +1022,11 @@ class VannaBase(ABC):
     ):
 
         try:
-            from clickhouse_driver import connect
+            import clickhouse_connect
         except ImportError:
             raise DependencyError(
                 "You need to install required dependencies to execute this method,"
-                " run command: \npip install clickhouse-driver"
+                " run command: \npip install clickhouse_connect"
             )
 
         if not host:
@@ -1062,12 +1062,13 @@ class VannaBase(ABC):
         conn = None
 
         try:
-            conn = connect(host=host,
-                                   user=user,
-                                   password=password,
-                                   database=dbname,
-                                   port=port,
-                                  )
+            conn = clickhouse_connect.get_client(
+                host=host,
+                port=port,
+                username=user,
+                password=password,
+                database=dbname,
+            )
             print(conn)
         except Exception as e:
             raise ValidationError(e)
@@ -1075,19 +1076,16 @@ class VannaBase(ABC):
         def run_sql_clickhouse(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
                 try:
-                  cs = conn.cursor()
-                  cs.execute(sql)
-                  results = cs.fetchall()
+                    result = conn.query(sql)
+                    results = result.result_rows
 
-                  # Create a pandas dataframe from the results
-                  df = pd.DataFrame(
-                    results, columns=[desc[0] for desc in cs.description]
-                  )
-                  return df
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(results, columns=result.column_names)
+                    return df
 
                 except Exception as e:
                     raise e
-
+        
         self.run_sql_is_set = True
         self.run_sql = run_sql_clickhouse
 
