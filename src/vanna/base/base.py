@@ -416,18 +416,27 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def get_similar_tables_metadata(self, table_metadata: TableMetadata = None, ddl: str = None, engine: str = None, size: int = 10, **kwargs) -> list:
+    def search_tables_metadata(self,
+                              engine: str = None,
+                              catalog: str = None,
+                              schema: str = None,
+                              table_name: str = None,
+                              ddl: str = None,
+                              size: int = 10,
+                              **kwargs) -> list:
         """
         This method is used to get similar tables metadata.
 
         Args:
-            table_metadata (TableMetadata): The table to get similar tables metadata for.
-            ddl (str): The DDL statement of the table.
-            engine (str): The database engine of the table.
-            size (int): The number of similar tables metadata to return.
+            engine (str): The database engine.
+            catalog (str): The catalog.
+            schema (str): The schema.
+            table_name (str): The table name.
+            ddl (str): The DDL statement.
+            size (int): The number of tables to return.
 
         Returns:
-            list: A list of similar tables metadata.
+            list: A list of tables metadata.
         """
         pass
 

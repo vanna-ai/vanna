@@ -344,12 +344,17 @@ class OpenSearch_VectorStore(VannaBase):
     return [(hit['_source']['question'], hit['_source']['sql']) for hit in
             response['hits']['hits']]
 
-  def get_similar_tables_metadata(self, table_metadata: TableMetadata = None, ddl: str = None,
-                                  engine: str = None, size: int = 10,
-                                  **kwargs) -> list:
+  def search_tables_metadata(self,
+                            engine: str = None,
+                            catalog: str = None,
+                            schema: str = None,
+                            table_name: str = None,
+                            ddl: str = None,
+                            size: int = 10,
+                            **kwargs) -> list:
     # Assume you have some vector search mechanism associated with your data
     query = {}
-    if table_metadata is None and ddl is None and engine is None:
+    if engine is None and catalog is None and schema is None and table_name is None and ddl is None:
       query = {
         "query": {
           "match_all": {}
@@ -357,19 +362,21 @@ class OpenSearch_VectorStore(VannaBase):
       }
     else:
       query["query"] = {"match": {}}
-      if table_metadata is not None:
-        if table_metadata.catalog is not None:
-          query["query"]["match"]["catalog"] = table_metadata.catalog
-        if table_metadata.schema is not None:
-          query["query"]["match"]["schema"] = table_metadata.schema
-        if table_metadata.table_name is not None:
-          query["query"]["match"]["table_name"] = table_metadata.table_name
+      if engine is not None:
+        query["query"]["match"]["engine"] = engine
+
+      if catalog is not None:
+        query["query"]["match"]["catalog"] = catalog
+
+      if schema is not None:
+        query["query"]["match"]["schema"] = schema
+
+      if table_name is not None:
+        query["query"]["match"]["table_name"] = table_name
 
       if ddl is not None:
         query["query"]["match"]["ddl"] = ddl
 
-      if engine is not None:
-        query["query"]["match"]["engine"] = engine
     if size is not None:
       query["size"] = size
 
