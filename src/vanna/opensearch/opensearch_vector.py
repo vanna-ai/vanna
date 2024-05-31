@@ -337,18 +337,16 @@ class OpenSearch_VectorStore(VannaBase):
                                   engine: str = None, size: int = 10,
                                   **kwargs) -> list:
     # Assume you have some vector search mechanism associated with your data
+    query = {
+
+    }
     if table is None and ddl is None and engine is None:
       query = {
         "query": {
           "match_all": {}
-        },
-        "size": size
+        }
       }
     else:
-      query = {
-        "size": size
-      }
-
       if table is not None:
         query["query"]["match"]["table"] = table
 
@@ -357,6 +355,9 @@ class OpenSearch_VectorStore(VannaBase):
 
       if engine is not None:
         query["query"]["match"]["engine"] = engine
+    if size is not None:
+      query["size"] = size
+
     print(query)
     response = self.client.search(index=self.ddl_index, body=query, **kwargs)
     return [hit['_source'] for hit in response['hits']['hits']]
