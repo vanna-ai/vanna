@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 postgres = ["psycopg2-binary", "db-dtypes"]
 mysql = ["PyMySQL"]
-clickhouse = ["clickhouse_driver"]
+clickhouse = ["clickhouse_connect"]
 bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
