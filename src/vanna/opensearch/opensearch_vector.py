@@ -4,6 +4,7 @@ from typing import List
 
 import pandas as pd
 from opensearchpy import OpenSearch
+from ..types import TableMetadata
 
 from ..base import VannaBase
 from ..utils import deterministic_uuid
@@ -60,7 +61,13 @@ class OpenSearch_VectorStore(VannaBase):
           "engine": {
             "type": "keyword",
           },
-          "table": {
+          "catalog": {
+            "type": "keyword",
+          },
+          "schema": {
+            "type": "keyword",
+          },
+          "table_name": {
             "type": "keyword",
           },
           "ddl": {
@@ -249,16 +256,20 @@ class OpenSearch_VectorStore(VannaBase):
     md5_hex = md5_hash.hexdigest()
     return md5_hex
 
-  def add_ddl(self, ddl: str, table: str = None, engine: str = None,
+  def add_ddl(self, ddl: str, engine: str = None,
               **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
-    if table is not None and engine is not None:
-      id = deterministic_uuid(engine + "-" + table) + "-ddl"
+    table_metadata = self.extract_table_metadata(ddl)
+    full_table_name = table_metadata.getfulltablename()
+    if full_table_name is not None and engine is not None:
+      id = deterministic_uuid(engine + "-" + full_table_name) + "-ddl"
     else:
       id = str(uuid.uuid4()) + "-ddl"
     ddl_dict = {
       "engine": engine,
-      "table": table,
+      "catalog": table_metadata.catalog,
+      "schema": table_metadata.schema,
+      "table_name": table_metadata.table_name,
       "ddl": ddl
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
@@ -333,22 +344,26 @@ class OpenSearch_VectorStore(VannaBase):
     return [(hit['_source']['question'], hit['_source']['sql']) for hit in
             response['hits']['hits']]
 
-  def get_similar_tables_metadata(self, table: str = None, ddl: str = None,
+  def get_similar_tables_metadata(self, table_metadata: TableMetadata = None, ddl: str = None,
                                   engine: str = None, size: int = 10,
                                   **kwargs) -> list:
     # Assume you have some vector search mechanism associated with your data
-    query = {
-
-    }
-    if table is None and ddl is None and engine is None:
+    query = {}
+    if table_metadata is None and ddl is None and engine is None:
       query = {
         "query": {
           "match_all": {}
         }
       }
     else:
-      if table is not None:
-        query["query"]["match"]["table"] = table
+      query["query"] = {"match": {}}
+      if table_metadata is not None:
+        if table_metadata.catalog is not None:
+          query["query"]["match"]["catalog"] = table_metadata.catalog
+        if table_metadata.schema is not None:
+          query["query"]["match"]["schema"] = table_metadata.schema
+        if table_metadata.table_name is not None:
+          query["query"]["match"]["table_name"] = table_metadata.table_name
 
       if ddl is not None:
         query["query"]["match"]["ddl"] = ddl
