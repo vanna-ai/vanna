@@ -377,7 +377,7 @@ class OpenSearch_VectorStore(VannaBase):
       if ddl is not None:
         query["query"]["match"]["ddl"] = ddl
 
-    if size is not None:
+    if size > 0:
       query["size"] = size
 
     print(query)
