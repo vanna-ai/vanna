@@ -259,8 +259,8 @@ class OpenSearch_VectorStore(VannaBase):
   def add_ddl(self, ddl: str, engine: str = None,
               **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
-    table_metadata = self.extract_table_metadata(ddl)
-    full_table_name = table_metadata.getfulltablename()
+    table_metadata = VannaBase.extract_table_metadata(ddl)
+    full_table_name = table_metadata.get_full_table_name()
     if full_table_name is not None and engine is not None:
       id = deterministic_uuid(engine + "-" + full_table_name) + "-ddl"
     else:
@@ -361,21 +361,25 @@ class OpenSearch_VectorStore(VannaBase):
         }
       }
     else:
-      query["query"] = {"match": {}}
+      query["query"] = {
+        "bool": {
+          "should": [
+          ]
+        }
+      }
       if engine is not None:
-        query["query"]["match"]["engine"] = engine
+        query["query"]["bool"]["should"].append({"match": {"engine": engine}})
 
       if catalog is not None:
-        query["query"]["match"]["catalog"] = catalog
+        query["query"]["bool"]["should"].append({"match": {"catalog": catalog}})
 
       if schema is not None:
-        query["query"]["match"]["schema"] = schema
-
+        query["query"]["bool"]["should"].append({"match": {"schema": schema}})
       if table_name is not None:
-        query["query"]["match"]["table_name"] = table_name
+        query["query"]["bool"]["should"].append({"match": {"table_name": table_name}})
 
       if ddl is not None:
-        query["query"]["match"]["ddl"] = ddl
+        query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})
 
     if size > 0:
       query["size"] = size
