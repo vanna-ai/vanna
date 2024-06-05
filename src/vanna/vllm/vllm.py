@@ -17,6 +17,11 @@ class Vllm(VannaBase):
         else:
             self.model = config["model"]
 
+        if "auth-key" in config:
+            self.auth_key = config["auth-key"]
+        else:
+            self.auth_key = None
+
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}
 
@@ -67,7 +72,17 @@ class Vllm(VannaBase):
             "messages": prompt,
         }
 
-        response = requests.post(url, json=data)
+        if self.auth_key is not None:
+            headers = { 
+            'Content-Type': 'application/json', 
+            'Authorization': f'Bearer {self.auth_key}' 
+            }
+
+            response = requests.post(url, headers=headers,json=data)
+
+
+        else:
+            response = requests.post(url, json=data)
 
         response_dict = response.json()
 
