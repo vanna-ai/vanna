@@ -688,8 +688,8 @@ class VannaFlaskApp:
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
         @self.requires_auth
         @self.requires_cache(
-            ["question", "sql", "df", "fig_json"],
-            optional_fields=["summary"]
+            ["question", "sql", "df"],
+            optional_fields=["summary", "fig_json"]
         )
         def load_question(user: any, id: str, question, sql, df, fig_json, summary):
             try:
