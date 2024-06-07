@@ -585,13 +585,10 @@ class VannaFlaskApp:
                 print("TRAINING ERROR", e)
                 return jsonify({"type": "error", "error": str(e)})
 
-        @self.flask_app.route("/api/v0/create_function", methods=["POST"])
+        @self.flask_app.route("/api/v0/create_function", methods=["GET"])
         @self.requires_auth
-        def create_function(user: any):
-            question = flask.request.json.get("question")
-            sql = flask.request.json.get("sql")
-            id = flask.request.json.get("id")
-
+        @self.requires_cache(["question", "sql"])
+        def create_function(user: any, id: str, question: str, sql: str):
             plotly_code = self.cache.get(id=id, field="plotly_code")
 
             if plotly_code is None:
