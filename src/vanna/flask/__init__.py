@@ -809,4 +809,4 @@ class VannaFlaskApp:
                 print("Your app is running at:")
                 print("http://localhost:8084")
 
-            self.flask_app.run(host="0.0.0.0", port=8084, debug=self.debug)
+            self.flask_app.run(host="0.0.0.0", port=8084, debug=self.debug, use_reloader=False)
