@@ -82,7 +82,7 @@ class VannaBase(ABC):
         self.max_tokens = self.config.get("max_tokens", 14000)
 
     def log(self, message: str, title: str = "Info"):
-        print(message)
+        print(f"{title}: {message}")
 
     def _response_language(self) -> str:
         if self.language is None:
@@ -1596,6 +1596,7 @@ class VannaBase(ABC):
         print_results: bool = True,
         auto_train: bool = True,
         visualize: bool = True,  # if False, will not generate plotly code
+        allow_llm_to_see_data: bool = False,
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -1626,7 +1627,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql(question=question)
+            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data)
         except Exception as e:
             print(e)
             return None, None, None
