@@ -39,16 +39,6 @@ class Qdrant_VectorStore(VannaBase):
         TypeError: If config["client"] is not a `qdrant_client.QdrantClient` instance
     """
 
-    documentation_collection_name = "documentation"
-    ddl_collection_name = "ddl"
-    sql_collection_name = "sql"
-
-    id_suffixes = {
-        ddl_collection_name: "ddl",
-        documentation_collection_name: "doc",
-        sql_collection_name: "sql",
-    }
-
     def __init__(
         self,
         config={},
@@ -80,14 +70,20 @@ class Qdrant_VectorStore(VannaBase):
         self.collection_params = config.get("collection_params", {})
         self.distance_metric = config.get("distance_metric", models.Distance.COSINE)
         self.documentation_collection_name = config.get(
-            "documentation_collection_name", self.documentation_collection_name
+            "documentation_collection_name", "documentation"
         )
         self.ddl_collection_name = config.get(
-            "ddl_collection_name", self.ddl_collection_name
+            "ddl_collection_name", "ddl"
         )
         self.sql_collection_name = config.get(
-            "sql_collection_name", self.sql_collection_name
+            "sql_collection_name", "sql"
         )
+
+        self.id_suffixes = {
+            self.ddl_collection_name: "ddl",
+            self.documentation_collection_name: "doc",
+            self.sql_collection_name: "sql",
+        }
 
         self._setup_collections()
 
