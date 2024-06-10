@@ -212,7 +212,7 @@ class Qdrant_VectorStore(VannaBase):
         try:
             id, collection_name = self._parse_point_id(id)
             res = self._client.delete(collection_name, points_selector=[id])
-            res == UpdateStatus.COMPLETED
+            return True
         except ValueError:
             return False
 
