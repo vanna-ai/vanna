@@ -79,9 +79,10 @@ class VannaBase(ABC):
         self.static_documentation = ""
         self.dialect = self.config.get("dialect", "SQL")
         self.language = self.config.get("language", None)
+        self.max_tokens = self.config.get("max_tokens", 14000)
 
     def log(self, message: str, title: str = "Info"):
-        print(message)
+        print(f"{title}: {message}")
 
     def _response_language(self) -> str:
         if self.language is None:
@@ -564,14 +565,14 @@ class VannaBase(ABC):
             "Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions. "
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=self.max_tokens
         )
 
         if self.static_documentation != "":
             doc_list.append(self.static_documentation)
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=self.max_tokens
         )
 
         initial_prompt += (
@@ -612,15 +613,15 @@ class VannaBase(ABC):
         initial_prompt = f"The user initially asked the question: '{question}': \n\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=self.max_tokens
         )
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=self.max_tokens
         )
 
         initial_prompt = self.add_sql_to_prompt(
-            initial_prompt, question_sql_list, max_tokens=14000
+            initial_prompt, question_sql_list, max_tokens=self.max_tokens
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -1031,11 +1032,11 @@ class VannaBase(ABC):
     ):
 
         try:
-            from clickhouse_driver import connect
+            import clickhouse_connect
         except ImportError:
             raise DependencyError(
                 "You need to install required dependencies to execute this method,"
-                " run command: \npip install clickhouse-driver"
+                " run command: \npip install clickhouse_connect"
             )
 
         if not host:
@@ -1071,12 +1072,13 @@ class VannaBase(ABC):
         conn = None
 
         try:
-            conn = connect(host=host,
-                                   user=user,
-                                   password=password,
-                                   database=dbname,
-                                   port=port,
-                                  )
+            conn = clickhouse_connect.get_client(
+                host=host,
+                port=port,
+                username=user,
+                password=password,
+                database=dbname,
+            )
             print(conn)
         except Exception as e:
             raise ValidationError(e)
@@ -1084,19 +1086,16 @@ class VannaBase(ABC):
         def run_sql_clickhouse(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
                 try:
-                  cs = conn.cursor()
-                  cs.execute(sql)
-                  results = cs.fetchall()
+                    result = conn.query(sql)
+                    results = result.result_rows
 
-                  # Create a pandas dataframe from the results
-                  df = pd.DataFrame(
-                    results, columns=[desc[0] for desc in cs.description]
-                  )
-                  return df
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(results, columns=result.column_names)
+                    return df
 
                 except Exception as e:
                     raise e
-
+        
         self.run_sql_is_set = True
         self.run_sql = run_sql_clickhouse
 
@@ -1606,6 +1605,7 @@ class VannaBase(ABC):
         print_results: bool = True,
         auto_train: bool = True,
         visualize: bool = True,  # if False, will not generate plotly code
+        allow_llm_to_see_data: bool = False,
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -1636,7 +1636,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql(question=question)
+            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data)
         except Exception as e:
             print(e)
             return None, None, None

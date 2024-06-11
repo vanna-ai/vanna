@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 import pandas as pd
 from qdrant_client import QdrantClient, grpc, models
+from qdrant_client.http.models.models import UpdateStatus
 
 from ..base import VannaBase
 from ..utils import deterministic_uuid
@@ -38,16 +39,6 @@ class Qdrant_VectorStore(VannaBase):
         TypeError: If config["client"] is not a `qdrant_client.QdrantClient` instance
     """
 
-    documentation_collection_name = "documentation"
-    ddl_collection_name = "ddl"
-    sql_collection_name = "sql"
-
-    id_suffixes = {
-        ddl_collection_name: "ddl",
-        documentation_collection_name: "doc",
-        sql_collection_name: "sql",
-    }
-
     def __init__(
         self,
         config={},
@@ -79,14 +70,20 @@ class Qdrant_VectorStore(VannaBase):
         self.collection_params = config.get("collection_params", {})
         self.distance_metric = config.get("distance_metric", models.Distance.COSINE)
         self.documentation_collection_name = config.get(
-            "documentation_collection_name", self.documentation_collection_name
+            "documentation_collection_name", "documentation"
         )
         self.ddl_collection_name = config.get(
-            "ddl_collection_name", self.ddl_collection_name
+            "ddl_collection_name", "ddl"
         )
         self.sql_collection_name = config.get(
-            "sql_collection_name", self.sql_collection_name
+            "sql_collection_name", "sql"
         )
+
+        self.id_suffixes = {
+            self.ddl_collection_name: "ddl",
+            self.documentation_collection_name: "doc",
+            self.sql_collection_name: "sql",
+        }
 
         self._setup_collections()
 
@@ -210,7 +207,8 @@ class Qdrant_VectorStore(VannaBase):
     def remove_training_data(self, id: str, **kwargs) -> bool:
         try:
             id, collection_name = self._parse_point_id(id)
-            self._client.delete(collection_name, points_selector=[id])
+            res = self._client.delete(collection_name, points_selector=[id])
+            return True
         except ValueError:
             return False
 
