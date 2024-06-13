@@ -382,7 +382,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
 
         return training_data.questions
 
-    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         if question in self.related_training_data:
             training_data = self.related_training_data[question]
         else:

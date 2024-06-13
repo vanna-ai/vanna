@@ -90,7 +90,7 @@ class VannaBase(ABC):
 
         return f"Respond in the {self.language} language."
 
-    def generate_sql(self, question: str, table_name: str = None, allow_llm_to_see_data=False, **kwargs) -> str:
+    def generate_sql(self, question: str, table_name_list: List[str] = None, allow_llm_to_see_data=False, **kwargs) -> str:
         """
         Example:
         ```python
@@ -112,7 +112,7 @@ class VannaBase(ABC):
 
         Args:
             question (str): The question to generate a SQL query for.
-            table_name (str): The table name to generate a SQL query for.
+            table_name_list (List[str], optional): A list of table names to use in the SQL query. Defaults to None.
             allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
@@ -123,7 +123,7 @@ class VannaBase(ABC):
         else:
             initial_prompt = None
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
-        ddl_list = self.get_related_ddl(question=question, table_name=table_name, **kwargs)
+        ddl_list = self.get_related_ddl(question=question, table_name_list=table_name_list, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
             initial_prompt=initial_prompt,
@@ -405,13 +405,13 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         """
         This method is used to get related DDL statements to a question.
 
         Args:
             question (str): The question to get related DDL statements for.
-            table_name (str): The table name to get related DDL statements for.
+            table_name_list (list): A list of table names to get related DDL statements for.
 
         Returns:
             list: A list of related DDL statements.

@@ -302,22 +302,30 @@ class OpenSearch_VectorStore(VannaBase):
                                  **kwargs)
     return response['_id']
 
-  def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> List[str]:
+  def get_related_ddl(self, question: str, table_name_list: List[str] = None,
+                      **kwargs) -> List[str]:
     # Assume you have some vector search mechanism associated with your data
-    query = {"query": {
-      "bool": {
-        "must": [
-        ]
+    query = {
+      "query": {
+        "bool": {
+          "should": [
+          ],
+          "must": [
+          ]
+        },
       },
       "size": self.n_results
-    }}
+    }
 
     if question is not None:
-      query["query"]["bool"]["must"].append({"match": {"question": question}})
+      query["query"]["bool"]["must"].append({"match": {"ddl": question}})
 
-    if table_name is not None:
-      wildcard_table_name = f"*{table_name}*"
-      query["query"]["bool"]["must"].append({"wildcard": {"full_table_name": wildcard_table_name}})
+    if table_name_list is not None and len(table_name_list) > 0:
+      for table_name in table_name_list:
+        wildcard_table_name = f"*{table_name}*"
+        query["query"]["bool"]["should"].append(
+          {"wildcard": {"full_table_name": wildcard_table_name}})
+      query["query"]["bool"]["minimum_should_match"] = 1
 
     print(query)
     response = self.client.search(index=self.ddl_index, body=query,
