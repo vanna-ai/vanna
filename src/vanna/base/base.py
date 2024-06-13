@@ -90,7 +90,7 @@ class VannaBase(ABC):
 
         return f"Respond in the {self.language} language."
 
-    def generate_sql(self, question: str, allow_llm_to_see_data=False, **kwargs) -> str:
+    def generate_sql(self, question: str, table_name: str = None, allow_llm_to_see_data=False, **kwargs) -> str:
         """
         Example:
         ```python
@@ -112,6 +112,7 @@ class VannaBase(ABC):
 
         Args:
             question (str): The question to generate a SQL query for.
+            table_name (str): The table name to generate a SQL query for.
             allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
@@ -122,7 +123,7 @@ class VannaBase(ABC):
         else:
             initial_prompt = None
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
-        ddl_list = self.get_related_ddl(question, **kwargs)
+        ddl_list = self.get_related_ddl(question=question, table_name=table_name, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
             initial_prompt=initial_prompt,
