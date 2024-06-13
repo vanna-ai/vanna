@@ -404,12 +404,13 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         """
         This method is used to get related DDL statements to a question.
 
         Args:
             question (str): The question to get related DDL statements for.
+            table_name (str): The table name to get related DDL statements for.
 
         Returns:
             list: A list of related DDL statements.
@@ -1160,7 +1161,7 @@ class VannaBase(ABC):
 
                 except Exception as e:
                     raise e
-        
+
         self.run_sql_is_set = True
         self.run_sql = run_sql_clickhouse
 

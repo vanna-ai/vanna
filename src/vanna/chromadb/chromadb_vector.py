@@ -240,7 +240,7 @@ class ChromaDB_VectorStore(VannaBase):
             )
         )
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         return ChromaDB_VectorStore._extract_documents(
             self.ddl_collection.query(
                 query_texts=[question],

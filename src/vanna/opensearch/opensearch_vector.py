@@ -70,6 +70,9 @@ class OpenSearch_VectorStore(VannaBase):
           "table_name": {
             "type": "keyword",
           },
+          "full_table_name": {
+            "type": "keyword",
+          },
           "ddl": {
             "type": "text",
           },
@@ -270,6 +273,7 @@ class OpenSearch_VectorStore(VannaBase):
       "catalog": table_metadata.catalog,
       "schema": table_metadata.schema,
       "table_name": table_metadata.table_name,
+      "full_table_name": full_table_name,
       "ddl": ddl
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
@@ -298,16 +302,23 @@ class OpenSearch_VectorStore(VannaBase):
                                  **kwargs)
     return response['_id']
 
-  def get_related_ddl(self, question: str, **kwargs) -> List[str]:
+  def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> List[str]:
     # Assume you have some vector search mechanism associated with your data
-    query = {
-      "query": {
-        "match": {
-          "ddl": question
-        }
+    query = {"query": {
+      "bool": {
+        "must": [
+        ]
       },
       "size": self.n_results
-    }
+    }}
+
+    if question is not None:
+      query["query"]["bool"]["must"].append({"match": {"question": question}})
+
+    if table_name is not None:
+      wildcard_table_name = f"*{table_name}*"
+      query["query"]["bool"]["must"].append({"wildcard": {"full_table_name": wildcard_table_name}})
+
     print(query)
     response = self.client.search(index=self.ddl_index, body=query,
                                   **kwargs)
@@ -345,13 +356,13 @@ class OpenSearch_VectorStore(VannaBase):
             response['hits']['hits']]
 
   def search_tables_metadata(self,
-                            engine: str = None,
-                            catalog: str = None,
-                            schema: str = None,
-                            table_name: str = None,
-                            ddl: str = None,
-                            size: int = 10,
-                            **kwargs) -> list:
+                             engine: str = None,
+                             catalog: str = None,
+                             schema: str = None,
+                             table_name: str = None,
+                             ddl: str = None,
+                             size: int = 10,
+                             **kwargs) -> list:
     # Assume you have some vector search mechanism associated with your data
     query = {}
     if engine is None and catalog is None and schema is None and table_name is None and ddl is None:
@@ -371,12 +382,14 @@ class OpenSearch_VectorStore(VannaBase):
         query["query"]["bool"]["should"].append({"match": {"engine": engine}})
 
       if catalog is not None:
-        query["query"]["bool"]["should"].append({"match": {"catalog": catalog}})
+        query["query"]["bool"]["should"].append(
+          {"match": {"catalog": catalog}})
 
       if schema is not None:
         query["query"]["bool"]["should"].append({"match": {"schema": schema}})
       if table_name is not None:
-        query["query"]["bool"]["should"].append({"match": {"table_name": table_name}})
+        query["query"]["bool"]["should"].append(
+          {"match": {"table_name": table_name}})
 
       if ddl is not None:
         query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})

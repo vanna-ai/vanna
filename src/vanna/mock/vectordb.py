@@ -20,7 +20,7 @@ class MockVectorDB(VannaBase):
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         return self._get_id(question)
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         return []
 
     def get_related_documentation(self, question: str, **kwargs) -> list:

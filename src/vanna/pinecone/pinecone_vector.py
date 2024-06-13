@@ -168,7 +168,7 @@ class PineconeDB_VectorStore(VannaBase):
         )
         return id
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         res = self.Index.query(
             namespace=self.ddl_namespace,
             vector=self.generate_embedding(question),

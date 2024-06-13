@@ -243,7 +243,7 @@ class Qdrant_VectorStore(VannaBase):
 
         return [dict(result.payload) for result in results]
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         results = self._client.search(
             self.ddl_collection_name,
             query_vector=self.generate_embedding(question),

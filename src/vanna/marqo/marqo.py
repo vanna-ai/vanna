@@ -157,7 +157,7 @@ class Marqo_VectorStore(VannaBase):
             self.mq.index("vanna-sql").search(question)
         )
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name: str = None, **kwargs) -> list:
         return Marqo_VectorStore._extract_documents(
             self.mq.index("vanna-ddl").search(question)
         )
