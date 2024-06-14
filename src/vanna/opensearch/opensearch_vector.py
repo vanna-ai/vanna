@@ -317,11 +317,13 @@ class OpenSearch_VectorStore(VannaBase):
       "size": self.n_results
     }
 
-    if question is not None:
+    if question is not None and len(question) > 0:
       query["query"]["bool"]["must"].append({"match": {"ddl": question}})
 
     if table_name_list is not None and len(table_name_list) > 0:
       for table_name in table_name_list:
+        if table_name is None or len(table_name) == 0:
+          continue
         wildcard_table_name = f"*{table_name}*"
         query["query"]["bool"]["should"].append(
           {"wildcard": {"full_table_name": wildcard_table_name}})
