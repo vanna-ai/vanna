@@ -111,6 +111,34 @@ def test_vn_chroma():
     df = vn_chroma.run_sql(sql)
     assert len(df) == 7
 
+
+from vanna.milvus import Milvus_VectorStore
+
+
+class VannaMilvus(Milvus_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        Milvus_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+vn_milvus = VannaMilvus(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
+vn_milvus.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_milvus():
+    existing_training_data = vn_milvus.get_training_data()
+    if len(existing_training_data) > 0:
+        for _, training_data in existing_training_data.iterrows():
+            vn_milvus.remove_training_data(training_data['id'])
+
+    df_ddl = vn_milvus.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+
+    for ddl in df_ddl['sql'].to_list():
+        vn_milvus.train(ddl=ddl)
+
+    sql = vn_milvus.generate_sql("What are the top 7 customers by sales?")
+    df = vn_milvus.run_sql(sql)
+    assert len(df) == 7
+
+
 class VannaNumResults(ChromaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)

@@ -7,6 +7,7 @@ def test_regular_imports():
     from vanna.hf.hf import Hf
     from vanna.local import LocalContext_OpenAI
     from vanna.marqo.marqo import Marqo_VectorStore
+    from vanna.milvus.milvus_vector import Milvus_VectorStore
     from vanna.mistral.mistral import Mistral
     from vanna.ollama.ollama import Ollama
     from vanna.openai.openai_chat import OpenAI_Chat
@@ -24,6 +25,7 @@ def test_shortcut_imports():
     from vanna.chromadb import ChromaDB_VectorStore
     from vanna.hf import Hf
     from vanna.marqo import Marqo_VectorStore
+    from vanna.milvus import Milvus_VectorStore
     from vanna.mistral import Mistral
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
