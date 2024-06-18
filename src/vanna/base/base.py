@@ -992,6 +992,7 @@ class VannaBase(ABC):
         def run_sql_mysql(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
                 try:
+                    conn.ping(reconnect=True)
                     cs = conn.cursor()
                     cs.execute(sql)
                     results = cs.fetchall()
