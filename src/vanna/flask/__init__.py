@@ -8,6 +8,7 @@ from functools import wraps
 
 import flask
 import requests
+from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
 
@@ -162,6 +163,10 @@ class VannaFlaskAPI:
         """
 
         self.flask_app = Flask(__name__)
+
+        self.swagger = Swagger(
+          self.flask_app, template={"info": {"title": "Vanna API"}}
+        )
         self.sock = Sock(self.flask_app)
         self.ws_clients = []
         self.vn = vn
@@ -191,6 +196,23 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/get_config", methods=["GET"])
         @self.requires_auth
         def get_config(user: any):
+            """
+            Get the configuration for a user
+            ---
+            parameters:
+              - name: user
+                in: query
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: config
+                    config:
+                      type: object
+            """
             config = self.auth.override_config_for_user(user, self.config)
             return jsonify(
                 {
@@ -202,6 +224,28 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/generate_questions", methods=["GET"])
         @self.requires_auth
         def generate_questions(user: any):
+            """
+            Generate questions
+            ---
+            parameters:
+              - name: user
+                in: query
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: question_list
+                    questions:
+                      type: array
+                      items:
+                        type: string
+                    header:
+                      type: string
+                      default: Here are some questions you can ask
+            """
             # If self has an _model attribute and model=='chinook'
             if hasattr(self.vn, "_model") and self.vn._model == "chinook":
                 return jsonify(
@@ -258,6 +302,29 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/generate_sql", methods=["GET"])
         @self.requires_auth
         def generate_sql(user: any):
+            """
+            Generate SQL from a question
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: question
+                in: query
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: sql
+                    id:
+                      type: string
+                    text:
+                      type: string
+            """
             question = flask.request.args.get("question")
 
             if question is None:
@@ -289,6 +356,29 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/get_function", methods=["GET"])
         @self.requires_auth
         def get_function(user: any):
+            """
+            Get a function from a question
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: question
+                in: query
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: function
+                    id:
+                      type: object
+                    function:
+                      type: string
+            """
             question = flask.request.args.get("question")
 
             if question is None:
@@ -324,6 +414,23 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/get_all_functions", methods=["GET"])
         @self.requires_auth
         def get_all_functions(user: any):
+            """
+            Get all the functions
+            ---
+            parameters:
+              - name: user
+                in: query
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: functions
+                    functions:
+                      type: array
+            """
             if not hasattr(vn, "get_all_functions"):
                 return jsonify({"type": "error", "error": "This setup does not support function generation."})
 
@@ -340,6 +447,31 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache(["sql"])
         def run_sql(user: any, id: str, sql: str):
+            """
+            Run SQL
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: df
+                    id:
+                      type: string
+                    df:
+                      type: object
+                    should_generate_chart:
+                      type: boolean
+            """
             try:
                 if not vn.run_sql_is_set:
                     return jsonify(
@@ -368,7 +500,34 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/fix_sql", methods=["POST"])
         @self.requires_auth
         @self.requires_cache(["question", "sql"])
-        def fix_sql(user: any, id: str, question:str, sql: str):
+        def fix_sql(user: any, id: str, question: str, sql: str):
+            """
+            Fix SQL
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+              - name: error
+                in: body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: sql
+                    id:
+                      type: string
+                    text:
+                      type: string
+            """
             error = flask.request.json.get("error")
 
             if error is None:
@@ -393,6 +552,33 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache([])
         def update_sql(user: any, id: str):
+            """
+            Update SQL
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+              - name: sql
+                in: body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: sql
+                    id:
+                      type: string
+                    text:
+                      type: string
+            """
             sql = flask.request.json.get('sql')
 
             if sql is None:
@@ -411,6 +597,20 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache(["df"])
         def download_csv(user: any, id: str, df):
+            """
+            Download CSV
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                description: download CSV
+            """
             csv = df.to_csv()
 
             return Response(
@@ -423,6 +623,32 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache(["df", "question", "sql"])
         def generate_plotly_figure(user: any, id: str, df, question, sql):
+            """
+            Generate plotly figure
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+              - name: chart_instructions
+                in: body
+                type: string
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: plotly_figure
+                    id:
+                      type: string
+                    fig:
+                      type: object
+            """
             chart_instructions = flask.request.args.get('chart_instructions')
 
             try:
@@ -461,6 +687,26 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/get_training_data", methods=["GET"])
         @self.requires_auth
         def get_training_data(user: any):
+            """
+            Get all training data
+            ---
+            parameters:
+              - name: user
+                in: query
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: df
+                    id:
+                      type: string
+                      default: training_data
+                    df:
+                      type: object
+            """
             df = vn.get_training_data()
 
             if df is None or len(df) == 0:
@@ -482,6 +728,24 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/remove_training_data", methods=["POST"])
         @self.requires_auth
         def remove_training_data(user: any):
+            """
+            Remove training data
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+            """
             # Get id from the JSON body
             id = flask.request.json.get("id")
 
@@ -498,6 +762,32 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/train", methods=["POST"])
         @self.requires_auth
         def add_training_data(user: any):
+            """
+            Add training data
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: question
+                in: body
+                type: string
+              - name: sql
+                in: body
+                type: string
+              - name: ddl
+                in: body
+                type: string
+              - name: documentation
+                in: body
+                type: string
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+            """
             question = flask.request.json.get("question")
             sql = flask.request.json.get("sql")
             ddl = flask.request.json.get("ddl")
@@ -517,6 +807,29 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache(["question", "sql"])
         def create_function(user: any, id: str, question: str, sql: str):
+            """
+            Create function
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: function_template
+                    id:
+                      type: string
+                    function_template:
+                      type: object
+            """
             plotly_code = self.cache.get(id=id, field="plotly_code")
 
             if plotly_code is None:
@@ -535,6 +848,28 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/update_function", methods=["POST"])
         @self.requires_auth
         def update_function(user: any):
+            """
+            Update function
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: old_function_name
+                in: body
+                type: string
+                required: true
+              - name: updated_function
+                in: body
+                type: object
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+            """
             old_function_name = flask.request.json.get("old_function_name")
             updated_function = flask.request.json.get("updated_function")
 
@@ -548,15 +883,57 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/delete_function", methods=["POST"])
         @self.requires_auth
         def delete_function(user: any):
+            """
+            Delete function
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: function_name
+                in: body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+            """
             function_name = flask.request.json.get("function_name")
 
             return jsonify({"success": vn.delete_function(function_name=function_name)})
-
 
         @self.flask_app.route("/api/v0/generate_followup_questions", methods=["GET"])
         @self.requires_auth
         @self.requires_cache(["df", "question", "sql"])
         def generate_followup_questions(user: any, id: str, df, question, sql):
+            """
+            Generate followup questions
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: question_list
+                    questions:
+                      type: array
+                      items:
+                        type: string
+                    header:
+                      type: string
+            """
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
                     question=question, sql=sql, df=df
@@ -589,6 +966,29 @@ class VannaFlaskAPI:
         @self.requires_auth
         @self.requires_cache(["df", "question"])
         def generate_summary(user: any, id: str, df, question):
+            """
+            Generate summary
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: text
+                    id:
+                      type: string
+                    text:
+                      type: string
+            """
             if self.allow_llm_to_see_data:
                 summary = vn.generate_summary(question=question, df=df)
 
@@ -617,6 +1017,37 @@ class VannaFlaskAPI:
             optional_fields=["summary", "fig_json"]
         )
         def load_question(user: any, id: str, question, sql, df, fig_json, summary):
+            """
+            Load question
+            ---
+            parameters:
+              - name: user
+                in: query
+              - name: id
+                in: query|body
+                type: string
+                required: true
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: question_cache
+                    id:
+                      type: string
+                    question:
+                      type: string
+                    sql:
+                      type: string
+                    df:
+                      type: object
+                    fig:
+                      type: object
+                    summary:
+                      type: string
+            """
             try:
                 return jsonify(
                     {
@@ -636,6 +1067,25 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/get_question_history", methods=["GET"])
         @self.requires_auth
         def get_question_history(user: any):
+            """
+            Get question history
+            ---
+            parameters:
+              - name: user
+                in: query
+            responses:
+              200:
+                schema:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      default: question_history
+                    questions:
+                      type: array
+                      items:
+                        type: string
+            """
             return jsonify(
                 {
                     "type": "question_history",
