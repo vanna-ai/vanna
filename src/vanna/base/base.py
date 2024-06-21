@@ -182,7 +182,7 @@ class VannaBase(ABC):
         """
 
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
-        sqls = re.findall(r"WITH.*?;", llm_response, re.DOTALL)
+        sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
             self.log(title="Extracted SQL", message=f"{sql}")
