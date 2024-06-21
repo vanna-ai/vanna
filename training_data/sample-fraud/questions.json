@@ -128,7 +128,7 @@
       "answer":"SELECT *\r\nFROM paysim_table.base_data limit 10;"
     },
     {
-      "question":"what is destination account recieved most amount of transfer through frauds ?",
+      "question":"what is destination account received most amount of transfer through frauds ?",
       "answer":"SELECT namedest,\n       sum(amount) as total_amount\nFROM   paysim_table.base_data\nWHERE  isfraud = 1\nGROUP BY namedest\nORDER BY total_amount desc limit 1;"
     },
     {
