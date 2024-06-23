@@ -359,11 +359,18 @@ class OpenSearch_VectorStore(VannaBase):
       "size": self.n_results
     }
     print(query)
+    data = []
     response = self.client.search(index=self.question_sql_index,
                                   body=query,
                                   **kwargs)
-    return [(hit['_source']['question'], hit['_source']['sql']) for hit in
-            response['hits']['hits']]
+    for hit in response['hits']['hits']:
+      data.append(
+        {
+          "question": hit["_source"]["question"],
+          "sql": hit["_source"]["sql"]
+        }
+      )
+    return data
 
   def search_tables_metadata(self,
                              engine: str = None,
@@ -384,22 +391,25 @@ class OpenSearch_VectorStore(VannaBase):
     else:
       query["query"] = {
         "bool": {
+          "must": [
+          ],
           "should": [
           ]
         }
       }
       if engine is not None:
-        query["query"]["bool"]["should"].append({"match": {"engine": engine}})
+        query["query"]["bool"]["must"].append({"match": {"engine": engine}})
 
       if catalog is not None:
-        query["query"]["bool"]["should"].append(
+        query["query"]["bool"]["must"].append(
           {"match": {"catalog": catalog}})
 
       if schema is not None:
-        query["query"]["bool"]["should"].append({"match": {"schema": schema}})
+        query["query"]["bool"]["must"].append({"match": {"schema": schema}})
       if table_name is not None:
-        query["query"]["bool"]["should"].append(
-          {"match": {"table_name": table_name}})
+        wildcard_table_name = f"*{table_name}*"
+        query["query"]["bool"]["must"].append(
+          {"wildcard": {"full_table_name": wildcard_table_name}})
 
       if ddl is not None:
         query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})
