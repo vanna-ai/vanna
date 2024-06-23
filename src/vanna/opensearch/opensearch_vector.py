@@ -359,11 +359,18 @@ class OpenSearch_VectorStore(VannaBase):
       "size": self.n_results
     }
     print(query)
+    data = []
     response = self.client.search(index=self.question_sql_index,
                                   body=query,
                                   **kwargs)
-    return [(hit['_source']['question'], hit['_source']['sql']) for hit in
-            response['hits']['hits']]
+    for hit in response['hits']['hits']:
+      data.append(
+        {
+          "question": hit["_source"]["question"],
+          "sql": hit["_source"]["sql"]
+        }
+      )
+    return data
 
   def search_tables_metadata(self,
                              engine: str = None,
