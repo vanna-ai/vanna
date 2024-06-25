@@ -110,6 +110,7 @@ class OpenSearch_VectorStore(VannaBase):
       question_sql_index_settings = config["es_question_sql_index_settings"]
 
     self.n_results = config.get("n_results", 10)
+    self.min_score = config.get("min_score", 0.5)
 
     self.document_index_settings = document_index_settings
     self.ddl_index_settings = ddl_index_settings
@@ -314,7 +315,8 @@ class OpenSearch_VectorStore(VannaBase):
           ]
         },
       },
-      "size": self.n_results
+      "size": self.n_results,
+      "min_score": self.min_score
     }
 
     if question is not None and len(question) > 0:
@@ -341,7 +343,8 @@ class OpenSearch_VectorStore(VannaBase):
           "doc": question
         }
       },
-      "size": self.n_results
+      "size": self.n_results,
+      "min_score": self.min_score
     }
     print(query)
     response = self.client.search(index=self.document_index,
@@ -356,7 +359,8 @@ class OpenSearch_VectorStore(VannaBase):
           "question": question
         }
       },
-      "size": self.n_results
+      "size": self.n_results,
+      "min_score": self.min_score
     }
     print(query)
     data = []
