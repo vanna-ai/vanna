@@ -577,6 +577,7 @@ class VannaBase(ABC):
             "3. If the provided context is insufficient, please explain why it can't be generated. \n"
             "4. Please use the most relevant table(s). \n"
             "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
+            f"6. Ensure that the output SQL is {self.dialect}-compliant and executable, and free of syntax errors. \n"
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -1087,7 +1088,7 @@ class VannaBase(ABC):
 
                 except Exception as e:
                     raise e
-        
+
         self.run_sql_is_set = True
         self.run_sql = run_sql_clickhouse
 
