@@ -494,15 +494,12 @@ class VannaFlaskApp:
         def generate_plotly_figure(user: any, id: str, df, question, sql):
             chart_instructions = flask.request.args.get('chart_instructions')
 
-            if chart_instructions is not None:
-                question = f"{question}. When generating the chart, use these special instructions: {chart_instructions}"
-
             try:
                 # If chart_instructions is not set then attempt to retrieve the code from the cache
                 if chart_instructions is None or len(chart_instructions) == 0:
                     code = self.cache.get(id=id, field="plotly_code")
-
-                if code is None:
+                else:
+                    question = f"{question}. When generating the chart, use these special instructions: {chart_instructions}"
                     code = vn.generate_plotly_code(
                         question=question,
                         sql=sql,

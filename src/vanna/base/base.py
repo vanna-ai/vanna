@@ -183,7 +183,7 @@ class VannaBase(ABC):
         """
 
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
-        sqls = re.findall(r"WITH.*?;", llm_response, re.DOTALL)
+        sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
             self.log(title="Extracted SQL", message=f"{sql}")
@@ -1068,6 +1068,7 @@ class VannaBase(ABC):
         def run_sql_mysql(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
                 try:
+                    conn.ping(reconnect=True)
                     cs = conn.cursor()
                     cs.execute(sql)
                     results = cs.fetchall()
