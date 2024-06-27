@@ -735,7 +735,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "my-password":
+        if password == "mypassword":
             password_env = os.getenv("SNOWFLAKE_PASSWORD")
 
             if password_env is not None:
