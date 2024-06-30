@@ -60,7 +60,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
             "params": [self._dataclass_to_dict(obj) for obj in params],
         }
 
-        response = requests.post(self._endpoint, headers=headers, data=json.dumps(data))
+        response = requests.post(self._endpoint, headers=headers, data=json.dumps(data), timeout=60)
         return response.json()
 
     def _dataclass_to_dict(self, obj):
@@ -85,7 +85,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
             }
         """
 
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query})
+        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query}, timeout=60)
         response_json = response.json()
         if response.status_code == 200 and 'data' in response_json and 'get_all_sql_functions' in response_json['data']:
             self.log(response_json['data']['get_all_sql_functions'])
@@ -123,7 +123,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         """
         static_function_arguments = [{"name": key, "value": str(value)} for key, value in additional_data.items()]
         variables = {"question": question, "staticFunctionArguments": static_function_arguments}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables})
+        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables}, timeout=60)
         response_json = response.json()
         if response.status_code == 200 and 'data' in response_json and 'get_and_instantiate_function' in response_json['data']:
             self.log(response_json['data']['get_and_instantiate_function'])
@@ -153,7 +153,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         }
         """
         variables = {"question": question, "sql": sql, "plotly_code": plotly_code}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables})
+        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables}, timeout=60)
         response_json = response.json()
         if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'generate_and_create_sql_function' in response_json['data']:
             resp = response_json['data']['generate_and_create_sql_function']
@@ -216,7 +216,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
 
         print("variables", variables)
 
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables})
+        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables}, timeout=60)
         response_json = response.json()
         if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'update_sql_function' in response_json['data']:
             return response_json['data']['update_sql_function']
@@ -230,7 +230,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         }
         """
         variables = {"function_name": function_name}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables})
+        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables}, timeout=60)
         response_json = response.json()
         if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'delete_sql_function' in response_json['data']:
             return response_json['data']['delete_sql_function']
