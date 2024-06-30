@@ -62,8 +62,8 @@ def __unauthenticated_rpc_call(method, params):
     data = {"method": method, "params": [__dataclass_to_dict(obj) for obj in params]}
 
     response = requests.post(
-        _unauthenticated_endpoint, headers=headers, data=json.dumps(data)
-    )
+        _unauthenticated_endpoint, headers=headers, data=json.dumps(data), 
+    timeout=60)
     return response.json()
 
 

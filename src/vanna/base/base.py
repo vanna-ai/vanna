@@ -808,7 +808,7 @@ class VannaBase(ABC):
 
         # Download the database if it doesn't exist
         if not os.path.exists(url):
-            response = requests.get(url)
+            response = requests.get(url, timeout=60)
             response.raise_for_status()  # Check that the request was successful
             with open(path, "wb") as f:
                 f.write(response.content)
@@ -1297,7 +1297,7 @@ class VannaBase(ABC):
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
                 if not os.path.exists(path):
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=60)
                     response.raise_for_status()  # Check that the request was successful
                     with open(path, "wb") as f:
                         f.write(response.content)

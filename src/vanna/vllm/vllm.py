@@ -78,11 +78,11 @@ class Vllm(VannaBase):
             'Authorization': f'Bearer {self.auth_key}' 
             }
 
-            response = requests.post(url, headers=headers,json=data)
+            response = requests.post(url, headers=headers,json=data, timeout=60)
 
 
         else:
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, timeout=60)
 
         response_dict = response.json()
 
