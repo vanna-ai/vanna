@@ -382,6 +382,16 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
 
         return training_data.questions
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         if question in self.related_training_data:
             training_data = self.related_training_data[question]

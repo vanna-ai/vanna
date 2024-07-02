@@ -233,6 +233,16 @@ class Qdrant_VectorStore(VannaBase):
     def embeddings_dimension(self):
         return len(self.generate_embedding("ABCDEF"))
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         results = self._client.search(
             self.sql_collection_name,

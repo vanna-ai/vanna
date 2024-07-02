@@ -225,6 +225,16 @@ class Milvus_VectorStore(VannaBase):
         df = pd.concat([df, df_doc])
         return df
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         search_params = {
             "metric_type": "L2",

@@ -152,6 +152,16 @@ class Marqo_VectorStore(VannaBase):
             # Return an empty list if 'hits' is not found or not a list
             return []
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         return Marqo_VectorStore._extract_documents(
             self.mq.index("vanna-sql").search(question)

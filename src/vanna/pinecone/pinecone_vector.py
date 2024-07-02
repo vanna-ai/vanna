@@ -168,6 +168,16 @@ class PineconeDB_VectorStore(VannaBase):
         )
         return id
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         res = self.Index.query(
             namespace=self.ddl_namespace,
