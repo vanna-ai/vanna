@@ -16,8 +16,8 @@ class OpenRouter_Chat(VannaBase):
     ):
         VannaBase.__init__(self, config=config)
         # default parameters - can be overrided using config
-        self.temperature = 0.7
-        self.max_tokens = 500
+        self.temperature = 0.3
+        self.max_tokens = 4000
 
         if "temperature" in config:
             self.temperature = config["temperature"]

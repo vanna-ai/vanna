@@ -1,14 +1,18 @@
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from ..base import VannaBase
 
 
 class OpenAI_Embeddings(VannaBase):
-    def __init__(self, client=None, config=None):
+    def __init__(self, client=None, async_client=None, config=None):
         VannaBase.__init__(self, config=config)
 
         if client is not None:
             self.client = client
+            return
+
+        if async_client is not None:
+            self.client = async_client
             return
 
         if self.client is not None:
