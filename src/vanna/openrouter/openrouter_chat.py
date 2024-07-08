@@ -45,7 +45,10 @@ class OpenRouter_Chat(VannaBase):
             return
 
         if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.client = OpenAI(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                base_url="https://openrouter.ai/api/v1",
+            )
             return
 
         if aclient is not None:
@@ -53,12 +56,19 @@ class OpenRouter_Chat(VannaBase):
             return
 
         if config is None and aclient is None:
-            self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.aclient = AsyncOpenAI(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                base_url="https://openrouter.ai/api/v1",
+            )
             return
 
         if "api_key" in config:
-            self.client = OpenAI(api_key=config["api_key"])
-            self.aclient = AsyncOpenAI(api_key=config["api_key"])
+            self.client = OpenAI(
+                api_key=config["api_key"], base_url="https://openrouter.ai/api/v1"
+            )
+            self.aclient = AsyncOpenAI(
+                api_key=config["api_key"], base_url="https://openrouter.ai/api/v1"
+            )
 
     def system_message(self, message: str) -> Any:
         return {"role": "system", "content": message}
