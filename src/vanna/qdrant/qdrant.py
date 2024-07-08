@@ -380,12 +380,8 @@ class Qdrant_VectorStore(VannaBase):
 
     @cached_property
     def embeddings_dimension(self):
-        if self._client:
-            return len(self.generate_embedding("ABCDEF"))
-        elif self._async_client:
-            import asyncio
-            return len(asyncio.run(self.agenerate_embedding("ABCDEF")))
-        return 0
+        import asyncio
+        return len(asyncio.run(self.agenerate_embedding("ABCDEF")))
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         results = self._client.search(
