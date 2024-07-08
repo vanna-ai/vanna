@@ -1,9 +1,9 @@
+import asyncio
 from functools import cached_property
 from typing import List, Tuple
 
 import pandas as pd
-from qdrant_client import QdrantClient, grpc, models
-from qdrant_client.http.models.models import UpdateStatus
+from qdrant_client import AsyncQdrantClient, QdrantClient, grpc, models
 
 from ..base import VannaBase
 from ..utils import deterministic_uuid
@@ -44,7 +44,11 @@ class Qdrant_VectorStore(VannaBase):
         config={},
     ):
         VannaBase.__init__(self, config=config)
-        client = config.get("client")
+        client = config.get("client", None)
+        async_client = config.get("async_client", None)
+
+        self._client = client
+        self._async_client = async_client
 
         if client is None:
             self._client = QdrantClient(
@@ -57,13 +61,17 @@ class Qdrant_VectorStore(VannaBase):
                 path=config.get("path", None),
                 prefix=config.get("prefix", None),
             )
-        elif not isinstance(client, QdrantClient):
-            raise TypeError(
-                f"Unsupported client of type {client.__class__} was set in config"
+        if async_client is None:
+            self._async_client = AsyncQdrantClient(
+                location=config.get("location", None),
+                url=config.get("url", None),
+                prefer_grpc=config.get("prefer_grpc", False),
+                https=config.get("https", None),
+                api_key=config.get("api_key", None),
+                timeout=config.get("timeout", None),
+                path=config.get("path", None),
+                prefix=config.get("prefix", None),
             )
-
-        else:
-            self._client = client
 
         self.n_results = config.get("n_results", 10)
         self.fastembed_model = config.get("fastembed_model", "BAAI/bge-small-en-v1.5")
@@ -72,12 +80,8 @@ class Qdrant_VectorStore(VannaBase):
         self.documentation_collection_name = config.get(
             "documentation_collection_name", "documentation"
         )
-        self.ddl_collection_name = config.get(
-            "ddl_collection_name", "ddl"
-        )
-        self.sql_collection_name = config.get(
-            "sql_collection_name", "sql"
-        )
+        self.ddl_collection_name = config.get("ddl_collection_name", "ddl")
+        self.sql_collection_name = config.get("sql_collection_name", "sql")
 
         self.id_suffixes = {
             self.ddl_collection_name: "ddl",
@@ -85,7 +89,10 @@ class Qdrant_VectorStore(VannaBase):
             self.sql_collection_name: "sql",
         }
 
-        self._setup_collections()
+        if async_client:
+            asyncio.run(self._asetup_collections())
+        else:
+            self._setup_collections()
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         question_answer = "Question: {0}\n\nSQL: {1}".format(question, sql)
@@ -97,6 +104,26 @@ class Qdrant_VectorStore(VannaBase):
                 models.PointStruct(
                     id=id,
                     vector=self.generate_embedding(question_answer),
+                    payload={
+                        "question": question,
+                        "sql": sql,
+                    },
+                )
+            ],
+        )
+
+        return self._format_point_id(id, self.sql_collection_name)
+
+    async def aadd_question_sql(self, question: str, sql: str, **kwargs) -> str:
+        question_answer = "Question: {0}\n\nSQL: {1}".format(question, sql)
+        id = deterministic_uuid(question_answer)
+
+        await self._async_client.upsert(
+            self.sql_collection_name,
+            points=[
+                models.PointStruct(
+                    id=id,
+                    vector=await self.agenerate_embedding(question_answer),
                     payload={
                         "question": question,
                         "sql": sql,
@@ -123,6 +150,22 @@ class Qdrant_VectorStore(VannaBase):
         )
         return self._format_point_id(id, self.ddl_collection_name)
 
+    async def aadd_ddl(self, ddl: str, **kwargs) -> str:
+        id = deterministic_uuid(ddl)
+        await self._async_client.upsert(
+            self.ddl_collection_name,
+            points=[
+                models.PointStruct(
+                    id=id,
+                    vector=await self.agenerate_embedding(ddl),
+                    payload={
+                        "ddl": ddl,
+                    },
+                )
+            ],
+        )
+        return self._format_point_id(id, self.ddl_collection_name)
+
     def add_documentation(self, documentation: str, **kwargs) -> str:
         id = deterministic_uuid(documentation)
 
@@ -132,6 +175,24 @@ class Qdrant_VectorStore(VannaBase):
                 models.PointStruct(
                     id=id,
                     vector=self.generate_embedding(documentation),
+                    payload={
+                        "documentation": documentation,
+                    },
+                )
+            ],
+        )
+
+        return self._format_point_id(id, self.documentation_collection_name)
+
+    async def aadd_documentation(self, documentation: str, **kwargs) -> str:
+        id = deterministic_uuid(documentation)
+
+        await self._async_client.upsert(
+            self.documentation_collection_name,
+            points=[
+                models.PointStruct(
+                    id=id,
+                    vector=await self.agenerate_embedding(documentation),
                     payload={
                         "documentation": documentation,
                     },
@@ -204,10 +265,81 @@ class Qdrant_VectorStore(VannaBase):
 
         return df
 
+    async def aget_training_data(self, **kwargs) -> pd.DataFrame:
+        df = pd.DataFrame()
+
+        if sql_data := await self._aget_all_points(self.sql_collection_name):
+            question_list = [data.payload["question"] for data in sql_data]
+            sql_list = [data.payload["sql"] for data in sql_data]
+            id_list = [
+                self._format_point_id(data.id, self.sql_collection_name)
+                for data in sql_data
+            ]
+
+            df_sql = pd.DataFrame(
+                {
+                    "id": id_list,
+                    "question": question_list,
+                    "content": sql_list,
+                }
+            )
+
+            df_sql["training_data_type"] = "sql"
+
+            df = pd.concat([df, df_sql])
+
+        if ddl_data := await self._aget_all_points(self.ddl_collection_name):
+            ddl_list = [data.payload["ddl"] for data in ddl_data]
+            id_list = [
+                self._format_point_id(data.id, self.ddl_collection_name)
+                for data in ddl_data
+            ]
+
+            df_ddl = pd.DataFrame(
+                {
+                    "id": id_list,
+                    "question": [None for _ in ddl_list],
+                    "content": ddl_list,
+                }
+            )
+
+            df_ddl["training_data_type"] = "ddl"
+
+            df = pd.concat([df, df_ddl])
+
+        if doc_data := await self._aget_all_points(self.documentation_collection_name):
+            document_list = [data.payload["documentation"] for data in doc_data]
+            id_list = [
+                self._format_point_id(data.id, self.documentation_collection_name)
+                for data in doc_data
+            ]
+
+            df_doc = pd.DataFrame(
+                {
+                    "id": id_list,
+                    "question": [None for _ in document_list],
+                    "content": document_list,
+                }
+            )
+
+            df_doc["training_data_type"] = "documentation"
+
+            df = pd.concat([df, df_doc])
+
+        return df
+
     def remove_training_data(self, id: str, **kwargs) -> bool:
         try:
             id, collection_name = self._parse_point_id(id)
             res = self._client.delete(collection_name, points_selector=[id])
+            return True
+        except ValueError:
+            return False
+
+    async def aremove_training_data(self, id: str, **kwargs) -> bool:
+        try:
+            id, collection_name = self._parse_point_id(id)
+            res = await self._async_client.delete(collection_name, points_selector=[id])
             return True
         except ValueError:
             return False
@@ -229,6 +361,23 @@ class Qdrant_VectorStore(VannaBase):
         else:
             return False
 
+    async def aremove_collection(self, collection_name: str) -> bool:
+        """
+        This function can reset the collection to empty state.
+
+        Args:
+            collection_name (str): sql or ddl or documentation
+
+        Returns:
+            bool: True if collection is deleted, False otherwise
+        """
+        if collection_name in self.id_suffixes.keys():
+            await self._async_client.delete_collection(collection_name)
+            await self._asetup_collections()
+            return True
+        else:
+            return False
+
     @cached_property
     def embeddings_dimension(self):
         return len(self.generate_embedding("ABCDEF"))
@@ -237,6 +386,16 @@ class Qdrant_VectorStore(VannaBase):
         results = self._client.search(
             self.sql_collection_name,
             query_vector=self.generate_embedding(question),
+            limit=self.n_results,
+            with_payload=True,
+        )
+
+        return [dict(result.payload) for result in results]
+
+    async def aget_similar_question_sql(self, question: str, **kwargs) -> list:
+        results = await self._async_client.search(
+            self.sql_collection_name,
+            query_vector=await self.agenerate_embedding(question),
             limit=self.n_results,
             with_payload=True,
         )
@@ -253,10 +412,30 @@ class Qdrant_VectorStore(VannaBase):
 
         return [result.payload["ddl"] for result in results]
 
+    async def aget_related_ddl(self, question: str, **kwargs) -> list:
+        results = await self._async_client.search(
+            self.ddl_collection_name,
+            query_vector=await self.agenerate_embedding(question),
+            limit=self.n_results,
+            with_payload=True,
+        )
+
+        return [result.payload["ddl"] for result in results]
+
     def get_related_documentation(self, question: str, **kwargs) -> list:
         results = self._client.search(
             self.documentation_collection_name,
             query_vector=self.generate_embedding(question),
+            limit=self.n_results,
+            with_payload=True,
+        )
+
+        return [result.payload["documentation"] for result in results]
+
+    async def aget_related_documentation(self, question: str, **kwargs) -> list:
+        results = await self._async_client.search(
+            self.documentation_collection_name,
+            query_vector=await self.agenerate_embedding(question),
             limit=self.n_results,
             with_payload=True,
         )
@@ -271,12 +450,42 @@ class Qdrant_VectorStore(VannaBase):
 
         return embedding.tolist()
 
+    async def agenerate_embedding(self, data: str, **kwargs) -> List[float]:
+        embedding_model = self._async_client._get_or_init_model(
+            model_name=self.fastembed_model
+        )
+        embedding = next(embedding_model.embed(data))
+
+        return embedding.tolist()
+
     def _get_all_points(self, collection_name: str):
         results: List[models.Record] = []
         next_offset = None
         stop_scrolling = False
         while not stop_scrolling:
             records, next_offset = self._client.scroll(
+                collection_name,
+                limit=SCROLL_SIZE,
+                offset=next_offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            stop_scrolling = next_offset is None or (
+                isinstance(next_offset, grpc.PointId)
+                and next_offset.num == 0
+                and next_offset.uuid == ""
+            )
+
+            results.extend(records)
+
+        return results
+
+    async def _aget_all_points(self, collection_name: str):
+        results: List[models.Record] = []
+        next_offset = None
+        stop_scrolling = False
+        while not stop_scrolling:
+            records, next_offset = await self._async_client.scroll(
                 collection_name,
                 limit=SCROLL_SIZE,
                 offset=next_offset,
@@ -315,6 +524,38 @@ class Qdrant_VectorStore(VannaBase):
             )
         if not self._client.collection_exists(self.documentation_collection_name):
             self._client.create_collection(
+                collection_name=self.documentation_collection_name,
+                vectors_config=models.VectorParams(
+                    size=self.embeddings_dimension,
+                    distance=self.distance_metric,
+                ),
+                **self.collection_params,
+            )
+
+    async def _asetup_collections(self):
+        if not await self._async_client.collection_exists(self.sql_collection_name):
+            await self._async_client.create_collection(
+                collection_name=self.sql_collection_name,
+                vectors_config=models.VectorParams(
+                    size=self.embeddings_dimension,
+                    distance=self.distance_metric,
+                ),
+                **self.collection_params,
+            )
+
+        if not await self._async_client.collection_exists(self.ddl_collection_name):
+            await self._async_client.create_collection(
+                collection_name=self.ddl_collection_name,
+                vectors_config=models.VectorParams(
+                    size=self.embeddings_dimension,
+                    distance=self.distance_metric,
+                ),
+                **self.collection_params,
+            )
+        if not await self._async_client.collection_exists(
+            self.documentation_collection_name
+        ):
+            await self._async_client.create_collection(
                 collection_name=self.documentation_collection_name,
                 vectors_config=models.VectorParams(
                     size=self.embeddings_dimension,
