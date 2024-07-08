@@ -12,7 +12,7 @@ class OpenRouter_Chat(VannaBase):
         self,
         client=None,
         aclient=None,
-        config: dict[str, Any] | None = None,
+        config: dict[str, Any] = {},
     ):
         VannaBase.__init__(self, config=config)
         # default parameters - can be overrided using config
