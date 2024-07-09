@@ -55,7 +55,7 @@ import re
 import sqlite3
 import traceback
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple, Union
+from typing import Any, AsyncGenerator, List, Tuple, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -1374,13 +1374,14 @@ class VannaBase(ABC):
         if not port:
             port = int(os.getenv("PORT", 3306))
 
-        conn = None
+        from sqlalchemy.ext.asyncio import async_sessionmaker
 
         try:
             engine = create_async_engine(
                 url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}"
             )
-            conn = await engine.connect()
+            async_session = async_sessionmaker(engine, expire_on_commit=False)
+
         except Exception as e:
             raise ValidationError(e)
 
@@ -1388,16 +1389,16 @@ class VannaBase(ABC):
             from sqlalchemy import text
 
             try:
-                cs = await conn.execute(text(sql))
-                results = cs.fetchall()
+                async with async_session() as session:
+                    cs = await session.execute(text(sql))
+                    results = cs.fetchall()
 
-                columns = cs.keys()
-                # Create a pandas dataframe from the results
-                df = pd.DataFrame(results, columns=columns)  # type: ignore
-                return df
+                    columns = cs.keys()
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(results, columns=columns)  # type: ignore
+                    return df
 
             except Exception as e:
-                await conn.rollback()
                 raise e
 
         self.arun_sql_is_set = True
