@@ -1382,13 +1382,9 @@ class VannaBase(ABC):
 
         try:
             engine = create_async_engine(
-                url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}",
-                echo=True,
-                pool_size=20,  # Increase pool size
-                max_overflow=30,  # Increase max overflow
-                pool_recycle=3600,  # Recycle connections after 1 hour
+                url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}"
             )
-            async_session = async_sessionmaker(engine, expire_on_commit=False)
+            async_session = async_sessionmaker(engine)
 
         except Exception as e:
             raise ValidationError(e)
@@ -1397,8 +1393,9 @@ class VannaBase(ABC):
             from sqlalchemy import text
 
             try:
-                async with async_session() as session:
+                async with async_session.begin() as session:
                     cs = await session.execute(text(sql))
+                    await session.commit()
                     results = cs.fetchall()
 
                     columns = cs.keys()
