@@ -1392,19 +1392,23 @@ class VannaBase(ABC):
         async def arun_sql_mysql(sql: str, **kwargs) -> pd.DataFrame:
             from sqlalchemy import text
 
-            try:
-                async with async_session.begin() as session:
-                    cs = await session.execute(text(sql))
-                    await session.commit()
-                    results = cs.fetchall()
+            session = async_session()
 
-                    columns = cs.keys()
-                    # Create a pandas dataframe from the results
-                    df = pd.DataFrame(results, columns=columns)  # type: ignore
-                    return df
+            try:
+                cs = await session.execute(text(sql))
+                results = cs.fetchall()
+
+                columns = cs.keys()
+                # Create a pandas dataframe from the results
+                df = pd.DataFrame(results, columns=columns)  # type: ignore
+                await session.commit()
+                return df
 
             except Exception as e:
+                await session.rollback()
                 raise e
+            finally:
+                await session.close()
 
         self.arun_sql_is_set = True
         self.arun_sql = arun_sql_mysql
