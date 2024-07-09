@@ -1382,7 +1382,11 @@ class VannaBase(ABC):
 
         try:
             engine = create_async_engine(
-                url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}"
+                url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}",
+                echo=True,
+                pool_size=20,  # Increase pool size
+                max_overflow=30,  # Increase max overflow
+                pool_recycle=3600,  # Recycle connections after 1 hour
             )
             async_session = async_sessionmaker(engine, expire_on_commit=False)
 
