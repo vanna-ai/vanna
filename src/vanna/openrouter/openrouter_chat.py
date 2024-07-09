@@ -3,6 +3,7 @@ from typing import Any, AsyncIterable
 
 from openai import AsyncOpenAI, OpenAI
 from openai.types.chat.chat_completion import Choice
+from tenacity import retry
 
 from ..base import VannaBase
 
@@ -119,6 +120,7 @@ class OpenRouter_Chat(VannaBase):
 
         return ""
 
+    @retry
     async def asubmit_prompt(
         self, prompt, model: str = "deepseek/deepseek-chat", **kwargs
     ) -> str:
