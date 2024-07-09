@@ -428,6 +428,8 @@ class VannaBase(ABC):
         Returns:
             str: The summary of the results of the SQL query.
         """
+        # trim the dataframe to 10 rows
+        df = df.head(10)
 
         message_log = [
             self.system_message(
@@ -459,6 +461,8 @@ class VannaBase(ABC):
         Returns:
             str: The summary of the results of the SQL query.
         """
+        # trim the dataframe to 10 rows
+        df = df.head(10)
 
         message_log = [
             self.system_message(
