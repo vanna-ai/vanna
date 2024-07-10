@@ -64,7 +64,7 @@ class Bedrock_Converse(VannaBase):
             if role == "system":
                 system_message = prompt_message["content"]
             else:
-                no_system_prompt.append({"role": role, "content": prompt_message["content"]})
+                no_system_prompt.append({"role": role, "content":[{"text": prompt_message["content"]}]})
 
         converse_api_params = {
             "modelId": self.model,
