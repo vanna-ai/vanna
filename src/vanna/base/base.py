@@ -1413,6 +1413,8 @@ class VannaBase(ABC):
         self.arun_sql_is_set = True
         self.arun_sql = arun_sql_mysql
 
+        return engine
+
     def connect_to_clickhouse(
         self,
         host: str = None,
