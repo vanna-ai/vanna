@@ -23,20 +23,15 @@ class OpenRouter_Chat(VannaBase):
     ):
         VannaBase.__init__(self, config=config)
         # default parameters - can be overrided using config
-        self.temperature = 0.3
-        self.max_tokens = 4000
+        self.temperature = config.get("temperature", 0.7)
+        self.max_tokens = config.get("max_tokens", 500)
         self.client = client
         self.aclient = aclient
-
-        if "temperature" in config:
-            self.temperature = config["temperature"]
-
-        if "max_tokens" in config:
-            self.max_tokens = config["max_tokens"]
-
-        if "api_key" in config:
-            self.client.api_key = config["api_key"]
-            self.aclient.api_key = config["api_key"]
+        self.model = config.get(
+            "model", os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
+        )
+        self.client.api_key = config.get("api_key", os.getenv("OPENROUTER_API_KEY"))
+        self.aclient.api_key = config.get("api_key", os.getenv("OPENROUTER_API_KEY"))
 
     def system_message(self, message: str) -> Any:
         return {"role": "system", "content": message}
@@ -88,9 +83,7 @@ class OpenRouter_Chat(VannaBase):
         return ""
 
     @retry
-    async def asubmit_prompt(
-        self, prompt, model: str = "deepseek/deepseek-chat", **kwargs
-    ) -> str:
+    async def asubmit_prompt(self, prompt, **kwargs) -> str:
         if prompt is None:
             raise Exception("Prompt is None")
 
@@ -103,9 +96,9 @@ class OpenRouter_Chat(VannaBase):
         for message in prompt:
             num_tokens += len(message["content"]) / 4
 
-        print(f"Using model {model} for {num_tokens} tokens (approx)")
+        print(f"Using model {self.model} for {num_tokens} tokens (approx)")
         response = await self.aclient.chat.completions.create(
-            model=model,
+            model=self.model,
             messages=prompt,
             max_tokens=self.max_tokens,
             stop=None,
@@ -128,9 +121,7 @@ class OpenRouter_Chat(VannaBase):
 
         return ""
 
-    async def astream_submit_prompt(
-        self, prompt, model: str = "deepseek/deepseek-chat", **kwargs
-    ) -> AsyncIterable[str]:
+    async def astream_submit_prompt(self, prompt, **kwargs) -> AsyncIterable[str]:
         if prompt is None:
             raise Exception("Prompt is None")
 
@@ -143,9 +134,9 @@ class OpenRouter_Chat(VannaBase):
         for message in prompt:
             num_tokens += len(message["content"]) / 4
 
-        print(f"Using model {model} for {num_tokens} tokens (approx)")
+        print(f"Using model {self.model} for {num_tokens} tokens (approx)")
         stream = await self.aclient.chat.completions.create(
-            model=model,
+            model=self.model,
             messages=prompt,
             max_tokens=self.max_tokens,
             stop=None,
