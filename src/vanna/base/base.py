@@ -1383,8 +1383,7 @@ class VannaBase(ABC):
         try:
             engine = create_async_engine(
                 url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}",
-                max_overflow=-1,
-                timeout=3600,
+                pool_timeout=3600,
             )
             async_session = async_sessionmaker(engine)
 
