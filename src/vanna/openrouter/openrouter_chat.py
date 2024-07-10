@@ -11,14 +11,22 @@ from ..base import VannaBase
 class OpenRouter_Chat(VannaBase):
     def __init__(
         self,
-        client=None,
-        aclient=None,
+        client=OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        ),
+        aclient=AsyncOpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+        ),
         config: dict[str, Any] = {},
     ):
         VannaBase.__init__(self, config=config)
         # default parameters - can be overrided using config
         self.temperature = 0.3
         self.max_tokens = 4000
+        self.client = client
+        self.aclient = aclient
 
         if "temperature" in config:
             self.temperature = config["temperature"]
@@ -26,50 +34,9 @@ class OpenRouter_Chat(VannaBase):
         if "max_tokens" in config:
             self.max_tokens = config["max_tokens"]
 
-        if "api_type" in config:
-            raise Exception(
-                "Passing api_type is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_base" in config:
-            raise Exception(
-                "Passing api_base is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_version" in config:
-            raise Exception(
-                "Passing api_version is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if client is not None:
-            self.client = client
-            return
-
-        if config is None and client is None:
-            self.client = OpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
-                base_url="https://openrouter.ai/api/v1",
-            )
-            return
-
-        if aclient is not None:
-            self.aclient = aclient
-            return
-
-        if config is None and aclient is None:
-            self.aclient = AsyncOpenAI(
-                api_key=os.getenv("OPENAI_API_KEY"),
-                base_url="https://openrouter.ai/api/v1",
-            )
-            return
-
         if "api_key" in config:
-            self.client = OpenAI(
-                api_key=config["api_key"], base_url="https://openrouter.ai/api/v1"
-            )
-            self.aclient = AsyncOpenAI(
-                api_key=config["api_key"], base_url="https://openrouter.ai/api/v1"
-            )
+            self.client.api_key = config["api_key"]
+            self.aclient.api_key = config["api_key"]
 
     def system_message(self, message: str) -> Any:
         return {"role": "system", "content": message}
