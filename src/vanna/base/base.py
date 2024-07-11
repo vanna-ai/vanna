@@ -792,13 +792,13 @@ class VannaBase(ABC):
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
-    def connect_to_sqlite(self, url: str):
+    def connect_to_sqlite(self, url: str, check_same_thread: bool = False,  **kwargs):
         """
         Connect to a SQLite database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
         Args:
             url (str): The URL of the database to connect to.
-
+            check_same_thread (str): Allow the connection may be accessed in multiple threads.
         Returns:
             None
         """
@@ -817,7 +817,11 @@ class VannaBase(ABC):
             url = path
 
         # Connect to the database
-        conn = sqlite3.connect(url, check_same_thread=False)
+        conn = sqlite3.connect(
+            url,
+            check_same_thread=check_same_thread,
+            **kwargs
+        )
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
