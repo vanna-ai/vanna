@@ -1442,23 +1442,15 @@ By following these steps, we can ensure that the answer is accurate and directly
         async def arun_sql_mysql(sql: str, **kwargs) -> pd.DataFrame:
             from sqlalchemy import text
 
-            session = async_session()
+            async with async_session() as session:
+                async with session.begin():
+                    cs = await session.execute(text(sql))
+                    results = cs.fetchall()
 
-            try:
-                cs = await session.execute(text(sql))
-                results = cs.fetchall()
-
-                columns = cs.keys()
-                # Create a pandas dataframe from the results
-                df = pd.DataFrame(results, columns=columns)  # type: ignore
-                await session.commit()
-                return df
-
-            except Exception as e:
-                await session.rollback()
-                raise e
-            finally:
-                await session.close()
+                    columns = cs.keys()
+                    df = pd.DataFrame(results, columns=columns)  # type: ignore
+                    await session.rollback()
+                    return df
 
         self.arun_sql_is_set = True
         self.arun_sql = arun_sql_mysql
