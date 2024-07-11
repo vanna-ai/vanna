@@ -469,8 +469,8 @@ class VannaBase(ABC):
         message_log = [
             self.system_message(
                 f"""Let's think step by step.
-                You are a helpful data assistant.
-                Given a set of question, sql query, and sql results, generate an answer to the question."""
+You are a helpful data assistant.
+Given a set of question, sql query, and sql results, generate an answer to the question."""
             ),
             self.assistant_message(
                 """Certainly! To generate an answer to a question given a SQL query and its results, we can follow these steps:
@@ -509,14 +509,17 @@ By following these steps, we can ensure that the answer is accurate and directly
             ),
             self.user_message(
                 f"""**Question**:
-                {question}
+{question}
 
-                **SQL query**:
-                {sql}
-
-                **SQL results (limited to 10 rows)**:
-                {parsed_df.to_markdown()}"""
-                + self._response_language()
+**SQL query**:
+```
+{sql}
+```
+**SQL results (limited to 10 rows)**:
+```
+{parsed_df.to_markdown()}
+```
+"""
             ),
         ]
 
