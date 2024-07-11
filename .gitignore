@@ -18,3 +18,4 @@ htmlcov
 chroma.sqlite3
 *.bin
 .coverage.*
+.vscode
