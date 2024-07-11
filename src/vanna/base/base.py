@@ -445,7 +445,9 @@ class VannaBase(ABC):
 
         return summary
 
-    async def agenerate_summary(self, question: str, df: pd.DataFrame, **kwargs) -> str:
+    async def agenerate_summary(
+        self, question: str, df: pd.DataFrame, sql: str, **kwargs
+    ) -> str:
         """
         **Example:**
         ```python
@@ -466,10 +468,54 @@ class VannaBase(ABC):
 
         message_log = [
             self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe following is a pandas DataFrame with the results of the query: \n{parsed_df.to_markdown()}\n\n"
+                f"""Let's think step by step.
+                You are a helpful data assistant.
+                Given a set of question, sql query, and sql results, generate an answer to the question."""
+            ),
+            self.assistant_message(
+                """Certainly! To generate an answer to a question given a SQL query and its results, we can follow these steps:
+1. **Understand the Question**: First, we need to clearly understand what the question is asking. This will help us determine what information from the SQL results is relevant.
+2. **Analyze the SQL Query**: Review the SQL query to understand what data it is retrieving and how it is structured. This will help us map the results back to the question.
+3. **Review the SQL Results**: Look at the results returned by the SQL query. Identify the columns and rows that contain the data relevant to the question.
+4. **Generate the Answer**: Using the relevant data from the SQL results, construct an answer to the question. Ensure that the answer is clear, concise, and directly addresses the question.
+
+Let's go through an example to illustrate this process:
+
+### Example
+
+**Question**: How many orders were placed in the month of January 2023?
+
+**SQL Query**:
+```sql
+SELECT COUNT(*) AS order_count
+FROM orders
+WHERE order_date BETWEEN '2023-01-01' AND '2023-01-31';
+```
+
+**SQL Results**:
+```
+order_count
+-----------
+500
+```
+
+### Step-by-Step Process
+
+1. **Understand the Question**: The question is asking for the number of orders placed in January 2023.
+2. **Analyze the SQL Query**: The SQL query counts the number of orders where the `order_date` falls within January 2023.
+3. **Review the SQL Results**: The results show that there were 500 orders.
+4. **Generate the Answer**: The answer to the question is: "There were 500 orders placed in the month of January 2023."
+By following these steps, we can ensure that the answer is accurate and directly addresses the question based on the provided SQL query and results."""
             ),
             self.user_message(
-                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary."
+                f"""**Question**:
+                {question}
+
+                **SQL query**:
+                {sql}
+
+                **SQL results (limited to 10 rows)**:
+                {parsed_df.to_markdown()}"""
                 + self._response_language()
             ),
         ]
