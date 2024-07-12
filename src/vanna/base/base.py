@@ -64,6 +64,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import sqlparse
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
@@ -1385,72 +1386,29 @@ By following these steps, we can ensure that the answer is accurate and directly
 
     async def aconnect_to_mysql(
         self,
-        host: str | None = None,
-        dbname: str | None = None,
-        user: str | None = None,
-        password: str | None = None,
-        port: int | None = None,
+        engine=create_async_engine(
+            url=f"mysql+aiomysql://{os.getenv("DB_USER")}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
+            pool_timeout=3600,
+        ),
     ):
-
-        try:
-            from sqlalchemy.ext.asyncio import create_async_engine
-        except ImportError:
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: \npip install aiomysql"
-            )
-
-        if not host:
-            host = os.getenv("HOST")
-
-        if not host:
-            raise ImproperlyConfigured("Please set your MySQL host")
-
-        if not dbname:
-            dbname = os.getenv("DATABASE")
-
-        if not dbname:
-            raise ImproperlyConfigured("Please set your MySQL database")
-
-        if not user:
-            user = os.getenv("USER")
-
-        if not user:
-            raise ImproperlyConfigured("Please set your MySQL user")
-
-        if not password:
-            password = os.getenv("PASSWORD")
-
-        if not password:
-            raise ImproperlyConfigured("Please set your MySQL password")
-
-        if not port:
-            port = int(os.getenv("PORT", 3306))
-
         from sqlalchemy.ext.asyncio import async_sessionmaker
 
-        try:
-            engine = create_async_engine(
-                url=f"mysql+aiomysql://{user}:{password}@{host}:{port}/{dbname}",
-                pool_timeout=3600,
-            )
-            async_session = async_sessionmaker(engine)
-
-        except Exception as e:
-            raise ValidationError(e)
+        async_session = async_sessionmaker(engine)
 
         async def arun_sql_mysql(sql: str, **kwargs) -> pd.DataFrame:
             from sqlalchemy import text
 
-            async with async_session() as session:
-                async with session.begin():
+            async with async_session.begin() as session:
+                try:
                     cs = await session.execute(text(sql))
                     results = cs.fetchall()
-
                     columns = cs.keys()
                     df = pd.DataFrame(results, columns=columns)  # type: ignore
-                    await session.rollback()
                     return df
+                except Exception as e:
+                    raise ValidationError(e)
+                finally:
+                    await session.rollback()
 
         self.arun_sql_is_set = True
         self.arun_sql = arun_sql_mysql
