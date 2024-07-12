@@ -1387,7 +1387,7 @@ By following these steps, we can ensure that the answer is accurate and directly
     async def aconnect_to_mysql(
         self,
         engine=create_async_engine(
-            url=f"""mysql+aiomysql://{os.getenv("DB_USER")}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}""",
+            url=f"""mysql+aiomysql://{os.getenv("DB_USER","")}:{os.getenv('DB_PASSWORD',"")}@{os.getenv('DB_HOST',"")}:{int(os.getenv('DB_PORT',3306))}/{os.getenv('DB_NAME',"")}""",
             pool_timeout=3600,
         ),
     ):
