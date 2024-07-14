@@ -12,8 +12,8 @@ repos:
       - id: debug-statements
       - id: mixed-line-ending
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.3
     hooks:
-      - id: isort
-        args: [ "--profile", "black", "--filter-files" ]
+      #- id: ruff
+      - id: ruff-format

@@ -1,4 +1,9 @@
 import os
+import sys
+from tempfile import TemporaryDirectory, NamedTemporaryFile
+
+import requests
+import pytest
 
 from vanna.anthropic.anthropic_chat import Anthropic_Chat
 from vanna.google import GoogleGeminiChat
@@ -10,54 +15,94 @@ from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
 try:
     print("Trying to load .env")
     from dotenv import load_dotenv
+
     load_dotenv()
 except Exception as e:
     print(f"Failed to load .env {e}")
     pass
 
-MY_VANNA_MODEL = 'chinook'
-ANTHROPIC_Model = 'claude-3-sonnet-20240229'
-MY_VANNA_API_KEY = os.environ['VANNA_API_KEY']
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-MISTRAL_API_KEY = os.environ['MISTRAL_API_KEY']
-ANTHROPIC_API_KEY = os.environ['ANTHROPIC_API_KEY']
-SNOWFLAKE_ACCOUNT = os.environ['SNOWFLAKE_ACCOUNT']
-SNOWFLAKE_USERNAME = os.environ['SNOWFLAKE_USERNAME']
-SNOWFLAKE_PASSWORD = os.environ['SNOWFLAKE_PASSWORD']
+MY_VANNA_MODEL = "chinook"
+ANTHROPIC_Model = "claude-3-sonnet-20240229"
+MY_VANNA_API_KEY = os.environ.get("VANNA_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+SNOWFLAKE_ACCOUNT = os.environ.get("SNOWFLAKE_ACCOUNT")
+SNOWFLAKE_USERNAME = os.environ.get("SNOWFLAKE_USERNAME")
+SNOWFLAKE_PASSWORD = os.environ.get("SNOWFLAKE_PASSWORD")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+
+def is_k_option_passed():
+    return "-k" in sys.argv
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_sessionstart(session):
+    if not is_k_option_passed():
+        assert MY_VANNA_API_KEY is not None, "VANNA_API_KEY is not set"
+        assert OPENAI_API_KEY is not None, "OPENAI_API_KEY is not set"
+        assert MISTRAL_API_KEY is not None, "MISTRAL_API_KEY is not set"
+        assert ANTHROPIC_API_KEY is not None, "ANTHROPIC_API_KEY is not set"
+        assert SNOWFLAKE_ACCOUNT is not None, "SNOWFLAKE_ACCOUNT is not set"
+        assert SNOWFLAKE_USERNAME is not None, "SNOWFLAKE_USERNAME is not set"
+        assert SNOWFLAKE_PASSWORD is not None, "SNOWFLAKE_PASSWORD is not set"
+        assert GEMINI_API_KEY is not None, "GEMINI_API_KEY is not set"
+
 
 class VannaOpenAI(VannaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
-        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        VannaDB_VectorStore.__init__(
+            self,
+            vanna_model=MY_VANNA_MODEL,
+            vanna_api_key=MY_VANNA_API_KEY,
+            config=config,
+        )
         OpenAI_Chat.__init__(self, config=config)
 
-vn_openai = VannaOpenAI(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
-vn_openai.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+vn_openai = VannaOpenAI(config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo"})
+vn_openai.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_openai():
     sql = vn_openai.generate_sql("What are the top 4 customers by sales?")
     df = vn_openai.run_sql(sql)
     assert len(df) == 4
 
+
 class VannaMistral(VannaDB_VectorStore, Mistral):
     def __init__(self, config=None):
-        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
-        Mistral.__init__(self, config={'api_key': MISTRAL_API_KEY, 'model': 'mistral-tiny'})
+        VannaDB_VectorStore.__init__(
+            self,
+            vanna_model=MY_VANNA_MODEL,
+            vanna_api_key=MY_VANNA_API_KEY,
+            config=config,
+        )
+        Mistral.__init__(
+            self, config={"api_key": MISTRAL_API_KEY, "model": "mistral-tiny"}
+        )
+
 
 vn_mistral = VannaMistral()
-vn_mistral.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+vn_mistral.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_mistral():
     sql = vn_mistral.generate_sql("What are the top 5 customers by sales?")
     df = vn_mistral.run_sql(sql)
     assert len(df) == 5
 
+
 vn_default = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
-vn_default.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+vn_default.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_default():
     sql = vn_default.generate_sql("What are the top 6 customers by sales?")
     df = vn_default.run_sql(sql)
     assert len(df) == 6
+
 
 from vanna.qdrant import Qdrant_VectorStore
 
@@ -67,22 +112,33 @@ class VannaQdrant(Qdrant_VectorStore, OpenAI_Chat):
         Qdrant_VectorStore.__init__(self, config=config)
         OpenAI_Chat.__init__(self, config=config)
 
+
 from qdrant_client import QdrantClient
 
 qdrant_memory_client = QdrantClient(":memory:")
 
-vn_qdrant = VannaQdrant(config={'client': qdrant_memory_client, 'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
-vn_qdrant.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+vn_qdrant = VannaQdrant(
+    config={
+        "client": qdrant_memory_client,
+        "api_key": OPENAI_API_KEY,
+        "model": "gpt-3.5-turbo",
+    }
+)
+vn_qdrant.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_qdrant():
-    df_ddl = vn_qdrant.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+    df_ddl = vn_qdrant.run_sql(
+        "SELECT type, sql FROM sqlite_master WHERE sql is not null"
+    )
 
-    for ddl in df_ddl['sql'].to_list():
+    for ddl in df_ddl["sql"].to_list():
         vn_qdrant.train(ddl=ddl)
 
     sql = vn_qdrant.generate_sql("What are the top 7 customers by sales?")
     df = vn_qdrant.run_sql(sql)
     assert len(df) == 7
+
 
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from vanna.openai.openai_chat import OpenAI_Chat
@@ -93,22 +149,251 @@ class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
         ChromaDB_VectorStore.__init__(self, config=config)
         OpenAI_Chat.__init__(self, config=config)
 
-vn_chroma = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
-vn_chroma.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+vn_chroma = MyVanna(config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo"})
+vn_chroma.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_chroma():
     existing_training_data = vn_chroma.get_training_data()
     if len(existing_training_data) > 0:
         for _, training_data in existing_training_data.iterrows():
-            vn_chroma.remove_training_data(training_data['id'])
+            vn_chroma.remove_training_data(training_data["id"])
 
-    df_ddl = vn_chroma.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+    df_ddl = vn_chroma.run_sql(
+        "SELECT type, sql FROM sqlite_master WHERE sql is not null"
+    )
 
-    for ddl in df_ddl['sql'].to_list():
+    for ddl in df_ddl["sql"].to_list():
         vn_chroma.train(ddl=ddl)
 
     sql = vn_chroma.generate_sql("What are the top 7 customers by sales?")
     df = vn_chroma.run_sql(sql)
+    assert len(df) == 7
+
+
+from vanna.duckdb.duckdb_vector import DuckDB_VectorStore
+
+
+class MyVannaDuckDb(DuckDB_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        DuckDB_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+
+def test_vn_duckdb():
+    import duckdb
+
+    with TemporaryDirectory() as temp_dir:
+        vn_duckdb = MyVannaDuckDb(
+            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "path": temp_dir}
+        )
+        database_path = os.path.join(temp_dir, "vanna.duckdb")
+        conn = duckdb.connect(database=database_path)
+        conn.close()
+        vn_duckdb.connect_to_duckdb(database_path)
+        _ = vn_duckdb.get_training_data()
+
+        conn = duckdb.connect(database=database_path)
+
+        employee_ddl = """
+        CREATE TABLE employee (
+            employee_id INTEGER,
+            name VARCHAR,
+            occupation VARCHAR
+        );
+        """
+
+        conn.execute(employee_ddl)
+
+        conn.execute(
+            """
+        INSERT INTO employee VALUES
+        (1, 'Alice Johnson', 'Software Engineer'),
+        (2, 'Bob Smith', 'Data Scientist'),
+        (3, 'Charlie Brown', 'Product Manager'),
+        (4, 'Diana Prince', 'UX Designer'),
+        (5, 'Ethan Hunt', 'DevOps Engineer');
+        """
+        )
+        conn.commit()
+        df_information_schema = vn_duckdb.run_sql(
+            "SELECT * FROM INFORMATION_SCHEMA.COLUMNS"
+        )
+        plan = vn_duckdb.get_training_plan_generic(df_information_schema)
+        vn_duckdb.train(plan=plan)
+
+        vn_duckdb.train(ddl=employee_ddl)
+        training_data = vn_duckdb.get_training_data()
+        assert not training_data.empty
+
+        similar_query = vn_duckdb.query_similar_embeddings("employee id", 3)
+        assert not similar_query.empty
+
+        sql = vn_duckdb.generate_sql(
+            question="write a query to get all software engineers from the employees table",
+            allow_llm_to_see_data=True,
+        )
+        df = vn_duckdb.run_sql(sql)
+        assert df.name[0] == "Alice Johnson"
+    del vn_duckdb
+    ################################################################################
+
+    with NamedTemporaryFile(
+        suffix=".sqlite", delete=False
+    ) as temp_sqlite_file, TemporaryDirectory() as temp_duckdb_dir:
+        database_path = os.path.join(temp_duckdb_dir, "vanna.duckdb")
+        response = requests.get("https://vanna.ai/Chinook.sqlite")
+        response.raise_for_status()
+        temp_sqlite_file.write(response.content)
+        temp_sqlite_file.flush()
+        print(f"Downloaded SQLite database to {temp_sqlite_file.name}")
+
+        duckdb_conn = duckdb.connect(database_path)
+        duckdb_conn.execute("INSTALL sqlite;")
+        duckdb_conn.execute("LOAD sqlite;")
+        duckdb_conn.execute(
+            f"ATTACH '{temp_sqlite_file.name}' AS sqlite_db (TYPE sqlite);"
+        )
+        duckdb_conn.execute("USE sqlite_db;")
+        print("Fetching list of tables from attached SQLite database...")
+        tables = duckdb_conn.execute("SHOW TABLES;").fetchall()
+        print(f"Tables found: {tables}")
+
+        ddls = []
+        for table in tables:
+            table_name = table[0]
+            duckdb_conn.execute(
+                f"CREATE TABLE IF NOT EXISTS main.{table_name} AS SELECT * FROM sqlite_db.{table_name}"
+            )
+            print(f"Copied table {table_name} to DuckDB.")
+            ddl_query = f"DESCRIBE {table_name};"
+            columns_info = duckdb_conn.execute(ddl_query).fetchall()
+            ddl = f"CREATE TABLE {table_name} (\n"
+            ddl += ",\n".join([f"  {col[0]} {col[1]}" for col in columns_info])
+            ddl += "\n);"
+            print(f"DDL for table {table_name}:\n{ddl}")
+            ddls.append(ddl)
+
+        duckdb_tables = duckdb_conn.execute("SHOW TABLES").fetchall()
+        duckdb_conn.commit()
+        print("Tables in DuckDB:", duckdb_tables)
+
+        vn_duckdb = MyVannaDuckDb(
+            config={
+                "api_key": OPENAI_API_KEY,
+                "model": "gpt-4-turbo",
+                "path": temp_duckdb_dir,
+            }
+        )
+        vn_duckdb.connect_to_duckdb(conn=duckdb_conn)
+        df_information_schema = vn_duckdb.run_sql(
+            "select * from vanna.information_schema.tables"
+        )
+        print(df_information_schema)
+        df_information_columns = vn_duckdb.run_sql(
+            "select * from vanna.information_schema.columns"
+        )
+        plan_schema = vn_duckdb.get_training_plan_generic(df_information_schema)
+        plan_columns = vn_duckdb.get_training_plan_generic(df_information_columns)
+        vn_duckdb.train(plan=plan_schema)
+        vn_duckdb.train(plan=plan_columns)
+
+        for ddl in ddls:
+            vn_duckdb.train(ddl=ddl)
+
+        sql = vn_duckdb.generate_sql("What are the top 7 customers by sales?")
+        df = vn_duckdb.run_sql(sql)
+        assert len(df) == 7
+
+        duckdb_conn.close()
+
+
+from vanna.sqlite.sqlite_vector import (
+    SQLite_VectorStore,
+    sqlite_information_schema,
+)
+
+
+class MyVannaSqlite(SQLite_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        SQLite_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+
+def test_vn_sqlite():
+    import sqlite3
+
+    with TemporaryDirectory() as temp_dir:
+        vn_sqlite = MyVannaSqlite(
+            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "path": temp_dir}
+        )
+        database_path = os.path.join(temp_dir, "vanna.sqlite")
+        conn = sqlite3.connect(database_path)
+
+        employee_ddl = """
+        CREATE TABLE employee (
+            employee_id INTEGER,
+            name VARCHAR,
+            occupation VARCHAR
+        );
+        """
+
+        conn.execute(employee_ddl)
+
+        conn.execute(
+            """
+        INSERT INTO employee VALUES
+        (1, 'Alice Johnson', 'Software Engineer'),
+        (2, 'Bob Smith', 'Data Scientist'),
+        (3, 'Charlie Brown', 'Product Manager'),
+        (4, 'Diana Prince', 'UX Designer'),
+        (5, 'Ethan Hunt', 'DevOps Engineer');
+        """
+        )
+        conn.commit()
+        conn.close()
+
+        vn_sqlite.connect_to_sqlite(database_path)
+        df_information_schema = sqlite_information_schema(database_path)
+        plan = vn_sqlite.get_training_plan_generic(df_information_schema)
+        vn_sqlite.train(plan=plan)
+
+        vn_sqlite.train(ddl=employee_ddl)
+        training_data = vn_sqlite.get_training_data()
+        assert not training_data.empty
+
+        similar_query = vn_sqlite.query_similar_embeddings("employee id", 3)
+        assert not similar_query.empty
+
+        sql = vn_sqlite.generate_sql(
+            question="write a query to get all software engineers from the employees table",
+            allow_llm_to_see_data=True,
+        )
+        df = vn_sqlite.run_sql(sql)
+        assert df.name[0] == "Alice Johnson"
+
+    del vn_sqlite
+    #############################################################
+
+    vn_sqlite = MyVannaSqlite(
+        config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo"}
+    )
+    vn_sqlite.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+    existing_training_data = vn_sqlite.get_training_data()
+    if len(existing_training_data) > 0:
+        for _, training_data in existing_training_data.iterrows():
+            vn_sqlite.remove_training_data(training_data["id"])
+
+    df_ddl = vn_sqlite.run_sql(
+        "SELECT type, sql FROM sqlite_master WHERE sql is not null"
+    )
+
+    for ddl in df_ddl["sql"].to_list():
+        vn_sqlite.train(ddl=ddl)
+
+    sql = vn_sqlite.generate_sql("What are the top 7 customers by sales?")
+    df = vn_sqlite.run_sql(sql)
     assert len(df) == 7
 
 
@@ -120,18 +405,22 @@ class VannaMilvus(Milvus_VectorStore, OpenAI_Chat):
         Milvus_VectorStore.__init__(self, config=config)
         OpenAI_Chat.__init__(self, config=config)
 
-vn_milvus = VannaMilvus(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
-vn_milvus.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+vn_milvus = VannaMilvus(config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo"})
+vn_milvus.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_milvus():
     existing_training_data = vn_milvus.get_training_data()
     if len(existing_training_data) > 0:
         for _, training_data in existing_training_data.iterrows():
-            vn_milvus.remove_training_data(training_data['id'])
+            vn_milvus.remove_training_data(training_data["id"])
 
-    df_ddl = vn_milvus.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+    df_ddl = vn_milvus.run_sql(
+        "SELECT type, sql FROM sqlite_master WHERE sql is not null"
+    )
 
-    for ddl in df_ddl['sql'].to_list():
+    for ddl in df_ddl["sql"].to_list():
         vn_milvus.train(ddl=ddl)
 
     sql = vn_milvus.generate_sql("What are the top 7 customers by sales?")
@@ -144,14 +433,31 @@ class VannaNumResults(ChromaDB_VectorStore, OpenAI_Chat):
         ChromaDB_VectorStore.__init__(self, config=config)
         OpenAI_Chat.__init__(self, config=config)
 
-vn_chroma_n_results = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results': 1})
-vn_chroma_n_results_ddl = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_ddl': 2})
-vn_chroma_n_results_sql = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_sql': 3})
-vn_chroma_n_results_documentation = MyVanna(config={'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo', 'n_results_documentation': 4})
+
+vn_chroma_n_results = MyVanna(
+    config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo", "n_results": 1}
+)
+vn_chroma_n_results_ddl = MyVanna(
+    config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo", "n_results_ddl": 2}
+)
+vn_chroma_n_results_sql = MyVanna(
+    config={"api_key": OPENAI_API_KEY, "model": "gpt-3.5-turbo", "n_results_sql": 3}
+)
+vn_chroma_n_results_documentation = MyVanna(
+    config={
+        "api_key": OPENAI_API_KEY,
+        "model": "gpt-3.5-turbo",
+        "n_results_documentation": 4,
+    }
+)
+
 
 def test_n_results():
     for i in range(1, 10):
-        vn_chroma.train(question=f"What are the total sales for customer {i}?", sql=f"SELECT SUM(sales) FROM example_sales WHERE customer_id = {i}")
+        vn_chroma.train(
+            question=f"What are the total sales for customer {i}?",
+            sql=f"SELECT SUM(sales) FROM example_sales WHERE customer_id = {i}",
+        )
 
     for i in range(1, 10):
         vn_chroma.train(documentation=f"Sample documentation {i}")
@@ -170,17 +476,29 @@ def test_n_results():
     assert len(vn_chroma_n_results_sql.get_similar_question_sql(question)) == 3
 
     assert len(vn_chroma_n_results_documentation.get_related_ddl(question)) != 4
-    assert len(vn_chroma_n_results_documentation.get_related_documentation(question)) == 4
-    assert len(vn_chroma_n_results_documentation.get_similar_question_sql(question)) != 4
+    assert (
+        len(vn_chroma_n_results_documentation.get_related_documentation(question)) == 4
+    )
+    assert (
+        len(vn_chroma_n_results_documentation.get_similar_question_sql(question)) != 4
+    )
+
 
 class VannaClaude(VannaDB_VectorStore, Anthropic_Chat):
     def __init__(self, config=None):
-        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
-        Anthropic_Chat.__init__(self, config={'api_key': ANTHROPIC_API_KEY, 'model': ANTHROPIC_Model})
+        VannaDB_VectorStore.__init__(
+            self,
+            vanna_model=MY_VANNA_MODEL,
+            vanna_api_key=MY_VANNA_API_KEY,
+            config=config,
+        )
+        Anthropic_Chat.__init__(
+            self, config={"api_key": ANTHROPIC_API_KEY, "model": ANTHROPIC_Model}
+        )
 
 
 vn_claude = VannaClaude()
-vn_claude.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+vn_claude.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
 
 
 def test_vn_claude():
@@ -188,18 +506,27 @@ def test_vn_claude():
     df = vn_claude.run_sql(sql)
     assert len(df) == 8
 
+
 class VannaGemini(VannaDB_VectorStore, GoogleGeminiChat):
     def __init__(self, config=None):
-        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        VannaDB_VectorStore.__init__(
+            self,
+            vanna_model=MY_VANNA_MODEL,
+            vanna_api_key=MY_VANNA_API_KEY,
+            config=config,
+        )
         GoogleGeminiChat.__init__(self, config=config)
 
-vn_gemini = VannaGemini(config={'api_key': os.environ['GEMINI_API_KEY']})
-vn_gemini.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+vn_gemini = VannaGemini(config={"api_key": GEMINI_API_KEY})
+vn_gemini.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+
 
 def test_vn_gemini():
     sql = vn_gemini.generate_sql("What are the top 9 customers by sales?")
     df = vn_gemini.run_sql(sql)
     assert len(df) == 9
+
 
 def test_training_plan():
     vn_dummy = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
@@ -208,10 +535,12 @@ def test_training_plan():
         account=SNOWFLAKE_ACCOUNT,
         username=SNOWFLAKE_USERNAME,
         password=SNOWFLAKE_PASSWORD,
-        database='SNOWFLAKE_SAMPLE_DATA',
+        database="SNOWFLAKE_SAMPLE_DATA",
     )
 
-    df_information_schema = vn_dummy.run_sql("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = 'TPCH_SF1' ")
+    df_information_schema = vn_dummy.run_sql(
+        "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = 'TPCH_SF1' "
+    )
 
     plan = vn_dummy.get_training_plan_generic(df_information_schema)
     assert len(plan._plan) == 8
