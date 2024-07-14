@@ -1,5 +1,4 @@
 import json
-import os
 import sqlite3
 from typing import List
 
@@ -22,8 +21,8 @@ def cosine_similarity(a, b):
     return dot_product / (magnitude_a * magnitude_b)
 
 
-def sqlite_information_schema(database_path):
-    conn = sqlite3.connect(database_path)
+def sqlite_information_schema(database):
+    conn = sqlite3.connect(database=database)
     tables = pd.read_sql_query(
         "SELECT name FROM sqlite_master WHERE type='table';", conn
     )
@@ -63,9 +62,7 @@ class SQLite_VectorStore(VannaBase):
         if config is None:
             config = {}
 
-        path = config.get("path", ".")
-        database_name = config.get("database_name", "vanna.sqlite")
-        self.database_path = os.path.join(path, database_name)
+        self.database = config.get("database")
         self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
         self.n_results_documentation = config.get(
             "n_results_documentation", config.get("n_results", 10)
@@ -73,8 +70,7 @@ class SQLite_VectorStore(VannaBase):
         self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
         self.model_name = self.config.get("model_name", "BAAI/bge-small-en-v1.5")
         self.embedding_model = TextEmbedding(model_name=self.model_name)
-
-        conn = sqlite3.connect(self.database_path)
+        conn = sqlite3.connect(database=self.database)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS embeddings (
@@ -92,7 +88,7 @@ class SQLite_VectorStore(VannaBase):
         return embeddings[0]
 
     def write_embedding_to_table(self, text, id, embedding):
-        con = sqlite3.connect(self.database_path)
+        con = sqlite3.connect(database=self.database)
         embedding_array = np.array(embedding, dtype=np.float32).tobytes()
         con.execute(
             "INSERT INTO embeddings (id, text, model, vec) VALUES (?, ?, ?, ?)",
@@ -128,7 +124,7 @@ class SQLite_VectorStore(VannaBase):
         return id
 
     def get_training_data(self) -> pd.DataFrame:
-        con = sqlite3.connect(self.database_path)
+        con = sqlite3.connect(database=self.database)
         sql_data = pd.read_sql_query("SELECT * FROM embeddings", con)
         con.close()
 
@@ -171,7 +167,7 @@ class SQLite_VectorStore(VannaBase):
         return df
 
     def remove_training_data(self, id: str) -> bool:
-        con = sqlite3.connect(self.database_path)
+        con = sqlite3.connect(database=self.database)
         con.execute("DELETE FROM embeddings WHERE id = ?", (id,))
         con.commit()
         con.close()
@@ -182,7 +178,7 @@ class SQLite_VectorStore(VannaBase):
             collection_name, None
         )
         if suffix:
-            con = sqlite3.connect(self.database_path)
+            con = sqlite3.connect(database=self.database)
             con.execute("DELETE FROM embeddings WHERE id LIKE ?", (suffix,))
             con.commit()
             con.close()
@@ -192,7 +188,7 @@ class SQLite_VectorStore(VannaBase):
     def query_similar_embeddings(self, query_text: str, top_n: int) -> pd.DataFrame:
         query_embedding = self.generate_embedding(query_text)
 
-        con = sqlite3.connect(self.database_path)
+        con = sqlite3.connect(database=self.database)
         embeddings_data = pd.read_sql_query("SELECT id, text, vec FROM embeddings", con)
         con.close()
 

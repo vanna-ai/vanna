@@ -185,12 +185,10 @@ def test_vn_duckdb():
     import duckdb
 
     with TemporaryDirectory() as temp_dir:
+        database_path = f"{temp_dir}/vanna.duckdb"
         vn_duckdb = MyVannaDuckDb(
-            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "path": temp_dir}
+            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "database": database_path}
         )
-        database_path = os.path.join(temp_dir, "vanna.duckdb")
-        conn = duckdb.connect(database=database_path)
-        conn.close()
         vn_duckdb.connect_to_duckdb(database_path)
         _ = vn_duckdb.get_training_data()
 
@@ -242,7 +240,7 @@ def test_vn_duckdb():
     with NamedTemporaryFile(
         suffix=".sqlite", delete=False
     ) as temp_sqlite_file, TemporaryDirectory() as temp_duckdb_dir:
-        database_path = os.path.join(temp_duckdb_dir, "vanna.duckdb")
+        database_path = f"{temp_duckdb_dir}/vanna.duckdb"
         response = requests.get("https://vanna.ai/Chinook.sqlite")
         response.raise_for_status()
         temp_sqlite_file.write(response.content)
@@ -283,7 +281,7 @@ def test_vn_duckdb():
             config={
                 "api_key": OPENAI_API_KEY,
                 "model": "gpt-4-turbo",
-                "path": temp_duckdb_dir,
+                "database": database_path,
             }
         )
         vn_duckdb.connect_to_duckdb(conn=duckdb_conn)
@@ -325,11 +323,11 @@ def test_vn_sqlite():
     import sqlite3
 
     with TemporaryDirectory() as temp_dir:
+        database_path = f"{temp_dir}/vanna.sqlite"
         vn_sqlite = MyVannaSqlite(
-            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "path": temp_dir}
+            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "database": database_path}
         )
-        database_path = os.path.join(temp_dir, "vanna.sqlite")
-        conn = sqlite3.connect(database_path)
+        conn = sqlite3.connect(database=database_path)
 
         employee_ddl = """
         CREATE TABLE employee (
@@ -375,26 +373,28 @@ def test_vn_sqlite():
 
     del vn_sqlite
     #############################################################
+    with NamedTemporaryFile(
+        suffix=".sqlite", delete=False
+    ) as temp_sqlite_file:
+        vn_sqlite = MyVannaSqlite(
+            config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo", "database": temp_sqlite_file.name}
+        )
+        vn_sqlite.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
+        existing_training_data = vn_sqlite.get_training_data()
+        if len(existing_training_data) > 0:
+            for _, training_data in existing_training_data.iterrows():
+                vn_sqlite.remove_training_data(training_data["id"])
 
-    vn_sqlite = MyVannaSqlite(
-        config={"api_key": OPENAI_API_KEY, "model": "gpt-4-turbo"}
-    )
-    vn_sqlite.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
-    existing_training_data = vn_sqlite.get_training_data()
-    if len(existing_training_data) > 0:
-        for _, training_data in existing_training_data.iterrows():
-            vn_sqlite.remove_training_data(training_data["id"])
+        df_ddl = vn_sqlite.run_sql(
+            "SELECT type, sql FROM sqlite_master WHERE sql is not null"
+        )
 
-    df_ddl = vn_sqlite.run_sql(
-        "SELECT type, sql FROM sqlite_master WHERE sql is not null"
-    )
+        for ddl in df_ddl["sql"].to_list():
+            vn_sqlite.train(ddl=ddl)
 
-    for ddl in df_ddl["sql"].to_list():
-        vn_sqlite.train(ddl=ddl)
-
-    sql = vn_sqlite.generate_sql("What are the top 7 customers by sales?")
-    df = vn_sqlite.run_sql(sql)
-    assert len(df) == 7
+        sql = vn_sqlite.generate_sql("What are the top 7 customers by sales?")
+        df = vn_sqlite.run_sql(sql)
+        assert len(df) == 7
 
 
 from vanna.milvus import Milvus_VectorStore

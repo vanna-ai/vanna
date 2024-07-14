@@ -17,9 +17,7 @@ class DuckDB_VectorStore(VannaBase):
         if config is None:
             config = {}
 
-        path = config.get("path", ".")
-        database_name = config.get("database_name", "vanna.duckdb")
-        self.database_path = os.path.join(path, database_name)
+        self.database = config.get("database", ".")
         self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
         self.n_results_documentation = config.get(
             "n_results_documentation", config.get("n_results", 10)
@@ -29,7 +27,7 @@ class DuckDB_VectorStore(VannaBase):
         self.model_name = self.config.get("model_name", "BAAI/bge-small-en-v1.5")
         self.embedding_model = TextEmbedding(model_name=self.model_name)
 
-        conn = duckdb.connect(database=self.database_path)
+        conn = duckdb.connect(database=self.database)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS embeddings (
@@ -47,7 +45,7 @@ class DuckDB_VectorStore(VannaBase):
         return embeddings[0]
 
     def write_embedding_to_table(self, text, id, embedding):
-        con = duckdb.connect(database=self.database_path)
+        con = duckdb.connect(database=self.database)
         embedding_array = np.array(embedding, dtype=np.float32).tolist()
         con.execute(
             "INSERT INTO embeddings (id, text, model, vec) VALUES (?, ?, ?, ?)",
@@ -82,7 +80,7 @@ class DuckDB_VectorStore(VannaBase):
         return id
 
     def get_training_data(self) -> pd.DataFrame:
-        con = duckdb.connect(database=self.database_path)
+        con = duckdb.connect(database=self.database)
         sql_data = con.execute("SELECT * FROM embeddings").fetchdf()
         con.close()
 
@@ -125,7 +123,7 @@ class DuckDB_VectorStore(VannaBase):
         return df
 
     def remove_training_data(self, id: str) -> bool:
-        con = duckdb.connect(database=self.database_path)
+        con = duckdb.connect(database=self.database)
         con.execute("DELETE FROM embeddings WHERE id = ?", [id])
         con.close()
         return True
@@ -135,7 +133,7 @@ class DuckDB_VectorStore(VannaBase):
             collection_name, None
         )
         if suffix:
-            con = duckdb.connect(database=self.database_path)
+            con = duckdb.connect(database=self.database)
             con.execute("DELETE FROM embeddings WHERE id LIKE ?", ["%" + suffix])
             con.close()
             return True
@@ -145,7 +143,7 @@ class DuckDB_VectorStore(VannaBase):
         query_embedding = self.generate_embedding(query_text)
         query_embedding_array = np.array(query_embedding, dtype=np.float32).tolist()
 
-        con = duckdb.connect(database=self.database_path)
+        con = duckdb.connect(database=self.database)
         results = con.execute(
             """
             SELECT text, array_cosine_similarity(vec, ?::FLOAT[384]) AS similarity_score

@@ -813,7 +813,8 @@ class VannaBase(ABC):
 
             if path == ":memory:" or path == "":
                 url = ":memory:"
-
+            elif os.path.exists(url):
+                pass
             elif not os.path.exists(url):
                 response = requests.get(url)
                 response.raise_for_status()  # Check that the request was successful
