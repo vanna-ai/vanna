@@ -31,7 +31,7 @@ class OpenSearch_VectorStore(VannaBase):
     if config is not None and "es_question_sql_index" in config:
       question_sql_index = config["es_question_sql_index"]
 
-    self.dimensions = 768
+    self.dimensions = 1536
     if config is not None and "dimensions" in config:
       self.dimensions = config["dimensions"]
 
@@ -46,7 +46,22 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
@@ -58,12 +73,30 @@ class OpenSearch_VectorStore(VannaBase):
             "type": "text",
           },
           "question_embedding": {
-            "type": "dense_vector",
-            "dims": self.dimensions
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 100,
+                "m": 16
+              }
+            }
           },
           "doc_embedding": {
-            "type": "dense_vector",
-            "dims": self.dimensions
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 100,
+                "m": 16
+              }
+            }
           }
         }
       }
@@ -73,7 +106,22 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
@@ -100,8 +148,17 @@ class OpenSearch_VectorStore(VannaBase):
             "type": "text",
           },
           "doc_embedding": {
-            "type": "dense_vector",
-            "dims": self.dimensions
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 100,
+                "m": 16
+              }
+            }
           }
         }
       }
@@ -111,7 +168,22 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
@@ -123,8 +195,17 @@ class OpenSearch_VectorStore(VannaBase):
             "type": "text",
           },
           "question_embedding": {
-            "type": "dense_vector",
-            "dims": self.dimensions
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 100,
+                "m": 16
+              }
+            }
           }
         }
       }
