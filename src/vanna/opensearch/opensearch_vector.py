@@ -72,19 +72,6 @@ class OpenSearch_VectorStore(VannaBase):
           "doc": {
             "type": "text",
           },
-          "question_embedding": {
-            "type": "knn_vector",
-            "dimension": self.dimensions,
-            "method": {
-              "name": "hnsw",
-              "space_type": "cosinesimil",
-              "engine": "lucene",
-              "parameters": {
-                "ef_construction": 100,
-                "m": 16
-              }
-            }
-          },
           "doc_embedding": {
             "type": "knn_vector",
             "dimension": self.dimensions,
@@ -146,19 +133,6 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "doc": {
             "type": "text",
-          },
-          "doc_embedding": {
-            "type": "knn_vector",
-            "dimension": self.dimensions,
-            "method": {
-              "name": "hnsw",
-              "space_type": "cosinesimil",
-              "engine": "lucene",
-              "parameters": {
-                "ef_construction": 100,
-                "m": 16
-              }
-            }
           }
         }
       }
@@ -454,6 +428,11 @@ class OpenSearch_VectorStore(VannaBase):
     question_embedding = self.generate_embedding(question)
     if question_embedding is None:
       query = {
+        "_source": {
+          "excludes": [
+            "doc_embedding"
+          ]
+        },
         "query": {
           "match": {
             "doc": question
@@ -464,16 +443,16 @@ class OpenSearch_VectorStore(VannaBase):
       }
     else:
       query = {
+        "_source": {
+          "excludes": [
+            "doc_embedding"
+          ]
+        },
         "query": {
-          "script_score": {
-            "query": {
-              "match_all": {}
-            },
-            "script": {
-              "source": "cosineSimilarity(params.doc_query_vector, 'doc_embedding') + 1.0",
-              "params": {
-                "doc_query_vector": question_embedding
-              }
+          "knn": {
+            "doc_embedding": {
+              "vector": question_embedding,
+              "k": self.n_results
             }
           }
         },
@@ -490,6 +469,11 @@ class OpenSearch_VectorStore(VannaBase):
     question_embedding = self.generate_embedding(question)
     if question_embedding is None:
       query = {
+        "_source": {
+          "excludes": [
+            "question_embedding"
+          ]
+        },
         "query": {
           "match": {
             "question": question
@@ -500,16 +484,16 @@ class OpenSearch_VectorStore(VannaBase):
       }
     else:
       query = {
+        "_source": {
+          "excludes": [
+            "question_embedding"
+          ]
+        },
         "query": {
-          "script_score": {
-            "query": {
-              "match_all": {}
-            },
-            "script": {
-              "source": "cosineSimilarity(params.question_query_vector, 'question_embedding') + 1.0",
-              "params": {
-                "question_query_vector": question_embedding
-              }
+          "knn": {
+            "question_embedding": {
+              "vector": question_embedding,
+              "k": self.n_results
             }
           }
         },
@@ -542,6 +526,7 @@ class OpenSearch_VectorStore(VannaBase):
     query = {}
     if engine is None and catalog is None and schema is None and table_name is None and ddl is None:
       query = {
+
         "query": {
           "match_all": {}
         }
@@ -585,7 +570,13 @@ class OpenSearch_VectorStore(VannaBase):
     data = []
     response = self.client.search(
       index=self.document_index,
-      body={"query": {"match_all": {}}},
+      body={"_source": {
+          "excludes": [
+            "doc_embedding"
+          ]
+        },
+        "query": {"match_all": {}}
+      },
       size=1000
     )
     # records = [hit['_source'] for hit in response['hits']['hits']]
@@ -601,7 +592,13 @@ class OpenSearch_VectorStore(VannaBase):
 
     response = self.client.search(
       index=self.question_sql_index,
-      body={"query": {"match_all": {}}},
+      body={"_source": {
+          "excludes": [
+            "question_embedding"
+          ]
+        },
+        "query": {"match_all": {}}
+      },
       size=1000
     )
     # records = [hit['_source'] for hit in response['hits']['hits']]
