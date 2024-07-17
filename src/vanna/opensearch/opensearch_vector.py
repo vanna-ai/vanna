@@ -21,6 +21,14 @@ class OpenSearch_VectorStore(VannaBase):
       default_ef = embedding_functions.DefaultEmbeddingFunction()
       self.embedding_function = default_ef
 
+    embedding_test = self.embedding_function(["test"])[0]
+    print("Embedding function initialized with embedding_dim: ",
+          len(embedding_test), " embedding_test: ", embedding_test)
+
+    self.dimensions = len(embedding_test)
+    if config is not None and "dimensions" in config:
+      self.dimensions = config["dimensions"]
+
     document_index = "vanna_document_index"
     ddl_index = "vanna_ddl_index"
     question_sql_index = "vanna_questions_sql_index"
@@ -30,10 +38,6 @@ class OpenSearch_VectorStore(VannaBase):
       ddl_index = config["es_ddl_index"]
     if config is not None and "es_question_sql_index" in config:
       question_sql_index = config["es_question_sql_index"]
-
-    self.dimensions = 1536
-    if config is not None and "dimensions" in config:
-      self.dimensions = config["dimensions"]
 
     self.document_index = document_index
     self.ddl_index = ddl_index
@@ -80,7 +84,7 @@ class OpenSearch_VectorStore(VannaBase):
               "space_type": "cosinesimil",
               "engine": "lucene",
               "parameters": {
-                "ef_construction": 100,
+                "ef_construction": 128,
                 "m": 16
               }
             }
@@ -176,7 +180,7 @@ class OpenSearch_VectorStore(VannaBase):
               "space_type": "cosinesimil",
               "engine": "lucene",
               "parameters": {
-                "ef_construction": 100,
+                "ef_construction": 128,
                 "m": 16
               }
             }
@@ -571,10 +575,10 @@ class OpenSearch_VectorStore(VannaBase):
     response = self.client.search(
       index=self.document_index,
       body={"_source": {
-          "excludes": [
-            "doc_embedding"
-          ]
-        },
+        "excludes": [
+          "doc_embedding"
+        ]
+      },
         "query": {"match_all": {}}
       },
       size=1000
@@ -593,10 +597,10 @@ class OpenSearch_VectorStore(VannaBase):
     response = self.client.search(
       index=self.question_sql_index,
       body={"_source": {
-          "excludes": [
-            "question_embedding"
-          ]
-        },
+        "excludes": [
+          "question_embedding"
+        ]
+      },
         "query": {"match_all": {}}
       },
       size=1000
