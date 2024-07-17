@@ -3,6 +3,7 @@ import uuid
 from typing import List
 
 import pandas as pd
+from chromadb.utils import embedding_functions
 from opensearchpy import OpenSearch
 from ..types import TableMetadata
 
@@ -13,6 +14,13 @@ from ..utils import deterministic_uuid
 class OpenSearch_VectorStore(VannaBase):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
+
+    if config is not None and "embedding_function" in config:
+      self.embedding_function = config["embedding_function"]
+    else:
+      default_ef = embedding_functions.DefaultEmbeddingFunction()
+      self.embedding_function = default_ef
+
     document_index = "vanna_document_index"
     ddl_index = "vanna_ddl_index"
     question_sql_index = "vanna_questions_sql_index"
@@ -22,6 +30,10 @@ class OpenSearch_VectorStore(VannaBase):
       ddl_index = config["es_ddl_index"]
     if config is not None and "es_question_sql_index" in config:
       question_sql_index = config["es_question_sql_index"]
+
+    self.dimensions = 768
+    if config is not None and "dimensions" in config:
+      self.dimensions = config["dimensions"]
 
     self.document_index = document_index
     self.ddl_index = ddl_index
@@ -44,6 +56,14 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "doc": {
             "type": "text",
+          },
+          "question_embedding": {
+            "type": "dense_vector",
+            "dims": self.dimensions
+          },
+          "doc_embedding": {
+            "type": "dense_vector",
+            "dims": self.dimensions
           }
         }
       }
@@ -78,6 +98,10 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "doc": {
             "type": "text",
+          },
+          "doc_embedding": {
+            "type": "dense_vector",
+            "dims": self.dimensions
           }
         }
       }
@@ -97,6 +121,10 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "sql": {
             "type": "text",
+          },
+          "question_embedding": {
+            "type": "dense_vector",
+            "dims": self.dimensions
           }
         }
       }
@@ -269,6 +297,7 @@ class OpenSearch_VectorStore(VannaBase):
       id = deterministic_uuid(engine + "-" + full_table_name) + "-ddl"
     else:
       id = str(uuid.uuid4()) + "-ddl"
+
     ddl_dict = {
       "engine": engine,
       "catalog": table_metadata.catalog,
@@ -283,9 +312,11 @@ class OpenSearch_VectorStore(VannaBase):
 
   def add_documentation(self, doc: str, **kwargs) -> str:
     # Assuming you have a documentation index in your OpenSearch
-    id = str(uuid.uuid4()) + "-doc"
+    id = deterministic_uuid(doc) + "-doc"
+    doc_embedding = self.generate_embedding(doc)
     doc_dict = {
-      "doc": doc
+      "doc": doc,
+      "doc_embedding": doc_embedding
     }
     response = self.client.index(index=self.document_index, id=id,
                                  body=doc_dict, **kwargs)
@@ -293,10 +324,12 @@ class OpenSearch_VectorStore(VannaBase):
 
   def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
     # Assuming you have a Questions and SQL index in your OpenSearch
-    id = str(uuid.uuid4()) + "-sql"
+    id = deterministic_uuid(question) + "-sql"
+    question_embedding = self.generate_embedding(question)
     question_sql_dict = {
       "question": question,
-      "sql": sql
+      "sql": sql,
+      "question_embedding": question_embedding
     }
     response = self.client.index(index=self.question_sql_index,
                                  body=question_sql_dict, id=id,
@@ -337,15 +370,35 @@ class OpenSearch_VectorStore(VannaBase):
     return [hit['_source']['ddl'] for hit in response['hits']['hits']]
 
   def get_related_documentation(self, question: str, **kwargs) -> List[str]:
-    query = {
-      "query": {
-        "match": {
-          "doc": question
-        }
-      },
-      "size": self.n_results,
-      "min_score": self.min_score
-    }
+    question_embedding = self.generate_embedding(question)
+    if question_embedding is None:
+      query = {
+        "query": {
+          "match": {
+            "doc": question
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
+    else:
+      query = {
+        "query": {
+          "script_score": {
+            "query": {
+              "match_all": {}
+            },
+            "script": {
+              "source": "cosineSimilarity(params.doc_query_vector, 'doc_embedding') + 1.0",
+              "params": {
+                "doc_query_vector": question_embedding
+              }
+            }
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
     print(query)
     response = self.client.search(index=self.document_index,
                                   body=query,
@@ -353,15 +406,35 @@ class OpenSearch_VectorStore(VannaBase):
     return [hit['_source']['doc'] for hit in response['hits']['hits']]
 
   def get_similar_question_sql(self, question: str, **kwargs) -> List[str]:
-    query = {
-      "query": {
-        "match": {
-          "question": question
-        }
-      },
-      "size": self.n_results,
-      "min_score": self.min_score
-    }
+    question_embedding = self.generate_embedding(question)
+    if question_embedding is None:
+      query = {
+        "query": {
+          "match": {
+            "question": question
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
+    else:
+      query = {
+        "query": {
+          "script_score": {
+            "query": {
+              "match_all": {}
+            },
+            "script": {
+              "source": "cosineSimilarity(params.question_query_vector, 'question_embedding') + 1.0",
+              "params": {
+                "question_query_vector": question_embedding
+              }
+            }
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
     print(query)
     data = []
     response = self.client.search(index=self.question_sql_index,
@@ -497,8 +570,10 @@ class OpenSearch_VectorStore(VannaBase):
       return False
 
   def generate_embedding(self, data: str, **kwargs) -> list[float]:
-    # opensearch doesn't need to generate embeddings
-    pass
+    embedding = self.embedding_function([data])
+    if len(embedding) == 1:
+      return embedding[0]
+    return embedding
 
 # OpenSearch_VectorStore.__init__(self, config={'es_urls':
 # "https://opensearch-node.test.com:9200", 'es_encoded_base64': True, 'es_user':
