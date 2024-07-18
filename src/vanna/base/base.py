@@ -831,6 +831,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
+        autocommit: bool = False
     ):
         """
         Connect to postgres using the psycopg2 connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
@@ -850,6 +851,7 @@ class VannaBase(ABC):
             user (str): The postgres user.
             password (str): The postgres password.
             port (int): The postgres Port.
+            autocommit (bool) : The postgres autocommit flag
         """
 
         try:
@@ -901,6 +903,7 @@ class VannaBase(ABC):
                 password=password,
                 port=port,
             )
+          conn.autocommit = autocommit
         except psycopg2.Error as e:
             raise ValidationError(e)
 
