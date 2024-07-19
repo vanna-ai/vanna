@@ -49,7 +49,7 @@ class Marqo_VectorStore(VannaBase):
 
         return id
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = str(uuid.uuid4()) + "-ddl"
         ddl_dict = {
             "ddl": ddl,

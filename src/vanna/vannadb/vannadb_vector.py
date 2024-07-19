@@ -305,7 +305,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
 
         return status.id
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         params = [StringData(data=ddl)]
 
         d = self._rpc_call(method="add_ddl", params=params)

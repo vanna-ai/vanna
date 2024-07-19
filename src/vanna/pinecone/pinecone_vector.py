@@ -115,7 +115,7 @@ class PineconeDB_VectorStore(VannaBase):
             return False
         return True
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl) + "-ddl"
         if self._check_if_embedding_exists(id=id, namespace=self.ddl_namespace):
             print(f"DDL with id: {id} already exists in the index. Skipping...")

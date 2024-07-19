@@ -117,6 +117,9 @@ class OpenSearch_VectorStore(VannaBase):
       },
       "mappings": {
         "properties": {
+          "biz_type": {
+            "type": "keyword",
+          },
           "engine": {
             "type": "keyword",
           },
@@ -347,7 +350,7 @@ class OpenSearch_VectorStore(VannaBase):
     md5_hex = md5_hash.hexdigest()
     return md5_hex
 
-  def add_ddl(self, ddl: str, engine: str = None,
+  def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None,
               **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
     table_metadata = VannaBase.extract_table_metadata(ddl)
@@ -363,7 +366,8 @@ class OpenSearch_VectorStore(VannaBase):
       "schema": table_metadata.schema,
       "table_name": table_metadata.table_name,
       "full_table_name": full_table_name,
-      "ddl": ddl
+      "ddl": ddl,
+      "biz_type": biz_type
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
                                  **kwargs)

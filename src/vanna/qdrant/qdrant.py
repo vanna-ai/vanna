@@ -107,7 +107,7 @@ class Qdrant_VectorStore(VannaBase):
 
         return self._format_point_id(id, self.sql_collection_name)
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl)
         self._client.upsert(
             self.ddl_collection_name,

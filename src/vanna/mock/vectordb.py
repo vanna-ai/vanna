@@ -11,7 +11,7 @@ class MockVectorDB(VannaBase):
         # Hash the value and return the ID
         return str(hash(value))
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         return self._get_id(ddl)
 
     def add_documentation(self, doc: str, **kwargs) -> str:

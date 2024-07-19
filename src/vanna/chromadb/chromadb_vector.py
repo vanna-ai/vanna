@@ -79,7 +79,7 @@ class ChromaDB_VectorStore(VannaBase):
 
         return id
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl) + "-ddl"
         self.ddl_collection.add(
             documents=ddl,

@@ -471,7 +471,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_ddl(self, ddl: str, engine: str = None, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         """
         This method is used to add a DDL statement to the training data.
 
@@ -1786,6 +1786,7 @@ class VannaBase(ABC):
         sql: str = None,
         ddl: str = None,
         engine: str = None,
+        biz_type: str = None,
         documentation: str = None,
         plan: TrainingPlan = None,
     ) -> str:
@@ -1807,6 +1808,7 @@ class VannaBase(ABC):
             sql (str): The SQL query to train on.
             ddl (str):  The DDL statement.
             engine (str): The database engine.
+            biz_type (str): The business type.
             documentation (str): The documentation to train on.
             plan (TrainingPlan): The training plan to train on.
         Returns:
@@ -1828,12 +1830,12 @@ class VannaBase(ABC):
 
         if ddl:
             print("Adding ddl:", ddl)
-            return self.add_ddl(ddl=ddl, engine=engine)
+            return self.add_ddl(ddl=ddl, engine=engine, biz_type=biz_type)
 
         if plan:
             for item in plan._plan:
                 if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
-                    self.add_ddl(ddl=item.item_value, engine=engine)
+                    self.add_ddl(ddl=item.item_value, engine=engine, biz_type=biz_type)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                     self.add_documentation(item.item_value)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
