@@ -425,6 +425,7 @@ class VannaBase(ABC):
                               schema: str = None,
                               table_name: str = None,
                               ddl: str = None,
+                              biz_type: str = None,
                               size: int = 10,
                               **kwargs) -> list:
         """
@@ -436,6 +437,7 @@ class VannaBase(ABC):
             schema (str): The schema.
             table_name (str): The table name.
             ddl (str): The DDL statement.
+            biz_type (str): The business type.
             size (int): The number of tables to return.
 
         Returns:

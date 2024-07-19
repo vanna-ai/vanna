@@ -388,6 +388,7 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
                                schema: str = None,
                                table_name: str = None,
                                ddl: str = None,
+                               biz_type: str = None,
                                size: int = 10,
                                **kwargs) -> list:
       return []

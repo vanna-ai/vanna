@@ -528,6 +528,7 @@ class OpenSearch_VectorStore(VannaBase):
                              schema: str = None,
                              table_name: str = None,
                              ddl: str = None,
+                             biz_type: str = None,
                              size: int = 10,
                              **kwargs) -> list:
     # Assume you have some vector search mechanism associated with your data
@@ -564,6 +565,9 @@ class OpenSearch_VectorStore(VannaBase):
 
       if ddl is not None:
         query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})
+
+      if biz_type is not None:
+        query["query"]["bool"]["should"].append({"match": {"biz_type": biz_type}})
 
     if size > 0:
       query["size"] = size
