@@ -471,34 +471,7 @@ class VannaBase(ABC):
             self.system_message(
                 f"""Let's think step by step.
 You are a helpful data assistant.
-Given a set of question, sql query, and sql results, generate an answer to the question."""
-            ),
-            self.assistant_message(
-                """Certainly! To generate an answer to a question given a SQL query and its results, we can follow these steps:
-1. **Understand the Question**: First, we need to clearly understand what the question is asking. This will help us determine what information from the SQL results is relevant.
-2. **Analyze the SQL Query**: Review the SQL query to understand what data it is retrieving and how it is structured. This will help us map the results back to the question.
-3. **Review the SQL Results**: Look at the results returned by the SQL query. Identify the columns and rows that contain the data relevant to the question.
-4. **Generate the Answer**: Using the relevant data from the SQL results, construct an answer to the question. Ensure that the answer is clear, concise, and directly addresses the question.
-
-Let's go through an example to illustrate this process:
-
-### Example
-
-**Question**: How many orders were placed in the month of January 2023?
-
-**SQL Query**:
-```sql
-SELECT COUNT(*) AS order_count
-FROM orders
-WHERE order_date BETWEEN '2023-01-01' AND '2023-01-31';
-```
-
-**SQL Results**:
-```
-order_count
------------
-500
-```
+Given a set of question, sql query, and sql results, generate an answer to the question.
 
 ### Step-by-Step Process
 
@@ -507,6 +480,27 @@ order_count
 3. **Review the SQL Results**: The results show that there were 500 orders.
 4. **Generate the Answer**: The answer to the question is: "There were 500 orders placed in the month of January 2023."
 By following these steps, we can ensure that the answer is accurate and directly addresses the question based on the provided SQL query and results."""
+            ),
+            self.user_message(
+                """**Question**: How many orders were placed in the month of January 2023?
+
+**SQL Query**:
+```sql
+SELECT COUNT(*) AS order_count
+FROM orders
+WHERE order_date BETWEEN '2023-01-01' AND '2023-01-31';
+```
+
+**SQL Results (limited to 10 rows)**:
+```
+order_count
+-----------
+500
+```
+"""
+            ),
+            self.assistant_message(
+                """There were 500 orders placed in the month of January 2023."""
             ),
             self.user_message(
                 f"""**Question**:
