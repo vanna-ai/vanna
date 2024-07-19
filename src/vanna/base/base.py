@@ -471,7 +471,7 @@ class VannaBase(ABC):
             self.system_message(
                 f"""Let's think step by step.
 You are a helpful data assistant.
-Given a set of question, sql query, and sql results, generate an answer to the question.
+Given a set of question, sql query, and sql results, generate an answer to the original question.
 
 ### Step-by-Step Process
 
@@ -479,42 +479,22 @@ Given a set of question, sql query, and sql results, generate an answer to the q
 2. **Analyze the SQL Query**: The SQL query counts the number of orders where the `order_date` falls within January 2023.
 3. **Review the SQL Results**: The results show that there were 500 orders.
 4. **Generate the Answer**: The answer to the question is: "There were 500 orders placed in the month of January 2023."
-By following these steps, we can ensure that the answer is accurate and directly addresses the question based on the provided SQL query and results."""
-            ),
-            self.user_message(
-                """**Question**: How many orders were placed in the month of January 2023?
+5. Your answer should be as detailed as possible, copy the sql result if necessary.
+
+By following these steps, we can ensure that the answer is accurate and directly addresses the question based on the provided SQL query and results.
+
+Example:
+**Question**: {question}
 
 **SQL Query**:
 ```sql
-SELECT COUNT(*) AS order_count
-FROM orders
-WHERE order_date BETWEEN '2023-01-01' AND '2023-01-31';
+{sql}
 ```
 
 **SQL Results (limited to 10 rows)**:
-```
-order_count
------------
-500
-```
-"""
-            ),
-            self.assistant_message(
-                """There were 500 orders placed in the month of January 2023."""
-            ),
-            self.user_message(
-                f"""**Question**:
-{question}
-
-**SQL query**:
-```
-{sql}
-```
-**SQL results (limited to 10 rows)**:
-```
+```md
 {parsed_df.to_markdown()}
-```
-"""
+```"""
             ),
         ]
 
