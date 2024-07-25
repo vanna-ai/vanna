@@ -182,7 +182,7 @@ class VannaBase(ABC):
         """
 
         # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
-        sqls = re.findall(r"WITH.*?;", llm_response, re.DOTALL)
+        sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.DOTALL)
         if sqls:
             sql = sqls[-1]
             self.log(title="Extracted SQL", message=f"{sql}")
@@ -735,7 +735,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "my-password":
+        if password == "mypassword":
             password_env = os.getenv("SNOWFLAKE_PASSWORD")
 
             if password_env is not None:

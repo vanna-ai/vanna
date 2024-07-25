@@ -11,13 +11,9 @@ class OpenAI_Chat(VannaBase):
 
         # default parameters - can be overrided using config
         self.temperature = 0.7
-        self.max_tokens = 500
 
         if "temperature" in config:
             self.temperature = config["temperature"]
-
-        if "max_tokens" in config:
-            self.max_tokens = config["max_tokens"]
 
         if "api_type" in config:
             raise Exception(
@@ -75,7 +71,6 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 model=model,
                 messages=prompt,
-                max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
@@ -87,7 +82,6 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 engine=engine,
                 messages=prompt,
-                max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
@@ -98,7 +92,6 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 engine=self.config["engine"],
                 messages=prompt,
-                max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
@@ -109,7 +102,6 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 model=self.config["model"],
                 messages=prompt,
-                max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
@@ -123,7 +115,6 @@ class OpenAI_Chat(VannaBase):
             response = self.client.chat.completions.create(
                 model=model,
                 messages=prompt,
-                max_tokens=self.max_tokens,
                 stop=None,
                 temperature=self.temperature,
             )
