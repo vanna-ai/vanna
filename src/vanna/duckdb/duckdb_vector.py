@@ -26,15 +26,18 @@ class DuckDB_VectorStore(VannaBase):
 
         self.model_name = self.config.get("model_name", "BAAI/bge-small-en-v1.5")
         self.embedding_model = TextEmbedding(model_name=self.model_name)
+        self.embedding_size = self.config.get(
+            "embedding_size", 384
+        )  # default is size of BAAI/bge-small-en-v1.5
 
         conn = duckdb.connect(database=self.database)
         conn.execute(
-            """
+            f"""
             CREATE TABLE IF NOT EXISTS embeddings (
                 id VARCHAR,
                 text VARCHAR,
                 model VARCHAR,
-                vec FLOAT[384]
+                vec FLOAT[{self.embedding_size}]
             );
         """
         )
