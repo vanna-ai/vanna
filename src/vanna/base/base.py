@@ -582,6 +582,7 @@ class VannaBase(ABC):
             "3. If the provided context is insufficient, please explain why it can't be generated. \n"
             "4. Please use the most relevant table(s). \n"
             "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
+            f"6. Ensure that the output SQL is {self.dialect}-compliant and executable, and free of syntax errors. \n"
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -723,6 +724,7 @@ class VannaBase(ABC):
         database: str,
         role: Union[str, None] = None,
         warehouse: Union[str, None] = None,
+        **kwargs,
     ):
         try:
             snowflake = __import__("snowflake.connector")
@@ -740,7 +742,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "my-password":
+        if password == "mypassword":
             password_env = os.getenv("SNOWFLAKE_PASSWORD")
 
             if password_env is not None:
@@ -770,6 +772,7 @@ class VannaBase(ABC):
             account=account,
             database=database,
             client_session_keep_alive=True,
+            **kwargs,
         )
 
         def run_sql_snowflake(sql: str) -> pd.DataFrame:
@@ -795,13 +798,19 @@ class VannaBase(ABC):
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
-    def connect_to_sqlite(self, url: str = ":memory:", conn=None):
+    def connect_to_sqlite(
+        self,
+        url: str = ":memory:",
+        conn=None,
+        check_same_thread: bool = False,
+        **kwargs,
+    ):
         """
         Connect to a SQLite database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
         Args:
             url (str): The URL of the database to connect to.
-
+            check_same_thread (str): Allow the connection may be accessed in multiple threads.
         Returns:
             None
         """
@@ -826,7 +835,8 @@ class VannaBase(ABC):
                     f"Invalid connection settings. Pass a valid url or sqlite conn."
                 )
 
-            conn = sqlite3.connect(url, check_same_thread=False)
+        # Connect to the database
+        conn = sqlite3.connect(url, check_same_thread=check_same_thread, **kwargs)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
@@ -842,6 +852,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
+        **kwargs,
     ):
         """
         Connect to postgres using the psycopg2 connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
@@ -911,6 +922,7 @@ class VannaBase(ABC):
                 user=user,
                 password=password,
                 port=port,
+                **kwargs,
             )
         except psycopg2.Error as e:
             raise ValidationError(e)
@@ -947,6 +959,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
+        **kwargs,
     ):
         try:
             import pymysql.cursors
@@ -996,6 +1009,7 @@ class VannaBase(ABC):
                 database=dbname,
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
+                **kwargs,
             )
         except pymysql.Error as e:
             raise ValidationError(e)
@@ -1032,6 +1046,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
+        **kwargs,
     ):
         try:
             import clickhouse_connect
@@ -1080,6 +1095,7 @@ class VannaBase(ABC):
                 username=user,
                 password=password,
                 database=dbname,
+                **kwargs,
             )
             print(conn)
         except Exception as e:
@@ -1102,10 +1118,7 @@ class VannaBase(ABC):
         self.run_sql = run_sql_clickhouse
 
     def connect_to_oracle(
-        self,
-        user: str = None,
-        password: str = None,
-        dsn: str = None,
+        self, user: str = None, password: str = None, dsn: str = None, **kwargs
     ):
         """
         Connect to an Oracle db using oracledb package. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
@@ -1154,11 +1167,7 @@ class VannaBase(ABC):
         conn = None
 
         try:
-            conn = oracledb.connect(
-                user=user,
-                password=password,
-                dsn=dsn,
-            )
+            conn = oracledb.connect(user=user, password=password, dsn=dsn, **kwargs)
         except oracledb.Error as e:
             raise ValidationError(e)
 
@@ -1192,7 +1201,9 @@ class VannaBase(ABC):
         self.run_sql_is_set = True
         self.run_sql = run_sql_oracle
 
-    def connect_to_bigquery(self, cred_file_path: str = None, project_id: str = None):
+    def connect_to_bigquery(
+        self, cred_file_path: str = None, project_id: str = None, **kwargs
+    ):
         """
         Connect to gcs using the bigquery connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
         **Example:**
@@ -1254,7 +1265,9 @@ class VannaBase(ABC):
                 )
 
             try:
-                conn = bigquery.Client(project=project_id, credentials=credentials)
+                conn = bigquery.Client(
+                    project=project_id, credentials=credentials, **kwargs
+                )
             except:
                 raise ImproperlyConfigured(
                     "Could not connect to bigquery please correct credentials"
@@ -1277,7 +1290,9 @@ class VannaBase(ABC):
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
 
-    def connect_to_duckdb(self, url: str = ":memory:", init_sql: str = None, conn=None):
+    def connect_to_duckdb(
+        self, url: str = ":memory:", init_sql: str = None, conn=None, **kwargs
+    ):
         """
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
@@ -1313,7 +1328,8 @@ class VannaBase(ABC):
                         with open(path, "wb") as f:
                             f.write(response.content)
 
-                conn = duckdb.connect(path)
+        # Connect to the database
+        conn = duckdb.connect(path, **kwargs)
         if init_sql:
             conn.query(init_sql)
 
@@ -1324,7 +1340,7 @@ class VannaBase(ABC):
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
 
-    def connect_to_mssql(self, odbc_conn_str: str):
+    def connect_to_mssql(self, odbc_conn_str: str, **kwargs):
         """
         Connect to a Microsoft SQL Server database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
@@ -1357,7 +1373,7 @@ class VannaBase(ABC):
 
         from sqlalchemy import create_engine
 
-        engine = create_engine(connection_url)
+        engine = create_engine(connection_url, **kwargs)
 
         def run_sql_mssql(sql: str):
             # Execute the SQL statement and return the result as a pandas DataFrame
@@ -1383,6 +1399,7 @@ class VannaBase(ABC):
         combined_pem_path: str = None,
         protocol: str = "https",
         requests_kwargs: dict = None,
+        **kwargs,
     ):
         """
         Connect to a Presto database using the specified parameters.
@@ -1442,12 +1459,13 @@ class VannaBase(ABC):
 
         conn = None
 
+        if requests_kwargs is None and combined_pem_path is not None:
+            # use the combined pem file to verify the SSL connection
+            requests_kwargs = {
+                "verify": combined_pem_path,  # 使用转换后得到的 PEM 文件进行 SSL 验证
+            }
+
         try:
-            if requests_kwargs is None and combined_pem_path is not None:
-                # use the combined pem file to verify the SSL connection
-                requests_kwargs = {
-                    "verify": combined_pem_path,  # 使用转换后得到的 PEM 文件进行 SSL 验证
-                }
             conn = presto.Connection(
                 host=host,
                 username=user,
@@ -1457,6 +1475,7 @@ class VannaBase(ABC):
                 port=port,
                 protocol=protocol,
                 requests_kwargs=requests_kwargs,
+                **kwargs,
             )
         except presto.Error as e:
             raise ValidationError(e)
@@ -1497,6 +1516,7 @@ class VannaBase(ABC):
         password: str = None,
         port: int = None,
         auth: str = "CUSTOM",
+        **kwargs,
     ):
         """
         Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]

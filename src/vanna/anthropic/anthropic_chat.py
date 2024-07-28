@@ -8,15 +8,7 @@ from ..base import VannaBase
 class Anthropic_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
-
-        if client is not None:
-            self.client = client
-            return
-
-        if config is None and client is None:
-            self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-            return
-
+      
         # default parameters - can be overrided using config
         self.temperature = 0.7
         self.max_tokens = 500
@@ -27,6 +19,14 @@ class Anthropic_Chat(VannaBase):
         if "max_tokens" in config:
             self.max_tokens = config["max_tokens"]
 
+        if client is not None:
+            self.client = client
+            return
+
+        if config is None and client is None:
+            self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            return
+      
         if "api_key" in config:
             self.client = anthropic.Anthropic(api_key=config["api_key"])
 
