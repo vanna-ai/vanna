@@ -835,8 +835,7 @@ class VannaBase(ABC):
                     f"Invalid connection settings. Pass a valid url or sqlite conn."
                 )
 
-        # Connect to the database
-        conn = sqlite3.connect(url, check_same_thread=check_same_thread, **kwargs)
+            conn = sqlite3.connect(url, check_same_thread=check_same_thread, **kwargs)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
@@ -1328,8 +1327,7 @@ class VannaBase(ABC):
                         with open(path, "wb") as f:
                             f.write(response.content)
 
-        # Connect to the database
-        conn = duckdb.connect(path, **kwargs)
+            conn = duckdb.connect(path, **kwargs)
         if init_sql:
             conn.query(init_sql)
 
