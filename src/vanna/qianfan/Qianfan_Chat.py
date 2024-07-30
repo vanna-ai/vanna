@@ -78,7 +78,7 @@ class Qianfan_Chat(VannaBase):
 
     if initial_prompt is None:
       initial_prompt = f"You are a {self.dialect} expert. " + \
-                       "Please help to generate a SQL to answer the question.Please don;t give ant explanation for your answer. Just generate a SQL \n"
+                       "Please help to generate a SQL to answer the question based on some context.Please don't give any explanation for your answer. Just only generate a SQL \n"
 
     initial_prompt = self.add_ddl_to_prompt(
       initial_prompt, ddl_list, max_tokens=self.max_tokens
