@@ -37,6 +37,7 @@ all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snow
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
+qianfan = ["qianfan"]
 mistralai = ["mistralai"]
 anthropic = ["anthropic"]
 gemini = ["google-generativeai"]
