@@ -2,6 +2,7 @@ import qianfan
 
 from ..base import VannaBase
 
+
 class Qianfan_Chat(VannaBase):
   def __init__(self, client=None, config=None):
     VannaBase.__init__(self, config=config)
@@ -30,9 +31,8 @@ class Qianfan_Chat(VannaBase):
       self.client = client
       return
 
-    if config is None and client is None:
-      self.client = qianfan.ChatCompletion(model=self.model, access_key=self.api_key, secret_key=self.secret_key)
-      return
+    self.client = qianfan.ChatCompletion(ak=self.api_key,
+                                         sk=self.secret_key)
 
   def system_message(self, message: str) -> any:
     return {"role": "system", "content": message}
