@@ -79,7 +79,7 @@ class ChromaDB_VectorStore(VannaBase):
 
         return id
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl) + "-ddl"
         self.ddl_collection.add(
             documents=ddl,
@@ -240,7 +240,18 @@ class ChromaDB_VectorStore(VannaBase):
             )
         )
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               biz_type: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         return ChromaDB_VectorStore._extract_documents(
             self.ddl_collection.query(
                 query_texts=[question],

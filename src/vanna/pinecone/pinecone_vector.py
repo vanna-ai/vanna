@@ -115,7 +115,7 @@ class PineconeDB_VectorStore(VannaBase):
             return False
         return True
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl) + "-ddl"
         if self._check_if_embedding_exists(id=id, namespace=self.ddl_namespace):
             print(f"DDL with id: {id} already exists in the index. Skipping...")
@@ -168,7 +168,18 @@ class PineconeDB_VectorStore(VannaBase):
         )
         return id
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               biz_type: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         res = self.Index.query(
             namespace=self.ddl_namespace,
             vector=self.generate_embedding(question),
