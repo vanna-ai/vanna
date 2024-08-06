@@ -16,6 +16,7 @@ def test_regular_imports():
     from vanna.pinecone.pinecone_vector import PineconeDB_VectorStore
     from vanna.remote import VannaDefault
     from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
+    from vanna.weaviate.weaviate_vector import WeaviateDatabase
     from vanna.ZhipuAI.ZhipuAI_Chat import ZhipuAI_Chat
     from vanna.ZhipuAI.ZhipuAI_embeddings import ZhipuAI_Embeddings
 
@@ -33,4 +34,5 @@ def test_shortcut_imports():
     from vanna.pinecone import PineconeDB_VectorStore
     from vanna.vannadb import VannaDB_VectorStore
     from vanna.vllm import Vllm
+    from vanna.weaviate import WeaviateDatabase
     from vanna.ZhipuAI import ZhipuAI_Chat, ZhipuAI_Embeddings

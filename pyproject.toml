@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.6.2"
+version = "0.6.5"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "flask-sock", "sqlalchemy"
+    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "flask-sock", "flasgger", "sqlalchemy"
 ]
 
 [project.urls]
@@ -33,10 +33,11 @@ bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
 google = ["google-generativeai", "google-cloud-aiplatform"]
-all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone-client", "pymilvus[model]"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone-client", "pymilvus[model]","weaviate-client"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
+qianfan = ["qianfan"]
 mistralai = ["mistralai"]
 anthropic = ["anthropic"]
 gemini = ["google-generativeai"]
@@ -49,3 +50,5 @@ pinecone = ["pinecone-client", "fastembed"]
 opensearch = ["opensearch-py", "opensearch-dsl"]
 hf = ["transformers"]
 milvus = ["pymilvus[model]"]
+bedrock = ["boto3", "botocore"]
+weaviate = ["weaviate-client"]
