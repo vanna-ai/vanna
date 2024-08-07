@@ -213,8 +213,8 @@ class VannaBase(ABC):
                         ddl_list=ddl_list,
                         doc_list=doc_list
                         + [
-                            f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n"
-                            + df.to_markdown()
+                            f"The following is a pandas DataFrame (limited to 10 rows) with the results of the intermediate SQL query {intermediate_sql}: \n"
+                            + df.head(10).to_markdown()
                         ],
                         **kwargs,
                     )
