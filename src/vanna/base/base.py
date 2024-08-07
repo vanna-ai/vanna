@@ -178,9 +178,11 @@ class VannaBase(ABC):
             initial_prompt = self.config.get("initial_prompt", None)
         else:
             initial_prompt = None
-        question_sql_list = await self.aget_similar_question_sql(question, **kwargs)
-        ddl_list = await self.aget_related_ddl(question, **kwargs)
-        doc_list = await self.aget_related_documentation(question, **kwargs)
+        coros = []
+        coros.append(self.aget_similar_question_sql(question, **kwargs))
+        coros.append(self.aget_related_ddl(question, **kwargs))
+        coros.append(self.aget_related_documentation(question, **kwargs))
+        question_sql_list, ddl_list, doc_list = await asyncio.gather(*coros)
         prompt = self.get_sql_prompt(
             initial_prompt=initial_prompt or "",
             question=question,
