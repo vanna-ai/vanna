@@ -1,5 +1,7 @@
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+
+from mistralai import Mistral as MistralClient
+from mistralai import UserMessage
 
 from ..base import VannaBase
 
@@ -23,13 +25,13 @@ class Mistral(VannaBase):
         self.model = model
 
     def system_message(self, message: str) -> any:
-        return ChatMessage(role="system", content=message)
+        return {"role": "system", "content": message}
 
     def user_message(self, message: str) -> any:
-        return ChatMessage(role="user", content=message)
+        return {"role": "user", "content": message}
 
     def assistant_message(self, message: str) -> any:
-        return ChatMessage(role="assistant", content=message)
+        return {"role": "assistant", "content": message}
 
     def generate_sql(self, question: str, **kwargs) -> str:
         # Use the super generate_sql
@@ -41,7 +43,7 @@ class Mistral(VannaBase):
         return sql
 
     def submit_prompt(self, prompt, **kwargs) -> str:
-        chat_response = self.client.chat(
+        chat_response = self.client.chat.complete(
             model=self.model,
             messages=prompt,
         )
