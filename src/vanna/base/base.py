@@ -437,7 +437,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def remove_training_data(id: str, **kwargs) -> bool:
+    def remove_training_data(self, id: str, **kwargs) -> bool:
         """
         Example:
         ```python
@@ -1276,15 +1276,10 @@ class VannaBase(ABC):
 
         def run_sql_bigquery(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
-                try:
-                    job = conn.query(sql)
-                    df = job.result().to_dataframe()
-                    return df
-                except GoogleAPIError as error:
-                    errors = []
-                    for error in error.errors:
-                        errors.append(error["message"])
-                    raise errors
+                job = conn.query(sql)
+                df = job.result().to_dataframe()
+                return df
+
             return None
 
         self.dialect = "BigQuery SQL"
