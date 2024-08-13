@@ -213,17 +213,20 @@ class AzureAISearch_VectorStore(VannaBase):
 
         search = self.search_client.search(  
             search_text="*",
-            select=['id', 'document', 'type', 'column', 'table'],
+            select=['id', 'document', 'type'],
             filter=f"(type eq 'sql') or (type eq 'ddl') or (type eq 'doc')"
         ).by_page()
 
         df = pd.DataFrame([item for page in search for item in page])
 
-        df.loc[df["type"] == "sql", "question"] = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["question"])
-        df.loc[df["type"] == "sql", "content"]  = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["sql"])
-        df.loc[df["type"] != "sql", "content"]  = df.loc[df["type"] != "sql"]["document"]
-
-        return df[["id", "question", "content", "type"]]
+        if len(df):
+            df.loc[df["type"] == "sql", "question"] = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["question"])
+            df.loc[df["type"] == "sql", "content"]  = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["sql"])
+            df.loc[df["type"] != "sql", "content"]  = df.loc[df["type"] != "sql"]["document"]
+            
+            return df[["id", "question", "content", "type"]]
+        
+        return pd.DataFrame()
     
     def remove_training_data(self, id: str) -> bool:
         result = self.search_client.delete_documents(documents=[{'id':id}])
