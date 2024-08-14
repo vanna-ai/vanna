@@ -1,34 +1,29 @@
 import ast
 import json
-import pandas as pd
-
 from typing import List
+
+import pandas as pd
+from azure.core.credentials import AzureKeyCredential
+from azure.search.documents import SearchClient
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
+  ExhaustiveKnnAlgorithmConfiguration,
+  ExhaustiveKnnParameters,
+  SearchableField,
+  SearchField,
+  SearchFieldDataType,
+  SearchIndex,
+  VectorSearch,
+  VectorSearchAlgorithmKind,
+  VectorSearchAlgorithmMetric,
+  VectorSearchProfile,
+)
+from azure.search.documents.models import VectorFilterMode, VectorizedQuery
+from fastembed import TextEmbedding
 
 from ..base import VannaBase
 from ..utils import deterministic_uuid
 
-from fastembed import TextEmbedding
-
-from azure.search.documents.models import VectorizedQuery
-
-from azure.search.documents import SearchClient
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.indexes import SearchIndexClient 
-
-from azure.search.documents.models import VectorFilterMode
-
-from azure.search.documents.indexes.models import (
-    SearchableField,
-    SearchField,
-    SearchFieldDataType,
-    VectorSearch,
-    VectorSearchAlgorithmKind,
-    VectorSearchAlgorithmMetric,
-    VectorSearchProfile,
-    ExhaustiveKnnAlgorithmConfiguration,
-    ExhaustiveKnnParameters,
-    SearchIndex,
-)
 
 class AzureAISearch_VectorStore(VannaBase):
     """
@@ -77,16 +72,16 @@ class AzureAISearch_VectorStore(VannaBase):
         )
 
         self.index_client = SearchIndexClient(
-            endpoint=azure_search_endpoint, 
+            endpoint=azure_search_endpoint,
             credential=AzureKeyCredential(azure_search_api_key)
         )
-        
+
         self.search_client = SearchClient(
             endpoint=azure_search_endpoint,
             index_name=self.index_name,
             credential=AzureKeyCredential(azure_search_api_key)
         )
-        
+
         if self.index_name not in self._get_indexes():
             self._create_index()
 
@@ -122,7 +117,7 @@ class AzureAISearch_VectorStore(VannaBase):
 
     def _get_indexes(self) -> list:
         return [index for index in self.index_client.list_index_names()]
-    
+
     def add_ddl(self, ddl: str) -> str:
         id = deterministic_uuid(ddl) + "-ddl"
         document = {
@@ -211,7 +206,7 @@ class AzureAISearch_VectorStore(VannaBase):
 
     def get_training_data(self) -> List[str]:
 
-        search = self.search_client.search(  
+        search = self.search_client.search(
             search_text="*",
             select=['id', 'document', 'type'],
             filter=f"(type eq 'sql') or (type eq 'ddl') or (type eq 'doc')"
@@ -223,15 +218,15 @@ class AzureAISearch_VectorStore(VannaBase):
             df.loc[df["type"] == "sql", "question"] = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["question"])
             df.loc[df["type"] == "sql", "content"]  = df.loc[df["type"] == "sql"]["document"].apply(lambda x: json.loads(x)["sql"])
             df.loc[df["type"] != "sql", "content"]  = df.loc[df["type"] != "sql"]["document"]
-            
+
             return df[["id", "question", "content", "type"]]
-        
+
         return pd.DataFrame()
-    
+
     def remove_training_data(self, id: str) -> bool:
         result = self.search_client.delete_documents(documents=[{'id':id}])
         return result[0].succeeded
-    
+
     def remove_index(self):
         self.index_client.delete_index(self.index_name)
 

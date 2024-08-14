@@ -114,12 +114,13 @@ def test_vn_chroma():
 
 from vanna.azuresearch.azuresearch_vector import AzureAISearch_VectorStore
 
+
 class VannaAzureSearch(AzureAISearch_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
         AzureAISearch_VectorStore.__init__(self, config=config)
         OpenAI_Chat.__init__(self, config=config)
 
-vn_azure_search = VannaAzureSearch(config={'azure_search_api_key': AZURE_SEARCH_API_KEY,'api_key': OPENAI_API_KEY, 'model': 'gpt35turbo-1106'})
+vn_azure_search = VannaAzureSearch(config={'azure_search_api_key': AZURE_SEARCH_API_KEY,'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
 vn_azure_search.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
 
 def test_vn_azure_search():
@@ -128,7 +129,7 @@ def test_vn_azure_search():
     if len(existing_training_data) > 0:
         for _, training_data in existing_training_data.iterrows():
             vn_azure_search.remove_training_data(training_data['id'])
-    
+
     df_ddl = vn_azure_search.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
     for ddl in df_ddl['sql'].to_list():
         vn_azure_search.train(ddl=ddl)
