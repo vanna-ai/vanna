@@ -15,7 +15,7 @@ r"""
 
 # Open-Source and Extending
 
-Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](/docs/local.html).
+Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](https://vanna.ai/docs/postgres-ollama-chromadb/).
 
 The following is an example of where various functions are implemented in the codebase when using the default "local" version of Vanna. `vanna.base.VannaBase` is the base class which provides a `vanna.base.VannaBase.ask` and `vanna.base.VannaBase.train` function. Those rely on abstract methods which are implemented in the subclasses `vanna.openai_chat.OpenAI_Chat` and `vanna.chromadb_vector.ChromaDB_VectorStore`. `vanna.openai_chat.OpenAI_Chat` uses the OpenAI API to generate SQL and Plotly code. `vanna.chromadb_vector.ChromaDB_VectorStore` uses ChromaDB to store training data and generate embeddings.
 
@@ -1666,7 +1666,7 @@ class VannaBase(ABC):
 
         if self.run_sql_is_set is False:
             print(
-                "If you want to run the SQL query, connect to a database first. See here: https://vanna.ai/docs/databases.html"
+                "If you want to run the SQL query, connect to a database first."
             )
 
             if print_results:
