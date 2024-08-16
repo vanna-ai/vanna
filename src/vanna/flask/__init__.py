@@ -12,9 +12,9 @@ from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
 
+from ..base import VannaBase
 from .assets import css_content, html_content, js_content
 from .auth import AuthInterface, NoAuth
-from ..base import VannaBase
 
 
 class Cache(ABC):
@@ -1211,7 +1211,7 @@ class VannaFlaskApp(VannaFlaskAPI):
         self.config["ask_results_correct"] = ask_results_correct
         self.config["followup_questions"] = followup_questions
         self.config["summarization"] = summarization
-        self.config["function_generation"] = function_generation
+        self.config["function_generation"] = function_generation and hasattr(vn, "get_function")
 
         self.index_html_path = index_html_path
         self.assets_folder = assets_folder

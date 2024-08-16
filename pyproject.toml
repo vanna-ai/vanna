@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.6.5"
+version = "0.6.6"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -33,12 +33,12 @@ bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
 google = ["google-generativeai", "google-cloud-aiplatform"]
-all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai", "chromadb", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone-client", "pymilvus[model]","weaviate-client"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai>=1.0.0", "chromadb", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone-client", "pymilvus[model]","weaviate-client"]
 test = ["tox"]
 chromadb = ["chromadb"]
 openai = ["openai"]
 qianfan = ["qianfan"]
-mistralai = ["mistralai"]
+mistralai = ["mistralai>=1.0.0"]
 anthropic = ["anthropic"]
 gemini = ["google-generativeai"]
 marqo = ["marqo"]
