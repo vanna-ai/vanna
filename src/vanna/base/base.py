@@ -183,6 +183,10 @@ class VannaBase(ABC):
         coros.append(self.aget_related_ddl(question, **kwargs))
         coros.append(self.aget_related_documentation(question, **kwargs))
         question_sql_list, ddl_list, doc_list = await asyncio.gather(*coros)
+
+        # reverse due to llm lost in the middle
+        # top result should get better attention (at the end)
+        question_sql_list.reverse()
         prompt = self.get_sql_prompt(
             initial_prompt=initial_prompt or "",
             question=question,
