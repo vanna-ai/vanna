@@ -256,6 +256,33 @@ class VannaBase(ABC):
 
         return False
 
+    def generate_rewritten_question(self, last_question: str, new_question: str, **kwargs) -> str:
+        """
+        **Example:**
+        ```python
+        rewritten_question = vn.generate_rewritten_question("Who are the top 5 customers by sales?", "Show me their email addresses")
+        ```
+
+        Generate a rewritten question by combining the last question and the new question if they are related. If the new question is self-contained and not related to the last question, return the new question.
+
+        Args:
+            last_question (str): The previous question that was asked.
+            new_question (str): The new question to be combined with the last question.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            str: The combined question if related, otherwise the new question.
+        """
+        if last_question is None:
+            return new_question
+
+        prompt = [
+            self.system_message("Your goal is to combine a sequence of questions into a singular question if they are related. If the second question does not relate to the first question and is fully self-contained, return the second question. Return just the new combined question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
+            self.user_message("First question: " + last_question + "\nSecond question: " + new_question),
+        ]
+
+        return self.submit_prompt(prompt=prompt, **kwargs)
+
     def generate_followup_questions(
         self, question: str, sql: str, df: pd.DataFrame, n_questions: int = 5, **kwargs
     ) -> list:
