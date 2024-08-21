@@ -19,6 +19,7 @@ def test_regular_imports():
     from vanna.weaviate.weaviate_vector import WeaviateDatabase
     from vanna.ZhipuAI.ZhipuAI_Chat import ZhipuAI_Chat
     from vanna.ZhipuAI.ZhipuAI_embeddings import ZhipuAI_Embeddings
+    from vanna.azuresearch.azuresearch_vector import AzureAISearch_VectorStore
 
 def test_shortcut_imports():
     from vanna.anthropic import Anthropic_Chat
@@ -36,3 +37,4 @@ def test_shortcut_imports():
     from vanna.vllm import Vllm
     from vanna.weaviate import WeaviateDatabase
     from vanna.ZhipuAI import ZhipuAI_Chat, ZhipuAI_Embeddings
+    from vanna.azuresearch import AzureAISearch_VectorStore
