@@ -15,7 +15,7 @@ r"""
 
 # Open-Source and Extending
 
-Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](/docs/local.html).
+Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](https://vanna.ai/docs/postgres-ollama-chromadb/).
 
 The following is an example of where various functions are implemented in the codebase when using the default "local" version of Vanna. `vanna.base.VannaBase` is the base class which provides a `vanna.base.VannaBase.ask` and `vanna.base.VannaBase.train` function. Those rely on abstract methods which are implemented in the subclasses `vanna.openai_chat.OpenAI_Chat` and `vanna.chromadb_vector.ChromaDB_VectorStore`. `vanna.openai_chat.OpenAI_Chat` uses the OpenAI API to generate SQL and Plotly code. `vanna.chromadb_vector.ChromaDB_VectorStore` uses ChromaDB to store training data and generate embeddings.
 
@@ -255,6 +255,33 @@ class VannaBase(ABC):
             return True
 
         return False
+
+    def generate_rewritten_question(self, last_question: str, new_question: str, **kwargs) -> str:
+        """
+        **Example:**
+        ```python
+        rewritten_question = vn.generate_rewritten_question("Who are the top 5 customers by sales?", "Show me their email addresses")
+        ```
+
+        Generate a rewritten question by combining the last question and the new question if they are related. If the new question is self-contained and not related to the last question, return the new question.
+
+        Args:
+            last_question (str): The previous question that was asked.
+            new_question (str): The new question to be combined with the last question.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            str: The combined question if related, otherwise the new question.
+        """
+        if last_question is None:
+            return new_question
+
+        prompt = [
+            self.system_message("Your goal is to combine a sequence of questions into a singular question if they are related. If the second question does not relate to the first question and is fully self-contained, return the second question. Return just the new combined question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
+            self.user_message("First question: " + last_question + "\nSecond question: " + new_question),
+        ]
+
+        return self.submit_prompt(prompt=prompt, **kwargs)
 
     def generate_followup_questions(
         self, question: str, sql: str, df: pd.DataFrame, n_questions: int = 5, **kwargs
@@ -840,6 +867,7 @@ class VannaBase(ABC):
         port: int = None,
         **kwargs
     ):
+
         """
         Connect to postgres using the psycopg2 connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
         **Example:**
@@ -913,26 +941,44 @@ class VannaBase(ABC):
         except psycopg2.Error as e:
             raise ValidationError(e)
 
+        def connect_to_db():
+            return psycopg2.connect(host=host, dbname=dbname,
+                        user=user, password=password, port=port, **kwargs)
+
+
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
-                try:
-                    cs = conn.cursor()
-                    cs.execute(sql)
-                    results = cs.fetchall()
+            conn = None
+            try:
+                conn = connect_to_db()  # Initial connection attempt
+                cs = conn.cursor()
+                cs.execute(sql)
+                results = cs.fetchall()
 
-                    # Create a pandas dataframe from the results
-                    df = pd.DataFrame(
-                        results, columns=[desc[0] for desc in cs.description]
-                    )
-                    return df
+                # Create a pandas dataframe from the results
+                df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
+                return df
 
-                except psycopg2.Error as e:
+            except psycopg2.InterfaceError as e:
+                # Attempt to reconnect and retry the operation
+                if conn:
+                    conn.close()  # Ensure any existing connection is closed
+                conn = connect_to_db()
+                cs = conn.cursor()
+                cs.execute(sql)
+                results = cs.fetchall()
+
+                # Create a pandas dataframe from the results
+                df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
+                return df
+
+            except psycopg2.Error as e:
+                if conn:
                     conn.rollback()
                     raise ValidationError(e)
 
-                except Exception as e:
-                    conn.rollback()
-                    raise e
+            except Exception as e:
+                        conn.rollback()
+                        raise e
 
         self.dialect = "PostgreSQL"
         self.run_sql_is_set = True
@@ -1279,7 +1325,6 @@ class VannaBase(ABC):
                 job = conn.query(sql)
                 df = job.result().to_dataframe()
                 return df
-
             return None
 
         self.dialect = "BigQuery SQL"
@@ -1666,7 +1711,7 @@ class VannaBase(ABC):
 
         if self.run_sql_is_set is False:
             print(
-                "If you want to run the SQL query, connect to a database first. See here: https://vanna.ai/docs/databases.html"
+                "If you want to run the SQL query, connect to a database first."
             )
 
             if print_results:
