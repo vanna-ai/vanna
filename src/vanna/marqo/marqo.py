@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 import marqo
 import pandas as pd

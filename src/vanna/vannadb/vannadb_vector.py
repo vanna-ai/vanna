@@ -1,6 +1,7 @@
 import dataclasses
 import json
 from io import StringIO
+from typing import List
 
 import pandas as pd
 import requests
