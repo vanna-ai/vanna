@@ -24,6 +24,7 @@ ANTHROPIC_API_KEY = os.environ['ANTHROPIC_API_KEY']
 SNOWFLAKE_ACCOUNT = os.environ['SNOWFLAKE_ACCOUNT']
 SNOWFLAKE_USERNAME = os.environ['SNOWFLAKE_USERNAME']
 SNOWFLAKE_PASSWORD = os.environ['SNOWFLAKE_PASSWORD']
+# AZURE_SEARCH_API_KEY = os.environ['AZURE_SEARCH_API_KEY']
 
 class VannaOpenAI(VannaDB_VectorStore, OpenAI_Chat):
     def __init__(self, config=None):
@@ -111,6 +112,31 @@ def test_vn_chroma():
     df = vn_chroma.run_sql(sql)
     assert len(df) == 7
 
+# from vanna.azuresearch.azuresearch_vector import AzureAISearch_VectorStore
+
+
+# class VannaAzureSearch(AzureAISearch_VectorStore, OpenAI_Chat):
+#     def __init__(self, config=None):
+#         AzureAISearch_VectorStore.__init__(self, config=config)
+#         OpenAI_Chat.__init__(self, config=config)
+
+# vn_azure_search = VannaAzureSearch(config={'azure_search_api_key': AZURE_SEARCH_API_KEY,'api_key': OPENAI_API_KEY, 'model': 'gpt-3.5-turbo'})
+# vn_azure_search.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+# def test_vn_azure_search():
+#     existing_training_data = vn_azure_search.get_training_data()
+#     print(existing_training_data)
+#     if len(existing_training_data) > 0:
+#         for _, training_data in existing_training_data.iterrows():
+#             vn_azure_search.remove_training_data(training_data['id'])
+
+#     df_ddl = vn_azure_search.run_sql("SELECT type, sql FROM sqlite_master WHERE sql is not null")
+#     for ddl in df_ddl['sql'].to_list():
+#         vn_azure_search.train(ddl=ddl)
+
+#     sql = vn_azure_search.generate_sql("What are the top 7 customers by sales?")
+#     df = vn_azure_search.run_sql(sql)
+#     assert len(df) == 7
 
 from vanna.milvus import Milvus_VectorStore
 

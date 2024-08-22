@@ -5,6 +5,7 @@ import sys
 import uuid
 from abc import ABC, abstractmethod
 from functools import wraps
+import importlib.metadata
 
 import flask
 import requests
@@ -12,9 +13,9 @@ from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
 
+from ..base import VannaBase
 from .assets import css_content, html_content, js_content
 from .auth import AuthInterface, NoAuth
-from ..base import VannaBase
 
 
 class Cache(ABC):
@@ -352,6 +353,30 @@ class VannaFlaskAPI:
                         "text": sql,
                     }
                 )
+
+        @self.flask_app.route("/api/v0/generate_rewritten_question", methods=["GET"])
+        @self.requires_auth
+        def generate_rewritten_question(user: any):
+            """
+            Generate a rewritten question
+            ---
+            parameters:
+              - name: last_question
+                in: query
+                type: string
+                required: true
+              - name: new_question
+                in: query
+                type: string
+                required: true
+            """
+
+            last_question = flask.request.args.get("last_question")
+            new_question = flask.request.args.get("new_question")
+
+            rewritten_question = self.vn.generate_rewritten_question(last_question, new_question)
+
+            return jsonify({"type": "rewritten_question", "question": rewritten_question})
 
         @self.flask_app.route("/api/v0/get_function", methods=["GET"])
         @self.requires_auth
@@ -1212,7 +1237,8 @@ class VannaFlaskApp(VannaFlaskAPI):
         self.config["ask_results_correct"] = ask_results_correct
         self.config["followup_questions"] = followup_questions
         self.config["summarization"] = summarization
-        self.config["function_generation"] = function_generation
+        self.config["function_generation"] = function_generation and hasattr(vn, "get_function")
+        self.config["version"] = importlib.metadata.version('vanna')
 
         self.index_html_path = index_html_path
         self.assets_folder = assets_folder
