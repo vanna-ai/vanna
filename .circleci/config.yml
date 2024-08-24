@@ -1,39 +1,20 @@
-# This config was automatically generated from your source code
-# Stacks detected: cicd:github-actions:.github/workflows,deps:python:.,test:tox:.
 version: 2.1
-orbs:
-  python: circleci/python@2
+
 jobs:
-  test-python:
-    # Install dependencies and run tests
+  test:
     docker:
-      - image: cimg/python:3.8-node
+      - image: circleci/python:3.11
     steps:
       - checkout
-      - python/install-packages
-      - python/install-packages:
-          args: tox
       - run:
-          name: Run tests
-          command: tox
-      - store_test_results:
-          path: junit.xml
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
+          name: Install tox
+          command: pip install tox
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: found github actions config
-          command: ':'
+          name: Run tox tests
+          command: tox -e py311
+
 workflows:
-  build-and-test:
+  version: 2
+  test:
     jobs:
-      - test-python
-    # - deploy:
-    #     requires:
-    #       - test-python
+      - test
