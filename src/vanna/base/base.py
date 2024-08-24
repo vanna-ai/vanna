@@ -67,6 +67,8 @@ from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
 
+MAX_TOKENS = 14000
+
 
 class VannaBase(ABC):
     def __init__(self, config=None):
@@ -184,7 +186,7 @@ class VannaBase(ABC):
             question (str): The question to get similar questions and their corresponding SQL statements for.
 
         Returns:
-            list: A list of similar questions and their corresponding SQL statements.            
+            list: A list of similar questions and their corresponding SQL statements.
         """
         pass
 
@@ -224,7 +226,7 @@ class VannaBase(ABC):
             sql (str): The SQL query to add.
 
         Returns:
-            str: The ID of the training data that was added.       
+            str: The ID of the training data that was added.
         """
         pass
 
@@ -232,7 +234,7 @@ class VannaBase(ABC):
     def add_ddl(self, ddl: str, **kwargs) -> str:
         """
         This method is used to add a DDL statement to the training data.
-        
+
         Args:
             ddl (str): The DDL statement to add.
 
@@ -265,7 +267,7 @@ class VannaBase(ABC):
         This method is used to get all the training data from the retrieval layer.
 
         Returns:
-            pd.DataFrame: The training data.        
+            pd.DataFrame: The training data.
         """
         pass
 
@@ -305,7 +307,7 @@ class VannaBase(ABC):
         return len(string) / 4
 
     def add_ddl_to_prompt(
-        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = MAX_TOKENS
     ) -> str:
         if len(ddl_list) > 0:
             initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -321,7 +323,10 @@ class VannaBase(ABC):
         return initial_prompt
 
     def add_documentation_to_prompt(
-        self, initial_prompt: str, documentation_list: list[str], max_tokens: int = 14000
+        self,
+        initial_prompt: str,
+        documentation_list: list[str],
+        max_tokens: int = MAX_TOKENS,
     ) -> str:
         if len(documentation_list) > 0:
             initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -337,7 +342,7 @@ class VannaBase(ABC):
         return initial_prompt
 
     def add_sql_to_prompt(
-        self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, sql_list: list[str], max_tokens: int = MAX_TOKENS
     ) -> str:
         if len(sql_list) > 0:
             initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
@@ -386,11 +391,11 @@ class VannaBase(ABC):
         initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=MAX_TOKENS
         )
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=MAX_TOKENS
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -418,15 +423,15 @@ class VannaBase(ABC):
         initial_prompt = f"The user initially asked the question: '{question}': \n\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=14000
+            initial_prompt, ddl_list, max_tokens=MAX_TOKENS
         )
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=14000
+            initial_prompt, doc_list, max_tokens=MAX_TOKENS
         )
 
         initial_prompt = self.add_sql_to_prompt(
-            initial_prompt, question_sql_list, max_tokens=14000
+            initial_prompt, question_sql_list, max_tokens=MAX_TOKENS
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -843,13 +848,13 @@ class VannaBase(ABC):
                 " run command: \npip install vanna[duckdb]"
             )
         # URL of the database to download
-        if url==":memory:" or url=="":
-            path=":memory:"
+        if url == ":memory:" or url == "":
+            path = ":memory:"
         else:
             # Path to save the downloaded database
             print(os.path.exists(url))
             if os.path.exists(url):
-                path=url
+                path = url
             else:
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
@@ -894,7 +899,7 @@ class VannaBase(ABC):
         question: Union[str, None] = None,
         print_results: bool = True,
         auto_train: bool = True,
-        visualize: bool = True, # if False, will not generate plotly code
+        visualize: bool = True,  # if False, will not generate plotly code
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -975,7 +980,9 @@ class VannaBase(ABC):
                             display = __import__(
                                 "IPython.display", fromlist=["display"]
                             ).display
-                            Image = __import__("IPython.display", fromlist=["Image"]).Image
+                            Image = __import__(
+                                "IPython.display", fromlist=["Image"]
+                            ).Image
                             img_bytes = fig.to_image(format="png", scale=2)
                             display(Image(img_bytes))
                         except Exception as e:
@@ -1328,4 +1335,3 @@ class VannaBase(ABC):
             fig.update_layout(template="plotly_dark")
 
         return fig
-
