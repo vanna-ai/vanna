@@ -290,3 +290,29 @@ class TrainingPlan:
             if str(plan_item) == item:
                 self._plan.remove(plan_item)
                 break
+
+
+class TableMetadata:
+  def __init__(self, catalog=None, schema=None, table_name=None):
+    self.catalog = catalog
+    self.schema = schema
+    self.table_name = table_name
+
+  def __str__(self):
+    parts = []
+    if self.catalog:
+      parts.append(f"Catalog: {self.catalog}")
+    if self.schema:
+      parts.append(f"Schema: {self.schema}")
+    if self.table_name:
+      parts.append(f"Table: {self.table_name}")
+    return "\n".join(parts) if parts else "No match found"
+
+  def get_full_table_name(self):
+    if self.catalog and self.schema:
+      return f"{self.catalog}.{self.schema}.{self.table_name}"
+    elif self.schema:
+      return f"{self.schema}.{self.table_name}"
+    else:
+      return f"{self.table_name}"
+

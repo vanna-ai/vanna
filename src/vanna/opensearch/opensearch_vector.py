@@ -3,14 +3,32 @@ import uuid
 from typing import List
 
 import pandas as pd
+from chromadb.utils import embedding_functions
 from opensearchpy import OpenSearch
+from ..types import TableMetadata
 
 from ..base import VannaBase
+from ..utils import deterministic_uuid
 
 
 class OpenSearch_VectorStore(VannaBase):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
+
+    if config is not None and "embedding_function" in config:
+      self.embedding_function = config["embedding_function"]
+    else:
+      default_ef = embedding_functions.DefaultEmbeddingFunction()
+      self.embedding_function = default_ef
+
+    embedding_test = self.embedding_function(["test"])[0]
+    print("Embedding function initialized with embedding_dim: ",
+          len(embedding_test), " embedding_test: ", embedding_test)
+
+    self.dimensions = len(embedding_test)
+    if config is not None and "dimensions" in config:
+      self.dimensions = config["dimensions"]
+
     document_index = "vanna_document_index"
     ddl_index = "vanna_ddl_index"
     question_sql_index = "vanna_questions_sql_index"
@@ -32,7 +50,22 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
@@ -42,6 +75,19 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "doc": {
             "type": "text",
+          },
+          "doc_embedding": {
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 128,
+                "m": 16
+              }
+            }
           }
         }
       }
@@ -51,11 +97,44 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
         "properties": {
+          "biz_type": {
+            "type": "keyword",
+          },
+          "engine": {
+            "type": "keyword",
+          },
+          "catalog": {
+            "type": "keyword",
+          },
+          "schema": {
+            "type": "keyword",
+          },
+          "table_name": {
+            "type": "keyword",
+          },
+          "full_table_name": {
+            "type": "keyword",
+          },
           "ddl": {
             "type": "text",
           },
@@ -70,7 +149,22 @@ class OpenSearch_VectorStore(VannaBase):
       "settings": {
         "index": {
           "number_of_shards": 6,
-          "number_of_replicas": 2
+          "number_of_replicas": 2,
+          "knn": True
+        },
+        "analysis": {
+          "analyzer": {
+            "ik_max_word_lowercase_html_strip": {
+              "filter": [
+                "lowercase",
+                "asciifolding"
+              ],
+              "char_filter": [
+                "html_strip"
+              ],
+              "tokenizer": "ik_max_word"
+            }
+          }
         }
       },
       "mappings": {
@@ -80,6 +174,19 @@ class OpenSearch_VectorStore(VannaBase):
           },
           "sql": {
             "type": "text",
+          },
+          "question_embedding": {
+            "type": "knn_vector",
+            "dimension": self.dimensions,
+            "method": {
+              "name": "hnsw",
+              "space_type": "cosinesimil",
+              "engine": "lucene",
+              "parameters": {
+                "ef_construction": 128,
+                "m": 16
+              }
+            }
           }
         }
       }
@@ -91,6 +198,9 @@ class OpenSearch_VectorStore(VannaBase):
       ddl_index_settings = config["es_ddl_index_settings"]
     if config is not None and "es_question_sql_index_settings" in config:
       question_sql_index_settings = config["es_question_sql_index_settings"]
+
+    self.n_results = config.get("n_results", 10)
+    self.min_score = config.get("min_score", 0.5)
 
     self.document_index_settings = document_index_settings
     self.ddl_index_settings = ddl_index_settings
@@ -231,11 +341,33 @@ class OpenSearch_VectorStore(VannaBase):
       print(f"Error creating index: {index_name} ", e)
       return False
 
-  def add_ddl(self, ddl: str, **kwargs) -> str:
+  def calculate_md5(self, string: str) -> str:
+    # 将字符串编码为 bytes
+    string_bytes = self.encode('utf-8')
+    # 计算 MD5 哈希值
+    md5_hash = hashlib.md5(string_bytes)
+    # 获取十六进制表示的哈希值
+    md5_hex = md5_hash.hexdigest()
+    return md5_hex
+
+  def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None,
+              **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
-    id = str(uuid.uuid4()) + "-ddl"
+    table_metadata = VannaBase.extract_table_metadata(ddl)
+    full_table_name = table_metadata.get_full_table_name()
+    if full_table_name is not None and engine is not None:
+      id = deterministic_uuid(engine + "-" + full_table_name) + "-ddl"
+    else:
+      id = str(uuid.uuid4()) + "-ddl"
+
     ddl_dict = {
-      "ddl": ddl
+      "engine": engine,
+      "catalog": table_metadata.catalog,
+      "schema": table_metadata.schema,
+      "table_name": table_metadata.table_name,
+      "full_table_name": full_table_name,
+      "ddl": ddl,
+      "biz_type": biz_type
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
                                  **kwargs)
@@ -243,9 +375,11 @@ class OpenSearch_VectorStore(VannaBase):
 
   def add_documentation(self, doc: str, **kwargs) -> str:
     # Assuming you have a documentation index in your OpenSearch
-    id = str(uuid.uuid4()) + "-doc"
+    id = deterministic_uuid(doc) + "-doc"
+    doc_embedding = self.generate_embedding(doc)
     doc_dict = {
-      "doc": doc
+      "doc": doc,
+      "doc_embedding": doc_embedding
     }
     response = self.client.index(index=self.document_index, id=id,
                                  body=doc_dict, **kwargs)
@@ -253,38 +387,86 @@ class OpenSearch_VectorStore(VannaBase):
 
   def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
     # Assuming you have a Questions and SQL index in your OpenSearch
-    id = str(uuid.uuid4()) + "-sql"
+    id = deterministic_uuid(question) + "-sql"
+    question_embedding = self.generate_embedding(question)
     question_sql_dict = {
       "question": question,
-      "sql": sql
+      "sql": sql,
+      "question_embedding": question_embedding
     }
     response = self.client.index(index=self.question_sql_index,
                                  body=question_sql_dict, id=id,
                                  **kwargs)
     return response['_id']
 
-  def get_related_ddl(self, question: str, **kwargs) -> List[str]:
+  def get_related_ddl(self, question: str, table_name_list: List[str] = None,
+                      **kwargs) -> List[str]:
     # Assume you have some vector search mechanism associated with your data
     query = {
       "query": {
-        "match": {
-          "ddl": question
-        }
-      }
+        "bool": {
+          "should": [
+          ],
+          "must": [
+          ]
+        },
+      },
+      "size": self.n_results,
+      "min_score": self.min_score
     }
+
+    if question is not None and len(question) > 0:
+      query["query"]["bool"]["must"].append({"match": {"ddl": question}})
+
+    if table_name_list is not None and len(table_name_list) > 0:
+      for table_name in table_name_list:
+        if table_name is None or len(table_name) == 0:
+          continue
+        wildcard_table_name = f"*{table_name}*"
+        query["query"]["bool"]["should"].append(
+          {"wildcard": {"full_table_name": wildcard_table_name}})
+      query["query"]["bool"]["minimum_should_match"] = 1
+
     print(query)
     response = self.client.search(index=self.ddl_index, body=query,
                                   **kwargs)
     return [hit['_source']['ddl'] for hit in response['hits']['hits']]
 
   def get_related_documentation(self, question: str, **kwargs) -> List[str]:
-    query = {
-      "query": {
-        "match": {
-          "doc": question
-        }
+    question_embedding = self.generate_embedding(question)
+    if question_embedding is None:
+      query = {
+        "_source": {
+          "excludes": [
+            "doc_embedding"
+          ]
+        },
+        "query": {
+          "match": {
+            "doc": question
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
       }
-    }
+    else:
+      query = {
+        "_source": {
+          "excludes": [
+            "doc_embedding"
+          ]
+        },
+        "query": {
+          "knn": {
+            "doc_embedding": {
+              "vector": question_embedding,
+              "k": self.n_results
+            }
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
     print(query)
     response = self.client.search(index=self.document_index,
                                   body=query,
@@ -292,19 +474,107 @@ class OpenSearch_VectorStore(VannaBase):
     return [hit['_source']['doc'] for hit in response['hits']['hits']]
 
   def get_similar_question_sql(self, question: str, **kwargs) -> List[str]:
-    query = {
-      "query": {
-        "match": {
-          "question": question
-        }
+    question_embedding = self.generate_embedding(question)
+    if question_embedding is None:
+      query = {
+        "_source": {
+          "excludes": [
+            "question_embedding"
+          ]
+        },
+        "query": {
+          "match": {
+            "question": question
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
       }
-    }
+    else:
+      query = {
+        "_source": {
+          "excludes": [
+            "question_embedding"
+          ]
+        },
+        "query": {
+          "knn": {
+            "question_embedding": {
+              "vector": question_embedding,
+              "k": self.n_results
+            }
+          }
+        },
+        "size": self.n_results,
+        "min_score": self.min_score
+      }
     print(query)
+    data = []
     response = self.client.search(index=self.question_sql_index,
                                   body=query,
                                   **kwargs)
-    return [(hit['_source']['question'], hit['_source']['sql']) for hit in
-            response['hits']['hits']]
+    for hit in response['hits']['hits']:
+      data.append(
+        {
+          "question": hit["_source"]["question"],
+          "sql": hit["_source"]["sql"]
+        }
+      )
+    return data
+
+  def search_tables_metadata(self,
+                             engine: str = None,
+                             catalog: str = None,
+                             schema: str = None,
+                             table_name: str = None,
+                             ddl: str = None,
+                             biz_type: str = None,
+                             size: int = 10,
+                             **kwargs) -> list:
+    # Assume you have some vector search mechanism associated with your data
+    query = {}
+    if engine is None and catalog is None and schema is None and table_name is None and ddl is None:
+      query = {
+
+        "query": {
+          "match_all": {}
+        }
+      }
+    else:
+      query["query"] = {
+        "bool": {
+          "must": [
+          ],
+          "should": [
+          ]
+        }
+      }
+      if engine is not None:
+        query["query"]["bool"]["must"].append({"match": {"engine": engine}})
+
+      if catalog is not None:
+        query["query"]["bool"]["must"].append(
+          {"match": {"catalog": catalog}})
+
+      if schema is not None:
+        query["query"]["bool"]["must"].append({"match": {"schema": schema}})
+      if table_name is not None:
+        wildcard_table_name = f"*{table_name}*"
+        query["query"]["bool"]["must"].append(
+          {"wildcard": {"full_table_name": wildcard_table_name}})
+
+      if ddl is not None:
+        query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})
+
+      if biz_type is not None:
+        query["query"]["bool"]["should"].append({"match": {"biz_type": biz_type}})
+
+    if size > 0:
+      query["size"] = size
+
+    print(query)
+    response = self.client.search(index=self.ddl_index, body=query, **kwargs)
+    return [hit['_source'] for hit in response['hits']['hits']]
 
   def get_training_data(self, **kwargs) -> pd.DataFrame:
     # This will be a simple example pulling all data from an index
@@ -312,10 +582,15 @@ class OpenSearch_VectorStore(VannaBase):
     data = []
     response = self.client.search(
       index=self.document_index,
-      body={"query": {"match_all": {}}},
+      body={"_source": {
+        "excludes": [
+          "doc_embedding"
+        ]
+      },
+        "query": {"match_all": {}}
+      },
       size=1000
     )
-    print(query)
     # records = [hit['_source'] for hit in response['hits']['hits']]
     for hit in response['hits']['hits']:
       data.append(
@@ -329,7 +604,13 @@ class OpenSearch_VectorStore(VannaBase):
 
     response = self.client.search(
       index=self.question_sql_index,
-      body={"query": {"match_all": {}}},
+      body={"_source": {
+        "excludes": [
+          "question_embedding"
+        ]
+      },
+        "query": {"match_all": {}}
+      },
       size=1000
     )
     # records = [hit['_source'] for hit in response['hits']['hits']]
@@ -379,8 +660,10 @@ class OpenSearch_VectorStore(VannaBase):
       return False
 
   def generate_embedding(self, data: str, **kwargs) -> list[float]:
-    # opensearch doesn't need to generate embeddings
-    pass
+    embedding = self.embedding_function([data])
+    if len(embedding) == 1:
+      return embedding[0]
+    return embedding
 
 # OpenSearch_VectorStore.__init__(self, config={'es_urls':
 # "https://opensearch-node.test.com:9200", 'es_encoded_base64': True, 'es_user':

@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 
 from ..base import VannaBase
@@ -11,7 +13,7 @@ class MockVectorDB(VannaBase):
         # Hash the value and return the ID
         return str(hash(value))
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         return self._get_id(ddl)
 
     def add_documentation(self, doc: str, **kwargs) -> str:
@@ -20,11 +22,22 @@ class MockVectorDB(VannaBase):
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         return self._get_id(question)
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         return []
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
         return []
+
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               biz_type: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         return []

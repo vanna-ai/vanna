@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 import marqo
 import pandas as pd
@@ -49,7 +50,7 @@ class Marqo_VectorStore(VannaBase):
 
         return id
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = str(uuid.uuid4()) + "-ddl"
         ddl_dict = {
             "ddl": ddl,
@@ -152,12 +153,23 @@ class Marqo_VectorStore(VannaBase):
             # Return an empty list if 'hits' is not found or not a list
             return []
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               biz_type: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         return Marqo_VectorStore._extract_documents(
             self.mq.index("vanna-sql").search(question)
         )
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         return Marqo_VectorStore._extract_documents(
             self.mq.index("vanna-ddl").search(question)
         )

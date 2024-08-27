@@ -816,11 +816,12 @@ class VannaFlaskAPI:
             question = flask.request.json.get("question")
             sql = flask.request.json.get("sql")
             ddl = flask.request.json.get("ddl")
+            biz_type = flask.request.json.get("biz_type")
             documentation = flask.request.json.get("documentation")
 
             try:
                 id = vn.train(
-                    question=question, sql=sql, ddl=ddl, documentation=documentation
+                    question=question, sql=sql, ddl=ddl, biz_type=biz_type, documentation=documentation
                 )
 
                 return jsonify({"id": id})

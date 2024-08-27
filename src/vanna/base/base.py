@@ -65,7 +65,7 @@ import requests
 import sqlparse
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
-from ..types import TrainingPlan, TrainingPlanItem
+from ..types import TrainingPlan, TrainingPlanItem, TableMetadata
 from ..utils import validate_config_path
 
 
@@ -90,7 +90,7 @@ class VannaBase(ABC):
 
         return f"Respond in the {self.language} language."
 
-    def generate_sql(self, question: str, allow_llm_to_see_data=False, **kwargs) -> str:
+    def generate_sql(self, question: str, table_name_list: List[str] = None, allow_llm_to_see_data=False, **kwargs) -> str:
         """
         Example:
         ```python
@@ -112,6 +112,7 @@ class VannaBase(ABC):
 
         Args:
             question (str): The question to generate a SQL query for.
+            table_name_list (List[str], optional): A list of table names to use in the SQL query. Defaults to None.
             allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
@@ -122,7 +123,7 @@ class VannaBase(ABC):
         else:
             initial_prompt = None
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
-        ddl_list = self.get_related_ddl(question, **kwargs)
+        ddl_list = self.get_related_ddl(question=question, table_name_list=table_name_list, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
             initial_prompt=initial_prompt,
@@ -209,6 +210,54 @@ class VannaBase(ABC):
             return sql
 
         return llm_response
+
+    def extract_table_metadata(ddl: str) -> TableMetadata:
+      """
+        Example:
+        ```python
+        vn.extract_table_metadata("CREATE TABLE hive.bi_ads.customers (id INT, name TEXT, sales DECIMAL)")
+        ```
+
+        Extracts the table metadata from a DDL statement. This is useful in case the DDL statement contains other information besides the table metadata.
+        Override this function if your DDL statements need custom extraction logic.
+
+        Args:
+            ddl (str): The DDL statement.
+
+        Returns:
+            TableMetadata: The extracted table metadata.
+        """
+      pattern_with_catalog_schema = re.compile(
+        r'CREATE TABLE\s+(\w+)\.(\w+)\.(\w+)\s*\(',
+        re.IGNORECASE
+      )
+      pattern_with_schema = re.compile(
+        r'CREATE TABLE\s+(\w+)\.(\w+)\s*\(',
+        re.IGNORECASE
+      )
+      pattern_with_table = re.compile(
+        r'CREATE TABLE\s+(\w+)\s*\(',
+        re.IGNORECASE
+      )
+
+      match_with_catalog_schema = pattern_with_catalog_schema.search(ddl)
+      match_with_schema = pattern_with_schema.search(ddl)
+      match_with_table = pattern_with_table.search(ddl)
+
+      if match_with_catalog_schema:
+        catalog = match_with_catalog_schema.group(1)
+        schema = match_with_catalog_schema.group(2)
+        table_name = match_with_catalog_schema.group(3)
+        return TableMetadata(catalog, schema, table_name)
+      elif match_with_schema:
+        schema = match_with_schema.group(1)
+        table_name = match_with_schema.group(2)
+        return TableMetadata(None, schema, table_name)
+      elif match_with_table:
+        table_name = match_with_table.group(1)
+        return TableMetadata(None, None, table_name)
+      else:
+        return TableMetadata()
 
     def is_sql_valid(self, sql: str) -> bool:
         """
@@ -383,15 +432,43 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         """
         This method is used to get related DDL statements to a question.
 
         Args:
             question (str): The question to get related DDL statements for.
+            table_name_list (list): A list of table names to get related DDL statements for.
 
         Returns:
             list: A list of related DDL statements.
+        """
+        pass
+
+    @abstractmethod
+    def search_tables_metadata(self,
+                              engine: str = None,
+                              catalog: str = None,
+                              schema: str = None,
+                              table_name: str = None,
+                              ddl: str = None,
+                              biz_type: str = None,
+                              size: int = 10,
+                              **kwargs) -> list:
+        """
+        This method is used to get similar tables metadata.
+
+        Args:
+            engine (str): The database engine.
+            catalog (str): The catalog.
+            schema (str): The schema.
+            table_name (str): The table name.
+            ddl (str): The DDL statement.
+            biz_type (str): The business type.
+            size (int): The number of tables to return.
+
+        Returns:
+            list: A list of tables metadata.
         """
         pass
 
@@ -423,12 +500,13 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         """
         This method is used to add a DDL statement to the training data.
 
         Args:
             ddl (str): The DDL statement to add.
+            engine (str): The database engine that the DDL statement applies to.
 
         Returns:
             str: The ID of the training data that was added.
@@ -1778,6 +1856,8 @@ class VannaBase(ABC):
         question: str = None,
         sql: str = None,
         ddl: str = None,
+        engine: str = None,
+        biz_type: str = None,
         documentation: str = None,
         plan: TrainingPlan = None,
     ) -> str:
@@ -1798,8 +1878,12 @@ class VannaBase(ABC):
             question (str): The question to train on.
             sql (str): The SQL query to train on.
             ddl (str):  The DDL statement.
+            engine (str): The database engine.
+            biz_type (str): The business type.
             documentation (str): The documentation to train on.
             plan (TrainingPlan): The training plan to train on.
+        Returns:
+            str: The training pl
         """
 
         if question and not sql:
@@ -1817,12 +1901,12 @@ class VannaBase(ABC):
 
         if ddl:
             print("Adding ddl:", ddl)
-            return self.add_ddl(ddl)
+            return self.add_ddl(ddl=ddl, engine=engine, biz_type=biz_type)
 
         if plan:
             for item in plan._plan:
                 if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
-                    self.add_ddl(item.item_value)
+                    self.add_ddl(ddl=item.item_value, engine=engine, biz_type=biz_type)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                     self.add_documentation(item.item_value)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:

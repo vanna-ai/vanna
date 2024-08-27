@@ -107,7 +107,7 @@ class Qdrant_VectorStore(VannaBase):
 
         return self._format_point_id(id, self.sql_collection_name)
 
-    def add_ddl(self, ddl: str, **kwargs) -> str:
+    def add_ddl(self, ddl: str, engine: str = None, biz_type: str = None, **kwargs) -> str:
         id = deterministic_uuid(ddl)
         self._client.upsert(
             self.ddl_collection_name,
@@ -233,6 +233,17 @@ class Qdrant_VectorStore(VannaBase):
     def embeddings_dimension(self):
         return len(self.generate_embedding("ABCDEF"))
 
+    def search_tables_metadata(self,
+                               engine: str = None,
+                               catalog: str = None,
+                               schema: str = None,
+                               table_name: str = None,
+                               ddl: str = None,
+                               biz_type: str = None,
+                               size: int = 10,
+                               **kwargs) -> list:
+      return []
+
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         results = self._client.search(
             self.sql_collection_name,
@@ -243,7 +254,7 @@ class Qdrant_VectorStore(VannaBase):
 
         return [dict(result.payload) for result in results]
 
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, table_name_list: List[str] = None, **kwargs) -> list:
         results = self._client.search(
             self.ddl_collection_name,
             query_vector=self.generate_embedding(question),
