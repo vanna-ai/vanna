@@ -3,7 +3,6 @@ from typing import List, Tuple
 
 import pandas as pd
 from qdrant_client import QdrantClient, grpc, models
-from qdrant_client.http.models.models import UpdateStatus
 
 from ..base import VannaBase
 from ..utils import deterministic_uuid
@@ -234,32 +233,32 @@ class Qdrant_VectorStore(VannaBase):
         return len(self.generate_embedding("ABCDEF"))
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
-        results = self._client.search(
+        results = self._client.query_points(
             self.sql_collection_name,
-            query_vector=self.generate_embedding(question),
+            query=self.generate_embedding(question),
             limit=self.n_results,
             with_payload=True,
-        )
+        ).points
 
         return [dict(result.payload) for result in results]
 
     def get_related_ddl(self, question: str, **kwargs) -> list:
-        results = self._client.search(
+        results = self._client.query_points(
             self.ddl_collection_name,
-            query_vector=self.generate_embedding(question),
+            query=self.generate_embedding(question),
             limit=self.n_results,
             with_payload=True,
-        )
+        ).points
 
         return [result.payload["ddl"] for result in results]
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
-        results = self._client.search(
+        results = self._client.query_points(
             self.documentation_collection_name,
-            query_vector=self.generate_embedding(question),
+            query=self.generate_embedding(question),
             limit=self.n_results,
             with_payload=True,
-        )
+        ).points
 
         return [result.payload["documentation"] for result in results]
 
