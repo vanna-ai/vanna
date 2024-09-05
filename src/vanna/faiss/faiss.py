@@ -84,14 +84,14 @@ class FAISS(VannaBase):
             with open(filepath, 'w') as f:
                 json.dump(metadata, f)
 
-    def _generate_embedding(self, data: str, **kwargs) -> List[float]:
+    def generate_embedding(self, data: str, **kwargs) -> List[float]:
         embedding = self.embedding_model.encode(data)
         assert embedding.shape[0] == self.embedding_dim, \
             f"Embedding dimension mismatch: expected {self.embedding_dim}, got {embedding.shape[0]}"
         return embedding.tolist()
 
     def _add_to_index(self, index, metadata_list, text, extra_metadata=None) -> str:
-        embedding = self._generate_embedding(text)
+        embedding = self.generate_embedding(text)
         index.add(np.array([embedding], dtype=np.float32))
         entry_id = str(uuid.uuid4())
         metadata_list.append({"id": entry_id, **(extra_metadata or {})})
@@ -116,7 +116,7 @@ class FAISS(VannaBase):
         return entry_id
 
     def _get_similar(self, index, metadata_list, text, n_results) -> list:
-        embedding = self._generate_embedding(text)
+        embedding = self.generate_embedding(text)
         D, I = index.search(np.array([embedding], dtype=np.float32), k=n_results)
         return [] if len(I[0]) == 0 or I[0][0] == -1 else [metadata_list[i] for i in I[0]]
 
@@ -151,7 +151,7 @@ class FAISS(VannaBase):
                 if item['id'] == id:
                     del metadata_list[i]
                     new_index = faiss.IndexFlatL2(self.embedding_dim)
-                    embeddings = [self._generate_embedding(json.dumps(m)) for m in metadata_list]
+                    embeddings = [self.generate_embedding(json.dumps(m)) for m in metadata_list]
                     if embeddings:
                         new_index.add(np.array(embeddings, dtype=np.float32))
                     setattr(self, index_name.split('.')[0], new_index)
