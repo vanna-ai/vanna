@@ -186,10 +186,10 @@ class AzureAISearch_VectorStore(VannaBase):
             result = df["document"].tolist()
         return result
 
-    def get_similar_question_sql(self, text: str) -> List[str]:
+    def get_similar_question_sql(self, question: str) -> List[str]:
         result = []
         # Vectorize the text
-        vector_query = VectorizedQuery(vector=self.generate_embedding(text), fields="document_vector")
+        vector_query = VectorizedQuery(vector=self.generate_embedding(question), fields="document_vector")
         df = pd.DataFrame(
             self.search_client.search(
                 top=self.n_results_sql,
