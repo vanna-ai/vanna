@@ -23,6 +23,7 @@ jobs:
         pip install tox
     - name: Run tests
       env:
+        PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
         VANNA_API_KEY: ${{ secrets.VANNA_API_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
