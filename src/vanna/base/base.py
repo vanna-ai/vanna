@@ -67,10 +67,11 @@ from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
 
-MAX_TOKENS = 14000
 
 
 class VannaBase(ABC):
+    MAX_TOKENS = 14000
+
     def __init__(self, config=None):
         self.config = config
         self.run_sql_is_set = False
