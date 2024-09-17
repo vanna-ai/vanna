@@ -22,6 +22,12 @@ class Vllm(VannaBase):
         else:
             self.auth_key = None
 
+        if "temperature" in config:
+            self.temperature = config["temperature"]
+        else:
+            # default temperature - can be overrided using config
+            self.temperature = 0.7
+
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}
 
@@ -68,6 +74,7 @@ class Vllm(VannaBase):
         url = f"{self.host}/v1/chat/completions"
         data = {
             "model": self.model,
+            "temperature": self.temperature,
             "stream": False,
             "messages": prompt,
         }
