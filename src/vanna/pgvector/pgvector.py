@@ -8,9 +8,9 @@ from langchain_core.documents import Document
 from langchain_postgres.vectorstores import PGVector
 from sqlalchemy import create_engine, text
 
-from vanna import ValidationError
-from vanna.base.base import VannaBase
-from vanna.types import TrainingPlan, TrainingPlanItem
+from .. import ValidationError
+from ..base import VannaBase
+from ..types import TrainingPlan, TrainingPlanItem
 
 
 class PG_VectorStore(VannaBase):
@@ -250,11 +250,9 @@ class PG_VectorStore(VannaBase):
                     return False
 
     def generate_embedding(self, *args, **kwargs):
-        # Implement the method
         pass
 
     def submit_prompt(self, *args, **kwargs):
-        # Implement the method
         pass
 
     def system_message(self, message: str) -> any:
