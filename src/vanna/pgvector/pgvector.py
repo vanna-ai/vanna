@@ -249,11 +249,6 @@ class PG_VectorStore(VannaBase):
                     transaction.rollback()  # Rollback in case of error
                     return False
 
-
-    def assistant_message(self, *args, **kwargs):
-        # Implement the method
-        pass
-
     def generate_embedding(self, *args, **kwargs):
         # Implement the method
         pass
@@ -262,10 +257,11 @@ class PG_VectorStore(VannaBase):
         # Implement the method
         pass
 
-    def system_message(self, *args, **kwargs):
-        # Implement the method
-        pass
+    def system_message(self, message: str) -> any:
+        return {"role": "system", "content": message}
 
-    def user_message(self, *args, **kwargs):
-        # Implement the method
-        pass
+    def user_message(self, message: str) -> any:
+        return {"role": "user", "content": message}
+
+    def assistant_message(self, message: str) -> any:
+        return {"role": "assistant", "content": message}
