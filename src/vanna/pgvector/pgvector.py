@@ -28,23 +28,23 @@ class PG_VectorStore(VannaBase):
         if config and "embedding_function" in config:
             self.embedding_function = config.get("embedding_function")
         else:
-            from langchain_core.embeddings import HuggingFaceEmbeddings
-            self.embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-l6-v2")
+            from sentence_transformers import SentenceTransformer
+            self.embedding_function = SentenceTransformer("sentence-transformers/all-MiniLM-l6-v2")
 
         self.sql_vectorstore = PGVector(
-            embedding_function=self.embedding_function,
+            embeddings=self.embedding_function,
             collection_name="sql",
-            connection_string=self.connection_string,
+            connection=self.connection_string,
         )
         self.ddl_vectorstore = PGVector(
-            embedding_function=self.embedding_function,
+            embeddings=self.embedding_function,
             collection_name="ddl",
-            connection_string=self.connection_string,
+            connection=self.connection_string,
         )
         self.documentation_vectorstore = PGVector(
-            embedding_function=self.embedding_function,
+            embeddings=self.embedding_function,
             collection_name="documentation",
-            connection_string=self.connection_string,
+            connection=self.connection_string,
         )
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
@@ -248,3 +248,24 @@ class PG_VectorStore(VannaBase):
                     logging.error(f"An error occurred: {e}")
                     transaction.rollback()  # Rollback in case of error
                     return False
+
+
+    def assistant_message(self, *args, **kwargs):
+        # Implement the method
+        pass
+
+    def generate_embedding(self, *args, **kwargs):
+        # Implement the method
+        pass
+
+    def submit_prompt(self, *args, **kwargs):
+        # Implement the method
+        pass
+
+    def system_message(self, *args, **kwargs):
+        # Implement the method
+        pass
+
+    def user_message(self, *args, **kwargs):
+        # Implement the method
+        pass
