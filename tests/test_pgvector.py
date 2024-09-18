@@ -10,7 +10,7 @@ load_dotenv()
 def get_vanna_connection_string():
     server = os.environ.get("PG_SERVER")
     driver = "psycopg"
-    port = 5432
+    port = 5434
     database = os.environ.get("PG_DATABASE")
     username = os.environ.get("PG_USERNAME")
     password = os.environ.get("PG_PASSWORD")
@@ -20,7 +20,5 @@ def get_vanna_connection_string():
 
 def test_pgvector():
     connection_string = get_vanna_connection_string()
-    print("Connection string:")
-    print(connection_string)
     pgclient = PG_VectorStore(config={"connection_string": connection_string})
     assert pgclient is not None
