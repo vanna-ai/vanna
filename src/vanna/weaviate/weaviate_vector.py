@@ -7,7 +7,7 @@ from vanna.base import VannaBase
 
 class WeaviateDatabase(VannaBase):
 
-    def __init__(self, config=None):
+    def __init__(self, config=None,client= None):
         """
         Initialize the VannaEnhanced class with the provided configuration.
 
@@ -21,7 +21,7 @@ class WeaviateDatabase(VannaBase):
         fastembed_model (str): Fastembed model name for text embeddings. BAAI/bge-small-en-v1.5 by default.
 
         """
-        super().__init__(config=config)
+        super().__init__(config=config,client= None)
 
         if config is None:
             raise ValueError("config is required")
