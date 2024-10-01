@@ -28,8 +28,8 @@ class PG_VectorStore(VannaBase):
         if config and "embedding_function" in config:
             self.embedding_function = config.get("embedding_function")
         else:
-            from sentence_transformers import SentenceTransformer
-            self.embedding_function = SentenceTransformer("sentence-transformers/all-MiniLM-l6-v2")
+            from langchain_huggingface import HuggingFaceEmbeddings
+            self.embedding_function = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
         self.sql_collection = PGVector(
             embeddings=self.embedding_function,
@@ -251,3 +251,15 @@ class PG_VectorStore(VannaBase):
 
     def generate_embedding(self, *args, **kwargs):
         pass
+
+    def submit_prompt(self, *args, **kwargs):
+        pass
+
+    def system_message(self, message: str) -> any:
+        return {"role": "system", "content": message}
+
+    def user_message(self, message: str) -> any:
+        return {"role": "user", "content": message}
+
+    def assistant_message(self, message: str) -> any:
+        return {"role": "assistant", "content": message}
