@@ -94,16 +94,16 @@ class PG_VectorStore(VannaBase):
             case _:
                 raise ValueError("Specified collection does not exist.")
 
-    async def get_similar_question_sql(self, question: str) -> list:
+    def get_similar_question_sql(self, question: str) -> list:
         documents = self.sql_collection.similarity_search(query=question, k=self.n_results)
         return [ast.literal_eval(document.page_content) for document in documents]
 
-    async def get_related_ddl(self, question: str, **kwargs) -> list:
-        documents = await self.ddl_collection.similarity_search(query=question, k=self.n_results)
+    def get_related_ddl(self, question: str, **kwargs) -> list:
+        documents = self.ddl_collection.similarity_search(query=question, k=self.n_results)
         return [document.page_content for document in documents]
 
-    async def get_related_documentation(self, question: str, **kwargs) -> list:
-        documents = await self.documentation_collection.similarity_search(query=question, k=self.n_results)
+    def get_related_documentation(self, question: str, **kwargs) -> list:
+        documents = self.documentation_collection.similarity_search(query=question, k=self.n_results)
         return [document.page_content for document in documents]
 
     def train(
