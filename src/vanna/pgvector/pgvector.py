@@ -31,17 +31,17 @@ class PG_VectorStore(VannaBase):
             from sentence_transformers import SentenceTransformer
             self.embedding_function = SentenceTransformer("sentence-transformers/all-MiniLM-l6-v2")
 
-        self.sql_vectorstore = PGVector(
+        self.sql_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="sql",
             connection=self.connection_string,
         )
-        self.ddl_vectorstore = PGVector(
+        self.ddl_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="ddl",
             connection=self.connection_string,
         )
-        self.documentation_vectorstore = PGVector(
+        self.documentation_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="documentation",
             connection=self.connection_string,
