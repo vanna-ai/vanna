@@ -13,7 +13,7 @@ load_dotenv()
 def get_vanna_connection_string():
     server = os.environ.get("PG_SERVER")
     driver = "psycopg"
-    port = 5434
+    port = os.environ.get("PG_PORT", 5432)
     database = os.environ.get("PG_DATABASE")
     username = os.environ.get("PG_USERNAME")
     password = os.environ.get("PG_PASSWORD")
