@@ -15,7 +15,7 @@ class GoogleGeminiChat(VannaBase):
         if "model_name" in config:
             model_name = config["model_name"]
         else:
-            model_name = "gemini-1.0-pro"
+            model_name = "gemini-1.5-pro"
 
         self.google_api_key = None
 
