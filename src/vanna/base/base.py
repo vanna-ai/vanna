@@ -583,8 +583,8 @@ class VannaBase(ABC):
         """
 
         if initial_prompt is None:
-            initial_prompt = f"You are a {self.dialect} expert. " + \
-            "Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions. "
+            initial_prompt = f"您是 {self.dialect} 专家。 " + \
+            "请帮助生成一个 SQL 查询来回答这个问题。您的回答应仅基于给定的上下文，并遵循回答指南和格式说明。"
 
         initial_prompt = self.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=self.max_tokens
@@ -598,13 +598,13 @@ class VannaBase(ABC):
         )
 
         initial_prompt += (
-            "===Response Guidelines \n"
-            "1. If the provided context is sufficient, please generate a valid SQL query without any explanations for the question. \n"
-            "2. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql \n"
-            "3. If the provided context is insufficient, please explain why it can't be generated. \n"
-            "4. Please use the most relevant table(s). \n"
-            "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
-            f"6. Ensure that the output SQL is {self.dialect}-compliant and executable, and free of syntax errors. \n"
+            "“===响应指南 \n”"
+            "1.如果提供的上下文足够，请生成一个有效的SQL查询，不对问题进行任何解释。 \n"
+            "2.如果提供的上下文几乎足够，但需要了解特定列中的特定字符串，请生成一个中间SQL查询来查找该列中的不同字符串。在查询前添加一条注释，内容为intermediate_sql \n"
+            "3.如果提供的上下文不充分，请解释为什么无法生成。 \n"
+            "4.请使用最相关的表格。 \n"
+            "5.如果问题之前已经被问过并回答过，请完全按照之前给出的答案重复。 \n"
+            f"6.确保输出SQL为{self.dialect}-compliant并且没有语法错误。 \n"
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -1898,7 +1898,7 @@ class VannaBase(ABC):
                     df_columns_filtered_to_table = df.query(
                         f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
                     )
-                    doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+                    doc = f"以下列位于 {database} 数据库的 {table} 表中:\n\n"
                     doc += df_columns_filtered_to_table[columns].to_markdown()
 
                     plan._plan.append(
