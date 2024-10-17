@@ -351,10 +351,10 @@ class VannaBase(ABC):
 
         message_log = [
             self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
+                f"你是一个强力的数据助手. 用户问了这个问题: '{question}'\n\n下面是一个 pandas DataFrame 和查询结果: \n{df.to_markdown()}\n\n"
             ),
             self.user_message(
-                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary." +
+                "根据所提问题简要概括数据。除概述外，请勿作任何其他解释。" +
                 self._response_language()
             ),
         ]
@@ -716,19 +716,23 @@ class VannaBase(ABC):
         self, question: str = None, sql: str = None, df_metadata: str = None, **kwargs
     ) -> str:
         if question is not None:
-            system_msg = f"The following is a pandas DataFrame that contains the results of the query that answers the question the user asked: '{question}'"
+            system_msg = f"下面是一个 pandas DataFrame，其中包含回答用户所提问题的查询结果: '{question}'"
         else:
-            system_msg = "The following is a pandas DataFrame "
+            system_msg = "下面是一个 pandas DataFrame "
 
         if sql is not None:
-            system_msg += f"\n\nThe DataFrame was produced using this query: {sql}\n\n"
+            system_msg += f"\n\n这个DataFrame 是使用此查询生成的: {sql}\n\n"
 
-        system_msg += f"The following is information about the resulting pandas DataFrame 'df': \n{df_metadata}"
+        system_msg += f"以下是有关生成的 pandas DataFrame 的信息 'df': \n{df_metadata}"
 
         message_log = [
             self.system_message(system_msg),
             self.user_message(
-                "Can you generate the Python plotly code to chart the results of the dataframe? Assume the data is in a pandas dataframe called 'df'. If there is only one value in the dataframe, use an Indicator. Respond with only Python code. Do not answer with any explanations -- just the code."
+                f'''你是一个专业的python可视化处理工程师，根据客户的需求描述: {question}，绘制相应的表格或者图形，生成Python绘图代码 并使用plotly库 来绘制数据帧的结果，假设数据位于名为 'df' 的 pandas 数据帧中。如果 DataFrame 中只有一个值，请使用 Indicator。
+                以下是一些修改示例：
+                -- 修改背景颜色为红色： fig.update_layout(paper_bgcolor='red')
+                -- 修改线条颜色为红色：fig.update_traces(line=dict(color='red'))
+                仅使用 Python 代码进行响应。不要用任何解释来回答 -- 只用代码'''
             ),
         ]
 

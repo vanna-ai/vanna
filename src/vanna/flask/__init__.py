@@ -644,6 +644,7 @@ class VannaFlaskAPI:
                 headers={"Content-disposition": f"attachment; filename={id}.csv"},
             )
 
+        # 绘图方法
         @self.flask_app.route("/api/v0/generate_plotly_figure", methods=["GET"])
         @self.requires_auth
         @self.requires_cache(["df", "question", "sql"])
@@ -681,7 +682,7 @@ class VannaFlaskAPI:
                 if chart_instructions is None or len(chart_instructions) == 0:
                     code = self.cache.get(id=id, field="plotly_code")
                 else:
-                    question = f"{question}. When generating the chart, use these special instructions: {chart_instructions}"
+                    question = f"{question}. 生成图表时，请使用以下特殊说明: {chart_instructions}"
                     code = vn.generate_plotly_code(
                         question=question,
                         sql=sql,
