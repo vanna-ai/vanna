@@ -254,13 +254,13 @@ class VannaFlaskAPI:
                     {
                         "type": "question_list",
                         "questions": [
-                            "What are the top 10 artists by sales?",
-                            "What are the total sales per year by country?",
-                            "Who is the top selling artist in each genre? Show the sales numbers.",
-                            "How do the employees rank in terms of sales performance?",
-                            "Which 5 cities have the most customers?",
+                            "销售排名前10位的艺术家是什么？",
+                            "按国家/地区划分的每年总销售额是多少？",
+                            "谁是每个流派中最畅销的艺术家？ 显示销售数字。",
+                            "员工在销售业绩方面的排名如何？",
+                            "哪5个城市的客户最多？",
                         ],
-                        "header": "Here are some questions you can ask:",
+                        "header": "以下是您可以提出的一些问题:",
                     }
                 )
 
@@ -271,7 +271,7 @@ class VannaFlaskAPI:
                 return jsonify(
                     {
                         "type": "error",
-                        "error": "No training data found. Please add some training data first.",
+                        "error": "没有找到训练数据。 请先添加一些训练数据。",
                     }
                 )
 
@@ -289,7 +289,7 @@ class VannaFlaskAPI:
                     {
                         "type": "question_list",
                         "questions": questions,
-                        "header": "Here are some questions you can ask",
+                        "header": "以下是您可以提出的一些问题",
                     }
                 )
             except Exception as e:
