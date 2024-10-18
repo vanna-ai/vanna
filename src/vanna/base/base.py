@@ -306,10 +306,10 @@ class VannaBase(ABC):
 
         message_log = [
             self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
+                f"你是一个强力的数据助手. 用户问了这个问题: '{question}'\n\n此问题的 SQL 查询为: {sql}\n\n下面是一个包含查询结果的 pandas DataFrame: \n{df.to_markdown()}\n\n"
             ),
             self.user_message(
-                f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query." +
+                f"生成用户可能会询问的有关此数据的 {n_questions} 个后续问题的列表。回答问题列表，每行一个问题。不要用任何解释来回答 -- 只用问题来回答。请记住，应该有一个明确的 SQL 查询可以从问题中生成。首选可在此对话上下文之外回答的问题。首选对生成的 SQL 查询进行细微修改的问题，以便更深入地挖掘数据。每个问题都将变成一个按钮，用户可以单击该按钮以生成新的 SQL 查询，因此不要使用“示例”类型的问题。每个问题必须与实例化的 SQL 查询具有一一对应的关系。" +
                 self._response_language()
             ),
         ]
@@ -679,7 +679,7 @@ class VannaBase(ABC):
         response = self.submit_prompt(
             [
                 self.system_message(
-                    "The user will give you SQL and you will try to guess what the business question this query is answering. Return just the question without any additional explanation. Do not reference the table name in the question."
+                    "用户将为您提供 SQL，您将尝试猜测此查询正在回答的业务问题。只返回问题，不做任何其他解释。请勿在问题中引用表名。"
                 ),
                 self.user_message(sql),
             ],

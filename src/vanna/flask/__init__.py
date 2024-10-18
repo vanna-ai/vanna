@@ -8,6 +8,7 @@ from functools import wraps
 import importlib.metadata
 
 import flask
+from flask_cors import CORS
 import requests
 from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
@@ -164,7 +165,7 @@ class VannaFlaskAPI:
         """
 
         self.flask_app = Flask(__name__)
-
+        CORS(self.flask_app)
         self.swagger = Swagger(
           self.flask_app, template={"info": {"title": "Vanna API"}}
         )
