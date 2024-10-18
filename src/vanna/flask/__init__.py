@@ -297,7 +297,7 @@ class VannaFlaskAPI:
                     {
                         "type": "question_list",
                         "questions": [],
-                        "header": "继续问一个问题",
+                        "header": "提出你的问题",
                     }
                 )
 
