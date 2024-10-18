@@ -138,7 +138,7 @@ class VannaBase(ABC):
 
         if 'intermediate_sql' in llm_response:
             if not allow_llm_to_see_data:
-                return "The LLM is not allowed to see the data in your database. Your question requires database introspection to generate the necessary SQL. Please set allow_llm_to_see_data=True to enable this."
+                return "LLM 不允许查看数据库中的数据。您的问题需要数据库自省来生成必要的 SQL。请设置 allow_llm_to_see_data=True 以启用此功能。"
 
             if allow_llm_to_see_data:
                 intermediate_sql = self.extract_sql(llm_response)
@@ -152,7 +152,7 @@ class VannaBase(ABC):
                         question=question,
                         question_sql_list=question_sql_list,
                         ddl_list=ddl_list,
-                        doc_list=doc_list+[f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n" + df.to_markdown()],
+                        doc_list=doc_list+[f"下面的 pandas DataFrame 包含中间 SQL 查询的结果 {intermediate_sql}: \n" + df.to_markdown()],
                         **kwargs,
                     )
                     self.log(title="Final SQL Prompt", message=prompt)

@@ -559,7 +559,7 @@ class VannaFlaskAPI:
             if error is None:
                 return jsonify({"type": "error", "error": "No error provided"})
 
-            question = f"I have an error: {error}\n\nHere is the SQL I tried to run: {sql}\n\nThis is the question I was trying to answer: {question}\n\nCan you rewrite the SQL to fix the error?"
+            question = f"我有一个错误: {error}\n\n这是我尝试运行的 SQL: {sql}\n\n这是我试图回答的问题: {question}\n\n你可以重写SQL来修复错误吗?"
 
             fixed_sql = vn.generate_sql(question=question)
 
@@ -606,10 +606,12 @@ class VannaFlaskAPI:
                       type: string
             """
             sql = flask.request.json.get('sql')
+            question = flask.request.json.get("question")
 
             if sql is None:
                 return jsonify({"type": "error", "error": "No sql provided"})
 
+            self.cache.set(id=id, field='question', value=question)
             self.cache.set(id=id, field='sql', value=sql)
 
             return jsonify(
@@ -682,6 +684,15 @@ class VannaFlaskAPI:
                 # If chart_instructions is not set then attempt to retrieve the code from the cache
                 if chart_instructions is None or len(chart_instructions) == 0:
                     code = self.cache.get(id=id, field="plotly_code")
+                    # 缓存中也不存在时 需要从用户问题中获取
+                    if code is None:
+                      question = f"{question}. 根据用户描述或者数据来生成合适的图表"
+                      code = vn.generate_plotly_code(
+                        question=question,
+                        sql=sql,
+                        df_metadata=f"Running df.dtypes gives:\n {df.dtypes}",
+                      )
+                      self.cache.set(id=id, field="plotly_code", value=code)
                 else:
                     question = f"{question}. 生成图表时，请使用以下特殊说明: {chart_instructions}"
                     code = vn.generate_plotly_code(
@@ -975,7 +986,7 @@ class VannaFlaskAPI:
                         "type": "question_list",
                         "id": id,
                         "questions": followup_questions,
-                        "header": "Here are some potential followup questions:",
+                        "header": "以下是一些可能的后续问题:",
                     }
                 )
             else:
@@ -985,7 +996,7 @@ class VannaFlaskAPI:
                         "type": "question_list",
                         "id": id,
                         "questions": [],
-                        "header": "Followup Questions can be enabled if you set allow_llm_to_see_data=True",
+                        "header": "如果设置 allow_llm_to_see_data=True，就可以启用后续问题",
                     }
                 )
 
@@ -1033,7 +1044,7 @@ class VannaFlaskAPI:
                     {
                         "type": "text",
                         "id": id,
-                        "text": "Summarization can be enabled if you set allow_llm_to_see_data=True",
+                        "text": "如果设置 allow_llm_to_see_data=True 则可启用汇总功能",
                     }
                 )
 
