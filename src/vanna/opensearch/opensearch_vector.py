@@ -4,8 +4,10 @@ from typing import List
 
 import pandas as pd
 from opensearchpy import OpenSearch
+from ..types import TableMetadata
 
 from ..base import VannaBase
+from ..utils import deterministic_uuid
 
 
 class OpenSearch_VectorStore(VannaBase):
@@ -56,6 +58,18 @@ class OpenSearch_VectorStore(VannaBase):
       },
       "mappings": {
         "properties": {
+          "engine": {
+            "type": "keyword",
+          },
+          "catalog": {
+            "type": "keyword",
+          },
+          "schema": {
+            "type": "keyword",
+          },
+          "table_name": {
+            "type": "keyword",
+          },
           "ddl": {
             "type": "text",
           },
@@ -91,6 +105,8 @@ class OpenSearch_VectorStore(VannaBase):
       ddl_index_settings = config["es_ddl_index_settings"]
     if config is not None and "es_question_sql_index_settings" in config:
       question_sql_index_settings = config["es_question_sql_index_settings"]
+
+    self.n_results = config.get("n_results", 10)
 
     self.document_index_settings = document_index_settings
     self.ddl_index_settings = ddl_index_settings
@@ -231,10 +247,29 @@ class OpenSearch_VectorStore(VannaBase):
       print(f"Error creating index: {index_name} ", e)
       return False
 
-  def add_ddl(self, ddl: str, **kwargs) -> str:
+  def calculate_md5(self, string: str) -> str:
+    # 将字符串编码为 bytes
+    string_bytes = self.encode('utf-8')
+    # 计算 MD5 哈希值
+    md5_hash = hashlib.md5(string_bytes)
+    # 获取十六进制表示的哈希值
+    md5_hex = md5_hash.hexdigest()
+    return md5_hex
+
+  def add_ddl(self, ddl: str, engine: str = None,
+              **kwargs) -> str:
     # Assuming that you have a DDL index in your OpenSearch
-    id = str(uuid.uuid4()) + "-ddl"
+    table_metadata = VannaBase.extract_table_metadata(ddl)
+    full_table_name = table_metadata.get_full_table_name()
+    if full_table_name is not None and engine is not None:
+      id = deterministic_uuid(engine + "-" + full_table_name) + "-ddl"
+    else:
+      id = str(uuid.uuid4()) + "-ddl"
     ddl_dict = {
+      "engine": engine,
+      "catalog": table_metadata.catalog,
+      "schema": table_metadata.schema,
+      "table_name": table_metadata.table_name,
       "ddl": ddl
     }
     response = self.client.index(index=self.ddl_index, body=ddl_dict, id=id,
@@ -270,7 +305,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "ddl": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.ddl_index, body=query,
@@ -283,7 +319,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "doc": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.document_index,
@@ -297,7 +334,8 @@ class OpenSearch_VectorStore(VannaBase):
         "match": {
           "question": question
         }
-      }
+      },
+      "size": self.n_results
     }
     print(query)
     response = self.client.search(index=self.question_sql_index,
@@ -305,6 +343,50 @@ class OpenSearch_VectorStore(VannaBase):
                                   **kwargs)
     return [(hit['_source']['question'], hit['_source']['sql']) for hit in
             response['hits']['hits']]
+
+  def search_tables_metadata(self,
+                            engine: str = None,
+                            catalog: str = None,
+                            schema: str = None,
+                            table_name: str = None,
+                            ddl: str = None,
+                            size: int = 10,
+                            **kwargs) -> list:
+    # Assume you have some vector search mechanism associated with your data
+    query = {}
+    if engine is None and catalog is None and schema is None and table_name is None and ddl is None:
+      query = {
+        "query": {
+          "match_all": {}
+        }
+      }
+    else:
+      query["query"] = {
+        "bool": {
+          "should": [
+          ]
+        }
+      }
+      if engine is not None:
+        query["query"]["bool"]["should"].append({"match": {"engine": engine}})
+
+      if catalog is not None:
+        query["query"]["bool"]["should"].append({"match": {"catalog": catalog}})
+
+      if schema is not None:
+        query["query"]["bool"]["should"].append({"match": {"schema": schema}})
+      if table_name is not None:
+        query["query"]["bool"]["should"].append({"match": {"table_name": table_name}})
+
+      if ddl is not None:
+        query["query"]["bool"]["should"].append({"match": {"ddl": ddl}})
+
+    if size > 0:
+      query["size"] = size
+
+    print(query)
+    response = self.client.search(index=self.ddl_index, body=query, **kwargs)
+    return [hit['_source'] for hit in response['hits']['hits']]
 
   def get_training_data(self, **kwargs) -> pd.DataFrame:
     # This will be a simple example pulling all data from an index
@@ -315,7 +397,6 @@ class OpenSearch_VectorStore(VannaBase):
       body={"query": {"match_all": {}}},
       size=1000
     )
-    print(query)
     # records = [hit['_source'] for hit in response['hits']['hits']]
     for hit in response['hits']['hits']:
       data.append(
