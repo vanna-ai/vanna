@@ -15,7 +15,7 @@ r"""
 
 # Open-Source and Extending
 
-Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](https://vanna.ai/docs/postgres-ollama-chromadb/).
+Vanna.AI is open-source and extensible. If you'd like to use Vanna without the servers, see an example [here](/docs/local.html).
 
 The following is an example of where various functions are implemented in the codebase when using the default "local" version of Vanna. `vanna.base.VannaBase` is the base class which provides a `vanna.base.VannaBase.ask` and `vanna.base.VannaBase.train` function. Those rely on abstract methods which are implemented in the subclasses `vanna.openai_chat.OpenAI_Chat` and `vanna.chromadb_vector.ChromaDB_VectorStore`. `vanna.openai_chat.OpenAI_Chat` uses the OpenAI API to generate SQL and Plotly code. `vanna.chromadb_vector.ChromaDB_VectorStore` uses ChromaDB to store training data and generate embeddings.
 
@@ -62,35 +62,24 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
-import sqlparse
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
 from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
 
 
-class VannaBase(ABC):
-    def __init__(self, config=None):
-        if config is None:
-            config = {}
 
+class VannaBase(ABC):
+    MAX_TOKENS = 14000
+
+    def __init__(self, config=None):
         self.config = config
         self.run_sql_is_set = False
-        self.static_documentation = ""
-        self.dialect = self.config.get("dialect", "SQL")
-        self.language = self.config.get("language", None)
-        self.max_tokens = self.config.get("max_tokens", 14000)
 
-    def log(self, message: str, title: str = "Info"):
-        print(f"{title}: {message}")
+    def log(self, message: str):
+        print(message)
 
-    def _response_language(self) -> str:
-        if self.language is None:
-            return ""
-
-        return f"Respond in the {self.language} language."
-
-    def generate_sql(self, question: str, allow_llm_to_see_data=False, **kwargs) -> str:
+    def generate_sql(self, question: str, **kwargs) -> str:
         """
         Example:
         ```python
@@ -112,209 +101,60 @@ class VannaBase(ABC):
 
         Args:
             question (str): The question to generate a SQL query for.
-            allow_llm_to_see_data (bool): Whether to allow the LLM to see the data (for the purposes of introspecting the data to generate the final SQL).
 
         Returns:
             str: The SQL query that answers the question.
         """
-        if self.config is not None:
-            initial_prompt = self.config.get("initial_prompt", None)
-        else:
-            initial_prompt = None
         question_sql_list = self.get_similar_question_sql(question, **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
         prompt = self.get_sql_prompt(
-            initial_prompt=initial_prompt,
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
             doc_list=doc_list,
             **kwargs,
         )
-        self.log(title="SQL Prompt", message=prompt)
+        self.log(prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
-        self.log(title="LLM Response", message=llm_response)
-
-        if 'intermediate_sql' in llm_response:
-            if not allow_llm_to_see_data:
-                return "The LLM is not allowed to see the data in your database. Your question requires database introspection to generate the necessary SQL. Please set allow_llm_to_see_data=True to enable this."
-
-            if allow_llm_to_see_data:
-                intermediate_sql = self.extract_sql(llm_response)
-
-                try:
-                    self.log(title="Running Intermediate SQL", message=intermediate_sql)
-                    df = self.run_sql(intermediate_sql)
-
-                    prompt = self.get_sql_prompt(
-                        initial_prompt=initial_prompt,
-                        question=question,
-                        question_sql_list=question_sql_list,
-                        ddl_list=ddl_list,
-                        doc_list=doc_list+[f"The following is a pandas DataFrame with the results of the intermediate SQL query {intermediate_sql}: \n" + df.to_markdown()],
-                        **kwargs,
-                    )
-                    self.log(title="Final SQL Prompt", message=prompt)
-                    llm_response = self.submit_prompt(prompt, **kwargs)
-                    self.log(title="LLM Response", message=llm_response)
-                except Exception as e:
-                    return f"Error running intermediate SQL: {e}"
-
-
+        self.log(llm_response)
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
-        """
-        Example:
-        ```python
-        vn.extract_sql("Here's the SQL query in a code block: ```sql\nSELECT * FROM customers\n```")
-        ```
+        # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
+        sql = re.search(r"```sql\n(.*)```", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+            return sql.group(1)
 
-        Extracts the SQL query from the LLM response. This is useful in case the LLM response contains other information besides the SQL query.
-        Override this function if your LLM responses need custom extraction logic.
-
-        Args:
-            llm_response (str): The LLM response.
-
-        Returns:
-            str: The extracted SQL query.
-        """
-
-        # If the llm_response contains a CTE (with clause), extract the last sql between WITH and ;
-        sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.DOTALL)
-        if sqls:
-            sql = sqls[-1]
-            self.log(title="Extracted SQL", message=f"{sql}")
-            return sql
-
-        # If the llm_response is not markdown formatted, extract last sql by finding select and ; in the response
-        sqls = re.findall(r"SELECT.*?;", llm_response, re.DOTALL)
-        if sqls:
-            sql = sqls[-1]
-            self.log(title="Extracted SQL", message=f"{sql}")
-            return sql
-
-        # If the llm_response contains a markdown code block, with or without the sql tag, extract the last sql from it
-        sqls = re.findall(r"```sql\n(.*)```", llm_response, re.DOTALL)
-        if sqls:
-            sql = sqls[-1]
-            self.log(title="Extracted SQL", message=f"{sql}")
-            return sql
-
-        sqls = re.findall(r"```(.*)```", llm_response, re.DOTALL)
-        if sqls:
-            sql = sqls[-1]
-            self.log(title="Extracted SQL", message=f"{sql}")
-            return sql
+        sql = re.search(r"```(.*)```", llm_response, re.DOTALL)
+        if sql:
+            self.log(f"Output from LLM: {llm_response} \nExtracted SQL: {sql.group(1)}")
+            return sql.group(1)
 
         return llm_response
 
     def is_sql_valid(self, sql: str) -> bool:
-        """
-        Example:
-        ```python
-        vn.is_sql_valid("SELECT * FROM customers")
-        ```
-        Checks if the SQL query is valid. This is usually used to check if we should run the SQL query or not.
-        By default it checks if the SQL query is a SELECT statement. You can override this method to enable running other types of SQL queries.
+        # This is a check to see the SQL is valid and should be run
+        # This simple function just checks if the SQL contains a SELECT statement
 
-        Args:
-            sql (str): The SQL query to check.
-
-        Returns:
-            bool: True if the SQL query is valid, False otherwise.
-        """
-
-        parsed = sqlparse.parse(sql)
-
-        for statement in parsed:
-            if statement.get_type() == 'SELECT':
-                return True
-
-        return False
-
-    def should_generate_chart(self, df: pd.DataFrame) -> bool:
-        """
-        Example:
-        ```python
-        vn.should_generate_chart(df)
-        ```
-
-        Checks if a chart should be generated for the given DataFrame. By default, it checks if the DataFrame has more than one row and has numerical columns.
-        You can override this method to customize the logic for generating charts.
-
-        Args:
-            df (pd.DataFrame): The DataFrame to check.
-
-        Returns:
-            bool: True if a chart should be generated, False otherwise.
-        """
-
-        if len(df) > 1 and df.select_dtypes(include=['number']).shape[1] > 0:
+        if "SELECT" in sql.upper():
             return True
+        else:
+            return False
 
-        return False
-
-    def generate_rewritten_question(self, last_question: str, new_question: str, **kwargs) -> str:
-        """
-        **Example:**
-        ```python
-        rewritten_question = vn.generate_rewritten_question("Who are the top 5 customers by sales?", "Show me their email addresses")
-        ```
-
-        Generate a rewritten question by combining the last question and the new question if they are related. If the new question is self-contained and not related to the last question, return the new question.
-
-        Args:
-            last_question (str): The previous question that was asked.
-            new_question (str): The new question to be combined with the last question.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            str: The combined question if related, otherwise the new question.
-        """
-        if last_question is None:
-            return new_question
-
-        prompt = [
-            self.system_message("Your goal is to combine a sequence of questions into a singular question if they are related. If the second question does not relate to the first question and is fully self-contained, return the second question. Return just the new combined question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
-            self.user_message("First question: " + last_question + "\nSecond question: " + new_question),
-        ]
-
-        return self.submit_prompt(prompt=prompt, **kwargs)
-
-    def generate_followup_questions(
-        self, question: str, sql: str, df: pd.DataFrame, n_questions: int = 5, **kwargs
-    ) -> list:
-        """
-        **Example:**
-        ```python
-        vn.generate_followup_questions("What are the top 10 customers by sales?", sql, df)
-        ```
-
-        Generate a list of followup questions that you can ask Vanna.AI.
-
-        Args:
-            question (str): The question that was asked.
-            sql (str): The LLM-generated SQL query.
-            df (pd.DataFrame): The results of the SQL query.
-            n_questions (int): Number of follow-up questions to generate.
-
-        Returns:
-            list: A list of followup questions that you can ask Vanna.AI.
-        """
-
-        message_log = [
-            self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
-            ),
-            self.user_message(
-                f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query." +
-                self._response_language()
-            ),
-        ]
-
-        llm_response = self.submit_prompt(message_log, **kwargs)
+    def generate_followup_questions(self, question: str, **kwargs) -> str:
+        question_sql_list = self.get_similar_question_sql(question, **kwargs)
+        ddl_list = self.get_related_ddl(question, **kwargs)
+        doc_list = self.get_related_documentation(question, **kwargs)
+        prompt = self.get_followup_questions_prompt(
+            question=question,
+            question_sql_list=question_sql_list,
+            ddl_list=ddl_list,
+            doc_list=doc_list,
+            **kwargs,
+        )
+        llm_response = self.submit_prompt(prompt, **kwargs)
 
         numbers_removed = re.sub(r"^\d+\.\s*", "", llm_response, flags=re.MULTILINE)
         return numbers_removed.split("\n")
@@ -331,37 +171,6 @@ class VannaBase(ABC):
         question_sql = self.get_similar_question_sql(question="", **kwargs)
 
         return [q["question"] for q in question_sql]
-
-    def generate_summary(self, question: str, df: pd.DataFrame, **kwargs) -> str:
-        """
-        **Example:**
-        ```python
-        vn.generate_summary("What are the top 10 customers by sales?", df)
-        ```
-
-        Generate a summary of the results of a SQL query.
-
-        Args:
-            question (str): The question that was asked.
-            df (pd.DataFrame): The results of the SQL query.
-
-        Returns:
-            str: The summary of the results of the SQL query.
-        """
-
-        message_log = [
-            self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
-            ),
-            self.user_message(
-                "Briefly summarize the data based on the question that was asked. Do not respond with any additional explanation beyond the summary." +
-                self._response_language()
-            ),
-        ]
-
-        summary = self.submit_prompt(message_log, **kwargs)
-
-        return summary
 
     # ----------------- Use Any Embeddings API ----------------- #
     @abstractmethod
@@ -464,7 +273,7 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def remove_training_data(self, id: str, **kwargs) -> bool:
+    def remove_training_data(id: str, **kwargs) -> bool:
         """
         Example:
         ```python
@@ -499,10 +308,10 @@ class VannaBase(ABC):
         return len(string) / 4
 
     def add_ddl_to_prompt(
-        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, ddl_list: list[str], max_tokens: int = MAX_TOKENS
     ) -> str:
         if len(ddl_list) > 0:
-            initial_prompt += "\n===Tables \n"
+            initial_prompt += f"\nYou may use the following DDL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for ddl in ddl_list:
                 if (
@@ -518,10 +327,10 @@ class VannaBase(ABC):
         self,
         initial_prompt: str,
         documentation_list: list[str],
-        max_tokens: int = 14000,
+        max_tokens: int = MAX_TOKENS,
     ) -> str:
         if len(documentation_list) > 0:
-            initial_prompt += "\n===Additional Context \n\n"
+            initial_prompt += f"\nYou may use the following documentation as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for documentation in documentation_list:
                 if (
@@ -534,10 +343,10 @@ class VannaBase(ABC):
         return initial_prompt
 
     def add_sql_to_prompt(
-        self, initial_prompt: str, sql_list: list[str], max_tokens: int = 14000
+        self, initial_prompt: str, sql_list: list[str], max_tokens: int = MAX_TOKENS
     ) -> str:
         if len(sql_list) > 0:
-            initial_prompt += "\n===Question-SQL Pairs\n\n"
+            initial_prompt += f"\nYou may use the following SQL statements as a reference for what tables might be available. Use responses to past questions also to guide you:\n\n"
 
             for question in sql_list:
                 if (
@@ -551,7 +360,6 @@ class VannaBase(ABC):
 
     def get_sql_prompt(
         self,
-        initial_prompt : str,
         question: str,
         question_sql_list: list,
         ddl_list: list,
@@ -581,30 +389,14 @@ class VannaBase(ABC):
         Returns:
             any: The prompt for the LLM to generate SQL.
         """
-
-        if initial_prompt is None:
-            initial_prompt = f"You are a {self.dialect} expert. " + \
-            "Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions. "
+        initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=self.max_tokens
+            initial_prompt, ddl_list, max_tokens=MAX_TOKENS
         )
-
-        if self.static_documentation != "":
-            doc_list.append(self.static_documentation)
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=self.max_tokens
-        )
-
-        initial_prompt += (
-            "===Response Guidelines \n"
-            "1. If the provided context is sufficient, please generate a valid SQL query without any explanations for the question. \n"
-            "2. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql \n"
-            "3. If the provided context is insufficient, please explain why it can't be generated. \n"
-            "4. Please use the most relevant table(s). \n"
-            "5. If the question has been asked and answered before, please repeat the answer exactly as it was given before. \n"
-            f"6. Ensure that the output SQL is {self.dialect}-compliant and executable, and free of syntax errors. \n"
+            initial_prompt, doc_list, max_tokens=MAX_TOKENS
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -632,15 +424,15 @@ class VannaBase(ABC):
         initial_prompt = f"The user initially asked the question: '{question}': \n\n"
 
         initial_prompt = self.add_ddl_to_prompt(
-            initial_prompt, ddl_list, max_tokens=self.max_tokens
+            initial_prompt, ddl_list, max_tokens=MAX_TOKENS
         )
 
         initial_prompt = self.add_documentation_to_prompt(
-            initial_prompt, doc_list, max_tokens=self.max_tokens
+            initial_prompt, doc_list, max_tokens=MAX_TOKENS
         )
 
         initial_prompt = self.add_sql_to_prompt(
-            initial_prompt, question_sql_list, max_tokens=self.max_tokens
+            initial_prompt, question_sql_list, max_tokens=MAX_TOKENS
         )
 
         message_log = [self.system_message(initial_prompt)]
@@ -746,7 +538,6 @@ class VannaBase(ABC):
         database: str,
         role: Union[str, None] = None,
         warehouse: Union[str, None] = None,
-        **kwargs
     ):
         try:
             snowflake = __import__("snowflake.connector")
@@ -764,7 +555,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "mypassword":
+        if password == "my-password":
             password_env = os.getenv("SNOWFLAKE_PASSWORD")
 
             if password_env is not None:
@@ -793,8 +584,6 @@ class VannaBase(ABC):
             password=password,
             account=account,
             database=database,
-            client_session_keep_alive=True,
-            **kwargs
         )
 
         def run_sql_snowflake(sql: str) -> pd.DataFrame:
@@ -816,17 +605,16 @@ class VannaBase(ABC):
 
             return df
 
-        self.dialect = "Snowflake SQL"
         self.run_sql = run_sql_snowflake
         self.run_sql_is_set = True
 
-    def connect_to_sqlite(self, url: str, check_same_thread: bool = False,  **kwargs):
+    def connect_to_sqlite(self, url: str):
         """
         Connect to a SQLite database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
         Args:
             url (str): The URL of the database to connect to.
-            check_same_thread (str): Allow the connection may be accessed in multiple threads.
+
         Returns:
             None
         """
@@ -845,16 +633,11 @@ class VannaBase(ABC):
             url = path
 
         # Connect to the database
-        conn = sqlite3.connect(
-            url,
-            check_same_thread=check_same_thread,
-            **kwargs
-        )
+        conn = sqlite3.connect(url, check_same_thread=False)
 
         def run_sql_sqlite(sql: str):
             return pd.read_sql_query(sql, conn)
 
-        self.dialect = "SQLite"
         self.run_sql = run_sql_sqlite
         self.run_sql_is_set = True
 
@@ -865,9 +648,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
-        **kwargs
     ):
-
         """
         Connect to postgres using the psycopg2 connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
         **Example:**
@@ -936,319 +717,31 @@ class VannaBase(ABC):
                 user=user,
                 password=password,
                 port=port,
-                **kwargs
             )
         except psycopg2.Error as e:
             raise ValidationError(e)
 
-        def connect_to_db():
-            return psycopg2.connect(host=host, dbname=dbname,
-                        user=user, password=password, port=port, **kwargs)
-
-
         def run_sql_postgres(sql: str) -> Union[pd.DataFrame, None]:
-            conn = None
-            try:
-                conn = connect_to_db()  # Initial connection attempt
-                cs = conn.cursor()
-                cs.execute(sql)
-                results = cs.fetchall()
+            if conn:
+                try:
+                    cs = conn.cursor()
+                    cs.execute(sql)
+                    results = cs.fetchall()
 
-                # Create a pandas dataframe from the results
-                df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
-                return df
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(
+                        results, columns=[desc[0] for desc in cs.description]
+                    )
+                    return df
 
-            except psycopg2.InterfaceError as e:
-                # Attempt to reconnect and retry the operation
-                if conn:
-                    conn.close()  # Ensure any existing connection is closed
-                conn = connect_to_db()
-                cs = conn.cursor()
-                cs.execute(sql)
-                results = cs.fetchall()
-
-                # Create a pandas dataframe from the results
-                df = pd.DataFrame(results, columns=[desc[0] for desc in cs.description])
-                return df
-
-            except psycopg2.Error as e:
-                if conn:
+                except psycopg2.Error as e:
                     conn.rollback()
                     raise ValidationError(e)
 
-            except Exception as e:
-                        conn.rollback()
-                        raise e
-
-        self.dialect = "PostgreSQL"
         self.run_sql_is_set = True
         self.run_sql = run_sql_postgres
 
-
-    def connect_to_mysql(
-        self,
-        host: str = None,
-        dbname: str = None,
-        user: str = None,
-        password: str = None,
-        port: int = None,
-        **kwargs
-    ):
-
-        try:
-            import pymysql.cursors
-        except ImportError:
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: \npip install PyMySQL"
-            )
-
-        if not host:
-            host = os.getenv("HOST")
-
-        if not host:
-            raise ImproperlyConfigured("Please set your MySQL host")
-
-        if not dbname:
-            dbname = os.getenv("DATABASE")
-
-        if not dbname:
-            raise ImproperlyConfigured("Please set your MySQL database")
-
-        if not user:
-            user = os.getenv("USER")
-
-        if not user:
-            raise ImproperlyConfigured("Please set your MySQL user")
-
-        if not password:
-            password = os.getenv("PASSWORD")
-
-        if not password:
-            raise ImproperlyConfigured("Please set your MySQL password")
-
-        if not port:
-            port = os.getenv("PORT")
-
-        if not port:
-            raise ImproperlyConfigured("Please set your MySQL port")
-
-        conn = None
-
-        try:
-            conn = pymysql.connect(
-                host=host,
-                user=user,
-                password=password,
-                database=dbname,
-                port=port,
-                cursorclass=pymysql.cursors.DictCursor,
-                **kwargs
-            )
-        except pymysql.Error as e:
-            raise ValidationError(e)
-
-        def run_sql_mysql(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
-                try:
-                    conn.ping(reconnect=True)
-                    cs = conn.cursor()
-                    cs.execute(sql)
-                    results = cs.fetchall()
-
-                    # Create a pandas dataframe from the results
-                    df = pd.DataFrame(
-                        results, columns=[desc[0] for desc in cs.description]
-                    )
-                    return df
-
-                except pymysql.Error as e:
-                    conn.rollback()
-                    raise ValidationError(e)
-
-                except Exception as e:
-                    conn.rollback()
-                    raise e
-
-        self.run_sql_is_set = True
-        self.run_sql = run_sql_mysql
-
-    def connect_to_clickhouse(
-        self,
-        host: str = None,
-        dbname: str = None,
-        user: str = None,
-        password: str = None,
-        port: int = None,
-        **kwargs
-    ):
-
-        try:
-            import clickhouse_connect
-        except ImportError:
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: \npip install clickhouse_connect"
-            )
-
-        if not host:
-            host = os.getenv("HOST")
-
-        if not host:
-            raise ImproperlyConfigured("Please set your ClickHouse host")
-
-        if not dbname:
-            dbname = os.getenv("DATABASE")
-
-        if not dbname:
-            raise ImproperlyConfigured("Please set your ClickHouse database")
-
-        if not user:
-            user = os.getenv("USER")
-
-        if not user:
-            raise ImproperlyConfigured("Please set your ClickHouse user")
-
-        if not password:
-            password = os.getenv("PASSWORD")
-
-        if not password:
-            raise ImproperlyConfigured("Please set your ClickHouse password")
-
-        if not port:
-            port = os.getenv("PORT")
-
-        if not port:
-            raise ImproperlyConfigured("Please set your ClickHouse port")
-
-        conn = None
-
-        try:
-            conn = clickhouse_connect.get_client(
-                host=host,
-                port=port,
-                username=user,
-                password=password,
-                database=dbname,
-                **kwargs
-            )
-            print(conn)
-        except Exception as e:
-            raise ValidationError(e)
-
-        def run_sql_clickhouse(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
-                try:
-                    result = conn.query(sql)
-                    results = result.result_rows
-
-                    # Create a pandas dataframe from the results
-                    df = pd.DataFrame(results, columns=result.column_names)
-                    return df
-
-                except Exception as e:
-                    raise e
-
-        self.run_sql_is_set = True
-        self.run_sql = run_sql_clickhouse
-
-    def connect_to_oracle(
-        self,
-        user: str = None,
-        password: str = None,
-        dsn: str = None,
-        **kwargs
-    ):
-
-        """
-        Connect to an Oracle db using oracledb package. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
-        **Example:**
-        ```python
-        vn.connect_to_oracle(
-        user="username",
-        password="password",
-        dns="host:port/sid",
-        )
-        ```
-        Args:
-            USER (str): Oracle db user name.
-            PASSWORD (str): Oracle db user password.
-            DSN (str): Oracle db host ip - host:port/sid.
-        """
-
-        try:
-            import oracledb
-        except ImportError:
-
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: \npip install oracledb"
-            )
-
-        if not dsn:
-            dsn = os.getenv("DSN")
-
-        if not dsn:
-            raise ImproperlyConfigured("Please set your Oracle dsn which should include host:port/sid")
-
-        if not user:
-            user = os.getenv("USER")
-
-        if not user:
-            raise ImproperlyConfigured("Please set your Oracle db user")
-
-        if not password:
-            password = os.getenv("PASSWORD")
-
-        if not password:
-            raise ImproperlyConfigured("Please set your Oracle db password")
-
-        conn = None
-
-        try:
-            conn = oracledb.connect(
-                user=user,
-                password=password,
-                dsn=dsn,
-                **kwargs
-            )
-        except oracledb.Error as e:
-            raise ValidationError(e)
-
-        def run_sql_oracle(sql: str) -> Union[pd.DataFrame, None]:
-            if conn:
-                try:
-                    sql = sql.rstrip()
-                    if sql.endswith(';'): #fix for a known problem with Oracle db where an extra ; will cause an error.
-                        sql = sql[:-1]
-
-                    cs = conn.cursor()
-                    cs.execute(sql)
-                    results = cs.fetchall()
-
-                    # Create a pandas dataframe from the results
-                    df = pd.DataFrame(
-                        results, columns=[desc[0] for desc in cs.description]
-                    )
-                    return df
-
-                except oracledb.Error as e:
-                    conn.rollback()
-                    raise ValidationError(e)
-
-                except Exception as e:
-                    conn.rollback()
-                    raise e
-
-        self.run_sql_is_set = True
-        self.run_sql = run_sql_oracle
-
-    def connect_to_bigquery(
-        self,
-        cred_file_path: str = None,
-        project_id: str = None,
-        **kwargs
-    ):
+    def connect_to_bigquery(self, cred_file_path: str = None, project_id: str = None):
         """
         Connect to gcs using the bigquery connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
         **Example:**
@@ -1293,14 +786,19 @@ class VannaBase(ABC):
 
         conn = None
 
-        if not cred_file_path:
-            try:
-                conn = bigquery.Client(project=project_id)
-            except:
-                print("Could not found any google cloud implicit credentials")
-        else:
+        try:
+            conn = bigquery.Client(project=project_id)
+        except:
+            print("Could not found any google cloud implicit credentials")
+
+        if cred_file_path:
             # Validate file path and pemissions
             validate_config_path(cred_file_path)
+        else:
+            if not conn:
+                raise ValidationError(
+                    "Pleae provide a service account credentials json file"
+                )
 
         if not conn:
             with open(cred_file_path, "r") as f:
@@ -1310,11 +808,7 @@ class VannaBase(ABC):
                 )
 
             try:
-                conn = bigquery.Client(
-                    project=project_id,
-                    credentials=credentials,
-                    **kwargs
-                )
+                conn = bigquery.Client(project=project_id, credentials=credentials)
             except:
                 raise ImproperlyConfigured(
                     "Could not connect to bigquery please correct credentials"
@@ -1322,21 +816,26 @@ class VannaBase(ABC):
 
         def run_sql_bigquery(sql: str) -> Union[pd.DataFrame, None]:
             if conn:
-                job = conn.query(sql)
-                df = job.result().to_dataframe()
-                return df
+                try:
+                    job = conn.query(sql)
+                    df = job.result().to_dataframe()
+                    return df
+                except GoogleAPIError as error:
+                    errors = []
+                    for error in error.errors:
+                        errors.append(error["message"])
+                    raise errors
             return None
 
-        self.dialect = "BigQuery SQL"
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
 
-    def connect_to_duckdb(self, url: str, init_sql: str = None, **kwargs):
+    def connect_to_duckdb(self, url: str, init_sql: str = None):
         """
         Connect to a DuckDB database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
 
         Args:
-            url (str): The URL of the database to connect to. Use :memory: to create an in-memory database. Use md: or motherduck: to use the MotherDuck database.
+            url (str): The URL of the database to connect to.
             init_sql (str, optional): SQL to run when connecting to the database. Defaults to None.
 
         Returns:
@@ -1357,8 +856,6 @@ class VannaBase(ABC):
             print(os.path.exists(url))
             if os.path.exists(url):
                 path = url
-            elif url.startswith("md") or url.startswith("motherduck"):
-                path = url
             else:
                 path = os.path.basename(urlparse(url).path)
                 # Download the database if it doesn't exist
@@ -1369,277 +866,15 @@ class VannaBase(ABC):
                         f.write(response.content)
 
         # Connect to the database
-        conn = duckdb.connect(path, **kwargs)
+        conn = duckdb.connect(path)
         if init_sql:
             conn.query(init_sql)
 
         def run_sql_duckdb(sql: str):
             return conn.query(sql).to_df()
 
-        self.dialect = "DuckDB SQL"
         self.run_sql = run_sql_duckdb
         self.run_sql_is_set = True
-
-    def connect_to_mssql(self, odbc_conn_str: str, **kwargs):
-        """
-        Connect to a Microsoft SQL Server database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
-
-        Args:
-            odbc_conn_str (str): The ODBC connection string.
-
-        Returns:
-            None
-        """
-        try:
-            import pyodbc
-        except ImportError:
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: pip install pyodbc"
-            )
-
-        try:
-            import sqlalchemy as sa
-            from sqlalchemy.engine import URL
-        except ImportError:
-            raise DependencyError(
-                "You need to install required dependencies to execute this method,"
-                " run command: pip install sqlalchemy"
-            )
-
-        connection_url = URL.create(
-            "mssql+pyodbc", query={"odbc_connect": odbc_conn_str}
-        )
-
-        from sqlalchemy import create_engine
-
-        engine = create_engine(connection_url, **kwargs)
-
-        def run_sql_mssql(sql: str):
-            # Execute the SQL statement and return the result as a pandas DataFrame
-            with engine.begin() as conn:
-                df = pd.read_sql_query(sa.text(sql), conn)
-                conn.close()
-                return df
-
-            raise Exception("Couldn't run sql")
-
-        self.dialect = "T-SQL / Microsoft SQL Server"
-        self.run_sql = run_sql_mssql
-        self.run_sql_is_set = True
-    def connect_to_presto(
-        self,
-        host: str,
-        catalog: str = 'hive',
-        schema: str = 'default',
-        user: str = None,
-        password: str = None,
-        port: int = None,
-        combined_pem_path: str = None,
-        protocol: str = 'https',
-        requests_kwargs: dict = None,
-        **kwargs
-    ):
-      """
-        Connect to a Presto database using the specified parameters.
-
-        Args:
-            host (str): The host address of the Presto database.
-            catalog (str): The catalog to use in the Presto environment.
-            schema (str): The schema to use in the Presto environment.
-            user (str): The username for authentication.
-            password (str): The password for authentication.
-            port (int): The port number for the Presto connection.
-            combined_pem_path (str): The path to the combined pem file for SSL connection.
-            protocol (str): The protocol to use for the connection (default is 'https').
-            requests_kwargs (dict): Additional keyword arguments for requests.
-
-        Raises:
-            DependencyError: If required dependencies are not installed.
-            ImproperlyConfigured: If essential configuration settings are missing.
-
-        Returns:
-            None
-      """
-      try:
-        from pyhive import presto
-      except ImportError:
-        raise DependencyError(
-          "You need to install required dependencies to execute this method,"
-          " run command: \npip install pyhive"
-        )
-
-      if not host:
-        host = os.getenv("PRESTO_HOST")
-
-      if not host:
-        raise ImproperlyConfigured("Please set your presto host")
-
-      if not catalog:
-        catalog = os.getenv("PRESTO_CATALOG")
-
-      if not catalog:
-        raise ImproperlyConfigured("Please set your presto catalog")
-
-      if not user:
-        user = os.getenv("PRESTO_USER")
-
-      if not user:
-        raise ImproperlyConfigured("Please set your presto user")
-
-      if not password:
-        password = os.getenv("PRESTO_PASSWORD")
-
-      if not port:
-        port = os.getenv("PRESTO_PORT")
-
-      if not port:
-        raise ImproperlyConfigured("Please set your presto port")
-
-      conn = None
-
-      try:
-        if requests_kwargs is None and combined_pem_path is not None:
-          # use the combined pem file to verify the SSL connection
-          requests_kwargs = {
-            'verify': combined_pem_path,  # 使用转换后得到的 PEM 文件进行 SSL 验证
-          }
-        conn = presto.Connection(host=host,
-                                 username=user,
-                                 password=password,
-                                 catalog=catalog,
-                                 schema=schema,
-                                 port=port,
-                                 protocol=protocol,
-                                 requests_kwargs=requests_kwargs,
-                                 **kwargs)
-      except presto.Error as e:
-        raise ValidationError(e)
-
-      def run_sql_presto(sql: str) -> Union[pd.DataFrame, None]:
-        if conn:
-          try:
-            sql = sql.rstrip()
-            # fix for a known problem with presto db where an extra ; will cause an error.
-            if sql.endswith(';'):
-                sql = sql[:-1]
-            cs = conn.cursor()
-            cs.execute(sql)
-            results = cs.fetchall()
-
-            # Create a pandas dataframe from the results
-            df = pd.DataFrame(
-              results, columns=[desc[0] for desc in cs.description]
-            )
-            return df
-
-          except presto.Error as e:
-            print(e)
-            raise ValidationError(e)
-
-          except Exception as e:
-            print(e)
-            raise e
-
-      self.run_sql_is_set = True
-      self.run_sql = run_sql_presto
-
-    def connect_to_hive(
-        self,
-        host: str = None,
-        dbname: str = 'default',
-        user: str = None,
-        password: str = None,
-        port: int = None,
-        auth: str = 'CUSTOM',
-        **kwargs
-    ):
-      """
-        Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
-        Connect to a Hive database. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
-
-        Args:
-            host (str): The host of the Hive database.
-            dbname (str): The name of the database to connect to.
-            user (str): The username to use for authentication.
-            password (str): The password to use for authentication.
-            port (int): The port to use for the connection.
-            auth (str): The authentication method to use.
-
-        Returns:
-            None
-      """
-
-      try:
-        from pyhive import hive
-      except ImportError:
-        raise DependencyError(
-          "You need to install required dependencies to execute this method,"
-          " run command: \npip install pyhive"
-        )
-
-      if not host:
-        host = os.getenv("HIVE_HOST")
-
-      if not host:
-        raise ImproperlyConfigured("Please set your hive host")
-
-      if not dbname:
-        dbname = os.getenv("HIVE_DATABASE")
-
-      if not dbname:
-        raise ImproperlyConfigured("Please set your hive database")
-
-      if not user:
-        user = os.getenv("HIVE_USER")
-
-      if not user:
-        raise ImproperlyConfigured("Please set your hive user")
-
-      if not password:
-        password = os.getenv("HIVE_PASSWORD")
-
-      if not port:
-        port = os.getenv("HIVE_PORT")
-
-      if not port:
-        raise ImproperlyConfigured("Please set your hive port")
-
-      conn = None
-
-      try:
-        conn = hive.Connection(host=host,
-                               username=user,
-                               password=password,
-                               database=dbname,
-                               port=port,
-                               auth=auth)
-      except hive.Error as e:
-        raise ValidationError(e)
-
-      def run_sql_hive(sql: str) -> Union[pd.DataFrame, None]:
-        if conn:
-          try:
-            cs = conn.cursor()
-            cs.execute(sql)
-            results = cs.fetchall()
-
-            # Create a pandas dataframe from the results
-            df = pd.DataFrame(
-              results, columns=[desc[0] for desc in cs.description]
-            )
-            return df
-
-          except hive.Error as e:
-            print(e)
-            raise ValidationError(e)
-
-          except Exception as e:
-            print(e)
-            raise e
-
-      self.run_sql_is_set = True
-      self.run_sql = run_sql_hive
 
     def run_sql(self, sql: str, **kwargs) -> pd.DataFrame:
         """
@@ -1666,7 +901,6 @@ class VannaBase(ABC):
         print_results: bool = True,
         auto_train: bool = True,
         visualize: bool = True,  # if False, will not generate plotly code
-        allow_llm_to_see_data: bool = False,
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -1697,7 +931,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data)
+            sql = self.generate_sql(question=question)
         except Exception as e:
             print(e)
             return None, None, None
@@ -1711,7 +945,7 @@ class VannaBase(ABC):
 
         if self.run_sql_is_set is False:
             print(
-                "If you want to run the SQL query, connect to a database first."
+                "If you want to run the SQL query, connect to a database first. See here: https://vanna.ai/docs/databases.html"
             )
 
             if print_results:
@@ -1771,7 +1005,7 @@ class VannaBase(ABC):
                 return None
             else:
                 return sql, None, None
-        return sql, df, fig
+        return sql, df, None
 
     def train(
         self,
@@ -1803,7 +1037,7 @@ class VannaBase(ABC):
         """
 
         if question and not sql:
-            raise ValidationError("Please also provide a SQL query")
+            raise ValidationError(f"Please also provide a SQL query")
 
         if documentation:
             print("Adding documentation....")
@@ -1871,14 +1105,12 @@ class VannaBase(ABC):
         table_column = df.columns[
             df.columns.str.lower().str.contains("table_name")
         ].to_list()[0]
-        columns = [database_column,
-                    schema_column,
-                    table_column]
-        candidates = ["column_name",
-                      "data_type",
-                      "comment"]
-        matches = df.columns.str.lower().str.contains("|".join(candidates), regex=True)
-        columns += df.columns[matches].to_list()
+        column_column = df.columns[
+            df.columns.str.lower().str.contains("column_name")
+        ].to_list()[0]
+        data_type_column = df.columns[
+            df.columns.str.lower().str.contains("data_type")
+        ].to_list()[0]
 
         plan = TrainingPlan([])
 
@@ -1899,7 +1131,15 @@ class VannaBase(ABC):
                         f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
                     )
                     doc = f"The following columns are in the {table} table in the {database} database:\n\n"
-                    doc += df_columns_filtered_to_table[columns].to_markdown()
+                    doc += df_columns_filtered_to_table[
+                        [
+                            database_column,
+                            schema_column,
+                            table_column,
+                            column_column,
+                            data_type_column,
+                        ]
+                    ].to_markdown()
 
                     plan._plan.append(
                         TrainingPlanItem(
