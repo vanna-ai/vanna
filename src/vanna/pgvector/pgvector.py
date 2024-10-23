@@ -28,20 +28,20 @@ class PG_VectorStore(VannaBase):
         if config and "embedding_function" in config:
             self.embedding_function = config.get("embedding_function")
         else:
-            from sentence_transformers import SentenceTransformer
-            self.embedding_function = SentenceTransformer("sentence-transformers/all-MiniLM-l6-v2")
+            from langchain_huggingface import HuggingFaceEmbeddings
+            self.embedding_function = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-        self.sql_vectorstore = PGVector(
+        self.sql_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="sql",
             connection=self.connection_string,
         )
-        self.ddl_vectorstore = PGVector(
+        self.ddl_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="ddl",
             connection=self.connection_string,
         )
-        self.documentation_vectorstore = PGVector(
+        self.documentation_collection = PGVector(
             embeddings=self.embedding_function,
             collection_name="documentation",
             connection=self.connection_string,
@@ -94,16 +94,16 @@ class PG_VectorStore(VannaBase):
             case _:
                 raise ValueError("Specified collection does not exist.")
 
-    async def get_similar_question_sql(self, question: str) -> list:
+    def get_similar_question_sql(self, question: str) -> list:
         documents = self.sql_collection.similarity_search(query=question, k=self.n_results)
         return [ast.literal_eval(document.page_content) for document in documents]
 
-    async def get_related_ddl(self, question: str, **kwargs) -> list:
-        documents = await self.ddl_collection.similarity_search(query=question, k=self.n_results)
+    def get_related_ddl(self, question: str, **kwargs) -> list:
+        documents = self.ddl_collection.similarity_search(query=question, k=self.n_results)
         return [document.page_content for document in documents]
 
-    async def get_related_documentation(self, question: str, **kwargs) -> list:
-        documents = await self.documentation_collection.similarity_search(query=question, k=self.n_results)
+    def get_related_documentation(self, question: str, **kwargs) -> list:
+        documents = self.documentation_collection.similarity_search(query=question, k=self.n_results)
         return [document.page_content for document in documents]
 
     def train(
@@ -251,15 +251,3 @@ class PG_VectorStore(VannaBase):
 
     def generate_embedding(self, *args, **kwargs):
         pass
-
-    def submit_prompt(self, *args, **kwargs):
-        pass
-
-    def system_message(self, message: str) -> any:
-        return {"role": "system", "content": message}
-
-    def user_message(self, message: str) -> any:
-        return {"role": "user", "content": message}
-
-    def assistant_message(self, message: str) -> any:
-        return {"role": "assistant", "content": message}
