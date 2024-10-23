@@ -2082,9 +2082,11 @@ class VannaBase(ABC):
             elif len(numeric_cols) == 1 and len(categorical_cols) >= 1:
                 # Use a bar plot if there's one numeric and one categorical column
                 fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
+                fig.update_traces(texttemplate="%{y}
             elif len(categorical_cols) >= 1 and df[categorical_cols[0]].nunique() < 10:
                 # Use a pie chart for categorical data with fewer unique values
                 fig = px.pie(df, names=categorical_cols[0])
+                fig.update_traces(texttemplate="%{y}
             else:
                 # Default to a simple line plot if above conditions are not met
                 fig = px.line(df)
