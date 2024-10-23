@@ -15,7 +15,7 @@ class GoogleGeminiChat(VannaBase):
         if "model_name" in config:
             model_name = config["model_name"]
         else:
-            model_name = "gemini-1.0-pro"
+            model_name = "gemini-1.5-pro"
 
         self.google_api_key = None
 
@@ -30,7 +30,7 @@ class GoogleGeminiChat(VannaBase):
             self.chat_model = genai.GenerativeModel(model_name)
         else:
             # Authenticate using VertexAI
-            from vertexai.preview.generative_models import GenerativeModel
+            from vertexai.generative_models import GenerativeModel
             self.chat_model = GenerativeModel(model_name)
 
     def system_message(self, message: str) -> any:
