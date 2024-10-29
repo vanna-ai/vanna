@@ -91,7 +91,7 @@ class Ollama(VannaBase):
       f"model={self.model},\n"
       f"options={self.ollama_options},\n"
       f"keep_alive={self.keep_alive}")
-    self.log(f"Prompt Content:\n{json.dumps(prompt)}")
+    self.log(f"Prompt Content:\n{json.dumps(prompt, ensure_ascii=False)}")
     response_dict = self.ollama_client.chat(model=self.model,
                                             messages=prompt,
                                             stream=False,
