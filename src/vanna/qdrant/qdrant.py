@@ -143,6 +143,25 @@ class Qdrant_VectorStore(VannaBase):
     def get_training_data(self, **kwargs) -> pd.DataFrame:
         df = pd.DataFrame()
 
+        if ddl_data := self._get_all_points(self.ddl_collection_name):
+            ddl_list = [data.payload["ddl"] for data in ddl_data]
+            id_list = [
+                self._format_point_id(data.id, self.ddl_collection_name)
+                for data in ddl_data
+            ]
+
+            df_ddl = pd.DataFrame(
+                {
+                    "id": id_list,
+                    "question": [None for _ in ddl_list],
+                    "content": ddl_list,
+                }
+            )
+
+            df_ddl["training_data_type"] = "ddl"
+
+            df = pd.concat([df, df_ddl])
+
         if sql_data := self._get_all_points(self.sql_collection_name):
             question_list = [data.payload["question"] for data in sql_data]
             sql_list = [data.payload["sql"] for data in sql_data]
@@ -162,25 +181,6 @@ class Qdrant_VectorStore(VannaBase):
             df_sql["training_data_type"] = "sql"
 
             df = pd.concat([df, df_sql])
-
-        if ddl_data := self._get_all_points(self.ddl_collection_name):
-            ddl_list = [data.payload["ddl"] for data in ddl_data]
-            id_list = [
-                self._format_point_id(data.id, self.ddl_collection_name)
-                for data in ddl_data
-            ]
-
-            df_ddl = pd.DataFrame(
-                {
-                    "id": id_list,
-                    "question": [None for _ in ddl_list],
-                    "content": ddl_list,
-                }
-            )
-
-            df_ddl["training_data_type"] = "ddl"
-
-            df = pd.concat([df, df_ddl])
 
         if doc_data := self._get_all_points(self.documentation_collection_name):
             document_list = [data.payload["documentation"] for data in doc_data]
