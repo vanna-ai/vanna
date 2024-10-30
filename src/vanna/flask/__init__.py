@@ -1124,10 +1124,13 @@ class VannaFlaskAPI:
                       items:
                         type: string
             """
+            questions = cache.get_all(field_list=["question"])
+            if len(questions) != 0:
+              questions = list(reversed(questions))
             return jsonify(
                 {
                     "type": "question_history",
-                    "questions": cache.get_all(field_list=["question"]),
+                    "questions": questions,
                 }
             )
 
