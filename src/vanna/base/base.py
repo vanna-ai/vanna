@@ -734,7 +734,7 @@ class VannaBase(ABC):
 
         plotly_code = self.submit_prompt(message_log, kwargs=kwargs)
 
-        return self._sanitize_plotly_code(self._extract_python_code(plotly_code))
+        return self._sanitize_plotly_code(self._extract_python_code(plotly_code.strip()))
 
     # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
 
