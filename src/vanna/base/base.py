@@ -689,6 +689,9 @@ class VannaBase(ABC):
         return response
 
     def _extract_python_code(self, markdown_string: str) -> str:
+        # Strip whitespace to avoid indentation errors in LLM-generated code
+        markdown_string = markdown_string.strip()
+
         # Regex pattern to match Python code blocks
         pattern = r"```[\w\s]*python\n([\s\S]*?)```|```([\s\S]*?)```"
 
@@ -734,7 +737,7 @@ class VannaBase(ABC):
 
         plotly_code = self.submit_prompt(message_log, kwargs=kwargs)
 
-        return self._sanitize_plotly_code(self._extract_python_code(plotly_code.strip()))
+        return self._sanitize_plotly_code(self._extract_python_code(plotly_code))
 
     # ----------------- Connect to Any Database to run the Generated SQL ----------------- #
 
