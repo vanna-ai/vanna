@@ -992,6 +992,7 @@ class VannaBase(ABC):
         user: str = None,
         password: str = None,
         port: int = None,
+        autocommit: bool = False,
         **kwargs
     ):
 
@@ -1043,6 +1044,7 @@ class VannaBase(ABC):
                 database=dbname,
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
+                autocommit=autocommit,
                 **kwargs
             )
         except pymysql.Error as e:
@@ -1079,7 +1081,7 @@ class VannaBase(ABC):
         dbname: str = None,
         user: str = None,
         password: str = None,
-        port: int = None,
+        port: int = None,        
         **kwargs
     ):
 
