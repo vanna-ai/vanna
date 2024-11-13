@@ -35,6 +35,45 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [vanna-ai/vanna-flask](https://github.com/vanna-ai/vanna-flask)
 - [vanna-ai/vanna-slack](https://github.com/vanna-ai/vanna-slack)
 
+## Supported LLMs
+
+- [OpenAI](https://github.com/vanna-ai/vanna/tree/main/src/vanna/openai)
+- [Anthropic](https://github.com/vanna-ai/vanna/tree/main/src/vanna/anthropic)
+- [Gemini](https://github.com/vanna-ai/vanna/blob/main/src/vanna/google/gemini_chat.py)
+- [HuggingFace](https://github.com/vanna-ai/vanna/blob/main/src/vanna/hf/hf.py)
+- [AWS Bedrock](https://github.com/vanna-ai/vanna/tree/main/src/vanna/bedrock)
+- [Ollama](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ollama)
+- [Qianwen](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianwen)
+- [Qianfan](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianfan)
+- [Zhipu](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ZhipuAI)
+
+## Supported VectorStores
+
+- [AzureSearch](https://github.com/vanna-ai/vanna/tree/main/src/vanna/azuresearch)
+- [Opensearch](https://github.com/vanna-ai/vanna/tree/main/src/vanna/opensearch)
+- [PgVector](https://github.com/vanna-ai/vanna/tree/main/src/vanna/pgvector)
+- [PineCone](https://github.com/vanna-ai/vanna/tree/main/src/vanna/pinecone)
+- [ChromaDB](https://github.com/vanna-ai/vanna/tree/main/src/vanna/chromadb)
+- [FAISS](https://github.com/vanna-ai/vanna/tree/main/src/vanna/faiss)
+- [Marqo](https://github.com/vanna-ai/vanna/tree/main/src/vanna/marqo)
+- [Milvus](https://github.com/vanna-ai/vanna/tree/main/src/vanna/milvus)
+- [Qdrant](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qdrant)
+- [Weaviate](https://github.com/vanna-ai/vanna/tree/main/src/vanna/weaviate)
+
+## Supported Databases
+
+- [PostgreSQL](https://www.postgresql.org/)
+- [MySQL](https://www.mysql.com/)
+- [PrestoDB](https://prestodb.io/)
+- [Apache Hive](https://hive.apache.org/)
+- [ClickHouse](https://clickhouse.com/)
+- [Snowflake](https://www.snowflake.com/en/)
+- [Oracle](https://www.oracle.com/)
+- [Microsoft SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+- [BigQuery](https://cloud.google.com/bigquery)
+- [SQLite](https://www.sqlite.org/)
+- [DuckDB](https://duckdb.org/)
+
 
 ## Getting started
 See the [documentation](https://vanna.ai/docs/) for specifics on your desired database, LLM, etc.
