@@ -1167,7 +1167,7 @@ class VannaBase(ABC):
         vn.connect_to_oracle(
         user="username",
         password="password",
-        dns="host:port/sid",
+        dsn="host:port/sid",
         )
         ```
         Args:
