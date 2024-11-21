@@ -1,7 +1,7 @@
 
 
-| GitHub | PyPI | Documentation |
-| ------ | ---- | ------------- |
+| GitHub | PyPI | Documentation | Gurubase |
+| ------ | ---- | ------------- | -------- |
 | [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) | [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Vanna%20Guru-006BFF)](https://gurubase.io/g/vanna) |
 
 # Vanna
