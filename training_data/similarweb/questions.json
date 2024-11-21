@@ -1,6 +1,6 @@
 [
     {
-      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2023 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2023 ? Convert varchar to date using to date function , Plot a line chart ",
       "answer":"SELECT company_name,\r\n       extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%Tesla%'\r\n    or company_name = 'Ford')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2023-12-31'\r\nGROUP BY company_name, extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
     },
     {
@@ -52,7 +52,7 @@
       "answer":"```\nSELECT TICKER \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500 \nWHERE DOMAIN = 'google.com'\n```"
     },
     {
-      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2021? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2021? Convert varchar to date using to date function , Plot a line chart ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%ebay%'\n    or company_name ilike '%amazon%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
@@ -120,7 +120,7 @@
       "answer":"```\r\nSELECT DATE,\r\n    SUM(CASE WHEN DOMAIN = 'google.com' THEN TOTAL_VISITS ELSE 0 END) AS GOOGLE_VISITS,\r\n    SUM(CASE WHEN DOMAIN = 'bing.com' THEN TOTAL_VISITS ELSE 0 END) AS BING_VISITS\r\nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500\r\nWHERE DOMAIN IN ('google.com', 'bing.com')\r\nGROUP BY DATE\r\nORDER BY DATE ASC\r\n```"
     },
     {
-      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date function , Plot a line chart ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
@@ -192,7 +192,7 @@
       "answer":"SELECT company_name,\r\n       sum(total_visits) as visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  to_date(date, 'YYYY-MM-DD') between '2021-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name\r\nORDER BY visits desc limit 5;"
     },
     {
-      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2023 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "question":"what are the year on year total visits on ebay and amazon from 2018 to 2023 ? Convert varchar to date using to date function , Plot a line chart ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%ebay%'\n    or company_name ilike '%amazon%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2023-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
@@ -204,7 +204,7 @@
       "answer":"SELECT domain,\r\n       sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  date in ('2021-11-26', '2021-11-26')\r\nGROUP BY domain\r\nORDER BY total_visits desc"
     },
     {
-      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2021 ? Convert varchar to date using to date fucntion , Plot a line chart ",
+      "question":"what are the year on year total visits on Tesla and ford from 2018 to 2021 ? Convert varchar to date using to date function , Plot a line chart ",
       "answer":"SELECT company_name,\r\n       extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\r\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\nWHERE  (company_name ilike '%tesla%'\r\n    or company_name = 'Ford')\r\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\r\n   and '2021-12-31'\r\nGROUP BY company_name, extract(year\r\nFROM   to_date(date, 'YYYY-MM-DD'))\r\nORDER BY company_name, year;"
     },
     {
@@ -264,7 +264,7 @@
       "answer":"```\nSELECT DOMAIN, ROUND(AVG(TOTAL_AVG_VISIT_DURATION),2) AS AVG_DURATION \nFROM S__P_500_BY_DOMAIN_AND_AGGREGATED_BY_TICKERS_SAMPLE.DATAFEEDS.SP_500 \nGROUP BY DOMAIN \nORDER BY SUM(TOTAL_VISITS) DESC \nLIMIT 100\n```"
     },
     {
-      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2023 ? Convert varchar to date using to date fucntion ",
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2023 ? Convert varchar to date using to date function ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2023-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
@@ -284,7 +284,7 @@
       "answer":"SELECT sum(mobile_visits) as mobile_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  company_name ilike '%google%'\n   and to_date(date, 'YYYY-MM-DD') between '2010-12-31'\n   and '2021-01-01';"
     },
     {
-      "question":"what are the year on year total visits on Coca Coal and Pepsi from 2018 to 2021 ? Convert varchar to date using to date fucntion ",
+      "question":"what are the year on year total visits on Coca Coal and Pepsi from 2018 to 2021 ? Convert varchar to date using to date function ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%coca-cola%'\n    or company_name ilike '%pepsi%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
@@ -336,7 +336,7 @@
       "answer":"SELECT year,\r\n       mobile_visits - lag(mobile_visits,\r\n                           1) OVER (ORDER BY year) as mobile_visits_growth,\r\n       round((mobile_visits - lag(mobile_visits, 1) OVER (ORDER BY year)) * 100.0 \/ nullif(lag(mobile_visits, 1) OVER (ORDER BY year), 0),\r\n             2) as mobile_visits_growth_percentage\r\nFROM   (SELECT date_trunc('year', to_date(date, 'YYYY-MM-DD')) as year,\r\n               sum(mobile_visits) as mobile_visits\r\n        FROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\r\n        WHERE  company_name ilike '%alphabet%'\r\n           and to_date(date, 'YYYY-MM-DD') between '2010-01-01'\r\n           and '2021-12-31'\r\n        GROUP BY date_trunc('year', to_date(date, 'YYYY-MM-DD'))) subquery\r\nORDER BY year"
     },
     {
-      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date fucntion ",
+      "question":"what are the year on year total visits on Tesla and general mills from 2018 to 2021 ? Convert varchar to date using to date function ",
       "answer":"SELECT company_name,\n       extract(year\nFROM   to_date(date, 'YYYY-MM-DD')) as year, sum(total_visits) as total_visits\nFROM   s__p_500_by_domain_and_aggregated_by_tickers_sample.datafeeds.sp_500\nWHERE  (company_name ilike '%tesla%'\n    or company_name ilike '%general mills%')\n   and to_date(date, 'YYYY-MM-DD') between '2018-01-01'\n   and '2021-12-31'\nGROUP BY company_name, extract(year\nFROM   to_date(date, 'YYYY-MM-DD'))\nORDER BY company_name, year;"
     },
     {
