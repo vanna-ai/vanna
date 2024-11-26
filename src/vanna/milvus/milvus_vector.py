@@ -46,6 +46,10 @@ class Milvus_VectorStore(VannaBase):
         else:
             self.embedding_function = model.DefaultEmbeddingFunction()
         self._embedding_dim = self.embedding_function.encode_documents(["foo"])[0].shape[0]
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
         self._create_collections()
         self.n_results = config.get("n_results", 10)
 
@@ -56,7 +60,12 @@ class Milvus_VectorStore(VannaBase):
 
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
-        return self.embedding_function.encode_documents(data).tolist()
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].encode_documents(data).tolist()
+        else:
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = self.embedding_function
+            return self.embedding_function.encode_documents(data).tolist()
 
 
     def _create_sql_collection(self, name: str):

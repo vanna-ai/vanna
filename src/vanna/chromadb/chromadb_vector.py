@@ -55,12 +55,21 @@ class ChromaDB_VectorStore(VannaBase):
             embedding_function=self.embedding_function,
             metadata=collection_metadata,
         )
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
-        embedding = self.embedding_function([data])
-        if len(embedding) == 1:
-            return embedding[0]
-        return embedding
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding']
+        else:
+            embedding = self.embedding_function([data])
+            if len(embedding) == 1:
+                return embedding[0]
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = embedding
+            return embedding
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         question_sql_json = json.dumps(

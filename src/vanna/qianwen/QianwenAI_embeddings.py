@@ -31,16 +31,26 @@ class QianWenAI_Embeddings(VannaBase):
         if "api_key" in config:
             self.client.api_key = config["api_key"]
 
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
+
     def generate_embedding(self, data: str, **kwargs) -> list[float]:
-        if self.config is not None and "engine" in self.config:
-            embedding = self.client.embeddings.create(
-                engine=self.config["engine"],
-                input=data,
-            )
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].get("data")[0]["embedding"]
         else:
-            embedding = self.client.embeddings.create(
-                model="bge-large-zh",
-                input=data,
-            )
+            if self.config is not None and "engine" in self.config:
+                embedding = self.client.embeddings.create(
+                    engine=self.config["engine"],
+                    input=data,
+                )
+            else:
+                embedding = self.client.embeddings.create(
+                    model="bge-large-zh",
+                    input=data,
+                )
+        self.embedding_cache['question'] = data
+        self.embedding_cache['embedding'] = embedding
 
         return embedding.get("data")[0]["embedding"]
