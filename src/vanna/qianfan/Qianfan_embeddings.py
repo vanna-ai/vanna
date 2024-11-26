@@ -21,16 +21,26 @@ class Qianfan_Embeddings(VannaBase):
 
     self.client = qianfan.Embedding(ak=self.api_key, sk=self.secret_key)
 
-  def generate_embedding(self, data: str, **kwargs) -> list[float]:
-    if self.config is not None and "model" in self.config:
-      embedding = self.client.do(
-        model=self.config["model"],
-        input=[data],
-      )
-    else:
-      embedding = self.client.do(
-        model="bge-large-zh",
-        input=[data],
-      )
+    self.embedding_cache = {
+      'question': None,
+      'embedding': None
+    }
 
-    return embedding.get("data")[0]["embedding"]
+  def generate_embedding(self, data: str, **kwargs) -> list[float]:
+    if self.embedding_cache['question'] == data:
+        return self.embedding_cache['embedding'].get("data")[0]["embedding"]
+    else:
+        if self.config is not None and "model" in self.config:
+          embedding = self.client.do(
+            model=self.config["model"],
+            input=[data],
+          )
+        else:
+          embedding = self.client.do(
+            model="bge-large-zh",
+            input=[data],
+          )
+        self.embedding_cache['question'] = data
+        self.embedding_cache['embedding'] = embedding
+
+        return embedding.get("data")[0]["embedding"]
