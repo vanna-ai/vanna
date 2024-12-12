@@ -1,4 +1,5 @@
 import os
+
 from ..base import VannaBase
 
 
@@ -30,8 +31,29 @@ class GoogleGeminiChat(VannaBase):
             self.chat_model = genai.GenerativeModel(model_name)
         else:
             # Authenticate using VertexAI
+            import google.auth
+            import vertexai
             from vertexai.generative_models import GenerativeModel
-            self.chat_model = GenerativeModel(model_name)
+
+            json_file_path = config.get("google_credentials")  # Assuming the JSON file path is provided in the config
+
+            if not json_file_path or not os.path.exists(json_file_path):
+                raise FileNotFoundError(f"JSON credentials file not found at: {json_file_path}")
+
+            try:
+                # Validate and set the JSON file path for GOOGLE_APPLICATION_CREDENTIALS
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = json_file_path
+
+                # Initialize VertexAI with the credentials
+                credentials, _ = google.auth.default()
+                vertexai.init(credentials=credentials)
+                self.chat_model = GenerativeModel(model_name)
+            except google.auth.exceptions.DefaultCredentialsError as e:
+                raise RuntimeError(f"Default credentials error: {e}")
+            except google.auth.exceptions.TransportError as e:
+                raise RuntimeError(f"Transport error during authentication: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to authenticate using JSON file: {e}")
 
     def system_message(self, message: str) -> any:
         return message
