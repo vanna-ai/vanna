@@ -48,6 +48,10 @@ class GoogleGeminiChat(VannaBase):
                 credentials, _ = google.auth.default()
                 vertexai.init(credentials=credentials)
                 self.chat_model = GenerativeModel(model_name)
+            except google.auth.exceptions.DefaultCredentialsError as e:
+                raise RuntimeError(f"Default credentials error: {e}")
+            except google.auth.exceptions.TransportError as e:
+                raise RuntimeError(f"Transport error during authentication: {e}")
             except Exception as e:
                 raise RuntimeError(f"Failed to authenticate using JSON file: {e}")
 
