@@ -9,37 +9,28 @@ class OpenAI_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
-        # default parameters - can be overrided using config
-        self.temperature = 0.7
+        # Ensure config is a dictionary
+        config = config or {}
 
-        if "temperature" in config:
-            self.temperature = config["temperature"]
+        # Default parameters - can be overridden using config
+        self.temperature = config.get("temperature", 0.7)
 
-        if "api_type" in config:
-            raise Exception(
-                "Passing api_type is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_base" in config:
-            raise Exception(
-                "Passing api_base is now deprecated. Please pass an OpenAI client instead."
-            )
-
-        if "api_version" in config:
-            raise Exception(
-                "Passing api_version is now deprecated. Please pass an OpenAI client instead."
-            )
+        # Raise exceptions for deprecated parameters
+        for deprecated_param in ["api_type", "api_base", "api_version"]:
+            if deprecated_param in config:
+                raise Exception(
+                    f"Passing {deprecated_param} is now deprecated. Please pass an OpenAI client instead."
+                )
 
         if client is not None:
             self.client = client
             return
 
-        if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            return
-
-        if "api_key" in config:
-            self.client = OpenAI(api_key=config["api_key"])
+        # Initialize the OpenAI client with optional overrides from config
+        self.client = OpenAI(
+            api_key=config.get("api_key"),
+            base_url=config.get("base_url")
+        )
 
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}
@@ -106,10 +97,7 @@ class OpenAI_Chat(VannaBase):
                 temperature=self.temperature,
             )
         else:
-            if num_tokens > 3500:
-                model = "gpt-3.5-turbo-16k"
-            else:
-                model = "gpt-3.5-turbo"
+            model = "gpt-4o-mini" 
 
             print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
