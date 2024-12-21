@@ -9,6 +9,7 @@ import importlib.metadata
 
 import flask
 import requests
+from flask_jsglue import JSGlue
 from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
@@ -165,6 +166,7 @@ class VannaFlaskAPI:
 
         self.flask_app = Flask(__name__)
 
+        jsglue = JSGlue(self.flask_app)
         self.swagger = Swagger(
           self.flask_app, template={"info": {"title": "Vanna API"}}
         )
@@ -336,6 +338,9 @@ class VannaFlaskAPI:
 
             self.cache.set(id=id, field="question", value=question)
             self.cache.set(id=id, field="sql", value=sql)
+
+            # local_storage_data = {"id": {"question": question}}
+            # json_data = json.dumps(local_storage_data, indent=4)
 
             if vn.is_sql_valid(sql=sql):
                 return jsonify(

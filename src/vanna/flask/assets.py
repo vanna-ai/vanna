@@ -9,10 +9,11 @@ html_content = '''<!doctype html>
     <title>Vanna.AI</title>
     <script type="module" crossorigin src="/assets/index-35bab439.js"></script>
     <link rel="stylesheet" href="/assets/index-f228f78f.css">
+    {{ JSGlue.include() }}
   </head>
   <body class="bg-white dark:bg-slate-900">
     <div id="app"></div>
-    
+
   </body>
 </html>
 '''
