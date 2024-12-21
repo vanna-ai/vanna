@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "flask-sock", "flasgger", "sqlalchemy", "flask_jsglue"
+    "requests", "plotly", "pandas", "sqlparse", "flask", "flask-sock", "flasgger", "sqlalchemy", "Flask-JSGlue2"
 ]
 
 [project.urls]

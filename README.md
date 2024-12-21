@@ -1,4 +1,49 @@
-# REASON FOR IMPORTING THIS THIRD-PARTY LIBRARY INTO QUERYOUS GEORGE SOURCE CODE AND HOW TO UPDATE
+# REASON FOR IMPORTING THIS THIRD-PARTY LIBRARY INTO QUERYOUS GEORGE SOURCE CODE, SETUP, AND HOW TO UPDATE
+
+Our fork of Vanna: https://github.com/nrgmr/vanna-QG
+
+REASON:
+This library was imported so the Flask web app could save the chat history to local storage, instead of cache.
+If cache and a database are required for chat history in the future, the Flask request with the user's info will need to be passed to the cache (which also requires importing this library to the source code).
+This library has been imported as a git submodule and trimmed as much as possible to not contain excess code/weight.
+
+SETUP:
+Treat this library, and any git submodule, like it's own git repository because it is. Navigate to the submodule's root directory, src/vendor/vanna_qg, and run:
+
+```bash
+pip install .
+```
+
+UPDATING THE SUBMODULE:
+If Vanna updates one of the files we are using within Vendor (only related to the Flask app/web UI, we are using Vanna via pip install in the regular manner for everything else):
+
+-Within Queryous George navigate to /src/vendor/vanna_qg
+
+-
+
+```bash
+git checkout main
+```
+
+-
+
+```bash
+git fetch upstream
+```
+
+\*if this causes an error run the following command and then fetch again:
+
+```bash
+git remote add upstream git@github.com:vanna-ai/vanna.git
+```
+
+-
+
+```bash
+git checkout upstream/main [file_to_update]
+```
+
+This will update [file_to_update] in your working directory.
 
 # ORIGINAL README.md FOLLOWS
 
