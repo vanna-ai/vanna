@@ -18,7 +18,7 @@ class OpenAI_Chat(VannaBase):
         # Raise exceptions for deprecated parameters
         for deprecated_param in ["api_type", "api_base", "api_version"]:
             if deprecated_param in config:
-                raise Exception(
+                raise ValueError(
                     f"Passing {deprecated_param} is now deprecated. Please pass an OpenAI client instead."
                 )
 
@@ -32,21 +32,32 @@ class OpenAI_Chat(VannaBase):
             base_url=config.get("base_url")
         )
 
-    def system_message(self, message: str) -> any:
+    def system_message(self, message: str) -> dict:
         return {"role": "system", "content": message}
 
-    def user_message(self, message: str) -> any:
+    def user_message(self, message: str) -> dict:
         return {"role": "user", "content": message}
 
-    def assistant_message(self, message: str) -> any:
+    def assistant_message(self, message: str) -> dict:
         return {"role": "assistant", "content": message}
+
+    def generate_response(self, prompt, num_tokens):
+        model = self.config.get("model", "gpt-4o-mini")
+        print(f"Using model {model} for {num_tokens} tokens (approx)")
+        response = self.client.chat.completions.create(
+            model=model,
+            messages=prompt,
+            stop=None,
+            temperature=self.temperature,
+        )
+        return response
 
     def submit_prompt(self, prompt, **kwargs) -> str:
         if prompt is None:
-            raise Exception("Prompt is None")
+            raise ValueError("Prompt is None")
 
         if len(prompt) == 0:
-            raise Exception("Prompt is empty")
+            raise ValueError("Prompt is empty")
 
         # Count the number of tokens in the message log
         # Use 4 as an approximation for the number of characters per token
@@ -54,63 +65,14 @@ class OpenAI_Chat(VannaBase):
         for message in prompt:
             num_tokens += len(message["content"]) / 4
 
-        if kwargs.get("model", None) is not None:
-            model = kwargs.get("model", None)
-            print(
-                f"Using model {model} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
-            )
-        elif kwargs.get("engine", None) is not None:
-            engine = kwargs.get("engine", None)
-            print(
-                f"Using model {engine} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                engine=engine,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
-            )
-        elif self.config is not None and "engine" in self.config:
-            print(
-                f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                engine=self.config["engine"],
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
-            )
-        elif self.config is not None and "model" in self.config:
-            print(
-                f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
-            )
-            response = self.client.chat.completions.create(
-                model=self.config["model"],
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
-            )
-        else:
-            model = "gpt-4o-mini" 
+        # Use the generate_response method to get the response
+        response = self.generate_response(prompt, num_tokens)
 
-            print(f"Using model {model} for {num_tokens} tokens (approx)")
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
-            )
-
-        # Find the first response from the chatbot that has text in it (some responses may not have text)
+        # Find the first response from the chatbot that has text in it
+        # (some responses may not have text)
         for choice in response.choices:
             if "text" in choice:
                 return choice.text
 
-        # If no response with text is found, return the first response's content (which may be empty)
+        # If no response with text is found, return the first response's content
         return response.choices[0].message.content
