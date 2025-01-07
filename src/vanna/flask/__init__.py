@@ -9,7 +9,6 @@ import importlib.metadata
 
 import flask
 import requests
-from flask_jsglue import JSGlue
 from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
@@ -32,28 +31,28 @@ class Cache(ABC):
         pass
 
     @abstractmethod
-    def get(self, id, field):
+    def get(self, user, id, field):
         """
         Get a value from the cache.
         """
         pass
 
     @abstractmethod
-    def get_all(self, field_list) -> list:
+    def get_all(self, user, field_list) -> list:
         """
         Get all values from the cache.
         """
         pass
 
     @abstractmethod
-    def set(self, id, field, value):
+    def set(self, user, id, field, value):
         """
         Set a value in the cache.
         """
         pass
 
     @abstractmethod
-    def delete(self, id):
+    def delete(self, user, id):
         """
         Delete a value from the cache.
         """
@@ -67,30 +66,46 @@ class MemoryCache(Cache):
     def generate_id(self, *args, **kwargs):
         return str(uuid.uuid4())
 
-    def set(self, id, field, value):
-        if id not in self.cache:
-            self.cache[id] = {}
+    def set(self, user, id, field, value):
+        if user not in self.cache:
+            self.cache[user] = {}
 
-        self.cache[id][field] = value
+        if id not in self.cache[user]:
+            self.cache[user][id] = {}
 
-    def get(self, id, field):
-        if id not in self.cache:
+        self.cache[user][id][field] = value
+
+    def get(self, user, id, field):
+        if user not in self.cache:
             return None
 
-        if field not in self.cache[id]:
+        if id not in self.cache[user]:
             return None
 
-        return self.cache[id][field]
+        if field not in self.cache[user][id]:
+            return None
 
-    def get_all(self, field_list) -> list:
-        return [
-            {"id": id, **{field: self.get(id=id, field=field) for field in field_list}}
-            for id in self.cache
-        ]
+        return self.cache[user][id][field]
 
-    def delete(self, id):
-        if id in self.cache:
-            del self.cache[id]
+    def get_all(self, user, field_list) -> list:
+        if user in self.cache:
+            return [
+                {"user": user, "id": id, **{field: self.get(user=user, id=id, field=field) for field in field_list}}
+                for id in self.cache[user]
+            ]
+
+        return []
+
+    # def get_all(self, user, field_list) -> list:
+    #     return [
+    #         {"id": id, **{field: self.get(user=user, id=id, field=field) for field in field_list}}
+    #         for id in self.cache
+    #     ]
+
+    def delete(self, user, id):
+        if user in self.cache:
+            if id in self.cache[user]:
+                del self.cache[user][id]
 
 
 class VannaFlaskAPI:
@@ -100,6 +115,12 @@ class VannaFlaskAPI:
         def decorator(f):
             @wraps(f)
             def decorated(*args, **kwargs):
+
+                user = kwargs.get('user', None)
+
+                if user is None:
+                    return jsonify({"type": "error", "error": "No user provided"})
+
                 id = request.args.get("id")
 
                 if id is None:
@@ -108,15 +129,15 @@ class VannaFlaskAPI:
                         return jsonify({"type": "error", "error": "No id provided"})
 
                 for field in required_fields:
-                    if self.cache.get(id=id, field=field) is None:
+                    if self.cache.get(user=user, id=id, field=field) is None:
                         return jsonify({"type": "error", "error": f"No {field} found"})
 
                 field_values = {
-                    field: self.cache.get(id=id, field=field) for field in required_fields
+                    field: self.cache.get(user=user, id=id, field=field) for field in required_fields
                 }
 
                 for field in optional_fields:
-                    field_values[field] = self.cache.get(id=id, field=field)
+                    field_values[field] = self.cache.get(user=user, id=id, field=field)
 
                 # Add the id to the field_values
                 field_values["id"] = id
@@ -166,7 +187,6 @@ class VannaFlaskAPI:
 
         self.flask_app = Flask(__name__)
 
-        jsglue = JSGlue(self.flask_app)
         self.swagger = Swagger(
           self.flask_app, template={"info": {"title": "Vanna API"}}
         )
@@ -336,11 +356,8 @@ class VannaFlaskAPI:
             id = self.cache.generate_id(question=question)
             sql = vn.generate_sql(question=question, allow_llm_to_see_data=self.allow_llm_to_see_data)
 
-            self.cache.set(id=id, field="question", value=question)
-            self.cache.set(id=id, field="sql", value=sql)
-
-            # local_storage_data = {"id": {"question": question}}
-            # json_data = json.dumps(local_storage_data, indent=4)
+            self.cache.set(user=user, id=id, field="question", value=question)
+            self.cache.set(user=user, id=id, field="sql", value=sql)
 
             if vn.is_sql_valid(sql=sql):
                 return jsonify(
@@ -427,11 +444,11 @@ class VannaFlaskAPI:
                 self.vn.log(f"No instantiated SQL found for {question} in {function}")
                 return jsonify({"type": "error", "error": "No instantiated SQL found"})
 
-            self.cache.set(id=id, field="question", value=question)
-            self.cache.set(id=id, field="sql", value=function['instantiated_sql'])
+            self.cache.set(user=user, id=id, field="question", value=question)
+            self.cache.set(user=user, id=id, field="sql", value=function['instantiated_sql'])
 
             if 'instantiated_post_processing_code' in function and function['instantiated_post_processing_code'] is not None and len(function['instantiated_post_processing_code']) > 0:
-                self.cache.set(id=id, field="plotly_code", value=function['instantiated_post_processing_code'])
+                self.cache.set(user=user, id=id, field="plotly_code", value=function['instantiated_post_processing_code'])
 
             return jsonify(
                 {
@@ -513,7 +530,7 @@ class VannaFlaskAPI:
 
                 df = vn.run_sql(sql=sql)
 
-                self.cache.set(id=id, field="df", value=df)
+                self.cache.set(user=user, id=id, field="df", value=df)
 
                 return jsonify(
                     {
@@ -567,7 +584,7 @@ class VannaFlaskAPI:
 
             fixed_sql = vn.generate_sql(question=question)
 
-            self.cache.set(id=id, field="sql", value=fixed_sql)
+            self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
 
             return jsonify(
                 {
@@ -614,7 +631,7 @@ class VannaFlaskAPI:
             if sql is None:
                 return jsonify({"type": "error", "error": "No sql provided"})
 
-            self.cache.set(id=id, field='sql', value=sql)
+            self.cache.set(user=user, id=id, field='sql', value=sql)
 
             return jsonify(
                 {
@@ -684,7 +701,7 @@ class VannaFlaskAPI:
             try:
                 # If chart_instructions is not set then attempt to retrieve the code from the cache
                 if chart_instructions is None or len(chart_instructions) == 0:
-                    code = self.cache.get(id=id, field="plotly_code")
+                    code = self.cache.get(user=user, id=id, field="plotly_code")
                 else:
                     question = f"{question}. When generating the chart, use these special instructions: {chart_instructions}"
                     code = vn.generate_plotly_code(
@@ -692,12 +709,12 @@ class VannaFlaskAPI:
                         sql=sql,
                         df_metadata=f"Running df.dtypes gives:\n {df.dtypes}",
                     )
-                    self.cache.set(id=id, field="plotly_code", value=code)
+                    self.cache.set(user=user, id=id, field="plotly_code", value=code)
 
                 fig = vn.get_plotly_figure(plotly_code=code, df=df, dark_mode=False)
                 fig_json = fig.to_json()
 
-                self.cache.set(id=id, field="fig_json", value=fig_json)
+                self.cache.set(user=user, id=id, field="fig_json", value=fig_json)
 
                 return jsonify(
                     {
@@ -860,7 +877,7 @@ class VannaFlaskAPI:
                     function_template:
                       type: object
             """
-            plotly_code = self.cache.get(id=id, field="plotly_code")
+            plotly_code = self.cache.get(user=user, id=id, field="plotly_code")
 
             if plotly_code is None:
                 plotly_code = ""
@@ -971,7 +988,7 @@ class VannaFlaskAPI:
                 if followup_questions is not None and len(followup_questions) > 5:
                     followup_questions = followup_questions[:5]
 
-                self.cache.set(id=id, field="followup_questions", value=followup_questions)
+                self.cache.set(user=user, id=id, field="followup_questions", value=followup_questions)
 
                 return jsonify(
                     {
@@ -982,7 +999,7 @@ class VannaFlaskAPI:
                     }
                 )
             else:
-                self.cache.set(id=id, field="followup_questions", value=[])
+                self.cache.set(user=user, id=id, field="followup_questions", value=[])
                 return jsonify(
                     {
                         "type": "question_list",
@@ -1022,7 +1039,7 @@ class VannaFlaskAPI:
             if self.allow_llm_to_see_data:
                 summary = vn.generate_summary(question=question, df=df)
 
-                self.cache.set(id=id, field="summary", value=summary)
+                self.cache.set(user=user, id=id, field="summary", value=summary)
 
                 return jsonify(
                     {
@@ -1119,7 +1136,7 @@ class VannaFlaskAPI:
             return jsonify(
                 {
                     "type": "question_history",
-                    "questions": cache.get_all(field_list=["question"]),
+                    "questions": cache.get_all(user=user, field_list=["question"]),
                 }
             )
 
