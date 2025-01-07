@@ -151,7 +151,7 @@ class VannaFlaskAPI:
     def requires_auth(self, f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            user = self.auth.get_user(flask.request)
+            user = self.auth.get_user(flask.request).lower().strip()
 
             if not self.auth.is_logged_in(user):
                 return jsonify({"type": "not_logged_in", "html": self.auth.login_form()})
