@@ -12,7 +12,6 @@ html_content = '''<!doctype html>
   </head>
   <body class="bg-white dark:bg-slate-900">
     <div id="app"></div>
-    
   </body>
 </html>
 '''

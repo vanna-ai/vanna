@@ -1,10 +1,58 @@
+# REASON FOR IMPORTING THIS THIRD-PARTY LIBRARY INTO QUERYOUS GEORGE SOURCE CODE, SETUP, AND HOW TO UPDATE
 
+Our fork of Vanna: https://github.com/nrgmr/vanna-QG
 
-| GitHub | PyPI | Documentation | Gurubase |
-| ------ | ---- | ------------- | -------- |
+REASON:
+This library was imported so the Flask web app could save the chat history to local storage, instead of cache.
+If cache and a database are required for chat history in the future, the Flask request with the user's info will need to be passed to the cache (which also requires importing this library to the source code).
+This library has been imported as a git submodule and trimmed as much as possible to not contain excess code/weight.
+
+SETUP:
+Treat this library, and any git submodule, like it's own git repository because it is. Navigate to the submodule's root directory, src/vendor/vanna_qg, and run:
+
+```bash
+pip install .
+```
+
+UPDATING THE SUBMODULE:
+If Vanna updates one of the files we are using within Vendor (only related to the Flask app/web UI, we are using Vanna via pip install in the regular manner for everything else):
+
+-Within Queryous George navigate to /src/vendor/vanna_qg
+
+-
+
+```bash
+git checkout main
+```
+
+-
+
+```bash
+git fetch upstream
+```
+
+\*if this causes an error run the following command and then fetch again:
+
+```bash
+git remote add upstream git@github.com:vanna-ai/vanna.git
+```
+
+-
+
+```bash
+git checkout upstream/main [file_to_update]
+```
+
+This will update [file_to_update] in your working directory.
+
+# ORIGINAL README.md FOLLOWS
+
+| GitHub                                                                                                     | PyPI                                                                                      | Documentation                                                                                                        | Gurubase                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) | [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Vanna%20Guru-006BFF)](https://gurubase.io/g/vanna) |
 
 # Vanna
+
 Vanna is an MIT-licensed open-source Python RAG (Retrieval-Augmented Generation) framework for SQL generation and related functionality.
 
 https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a3b2ce
@@ -14,7 +62,6 @@ https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a
 ## How Vanna works
 
 ![Screen Recording 2024-01-24 at 11 21 37 AM](https://github.com/vanna-ai/vanna/assets/7146154/1d2718ad-12a8-4a76-afa2-c61754462f93)
-
 
 Vanna works in two easy steps - train a RAG "model" on your data, and then ask questions which will return SQL queries that can be set up to automatically run on your database.
 
@@ -28,6 +75,7 @@ If you don't know what RAG is, don't worry -- you don't need to know how this wo
 See the [base class](https://github.com/vanna-ai/vanna/blob/main/src/vanna/base/base.py) for more details on how this works under the hood.
 
 ## User Interfaces
+
 These are some of the user interfaces that we've built using Vanna. You can use these as-is or as a starting point for your own custom interface.
 
 - [Jupyter Notebook](https://vanna.ai/docs/postgres-openai-vanna-vannadb/)
@@ -74,14 +122,14 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [SQLite](https://www.sqlite.org/)
 - [DuckDB](https://duckdb.org/)
 
-
 ## Getting started
+
 See the [documentation](https://vanna.ai/docs/) for specifics on your desired database, LLM, etc.
 
 If you want to get a feel for how it works after training, you can try this [Colab notebook](https://vanna.ai/docs/app/).
 
-
 ### Install
+
 ```bash
 pip install vanna
 ```
@@ -89,6 +137,7 @@ pip install vanna
 There are a number of optional packages that can be installed so see the [documentation](https://vanna.ai/docs/) for more details.
 
 ### Import
+
 See the [documentation](https://vanna.ai/docs/) if you're customizing the LLM or vector database.
 
 ```python
@@ -108,13 +157,14 @@ vn = MyVanna(config={'api_key': 'sk-...', 'model': 'gpt-4-...'})
 
 ```
 
-
 ## Training
+
 You may or may not need to run these `vn.train` commands depending on your use case. See the [documentation](https://vanna.ai/docs/) for more details.
 
 These statements are shown to give you a feel for how it works.
 
 ### Train with DDL Statements
+
 DDL statements contain information about the table names, columns, data types, and relationships in your database.
 
 ```python
@@ -128,6 +178,7 @@ vn.train(ddl="""
 ```
 
 ### Train with Documentation
+
 Sometimes you may want to add documentation about your business terminology or definitions.
 
 ```python
@@ -135,19 +186,21 @@ vn.train(documentation="Our business defines XYZ as ...")
 ```
 
 ### Train with SQL
+
 You can also add SQL queries to your training data. This is useful if you have some queries already laying around. You can just copy and paste those from your editor to begin generating new SQL.
 
 ```python
 vn.train(sql="SELECT name, age FROM my-table WHERE name = 'John Doe'")
 ```
 
-
 ## Asking questions
+
 ```python
 vn.ask("What are the top 10 customers by sales?")
 ```
 
 You'll get SQL
+
 ```sql
 SELECT c.c_name as customer_name,
         sum(l.l_extendedprice * (1 - l.l_discount)) as total_sales
@@ -159,6 +212,7 @@ ORDER BY total_sales desc limit 10;
 ```
 
 If you've connected to a database, you'll get the table:
+
 <div>
 <table border="1" class="dataframe">
   <thead>
@@ -227,13 +281,16 @@ You'll also get an automated Plotly chart:
 ![](img/top-10-customers.png)
 
 ## RAG vs. Fine-Tuning
+
 RAG
+
 - Portable across LLMs
 - Easy to remove training data if any of it becomes obsolete
 - Much cheaper to run than fine-tuning
 - More future-proof -- if a better LLM comes out, you can just swap it out
 
 Fine-Tuning
+
 - Good if you need to minimize tokens in the prompt
 - Slow to get started
 - Expensive to train and run (generally)
@@ -241,22 +298,23 @@ Fine-Tuning
 ## Why Vanna?
 
 1. **High accuracy on complex datasets.**
-    - Vanna’s capabilities are tied to the training data you give it
-    - More training data means better accuracy for large and complex datasets
+   - Vanna’s capabilities are tied to the training data you give it
+   - More training data means better accuracy for large and complex datasets
 2. **Secure and private.**
-    - Your database contents are never sent to the LLM or the vector database
-    - SQL execution happens in your local environment
+   - Your database contents are never sent to the LLM or the vector database
+   - SQL execution happens in your local environment
 3. **Self learning.**
-    - If using via Jupyter, you can choose to "auto-train" it on the queries that were successfully executed
-    - If using via other interfaces, you can have the interface prompt the user to provide feedback on the results
-    - Correct question to SQL pairs are stored for future reference and make the future results more accurate
+   - If using via Jupyter, you can choose to "auto-train" it on the queries that were successfully executed
+   - If using via other interfaces, you can have the interface prompt the user to provide feedback on the results
+   - Correct question to SQL pairs are stored for future reference and make the future results more accurate
 4. **Supports any SQL database.**
-    - The package allows you to connect to any SQL database that you can otherwise connect to with Python
+   - The package allows you to connect to any SQL database that you can otherwise connect to with Python
 5. **Choose your front end.**
-    - Most people start in a Jupyter Notebook.
-    - Expose to your end users via Slackbot, web app, Streamlit app, or a custom front end.
+   - Most people start in a Jupyter Notebook.
+   - Expose to your end users via Slackbot, web app, Streamlit app, or a custom front end.
 
 ## Extending Vanna
+
 Vanna is designed to connect to any database, LLM, and vector database. There's a [VannaBase](https://github.com/vanna-ai/vanna/blob/main/src/vanna/base/base.py) abstract base class that defines some basic functionality. The package provides implementations for use with OpenAI and ChromaDB. You can easily extend Vanna to use your own LLM or vector database. See the [documentation](https://vanna.ai/docs/) for more details.
 
 ## Vanna in 100 Seconds
@@ -264,6 +322,7 @@ Vanna is designed to connect to any database, LLM, and vector database. There's 
 https://github.com/vanna-ai/vanna/assets/7146154/eb90ee1e-aa05-4740-891a-4fc10e611cab
 
 ## More resources
- - [Full Documentation](https://vanna.ai/docs/)
- - [Website](https://vanna.ai)
- - [Discord group for support](https://discord.gg/qUZYKHremx)
+
+- [Full Documentation](https://vanna.ai/docs/)
+- [Website](https://vanna.ai)
+- [Discord group for support](https://discord.gg/qUZYKHremx)
