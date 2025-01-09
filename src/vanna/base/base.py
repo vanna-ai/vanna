@@ -443,7 +443,7 @@ class VannaBase(ABC):
         """
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def search_tables_metadata(self,
                               engine: str = None,
                               catalog: str = None,
