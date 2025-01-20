@@ -6,6 +6,7 @@ from vanna.mistral.mistral import Mistral
 from vanna.openai.openai_chat import OpenAI_Chat
 from vanna.remote import VannaDefault
 from vanna.vannadb.vannadb_vector import VannaDB_VectorStore
+from vanna.groq import Groq_Chat
 
 try:
     print("Trying to load .env")
@@ -241,3 +242,16 @@ def test_training_plan():
 
     plan = vn_dummy.get_training_plan_generic(df_information_schema)
     assert len(plan._plan) == 8
+
+class VannaGroq(VannaDB_VectorStore, Groq_Chat):
+    def __init__(self, config=None):
+        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        Groq_Chat.__init__(self, config=config)
+
+vn_groq = VannaGroq(config={'api_key': os.environ['GROQ_API_KEY']})
+vn_groq.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+
+def test_vn_groq():
+    sql = vn_groq.generate_sql("What are the top 10 customers by sales?")
+    df = vn_groq.run_sql(sql)
+    assert len(df) == 10
