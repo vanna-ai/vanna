@@ -13,6 +13,8 @@ from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
 
+from training_data_addition import train_new_data
+
 from ..base import VannaBase
 from .assets import css_content, html_content, js_content
 from .auth import AuthInterface, NoAuth
@@ -981,6 +983,15 @@ class VannaFlaskAPI:
                     header:
                       type: string
             """
+
+            correct_result = {
+              "id": id,
+              "user": user,
+              "question": question,
+              "sql": sql,
+            }
+            train_new_data(correct_result)
+
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
                     question=question, sql=sql, df=df
