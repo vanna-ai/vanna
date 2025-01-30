@@ -1,4 +1,3 @@
-import ast
 import json
 
 import pandas as pd
@@ -93,7 +92,7 @@ class OpenSearch_Semantic_VectorStore(VannaBase):
 
   def get_similar_question_sql(self, question: str, **kwargs) -> list:
     documents = self.sql_store.similarity_search(query=question, k=self.n_results_sql)
-    return [ast.literal_eval(document.page_content) for document in documents]
+    return [json.loads(document.page_content) for document in documents]
 
   def get_training_data(self, **kwargs) -> pd.DataFrame:
     data = []
@@ -103,63 +102,58 @@ class OpenSearch_Semantic_VectorStore(VannaBase):
       }
     }
 
-    response = self.documentation_store.client.search(
-      index=self.document_index,
-      ignore_unavailable=True,
-      body=query,
-      size=1000 # TODO: paginate instead of getting max 1000 records
-    )
+    indices = [
+      {"index": self.document_index, "type": "documentation"},
+      {"index": self.question_sql_index, "type": "sql"},
+      {"index": self.ddl_index, "type": "ddl"},
+    ]
 
-    # records = [hit['_source'] for hit in response['hits']['hits']]
-    for hit in response['hits']['hits']:
-      data.append(
-        {
-          "id": hit["_id"],
-          "training_data_type": "documentation",
-          "question": None,
-          "content": hit["_source"]['text'],
-        }
+    # Use documentation_store.client consistently for search on all indices
+    opensearch_client = self.documentation_store.client
+
+    for index_info in indices:
+      index_name = index_info["index"]
+      training_data_type = index_info["type"]
+      scroll = '1m'  # keep scroll context for 1 minute
+      response = opensearch_client.search(
+        index=index_name,
+        ignore_unavailable=True,
+        body=query,
+        scroll=scroll,
+        size=1000
       )
 
-    response =self.sql_store.client.search(
-      index=self.question_sql_index,
-      ignore_unavailable=True,
-      body=query,
-      size=1000 # TODO: paginate instead of getting max 1000 records
-    )
-    # records = [hit['_source'] for hit in response['hits']['hits']]
-    for hit in response['hits']['hits']:
-      try:
-        doc_dict = ast.literal_eval(hit["_source"]['text'])
+      scroll_id = response.get('_scroll_id')
 
-        data.append(
-          {
+      while scroll_id:
+        hits = response['hits']['hits']
+        if not hits:
+          break  # No more hits, exit loop
+
+        for hit in hits:
+          source = hit['_source']
+          if training_data_type == "sql":
+            try:
+              doc_dict = json.loads(source['text'])
+              content = doc_dict.get("sql")
+              question = doc_dict.get("question")
+            except json.JSONDecodeError as e:
+              self.log(f"Skipping row with custom_id {hit['_id']} due to JSON parsing error: {e}","Error")
+              continue
+          else:  # documentation or ddl
+            content = source['text']
+            question = None
+
+          data.append({
             "id": hit["_id"],
-            "training_data_type": "sql",
-            "question": doc_dict.get("question"),
-            "content": doc_dict.get("sql"),
-          }
-        )
-      except (ValueError, SyntaxError):
-        self.log(f"Skipping row with custom_id {hit['_id']} due to parsing error.", "Error")
-        continue
+            "training_data_type": training_data_type,
+            "question": question,
+            "content": content,
+          })
 
-    response = self.ddl_store.client.search(
-      index=self.ddl_index,
-      ignore_unavailable=True,
-      body=query,
-      size=1000 # TODO: paginate instead of getting max 1000 records
-    )
-    # records = [hit['_source'] for hit in response['hits']['hits']]
-    for hit in response['hits']['hits']:
-      data.append(
-        {
-          "id": hit["_id"],
-          "training_data_type": "ddl",
-          "question": None,
-          "content": hit["_source"]['text'],
-        }
-      )
+        # Get next batch of results, using documentation_store.client.scroll
+        response = opensearch_client.scroll(scroll_id=scroll_id, scroll=scroll)
+        scroll_id = response.get('_scroll_id')
 
     return pd.DataFrame(data)
 
