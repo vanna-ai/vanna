@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import uuid
+import threading
 from abc import ABC, abstractmethod
 from functools import wraps
 import importlib.metadata
@@ -990,7 +991,8 @@ class VannaFlaskAPI:
               "question": question,
               "sql": sql,
             }
-            train_new_data(correct_result)
+            thread = threading.Thread(target=train_new_data, args=(correct_result,))
+            thread.start()
 
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
