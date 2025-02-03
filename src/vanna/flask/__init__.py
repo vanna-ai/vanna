@@ -848,6 +848,15 @@ class VannaFlaskAPI:
                     question=question, sql=sql, ddl=ddl, documentation=documentation
                 )
 
+                correct_result = {
+                  "id": id,
+                  "user": user,
+                  "question": question,
+                  "sql": sql,
+                }
+                thread = threading.Thread(target=train_new_data, args=(correct_result,))
+                thread.start()
+
                 return jsonify({"id": id})
             except Exception as e:
                 print("TRAINING ERROR", e)
@@ -984,15 +993,6 @@ class VannaFlaskAPI:
                     header:
                       type: string
             """
-
-            correct_result = {
-              "id": id,
-              "user": user,
-              "question": question,
-              "sql": sql,
-            }
-            thread = threading.Thread(target=train_new_data, args=(correct_result,))
-            thread.start()
 
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
