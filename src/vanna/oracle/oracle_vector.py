@@ -98,6 +98,13 @@ class Oracle_VectorStore(VannaBase):
 
   def add_ddl(self, ddl: str, **kwargs) -> str:
     collection = self.get_collection(self.ddl_collection)
+    question_ddl_json = json.dumps(
+      {
+        "question": None,
+        "ddl": ddl,
+      },
+      ensure_ascii=False,
+    )
     id = str(uuid.uuid4())
     custom_id = id + "-ddl"
     cursor = self.oracle_conn.cursor()
@@ -122,7 +129,7 @@ class Oracle_VectorStore(VannaBase):
       """, [
         collection["uuid"],
         self.generate_embedding(ddl),
-        ddl,  # 直接存储DDL字符串
+        question_ddl_json,
         json.dumps(self.cmetadata),
         custom_id,
         id
@@ -134,6 +141,13 @@ class Oracle_VectorStore(VannaBase):
 
   def add_documentation(self, documentation: str, **kwargs) -> str:
     collection = self.get_collection(self.documentation_collection)
+    question_documentation_json = json.dumps(
+      {
+        "question": None,
+        "documentation": documentation,
+      },
+      ensure_ascii=False,
+    )
     id = str(uuid.uuid4())
     custom_id = id + "-doc"
     cursor = self.oracle_conn.cursor()
@@ -158,7 +172,7 @@ class Oracle_VectorStore(VannaBase):
       """, [
         collection["uuid"],
         self.generate_embedding(documentation),
-        documentation,  # 直接存储文档内容
+        question_documentation_json,
         json.dumps(self.cmetadata),
         custom_id,
         id
