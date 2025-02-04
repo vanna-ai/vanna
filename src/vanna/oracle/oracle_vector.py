@@ -416,6 +416,16 @@ class Oracle_VectorStore(VannaBase):
     cursor.close()
     return Oracle_VectorStore._extract_documents(results)
 
+  def search_tables_metadata(self,
+                             engine: str = None,
+                             catalog: str = None,
+                             schema: str = None,
+                             table_name: str = None,
+                             ddl: str = None,
+                             size: int = 10,
+                             **kwargs) -> list:
+    pass
+
   def get_related_documentation(self, question: str, **kwargs) -> list:
     collection = self.get_collection(self.documentation_collection)
     cursor = self.oracle_conn.cursor()
