@@ -26,7 +26,7 @@ class DeepSeekChat(VannaBase):
             raise ValueError("config must contain a DeepSeek api_key")
 
         if "model" not in config:
-            raise ValueError("config must contain a Mistral model")
+            raise ValueError("config must contain a DeepSeek model")
     
         api_key = config["api_key"]
         model = config["model"]
