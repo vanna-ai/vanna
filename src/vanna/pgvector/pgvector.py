@@ -11,7 +11,6 @@ from sqlalchemy import create_engine, text
 from .. import ValidationError
 from ..base import VannaBase
 from ..types import TrainingPlan, TrainingPlanItem
-from ..utils import deterministic_uuid
 
 
 class PG_VectorStore(VannaBase):
@@ -56,7 +55,7 @@ class PG_VectorStore(VannaBase):
             },
             ensure_ascii=False,
         )
-        id = deterministic_uuid(question_sql_json) + "-sql"
+        id = str(uuid.uuid4()) + "-sql"
         createdat = kwargs.get("createdat")
         doc = Document(
             page_content=question_sql_json,
@@ -67,7 +66,7 @@ class PG_VectorStore(VannaBase):
         return id
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
-        _id = deterministic_uuid(ddl) + "-ddl"
+        _id = str(uuid.uuid4()) + "-ddl"
         doc = Document(
             page_content=ddl,
             metadata={"id": _id},
@@ -76,7 +75,7 @@ class PG_VectorStore(VannaBase):
         return _id
 
     def add_documentation(self, documentation: str, **kwargs) -> str:
-        _id = deterministic_uuid(documentation) + "-doc"
+        _id = str(uuid.uuid4()) + "-doc"
         doc = Document(
             page_content=documentation,
             metadata={"id": _id},
@@ -95,7 +94,7 @@ class PG_VectorStore(VannaBase):
             case _:
                 raise ValueError("Specified collection does not exist.")
 
-    def get_similar_question_sql(self, question: str, **kwargs) -> list:
+    def get_similar_question_sql(self, question: str) -> list:
         documents = self.sql_collection.similarity_search(query=question, k=self.n_results)
         return [ast.literal_eval(document.page_content) for document in documents]
 
@@ -204,7 +203,7 @@ class PG_VectorStore(VannaBase):
                     # Commit the transaction if the delete was successful
                     transaction.commit()
                     # Check if any row was deleted and return True or False accordingly
-                    return result.rowcount() > 0
+                    return result.rowcount > 0
                 except Exception as e:
                     # Rollback the transaction in case of error
                     logging.error(f"An error occurred: {e}")
@@ -236,9 +235,9 @@ class PG_VectorStore(VannaBase):
                 try:
                     result = connection.execute(query)
                     transaction.commit()  # Explicitly commit the transaction
-                    if result.rowcount() > 0:
+                    if result.rowcount > 0:
                         logging.info(
-                            f"Deleted {result.rowcount()} rows from "
+                            f"Deleted {result.rowcount} rows from "
                             f"langchain_pg_embedding where collection is {collection_name}."
                         )
                         return True
