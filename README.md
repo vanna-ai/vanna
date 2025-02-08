@@ -1,8 +1,8 @@
 
 
-| GitHub | PyPI | Documentation |
-| ------ | ---- | ------------- |
-| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) |
+| GitHub | PyPI | Documentation | Gurubase |
+| ------ | ---- | ------------- | -------- |
+| [![GitHub](https://img.shields.io/badge/GitHub-vanna-blue?logo=github)](https://github.com/vanna-ai/vanna) | [![PyPI](https://img.shields.io/pypi/v/vanna?logo=pypi)](https://pypi.org/project/vanna/) | [![Documentation](https://img.shields.io/badge/Documentation-vanna-blue?logo=read-the-docs)](https://vanna.ai/docs/) | [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Vanna%20Guru-006BFF)](https://gurubase.io/g/vanna) |
 
 # Vanna
 Vanna is an MIT-licensed open-source Python RAG (Retrieval-Augmented Generation) framework for SQL generation and related functionality.
@@ -34,6 +34,46 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [vanna-ai/vanna-streamlit](https://github.com/vanna-ai/vanna-streamlit)
 - [vanna-ai/vanna-flask](https://github.com/vanna-ai/vanna-flask)
 - [vanna-ai/vanna-slack](https://github.com/vanna-ai/vanna-slack)
+
+## Supported LLMs
+
+- [OpenAI](https://github.com/vanna-ai/vanna/tree/main/src/vanna/openai)
+- [Anthropic](https://github.com/vanna-ai/vanna/tree/main/src/vanna/anthropic)
+- [Gemini](https://github.com/vanna-ai/vanna/blob/main/src/vanna/google/gemini_chat.py)
+- [HuggingFace](https://github.com/vanna-ai/vanna/blob/main/src/vanna/hf/hf.py)
+- [AWS Bedrock](https://github.com/vanna-ai/vanna/tree/main/src/vanna/bedrock)
+- [Ollama](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ollama)
+- [Qianwen](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianwen)
+- [Qianfan](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianfan)
+- [Zhipu](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ZhipuAI)
+
+## Supported VectorStores
+
+- [AzureSearch](https://github.com/vanna-ai/vanna/tree/main/src/vanna/azuresearch)
+- [Opensearch](https://github.com/vanna-ai/vanna/tree/main/src/vanna/opensearch)
+- [PgVector](https://github.com/vanna-ai/vanna/tree/main/src/vanna/pgvector)
+- [PineCone](https://github.com/vanna-ai/vanna/tree/main/src/vanna/pinecone)
+- [ChromaDB](https://github.com/vanna-ai/vanna/tree/main/src/vanna/chromadb)
+- [FAISS](https://github.com/vanna-ai/vanna/tree/main/src/vanna/faiss)
+- [Marqo](https://github.com/vanna-ai/vanna/tree/main/src/vanna/marqo)
+- [Milvus](https://github.com/vanna-ai/vanna/tree/main/src/vanna/milvus)
+- [Qdrant](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qdrant)
+- [Weaviate](https://github.com/vanna-ai/vanna/tree/main/src/vanna/weaviate)
+- [Oracle](https://github.com/vanna-ai/vanna/tree/main/src/vanna/oracle)
+
+## Supported Databases
+
+- [PostgreSQL](https://www.postgresql.org/)
+- [MySQL](https://www.mysql.com/)
+- [PrestoDB](https://prestodb.io/)
+- [Apache Hive](https://hive.apache.org/)
+- [ClickHouse](https://clickhouse.com/)
+- [Snowflake](https://www.snowflake.com/en/)
+- [Oracle](https://www.oracle.com/)
+- [Microsoft SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+- [BigQuery](https://cloud.google.com/bigquery)
+- [SQLite](https://www.sqlite.org/)
+- [DuckDB](https://duckdb.org/)
 
 
 ## Getting started
