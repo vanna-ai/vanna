@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import uuid
+import threading
 from abc import ABC, abstractmethod
 from functools import wraps
 import importlib.metadata
@@ -12,6 +13,8 @@ import requests
 from flasgger import Swagger
 from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
+
+from training_data_addition import train_new_data
 
 from ..base import VannaBase
 from .assets import css_content, html_content, js_content
@@ -845,6 +848,15 @@ class VannaFlaskAPI:
                     question=question, sql=sql, ddl=ddl, documentation=documentation
                 )
 
+                correct_result = {
+                  "id": id,
+                  "user": user,
+                  "question": question,
+                  "sql": sql,
+                }
+                thread = threading.Thread(target=train_new_data, args=(correct_result,))
+                thread.start()
+
                 return jsonify({"id": id})
             except Exception as e:
                 print("TRAINING ERROR", e)
@@ -981,6 +993,7 @@ class VannaFlaskAPI:
                     header:
                       type: string
             """
+
             if self.allow_llm_to_see_data:
                 followup_questions = vn.generate_followup_questions(
                     question=question, sql=sql, df=df
