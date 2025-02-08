@@ -59,6 +59,7 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [Milvus](https://github.com/vanna-ai/vanna/tree/main/src/vanna/milvus)
 - [Qdrant](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qdrant)
 - [Weaviate](https://github.com/vanna-ai/vanna/tree/main/src/vanna/weaviate)
+- [Oracle](https://github.com/vanna-ai/vanna/tree/main/src/vanna/oracle)
 
 ## Supported Databases
 
