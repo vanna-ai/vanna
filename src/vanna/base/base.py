@@ -65,7 +65,7 @@ import requests
 import sqlparse
 
 from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
-from ..types import TrainingPlan, TrainingPlanItem, TableMetadata
+from ..types import TrainingPlan, TrainingPlanItem
 from ..utils import validate_config_path
 
 
@@ -210,54 +210,6 @@ class VannaBase(ABC):
 
         return llm_response
 
-    def extract_table_metadata(ddl: str) -> TableMetadata:
-      """
-        Example:
-        ```python
-        vn.extract_table_metadata("CREATE TABLE hive.bi_ads.customers (id INT, name TEXT, sales DECIMAL)")
-        ```
-
-        Extracts the table metadata from a DDL statement. This is useful in case the DDL statement contains other information besides the table metadata.
-        Override this function if your DDL statements need custom extraction logic.
-
-        Args:
-            ddl (str): The DDL statement.
-
-        Returns:
-            TableMetadata: The extracted table metadata.
-        """
-      pattern_with_catalog_schema = re.compile(
-        r'CREATE TABLE\s+(\w+)\.(\w+)\.(\w+)\s*\(',
-        re.IGNORECASE
-      )
-      pattern_with_schema = re.compile(
-        r'CREATE TABLE\s+(\w+)\.(\w+)\s*\(',
-        re.IGNORECASE
-      )
-      pattern_with_table = re.compile(
-        r'CREATE TABLE\s+(\w+)\s*\(',
-        re.IGNORECASE
-      )
-
-      match_with_catalog_schema = pattern_with_catalog_schema.search(ddl)
-      match_with_schema = pattern_with_schema.search(ddl)
-      match_with_table = pattern_with_table.search(ddl)
-
-      if match_with_catalog_schema:
-        catalog = match_with_catalog_schema.group(1)
-        schema = match_with_catalog_schema.group(2)
-        table_name = match_with_catalog_schema.group(3)
-        return TableMetadata(catalog, schema, table_name)
-      elif match_with_schema:
-        schema = match_with_schema.group(1)
-        table_name = match_with_schema.group(2)
-        return TableMetadata(None, schema, table_name)
-      elif match_with_table:
-        table_name = match_with_table.group(1)
-        return TableMetadata(None, None, table_name)
-      else:
-        return TableMetadata()
-
     def is_sql_valid(self, sql: str) -> bool:
         """
         Example:
@@ -354,7 +306,7 @@ class VannaBase(ABC):
 
         message_log = [
             self.system_message(
-                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.to_markdown()}\n\n"
+                f"You are a helpful data assistant. The user asked the question: '{question}'\n\nThe SQL query for this question was: {sql}\n\nThe following is a pandas DataFrame with the results of the query: \n{df.head(25).to_markdown()}\n\n"
             ),
             self.user_message(
                 f"Generate a list of {n_questions} followup questions that the user might ask about this data. Respond with a list of questions, one per line. Do not answer with any explanations -- just the questions. Remember that there should be an unambiguous SQL query that can be generated from the question. Prefer questions that are answerable outside of the context of this conversation. Prefer questions that are slight modifications of the SQL query that was generated that allow digging deeper into the data. Each question will be turned into a button that the user can click to generate a new SQL query so don't use 'example' type questions. Each question must have a one-to-one correspondence with an instantiated SQL query." +
@@ -444,31 +396,6 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def search_tables_metadata(self,
-                              engine: str = None,
-                              catalog: str = None,
-                              schema: str = None,
-                              table_name: str = None,
-                              ddl: str = None,
-                              size: int = 10,
-                              **kwargs) -> list:
-        """
-        This method is used to get similar tables metadata.
-
-        Args:
-            engine (str): The database engine.
-            catalog (str): The catalog.
-            schema (str): The schema.
-            table_name (str): The table name.
-            ddl (str): The DDL statement.
-            size (int): The number of tables to return.
-
-        Returns:
-            list: A list of tables metadata.
-        """
-        pass
-
-    @abstractmethod
     def get_related_documentation(self, question: str, **kwargs) -> list:
         """
         This method is used to get related documentation to a question.
@@ -496,13 +423,12 @@ class VannaBase(ABC):
         pass
 
     @abstractmethod
-    def add_ddl(self, ddl: str, engine: str = None, **kwargs) -> str:
+    def add_ddl(self, ddl: str, **kwargs) -> str:
         """
         This method is used to add a DDL statement to the training data.
 
         Args:
             ddl (str): The DDL statement to add.
-            engine (str): The database engine that the DDL statement applies to.
 
         Returns:
             str: The ID of the training data that was added.
@@ -1852,7 +1778,6 @@ class VannaBase(ABC):
         question: str = None,
         sql: str = None,
         ddl: str = None,
-        engine: str = None,
         documentation: str = None,
         plan: TrainingPlan = None,
     ) -> str:
@@ -1873,11 +1798,8 @@ class VannaBase(ABC):
             question (str): The question to train on.
             sql (str): The SQL query to train on.
             ddl (str):  The DDL statement.
-            engine (str): The database engine.
             documentation (str): The documentation to train on.
             plan (TrainingPlan): The training plan to train on.
-        Returns:
-            str: The training pl
         """
 
         if question and not sql:
@@ -1895,12 +1817,12 @@ class VannaBase(ABC):
 
         if ddl:
             print("Adding ddl:", ddl)
-            return self.add_ddl(ddl=ddl, engine=engine)
+            return self.add_ddl(ddl)
 
         if plan:
             for item in plan._plan:
                 if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
-                    self.add_ddl(ddl=item.item_value, engine=engine)
+                    self.add_ddl(item.item_value)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                     self.add_documentation(item.item_value)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
