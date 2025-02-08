@@ -689,6 +689,9 @@ class VannaBase(ABC):
         return response
 
     def _extract_python_code(self, markdown_string: str) -> str:
+        # Strip whitespace to avoid indentation errors in LLM-generated code
+        markdown_string = markdown_string.strip()
+
         # Regex pattern to match Python code blocks
         pattern = r"```[\w\s]*python\n([\s\S]*?)```|```([\s\S]*?)```"
 
