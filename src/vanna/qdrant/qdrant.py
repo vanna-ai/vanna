@@ -84,6 +84,11 @@ class Qdrant_VectorStore(VannaBase):
             self.sql_collection_name: "sql",
         }
 
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
+
         self._setup_collections()
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
@@ -266,9 +271,14 @@ class Qdrant_VectorStore(VannaBase):
         embedding_model = self._client._get_or_init_model(
             model_name=self.fastembed_model
         )
-        embedding = next(embedding_model.embed(data))
 
-        return embedding.tolist()
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].tolist()
+        else:
+            embedding = next(embedding_model.embed(data))
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = embedding
+            return embedding.tolist()
 
     def _get_all_points(self, collection_name: str):
         results: List[models.Record] = []

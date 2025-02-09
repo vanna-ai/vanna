@@ -1,12 +1,12 @@
 import json
 from typing import List
 
-from pinecone import Pinecone, PodSpec, ServerlessSpec
 import pandas as pd
+from fastembed import TextEmbedding
+from pinecone import Pinecone, PodSpec, ServerlessSpec
+
 from ..base import VannaBase
 from ..utils import deterministic_uuid
-
-from fastembed import TextEmbedding
 
 
 class PineconeDB_VectorStore(VannaBase):
@@ -77,6 +77,10 @@ class PineconeDB_VectorStore(VannaBase):
         self.serverless_spec = config.get(
             "serverless_spec", ServerlessSpec(cloud="aws", region="us-west-2")
         )
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
         self._setup_index()
 
     def _set_index_host(self, host: str) -> None:
@@ -271,5 +275,11 @@ class PineconeDB_VectorStore(VannaBase):
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
         embedding_model = TextEmbedding(model_name=self.fastembed_model)
-        embedding = next(embedding_model.embed(data))
-        return embedding.tolist()
+
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].tolist()
+        else:
+            embedding = next(embedding_model.embed(data))
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = embedding
+            return embedding.tolist()
