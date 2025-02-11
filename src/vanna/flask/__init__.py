@@ -369,9 +369,9 @@ class VannaFlaskAPI:
                 question=question, allow_llm_to_see_data=self.allow_llm_to_see_data
             )
             # Generates a summary of the SQL query
-            summary = vn.generate_sql_summary(question=question, sql=sql)
+            sql_summary = vn.generate_sql_summary(question=question, sql=sql)
             # Style the final output to be more readable
-            results = f"{summary}\n\nSQL Query:\n\n{sql}"
+            summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
 
             self.cache.set(user=user, id=id, field="question", value=question)
             self.cache.set(user=user, id=id, field="sql", value=sql)
@@ -381,7 +381,7 @@ class VannaFlaskAPI:
                     {
                         "type": "sql",
                         "id": id,
-                        "text": results,
+                        "text": summary,
                     }
                 )
             else:
