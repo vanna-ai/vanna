@@ -887,10 +887,6 @@ class VannaFlaskAPI:
             documentation = flask.request.json.get("documentation")
 
             try:
-                id = vn.train(
-                    question=question, sql=sql, ddl=ddl, documentation=documentation
-                )
-
                 correct_result = {
                   "id": id,
                   "user": user,
@@ -899,6 +895,10 @@ class VannaFlaskAPI:
                 }
                 thread = threading.Thread(target=train_new_data, args=(correct_result,))
                 thread.start()
+
+                id = vn.train(
+                    question=question, sql=sql, ddl=ddl, documentation=documentation
+                )
 
                 return jsonify({"id": id})
             except Exception as e:
