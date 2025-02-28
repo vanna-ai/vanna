@@ -888,7 +888,6 @@ class VannaFlaskAPI:
 
             try:
                 correct_result = {
-                  "id": id,
                   "user": user,
                   "question": question,
                   "sql": sql,
