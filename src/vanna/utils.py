@@ -3,11 +3,18 @@ import os
 import re
 import uuid
 from typing import Union
-
 from .exceptions import ImproperlyConfigured, ValidationError
 
-
 def validate_config_path(path):
+    """
+    Validates the given configuration file path.
+    This function checks if the provided path exists, is a file, and is readable.
+    If any of these conditions are not met, it raises an ImproperlyConfigured exception.
+    Args:
+        path (str): The path to the configuration file.
+    Raises:
+        ImproperlyConfigured: If the path does not exist, is not a file, or is not readable.
+    """
     if not os.path.exists(path):
         raise ImproperlyConfigured(
             f'No such configuration file: {path}'
@@ -25,6 +32,21 @@ def validate_config_path(path):
 
 
 def sanitize_model_name(model_name):
+    """
+    Sanitizes the given model name by performing the following operations:
+    - Converts the model name to lowercase.
+    - Replaces spaces with hyphens.
+    - Replaces multiple consecutive hyphens with a single hyphen.
+    - Replaces underscores with hyphens if both underscores and hyphens are present.
+    - Removes special characters, allowing only alphanumeric characters, hyphens, and underscores.
+    - Removes hyphens or underscores from the beginning or end of the model name.
+    Args:
+        model_name (str): The model name to sanitize.
+    Returns:
+        str: The sanitized model name.
+    Raises:
+        ValidationError: If an error occurs during sanitization.
+    """
     try:
         model_name = model_name.lower()
 
