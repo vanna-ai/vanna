@@ -377,7 +377,7 @@ class VannaFlaskAPI:
             summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
 
             self.cache.set(user=user, id=id, field="question", value=question)
-            self.cache.set(user=user, id=id, field="sql", value=sql)
+            self.cache.set(user=user, id=id, field="sql", value=summary)
 
             if vn.is_sql_valid(sql=sql):
                 return jsonify(
@@ -888,9 +888,9 @@ class VannaFlaskAPI:
 
             try:
                 correct_result = {
-                  "user": user,
-                  "question": question,
-                  "sql": sql,
+                    "user": user,
+                    "question": question,
+                    "sql": sql,
                 }
                 thread = threading.Thread(target=train_new_data, args=(correct_result,))
                 thread.start()
