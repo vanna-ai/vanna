@@ -374,17 +374,18 @@ class VannaFlaskAPI:
             # Generates a summary of the SQL query
             sql_summary = vn.generate_sql_summary(question=question, sql=sql)
             # Style the final output to be more readable
-            summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
+            full_summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
 
             self.cache.set(user=user, id=id, field="question", value=question)
             self.cache.set(user=user, id=id, field="sql", value=sql)
+            self.cache.set(user=user, id=id, field="sql_summary", value=full_summary)
 
             if vn.is_sql_valid(sql=sql):
                 return jsonify(
                     {
                         "type": "sql",
                         "id": id,
-                        "text": summary,
+                        "text": full_summary,
                     }
                 )
             else:
@@ -888,9 +889,9 @@ class VannaFlaskAPI:
 
             try:
                 correct_result = {
-                  "user": user,
-                  "question": question,
-                  "sql": sql,
+                    "user": user,
+                    "question": question,
+                    "sql": sql,
                 }
                 thread = threading.Thread(target=train_new_data, args=(correct_result,))
                 thread.start()
@@ -1124,9 +1125,12 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
         @self.requires_auth
         @self.requires_cache(
-            ["question", "sql", "df"], optional_fields=["summary", "fig_json"]
+            ["question", "sql", "df"],
+            optional_fields=["sql_summary", "summary", "fig_json"],
         )
-        def load_question(user: any, id: str, question, sql, df, fig_json, summary):
+        def load_question(
+            user: any, id: str, question, sql, df, fig_json, summary, sql_summary
+        ):
             """
             Load question
             ---
@@ -1157,6 +1161,8 @@ class VannaFlaskAPI:
                       type: object
                     summary:
                       type: string
+                    sql_summary:
+                      type: string
             """
             try:
                 return jsonify(
@@ -1164,7 +1170,7 @@ class VannaFlaskAPI:
                         "type": "question_cache",
                         "id": id,
                         "question": question,
-                        "sql": sql,
+                        "sql": sql_summary,
                         "df": df.head(10).to_json(orient="records", date_format="iso"),
                         "fig": fig_json,
                         "summary": summary,
