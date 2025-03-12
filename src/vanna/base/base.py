@@ -325,8 +325,8 @@ class VannaBase(ABC):
             return new_question
 
         prompt = [
-            self.system_message("Your goal is to combine a sequence of questions into a singular question if they are related. If the second question does not relate to the first question and is fully self-contained, return the second question. Return just the new combined question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
-            self.user_message("First question: " + last_question + "\nSecond question: " + new_question),
+            self.system_message("Your goal is to rewrite the user's question based on whether it is a follow up question to their previous question. If the new question is fully self-contained and does not require the context of the the previous question to answer, return the new question. Otherwise, rewrite the user's new question by including the relevant context of the previous question and return the rewritten question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
+            self.user_message("Previous question: " + last_question + "\nNew question: " + new_question),
         ]
 
         return self.submit_prompt(prompt=prompt, **kwargs)
