@@ -325,8 +325,20 @@ class VannaBase(ABC):
             return new_question
 
         prompt = [
-            self.system_message("Your goal is to combine a sequence of questions into a singular question if they are related. If the second question does not relate to the first question and is fully self-contained, return the second question. Return just the new combined question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
-            self.user_message("First question: " + last_question + "\nSecond question: " + new_question),
+            self.system_message("""Your task is to analyze the user's new question in relation to their previous question and determine if it is a follow-up question or a standalone query. Follow these guidelines:
+
+1. If the new question is self-contained and doesn't require context from the previous question, return it unchanged.
+
+2. If the new question is a follow-up or related to the previous question, rewrite it to include relevant context from the previous question. The rewritten question should be comprehensive enough to be understood and answered without needing to refer back to the previous question.
+
+3. Focus on maintaining the specific intent and constraints of the new question while incorporating necessary context.
+
+4. Ensure the rewritten question can theoretically be answered with a single SQL statement.
+
+5. Return only the rewritten question or the original new question if no rewrite is needed. Do not include any explanations or additional text.
+
+6. Pay attention to time periods, entities, or other specific parameters mentioned in both questions that might need to be substituted, combined, and/or clarified in the rewritten question."""),
+            self.user_message("Previous question: " + last_question + "\nNew question: " + new_question),
         ]
 
         return self.submit_prompt(prompt=prompt, **kwargs)
@@ -2172,5 +2184,5 @@ class VannaBase(ABC):
 
         if dark_mode:
             fig.update_layout(template="plotly_dark")
-
+          
         return fig
