@@ -298,9 +298,9 @@ class VannaBase(ABC):
 6. Pay attention to specific parameters mentioned in both questions that might need to be substituted, combined, and/or clarified in the rewritten question."""
             ),
             self.user_message(
-                "First question: "
+                "Previous question: "
                 + last_question
-                + "\nSecond question: "
+                + "\nNew question: "
                 + new_question
             ),
         ]
