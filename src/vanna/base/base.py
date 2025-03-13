@@ -325,7 +325,19 @@ class VannaBase(ABC):
             return new_question
 
         prompt = [
-            self.system_message("Your goal is to rewrite the user's question based on whether it is a follow up question to their previous question. If the new question is fully self-contained and does not require the context of the the previous question to answer, return the new question. Otherwise, rewrite the user's new question by including the relevant context of the previous question and return the rewritten question with no additional explanations. The question should theoretically be answerable with a single SQL statement."),
+            self.system_message("""Your task is to analyze the user's new question in relation to their previous question and determine if it is a follow-up question or a standalone query. Follow these guidelines:
+
+1. If the new question is self-contained and doesn't require context from the previous question, return it unchanged.
+
+2. If the new question is a follow-up or related to the previous question, rewrite it to include relevant context from the previous question. The rewritten question should be comprehensive enough to be understood and answered without needing to refer back to the previous question.
+
+3. Focus on maintaining the specific intent and constraints of the new question while incorporating necessary context.
+
+4. Ensure the rewritten question can theoretically be answered with a single SQL statement.
+
+5. Return only the rewritten question or the original new question if no rewrite is needed. Do not include any explanations or additional text.
+
+6. Pay attention to time periods, entities, or other specific parameters mentioned in both questions that might need to be substituted, combined, and/or clarified in the rewritten question."""),
             self.user_message("Previous question: " + last_question + "\nNew question: " + new_question),
         ]
 
