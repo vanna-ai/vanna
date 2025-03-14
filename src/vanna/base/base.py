@@ -883,7 +883,7 @@ class VannaBase(ABC):
             cs.execute(sql)
 
             if rows_limit != None:
-                results = cs.fetchmany(numRows=rows_limit)
+                results = cs.fetchmany(size=rows_limit)
             else:
                 results = cs.fetchall()
 
@@ -1029,7 +1029,7 @@ class VannaBase(ABC):
                 cs = conn.cursor()
                 cs.execute(sql)
                 if rows_limit != None:
-                    results = cs.fetchmany(numRows=rows_limit)
+                    results = cs.fetchmany(size=rows_limit)
                 else:
                     results = cs.fetchall()
 
@@ -1045,7 +1045,7 @@ class VannaBase(ABC):
                 cs = conn.cursor()
                 cs.execute(sql)
                 if rows_limit != None:
-                    results = cs.fetchmany(numRows=rows_limit)
+                    results = cs.fetchmany(size=rows_limit)
                 else:
                     results = cs.fetchall()
 
@@ -1137,7 +1137,7 @@ class VannaBase(ABC):
                     cs = conn.cursor()
                     cs.execute(sql)
                     if rows_limit != None:
-                        results = cs.fetchmany(numRows=rows_limit)
+                        results = cs.fetchmany(size=rows_limit)
                     else:
                         results = cs.fetchall()
 
@@ -1310,7 +1310,7 @@ class VannaBase(ABC):
                     cs = conn.cursor()
                     cs.execute(sql)
                     if rows_limit != None:
-                        results = cs.fetchmany(numRows=rows_limit)
+                        results = cs.fetchmany(size=rows_limit)
                     else:
                         results = cs.fetchall()
 
@@ -1614,7 +1614,7 @@ class VannaBase(ABC):
             cs = conn.cursor()
             cs.execute(sql)
             if rows_limit != None:
-                results = cs.fetchmany(numRows=rows_limit)
+                results = cs.fetchmany(size=rows_limit)
             else:
                 results = cs.fetchall()
 
@@ -1714,7 +1714,7 @@ class VannaBase(ABC):
             cs = conn.cursor()
             cs.execute(sql)
             if rows_limit != None:
-                results = cs.fetchmany(numRows=rows_limit)
+                results = cs.fetchmany(size=rows_limit)
             else:
                 results = cs.fetchall()
 
