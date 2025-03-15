@@ -43,6 +43,7 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [HuggingFace](https://github.com/vanna-ai/vanna/blob/main/src/vanna/hf/hf.py)
 - [AWS Bedrock](https://github.com/vanna-ai/vanna/tree/main/src/vanna/bedrock)
 - [Ollama](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ollama)
+- [LM Studio](https://github.com/vanna-ai/vanna/tree/main/src/vanna/lmstudio)
 - [Qianwen](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianwen)
 - [Qianfan](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qianfan)
 - [Zhipu](https://github.com/vanna-ai/vanna/tree/main/src/vanna/ZhipuAI)
