@@ -137,10 +137,6 @@ class MemoryCache(Cache):
             if id in self.cache[user]:
                 del self.cache[user][id]
 
-    def print(self):
-      print("CACHECHACHECAHCE", self.cache)
-
-
 class VannaFlaskAPI:
     flask_app = None
 
@@ -448,7 +444,6 @@ class VannaFlaskAPI:
                 required: true
             """
 
-             # Set temp cache that certain routes can check against
             id = self.cache.generate_id()
 
             last_question = flask.request.args.get("last_question")
@@ -1274,7 +1269,6 @@ class VannaFlaskAPI:
                       items:
                         type: string
             """
-            # Set temp cache that certain routes can check against
             id = self.cache.generate_id()
             self.cache.append_order(user=user, id=id, step="questions")
 
