@@ -2099,3 +2099,35 @@ class VannaBase(ABC):
             fig.update_layout(template="plotly_dark")
 
         return fig
+
+    def export_to_csv(self, df: pd.DataFrame, filepath: str, **kwargs) -> None:
+        """
+        Example:
+        ```python
+        vn.export_to_csv(df, "results.csv")
+        ```
+
+        Export a pandas DataFrame to a CSV file with proper UTF-8 encoding.
+        This ensures that non-ASCII text(such as Chinese characters) are correctly rendered in the exported file.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to export to CSV.
+            filepath (str): The file path where the CSV will be saved.
+            **kwargs: Additional keyword arguments to pass to pandas' to_csv method.
+
+        Returns:
+            None
+        """
+        # Set default encoding to UTF-8 if not provided
+        if 'encoding' not in kwargs:
+            kwargs['encoding'] = 'utf-8'
+        
+        # Set default index parameter to False if not provided
+        if 'index' not in kwargs:
+            kwargs['index'] = False
+            
+        try:
+            df.to_csv(filepath, **kwargs)
+        except Exception as e:
+            self.log(f"Error exporting DataFrame to CSV: {e}", title="Export Error")
+            raise
