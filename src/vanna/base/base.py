@@ -745,10 +745,13 @@ class VannaBase(ABC):
         self,
         account: str,
         username: str,
-        password: str,
         database: str,
+        password: str = None,
         role: Union[str, None] = None,
         warehouse: Union[str, None] = None,
+        private_key: Union[str, None] = None,
+        private_key_passphrase: Union[str, None] = None,
+        authenticator: Union[str, None] = None,
         **kwargs
     ):
         try:
@@ -767,7 +770,7 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "mypassword":
+        if password == "mypassword" and not private_key and not authenticator:
             password_env = os.getenv("SNOWFLAKE_PASSWORD")
 
             if password_env is not None:
@@ -791,14 +794,28 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake database.")
 
-        conn = snowflake.connector.connect(
-            user=username,
-            password=password,
-            account=account,
-            database=database,
-            client_session_keep_alive=True,
+        # Prepare connection parameters
+        conn_params = {
+            "user": username,
+            "account": account,
+            "database": database,
+            "client_session_keep_alive": True,
             **kwargs
-        )
+        }
+
+        # Add authentication method based on provided parameters
+        if private_key:
+            if private_key_passphrase:
+                conn_params["private_key"] = private_key
+                conn_params["private_key_passphrase"] = private_key_passphrase
+            else:
+                conn_params["private_key"] = private_key
+        elif authenticator:
+            conn_params["authenticator"] = authenticator
+        else:
+            conn_params["password"] = password
+
+        conn = snowflake.connector.connect(**conn_params)
 
         def run_sql_snowflake(sql: str) -> pd.DataFrame:
             cs = conn.cursor()
