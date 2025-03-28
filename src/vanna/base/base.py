@@ -2184,5 +2184,5 @@ class VannaBase(ABC):
 
         if dark_mode:
             fig.update_layout(template="plotly_dark")
-          
+
         return fig

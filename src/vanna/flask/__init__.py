@@ -15,6 +15,8 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_sock import Sock
 
 from training_data_addition import train_new_data
+from utils import token_limit_check
+from constants import TOKEN_LIMIT_REACHED_MESSAGE
 
 from ..base import VannaBase
 from .assets import css_content, html_content, js_content
@@ -1161,6 +1163,16 @@ class VannaFlaskAPI:
             """
 
             if self.allow_llm_to_see_data:
+                tokens = vn.str_to_approx_token_count(df.to_string(index=False))
+                token_overflow = token_limit_check(tokens)
+
+                if token_overflow["over_token_limit"]:
+                    return jsonify({
+                            "type": "error",
+                            "id": id,
+                            "error": TOKEN_LIMIT_REACHED_MESSAGE,
+                        })
+
                 summary = vn.generate_summary(question=question, df=df)
 
                 self.cache.set(user=user, id=id, field="summary", value=summary)
