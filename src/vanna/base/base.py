@@ -2118,6 +2118,11 @@ class VannaBase(ABC):
         Returns:
             None
         """
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("Expected pandas DataFrame")
+        if not isinstance(filepath, str):
+            raise TypeError("Filepath must be string")
+        
         # Set default encoding to UTF-8 if not provided
         if 'encoding' not in kwargs:
             kwargs['encoding'] = 'utf-8'
@@ -2128,6 +2133,9 @@ class VannaBase(ABC):
             
         try:
             df.to_csv(filepath, **kwargs)
-        except Exception as e:
-            self.log(f"Error exporting DataFrame to CSV: {e}", title="Export Error")
+        except OSError as e:
+            self.log(f"File system error: {e}", title="Export Error")
+            raise
+        except pd.errors.PandasError as e:
+            self.log(f"Data export error: {e}", title="Export Error")
             raise
