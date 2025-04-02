@@ -23,18 +23,22 @@ class Cohere_Chat(VannaBase):
             self.client = client
             return
 
-        if config is None and client is None:
-            self.client = OpenAI(
-                base_url="https://api.cohere.ai/compatibility/v1",
-                api_key=os.getenv("COHERE_API_KEY"),
-            )
-            return
-
-        if "api_key" in config:
-            self.client = OpenAI(
-                base_url="https://api.cohere.ai/compatibility/v1",
-                api_key=config["api_key"],
-            )
+        # Check for API key in environment variable
+        api_key = os.getenv("COHERE_API_KEY")
+        
+        # Check for API key in config
+        if config is not None and "api_key" in config:
+            api_key = config["api_key"]
+            
+        # Validate API key
+        if not api_key:
+            raise ValueError("Cohere API key is required. Please provide it via config or set the COHERE_API_KEY environment variable.")
+            
+        # Initialize client with validated API key
+        self.client = OpenAI(
+            base_url="https://api.cohere.ai/compatibility/v1",
+            api_key=api_key,
+        )
 
     def system_message(self, message: str) -> any:
         return {"role": "developer", "content": message}  # Cohere uses 'developer' for system role
