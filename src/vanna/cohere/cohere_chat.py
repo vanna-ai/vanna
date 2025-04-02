@@ -68,10 +68,27 @@ class Cohere_Chat(VannaBase):
             model = self.config["model"]
 
         print(f"Using model {model} for {num_tokens} tokens (approx)")
-        response = self.client.chat.completions.create(
-            model=model,
-            messages=prompt,
-            temperature=self.temperature,
-        )
-
-        return response.choices[0].message.content 
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=prompt,
+                temperature=self.temperature,
+            )
+            
+            # Check if response has expected structure
+            if not response or not hasattr(response, 'choices') or not response.choices:
+                raise ValueError("Received empty or malformed response from API")
+                
+            if not response.choices[0] or not hasattr(response.choices[0], 'message'):
+                raise ValueError("Response is missing expected 'message' field")
+                
+            if not hasattr(response.choices[0].message, 'content'):
+                raise ValueError("Response message is missing expected 'content' field")
+                
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            # Log the error and raise a more informative exception
+            error_msg = f"Error processing Cohere chat response: {str(e)}"
+            print(error_msg)
+            raise Exception(error_msg) 

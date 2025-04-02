@@ -37,15 +37,35 @@ class Cohere_Embeddings(VannaBase):
         )
 
     def generate_embedding(self, data: str, **kwargs) -> list[float]:
+        if not data:
+            raise ValueError("Cannot generate embedding for empty input data")
+            
         # Use model from kwargs, config, or default
         model = kwargs.get("model", self.model)
         if self.config is not None and "model" in self.config and model == self.model:
             model = self.config["model"]
+        
+        try:    
+            embedding = self.client.embeddings.create(
+                model=model,
+                input=data,
+                encoding_format="float",  # Ensure we get float values
+            )
             
-        embedding = self.client.embeddings.create(
-            model=model,
-            input=data,
-            encoding_format="float",  # Ensure we get float values
-        )
-
-        return embedding.data[0].embedding 
+            # Check if response has expected structure
+            if not embedding or not hasattr(embedding, 'data') or not embedding.data:
+                raise ValueError("Received empty or malformed embedding response from API")
+                
+            if not embedding.data[0] or not hasattr(embedding.data[0], 'embedding'):
+                raise ValueError("Embedding response is missing expected 'embedding' field")
+                
+            if not embedding.data[0].embedding:
+                raise ValueError("Received empty embedding vector")
+                
+            return embedding.data[0].embedding
+            
+        except Exception as e:
+            # Log the error and raise a more informative exception
+            error_msg = f"Error generating embedding with Cohere: {str(e)}"
+            print(error_msg)
+            raise Exception(error_msg) 
