@@ -142,14 +142,15 @@ See the [documentation](https://vanna.ai/docs/) if you're customizing the LLM or
 
 ```python
 # The import statement will vary depending on your LLM and vector database. This is an example for OpenAI + ChromaDB
+# Using "from vanna.openai.openai_chat import OpenAI_Chat" is also an option
 
-from vanna.openai.openai_chat import OpenAI_Chat
+from openai_chat_nrg import OpenAI_Chat_NRG
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 
-class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
+class MyVanna(ChromaDB_VectorStore, OpenAI_Chat_NRG):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)
-        OpenAI_Chat.__init__(self, config=config)
+        OpenAI_Chat_NRG.__init__(self, config=config)
 
 vn = MyVanna(config={'api_key': 'sk-...', 'model': 'gpt-4-...'})
 
