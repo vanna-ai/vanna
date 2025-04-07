@@ -1,11 +1,11 @@
-
-
 def test_regular_imports():
     from vanna.anthropic.anthropic_chat import Anthropic_Chat
     from vanna.azuresearch.azuresearch_vector import AzureAISearch_VectorStore
     from vanna.base.base import VannaBase
     from vanna.bedrock.bedrock_converse import Bedrock_Converse
     from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+    from vanna.cohere.cohere_chat import Cohere_Chat
+    from vanna.cohere.cohere_embeddings import Cohere_Embeddings
     from vanna.faiss.faiss import FAISS
     from vanna.google.bigquery_vector import BigQuery_VectorStore
     from vanna.google.gemini_chat import GoogleGeminiChat
@@ -40,6 +40,7 @@ def test_shortcut_imports():
     from vanna.azuresearch import AzureAISearch_VectorStore
     from vanna.base import VannaBase
     from vanna.chromadb import ChromaDB_VectorStore
+    from vanna.cohere import Cohere_Chat, Cohere_Embeddings
     from vanna.faiss import FAISS
     from vanna.hf import Hf
     from vanna.marqo import Marqo_VectorStore

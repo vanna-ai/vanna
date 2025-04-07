@@ -1,6 +1,7 @@
 import os
 
 from vanna.anthropic.anthropic_chat import Anthropic_Chat
+from vanna.cohere.cohere_chat import Cohere_Chat
 from vanna.google import GoogleGeminiChat
 from vanna.mistral.mistral import Mistral
 from vanna.openai.openai_chat import OpenAI_Chat
@@ -226,6 +227,23 @@ def test_vn_gemini():
     sql = vn_gemini.generate_sql("What are the top 9 customers by sales?")
     df = vn_gemini.run_sql(sql)
     assert len(df) == 9
+
+class VannaCohere(VannaDB_VectorStore, Cohere_Chat):
+    def __init__(self, config=None):
+        VannaDB_VectorStore.__init__(self, vanna_model=MY_VANNA_MODEL, vanna_api_key=MY_VANNA_API_KEY, config=config)
+        Cohere_Chat.__init__(self, config=config)
+
+try:
+    COHERE_API_KEY = os.environ['COHERE_API_KEY']
+    vn_cohere = VannaCohere(config={'api_key': COHERE_API_KEY, 'model': 'command-a-03-2025'})
+    vn_cohere.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+    
+    def test_vn_cohere():
+        sql = vn_cohere.generate_sql("What are the top 10 customers by sales?")
+        df = vn_cohere.run_sql(sql)
+        assert len(df) == 10
+except KeyError:
+    print("Skipping Cohere tests - COHERE_API_KEY not found in environment variables")
 
 def test_training_plan():
     vn_dummy = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
