@@ -86,6 +86,18 @@ class Ollama(VannaBase):
       return llm_response
 
   def submit_prompt(self, prompt, **kwargs) -> str:
+    """
+    Submits a prompt to the Ollama client and returns the response content.
+    Args:
+      prompt (dict): The prompt message to be sent to the Ollama client.
+      **kwargs: Additional keyword arguments.
+    Returns:
+      str: The content of the response message from the Ollama client.
+    Logs:
+      - Ollama parameters including model, options, and keep_alive status.
+      - The content of the prompt being submitted.
+      - The response received from the Ollama client.
+    """
     self.log(
       f"Ollama parameters:\n"
       f"model={self.model},\n"

@@ -54,7 +54,7 @@ import re
 import sqlite3
 import traceback
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Any
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -1670,6 +1670,7 @@ class VannaBase(ABC):
         auto_train: bool = True,
         visualize: bool = True,  # if False, will not generate plotly code
         allow_llm_to_see_data: bool = False,
+        **kwargs: Any,
     ) -> Union[
         Tuple[
             Union[str, None],
@@ -1700,7 +1701,7 @@ class VannaBase(ABC):
             question = input("Enter a question: ")
 
         try:
-            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data)
+            sql = self.generate_sql(question=question, allow_llm_to_see_data=allow_llm_to_see_data, **kwargs)
         except Exception as e:
             print(e)
             return None, None, None
