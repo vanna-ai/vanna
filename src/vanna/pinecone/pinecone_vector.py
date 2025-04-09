@@ -111,7 +111,7 @@ class PineconeDB_VectorStore(VannaBase):
 
     def _check_if_embedding_exists(self, id: str, namespace: str) -> bool:
         fetch_response = self.Index.fetch(ids=[id], namespace=namespace)
-        if fetch_response["vectors"] == {}:
+        if fetch_response.vectors == {}:
             return False
         return True
 
