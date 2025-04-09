@@ -1,11 +1,11 @@
-
-
 def test_regular_imports():
     from vanna.anthropic.anthropic_chat import Anthropic_Chat
     from vanna.azuresearch.azuresearch_vector import AzureAISearch_VectorStore
     from vanna.base.base import VannaBase
     from vanna.bedrock.bedrock_converse import Bedrock_Converse
     from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+    from vanna.cohere.cohere_chat import Cohere_Chat
+    from vanna.cohere.cohere_embeddings import Cohere_Embeddings
     from vanna.faiss.faiss import FAISS
     from vanna.google.bigquery_vector import BigQuery_VectorStore
     from vanna.google.gemini_chat import GoogleGeminiChat
@@ -20,7 +20,7 @@ def test_regular_imports():
     from vanna.openai.openai_embeddings import OpenAI_Embeddings
     from vanna.opensearch.opensearch_vector import OpenSearch_VectorStore
     from vanna.opensearch.opensearch_vector_semantic import (
-      OpenSearch_Semantic_VectorStore,
+        OpenSearch_Semantic_VectorStore,
     )
     from vanna.pgvector.pgvector import PG_VectorStore
     from vanna.pinecone.pinecone_vector import PineconeDB_VectorStore
@@ -41,6 +41,7 @@ def test_shortcut_imports():
     from vanna.azuresearch import AzureAISearch_VectorStore
     from vanna.base import VannaBase
     from vanna.chromadb import ChromaDB_VectorStore
+    from vanna.cohere import Cohere_Chat, Cohere_Embeddings
     from vanna.faiss import FAISS
     from vanna.hf import Hf
     from vanna.lmstudio import LMStudio
@@ -49,10 +50,7 @@ def test_shortcut_imports():
     from vanna.mistral import Mistral
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
-    from vanna.opensearch import (
-      OpenSearch_Semantic_VectorStore,
-      OpenSearch_VectorStore,
-    )
+    from vanna.opensearch import OpenSearch_Semantic_VectorStore, OpenSearch_VectorStore
     from vanna.pgvector import PG_VectorStore
     from vanna.pinecone import PineconeDB_VectorStore
     from vanna.qdrant import Qdrant_VectorStore
