@@ -10,6 +10,7 @@ def test_regular_imports():
     from vanna.google.bigquery_vector import BigQuery_VectorStore
     from vanna.google.gemini_chat import GoogleGeminiChat
     from vanna.hf.hf import Hf
+    from vanna.lmstudio.lmstudio import LMStudio
     from vanna.local import LocalContext_OpenAI
     from vanna.marqo.marqo import Marqo_VectorStore
     from vanna.milvus.milvus_vector import Milvus_VectorStore
@@ -19,7 +20,7 @@ def test_regular_imports():
     from vanna.openai.openai_embeddings import OpenAI_Embeddings
     from vanna.opensearch.opensearch_vector import OpenSearch_VectorStore
     from vanna.opensearch.opensearch_vector_semantic import (
-      OpenSearch_Semantic_VectorStore,
+        OpenSearch_Semantic_VectorStore,
     )
     from vanna.pgvector.pgvector import PG_VectorStore
     from vanna.pinecone.pinecone_vector import PineconeDB_VectorStore
@@ -43,15 +44,13 @@ def test_shortcut_imports():
     from vanna.cohere import Cohere_Chat, Cohere_Embeddings
     from vanna.faiss import FAISS
     from vanna.hf import Hf
+    from vanna.lmstudio import LMStudio
     from vanna.marqo import Marqo_VectorStore
     from vanna.milvus import Milvus_VectorStore
     from vanna.mistral import Mistral
     from vanna.ollama import Ollama
     from vanna.openai import OpenAI_Chat, OpenAI_Embeddings
-    from vanna.opensearch import (
-      OpenSearch_Semantic_VectorStore,
-      OpenSearch_VectorStore,
-    )
+    from vanna.opensearch import OpenSearch_Semantic_VectorStore, OpenSearch_VectorStore
     from vanna.pgvector import PG_VectorStore
     from vanna.pinecone import PineconeDB_VectorStore
     from vanna.qdrant import Qdrant_VectorStore
