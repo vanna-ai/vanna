@@ -16,6 +16,7 @@ from flask_sock import Sock
 
 from training_data_addition import train_new_data
 from utils import token_limit_check
+from error_handling import HTTPError
 from constants import TOKEN_LIMIT_REACHED_MESSAGE
 
 from ..base import VannaBase
@@ -383,51 +384,56 @@ class VannaFlaskAPI:
                     text:
                       type: string
             """
-            question = flask.request.args.get("question")
+            try:
 
-            id = self.cache.generate_id(question=question)
-            self.cache.append_order(user=user, id=id, step="sql")
+                question = flask.request.args.get("question")
 
-            if question is None:
+                id = self.cache.generate_id(question=question)
+                self.cache.append_order(user=user, id=id, step="sql")
+
+                if question is None:
+                    current_order = self.cache.get_order(user=user)
+                    if current_order[-1]["step"] == "sql" and current_order[-1]["id"] == id:
+                        return jsonify({"type": "error", "error": "No question provided"})
+
+                    return jsonify()
+
+                sql = vn.generate_sql(
+                    question=question, allow_llm_to_see_data=self.allow_llm_to_see_data
+                )
+                # Generates a summary of the SQL query
+                sql_summary = vn.generate_sql_summary(question=question, sql=sql)
+                # Style the final output to be more readable
+                full_summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
+
+                self.cache.set(user=user, id=id, field="question", value=question)
+                self.cache.set(user=user, id=id, field="sql", value=sql)
+                self.cache.set(user=user, id=id, field="sql_summary", value=full_summary)
+
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "sql" and current_order[-1]["id"] == id:
-                    return jsonify({"type": "error", "error": "No question provided"})
+                    if vn.is_sql_valid(sql=sql):
+                        self.cache.append_order(user=user, id=id, step="answer")
+                        return jsonify(
+                            {
+                                "type": "sql",
+                                "id": id,
+                                "text": full_summary,
+                            }
+                        )
+                    else:
+                        return jsonify(
+                            {
+                                "type": "text",
+                                "id": id,
+                                "text": sql,
+                            }
+                        )
 
                 return jsonify()
 
-            sql = vn.generate_sql(
-                question=question, allow_llm_to_see_data=self.allow_llm_to_see_data
-            )
-            # Generates a summary of the SQL query
-            sql_summary = vn.generate_sql_summary(question=question, sql=sql)
-            # Style the final output to be more readable
-            full_summary = f"{sql_summary}\n\nSQL Query:\n\n{sql}"
-
-            self.cache.set(user=user, id=id, field="question", value=question)
-            self.cache.set(user=user, id=id, field="sql", value=sql)
-            self.cache.set(user=user, id=id, field="sql_summary", value=full_summary)
-
-            current_order = self.cache.get_order(user=user)
-            if current_order[-1]["step"] == "sql" and current_order[-1]["id"] == id:
-                if vn.is_sql_valid(sql=sql):
-                    self.cache.append_order(user=user, id=id, step="answer")
-                    return jsonify(
-                        {
-                            "type": "sql",
-                            "id": id,
-                            "text": full_summary,
-                        }
-                    )
-                else:
-                    return jsonify(
-                        {
-                            "type": "text",
-                            "id": id,
-                            "text": sql,
-                        }
-                    )
-
-            return jsonify()
+            except HTTPError as e:
+                return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/generate_rewritten_question", methods=["GET"])
         @self.requires_auth
@@ -445,24 +451,28 @@ class VannaFlaskAPI:
                 type: string
                 required: true
             """
+            try:
 
-            id = self.cache.generate_id()
+              id = self.cache.generate_id()
 
-            last_question = flask.request.args.get("last_question")
-            new_question = flask.request.args.get("new_question")
+              last_question = flask.request.args.get("last_question")
+              new_question = flask.request.args.get("new_question")
 
-            rewritten_question = self.vn.generate_rewritten_question(
-                last_question, new_question
-            )
+              rewritten_question = self.vn.generate_rewritten_question(
+                  last_question, new_question
+              )
 
-            current_order = self.cache.get_order(user=user)
-            if current_order[-1]["step"] == "answer":
-                self.cache.append_order(user=user, id=id, step="sql")
-                return jsonify(
-                    {"type": "rewritten_question", "question": rewritten_question}
-                )
+              current_order = self.cache.get_order(user=user)
+              if current_order[-1]["step"] == "answer":
+                  self.cache.append_order(user=user, id=id, step="sql")
+                  return jsonify(
+                      {"type": "rewritten_question", "question": rewritten_question}
+                  )
 
-            return jsonify()
+              return jsonify()
+
+            except HTTPError as e:
+                return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/get_function", methods=["GET"])
         @self.requires_auth
@@ -635,6 +645,12 @@ class VannaFlaskAPI:
 
                 return jsonify()
 
+            except HTTPError as e:
+                current_order = self.cache.get_order(user=user)
+                if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
+                  return jsonify({"type": "error", "error": str(e)})
+
+                return jsonify()
             except Exception as e:
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
@@ -673,24 +689,30 @@ class VannaFlaskAPI:
                     text:
                       type: string
             """
-            error = flask.request.json.get("error")
+            try:
 
-            if error is None:
-                return jsonify({"type": "error", "error": "No error provided"})
+              error = flask.request.json.get("error")
 
-            question = f"I have an error: {error}\n\nHere is the SQL I tried to run: {sql}\n\nThis is the question I was trying to answer: {question}\n\nCan you rewrite the SQL to fix the error?"
+              if error is None:
+                  return jsonify({"type": "error", "error": "No error provided"})
 
-            fixed_sql = vn.generate_sql(question=question)
+              question = f"I have an error: {error}\n\nHere is the SQL I tried to run: {sql}\n\nThis is the question I was trying to answer: {question}\n\nCan you rewrite the SQL to fix the error?"
 
-            self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
+              fixed_sql = vn.generate_sql(question=question)
 
-            return jsonify(
-                {
-                    "type": "sql",
-                    "id": id,
-                    "text": fixed_sql,
-                }
-            )
+              self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
+
+              return jsonify(
+                  {
+                      "type": "sql",
+                      "id": id,
+                      "text": fixed_sql,
+                  }
+              )
+
+            except HTTPError as e:
+              return jsonify({"type": "error", "error": str(e)})
+
 
         @self.flask_app.route("/api/v0/update_sql", methods=["POST"])
         @self.requires_auth
@@ -756,13 +778,19 @@ class VannaFlaskAPI:
               200:
                 description: download CSV
             """
-            csv = df.to_csv()
+            try:
+              try:
+                csv = df.to_csv()
 
-            return Response(
-                csv,
-                mimetype="text/csv",
-                headers={"Content-disposition": f"attachment; filename={id}.csv"},
-            )
+                return Response(
+                    csv,
+                    mimetype="text/csv",
+                    headers={"Content-disposition": f"attachment; filename={id}.csv"},
+                )
+              except Exception as e:
+                raise HTTPError(message=e, code=500) from e
+            except HTTPError as e:
+              return jsonify({"type": "error", "error": str(e)})
 
         @self.flask_app.route("/api/v0/generate_plotly_figure", methods=["GET"])
         @self.requires_auth
@@ -821,6 +849,8 @@ class VannaFlaskAPI:
                         "fig": fig_json,
                     }
                 )
+            except HTTPError as e:
+                  return jsonify({"type": "error", "error": str(e)})
             except Exception as e:
                 # Print the stack trace
                 import traceback
@@ -1091,46 +1121,54 @@ class VannaFlaskAPI:
                     header:
                       type: string
             """
+            try:
 
-            if self.allow_llm_to_see_data:
-                followup_questions = vn.generate_followup_questions(
-                    question=question, sql=sql, df=df
-                )
-                if followup_questions is not None and len(followup_questions) > 5:
-                    followup_questions = followup_questions[:5]
+                if self.allow_llm_to_see_data:
+                    followup_questions = vn.generate_followup_questions(
+                        question=question, sql=sql, df=df
+                    )
+                    if followup_questions is not None and len(followup_questions) > 5:
+                        followup_questions = followup_questions[:5]
 
-                self.cache.set(
-                    user=user,
-                    id=id,
-                    field="followup_questions",
-                    value=followup_questions,
-                )
-
-                current_order = self.cache.get_order(user=user)
-                if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify(
-                        {
-                            "type": "question_list",
-                            "id": id,
-                            "questions": followup_questions,
-                            "header": "Here are some potential followup questions:",
-                        }
+                    self.cache.set(
+                        user=user,
+                        id=id,
+                        field="followup_questions",
+                        value=followup_questions,
                     )
 
-                return jsonify()
-            else:
-                self.cache.set(user=user, id=id, field="followup_questions", value=[])
+                    current_order = self.cache.get_order(user=user)
+                    if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
+                        return jsonify(
+                            {
+                                "type": "question_list",
+                                "id": id,
+                                "questions": followup_questions,
+                                "header": "Here are some potential followup questions:",
+                            }
+                        )
 
+                    return jsonify()
+                else:
+                    self.cache.set(user=user, id=id, field="followup_questions", value=[])
+
+                    current_order = self.cache.get_order(user=user)
+                    if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
+                        return jsonify(
+                            {
+                                "type": "question_list",
+                                "id": id,
+                                "questions": [],
+                                "header": "Followup Questions can be enabled if you set allow_llm_to_see_data=True",
+                            }
+                        )
+
+                    return jsonify()
+
+            except HTTPError as e:
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify(
-                        {
-                            "type": "question_list",
-                            "id": id,
-                            "questions": [],
-                            "header": "Followup Questions can be enabled if you set allow_llm_to_see_data=True",
-                        }
-                    )
+                    return jsonify({"type": "error", "error": str(e)})
 
                 return jsonify()
 
@@ -1161,43 +1199,41 @@ class VannaFlaskAPI:
                     text:
                       type: string
             """
+            try:
 
-            if self.allow_llm_to_see_data:
-                tokens = vn.str_to_approx_token_count(df.to_string(index=False))
-                token_overflow = token_limit_check(tokens)
+                if self.allow_llm_to_see_data:
+                    summary = vn.generate_summary(question=question, df=df)
 
-                if token_overflow["over_token_limit"]:
-                    return jsonify({
-                            "type": "error",
-                            "id": id,
-                            "error": TOKEN_LIMIT_REACHED_MESSAGE,
-                        })
+                    self.cache.set(user=user, id=id, field="summary", value=summary)
 
-                summary = vn.generate_summary(question=question, df=df)
+                    current_order = self.cache.get_order(user=user)
+                    if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
+                        return jsonify(
+                            {
+                                "type": "text",
+                                "id": id,
+                                "text": summary,
+                            }
+                        )
 
-                self.cache.set(user=user, id=id, field="summary", value=summary)
+                    return jsonify()
+                else:
+                    current_order = self.cache.get_order(user=user)
+                    if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
+                        return jsonify(
+                            {
+                                "type": "text",
+                                "id": id,
+                                "text": "Summarization can be enabled if you set allow_llm_to_see_data=True",
+                            }
+                        )
 
+                    return jsonify()
+
+            except HTTPError as e:
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify(
-                        {
-                            "type": "text",
-                            "id": id,
-                            "text": summary,
-                        }
-                    )
-
-                return jsonify()
-            else:
-                current_order = self.cache.get_order(user=user)
-                if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify(
-                        {
-                            "type": "text",
-                            "id": id,
-                            "text": "Summarization can be enabled if you set allow_llm_to_see_data=True",
-                        }
-                    )
+                    return jsonify({"type": "error", "error": str(e)})
 
                 return jsonify()
 
