@@ -2,13 +2,10 @@ import datetime
 import os
 import uuid
 from typing import List, Optional
-from vertexai.language_models import (
-  TextEmbeddingInput,
-  TextEmbeddingModel
-)
 
 import pandas as pd
 from google.cloud import bigquery
+from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
 from ..base import VannaBase
 
@@ -82,6 +79,10 @@ class BigQuery_VectorStore(VannaBase):
             # Table does not exist, create it
             self.conn.create_table(table, timeout=30)  # Make an API request.
             print(f"Created table {self.table_id}")
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
 
         # Create VECTOR INDEX IF NOT EXISTS
         # TODO: This requires 5000 rows before it can be created
@@ -192,7 +193,12 @@ class BigQuery_VectorStore(VannaBase):
         return result
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
-        return self.generate_storage_embedding(data, **kwargs)
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding']
+        else:
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = self.generate_storage_embedding(data, **kwargs)
+            return self.generate_storage_embedding(data, **kwargs)
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         df = self.fetch_similar_training_data(training_data_type="sql", question=question, n_results=self.n_results_sql)

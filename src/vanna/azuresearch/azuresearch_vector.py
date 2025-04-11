@@ -85,6 +85,11 @@ class AzureAISearch_VectorStore(VannaBase):
         if self.index_name not in self._get_indexes():
             self._create_index()
 
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
+
     def _create_index(self) -> bool:
         fields = [
             SearchableField(name="id", type=SearchFieldDataType.String, key=True, filterable=True),
@@ -232,5 +237,10 @@ class AzureAISearch_VectorStore(VannaBase):
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
         embedding_model = TextEmbedding(model_name=self.fastembed_model)
-        embedding = next(embedding_model.embed(data))
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].tolist()
+        else:
+            embedding = next(embedding_model.embed(data))
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = embedding
         return embedding.tolist()

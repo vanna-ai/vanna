@@ -45,6 +45,11 @@ class WeaviateDatabase(VannaBase):
             "doc": "DocumentationEntry"
         }
 
+        self.embedding_cache = {
+            'question': None,
+            'embedding': None
+        }
+
         self._create_collections_if_not_exist()
 
     def _create_collections_if_not_exist(self):
@@ -85,8 +90,13 @@ class WeaviateDatabase(VannaBase):
             )
 
     def generate_embedding(self, data: str, **kwargs):
-            embedding_model = TextEmbedding(model_name=self.fastembed_model)
+        embedding_model = TextEmbedding(model_name=self.fastembed_model)
+        if self.embedding_cache['question'] == data:
+            return self.embedding_cache['embedding'].tolist()
+        else:
             embedding = next(embedding_model.embed(data))
+            self.embedding_cache['question'] = data
+            self.embedding_cache['embedding'] = embedding
             return embedding.tolist()
 
 
