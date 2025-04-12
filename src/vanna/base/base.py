@@ -206,7 +206,7 @@ class VannaBase(ABC):
 
         # Match SELECT ... ;
         sqls = re.findall(
-            r"\bSELECT\b .*?(?:'(?:[^']|''|\\')*'|\"(?:[^\"]|\\\")*\")*?;",
+            r"\bSELECT\b .*?(?:'(?:[^']|''|\\')*'|\"(?:[^\"]|\\\")*\")*?[^;]*;",
             llm_response,
             re.DOTALL | re.IGNORECASE,
         )
