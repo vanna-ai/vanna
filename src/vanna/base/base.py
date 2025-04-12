@@ -206,9 +206,21 @@ class VannaBase(ABC):
 
         # Match SELECT ... ;
         sqls = re.findall(
-            r"\bSELECT\b .*?(?:'(?:[^']|''|\\')*'|\"(?:[^\"]|\\\")*\")*?[^;]*;",
+            r"""
+            \bSELECT\b                                # SELECT keyword
+            (?:                                       # Non-capturing group for the whole query
+                [^'"`;]*                              # Non-quote/semi-colon characters
+                (?:                                   # Alternation for quoted strings
+                    '(?:[^'\\]|\\.|'')*'              # single-quoted string
+                    |"(?:[^"\\]|\\.)*"                # double-quoted string
+                    |`(?:[^`\\]|\\.)*`                # backtick-quoted string (optional)
+                )
+            )*?                                       # Repeat lazily
+            [^'"`]*?                                  # Any remaining non-quote/semi-colon chars
+            ;                                         # Final semicolon outside of quotes
+            """,
             llm_response,
-            re.DOTALL | re.IGNORECASE,
+            re.DOTALL | re.IGNORECASE | re.VERBOSE
         )
         if sqls:
             sql = sqls[-1]
