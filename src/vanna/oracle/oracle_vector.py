@@ -1,5 +1,6 @@
 import json
 import uuid
+from abc import ABC
 from typing import List, Optional, Tuple
 
 import oracledb
@@ -11,7 +12,7 @@ from ..base import VannaBase
 default_ef = embedding_functions.DefaultEmbeddingFunction()
 
 
-class Oracle_VectorStore(VannaBase):
+class Oracle_VectorStore(VannaBase, ABC):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
 

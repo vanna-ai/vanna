@@ -1,9 +1,10 @@
 import os
+from abc import ABC
 
 from ..base import VannaBase
 
 
-class GoogleGeminiChat(VannaBase):
+class GoogleGeminiChat(VannaBase, ABC):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 

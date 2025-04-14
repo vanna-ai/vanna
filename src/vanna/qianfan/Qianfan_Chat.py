@@ -1,9 +1,11 @@
+from abc import ABC
+
 import qianfan
 
 from ..base import VannaBase
 
 
-class Qianfan_Chat(VannaBase):
+class Qianfan_Chat(VannaBase, ABC):
   def __init__(self, client=None, config=None):
     VannaBase.__init__(self, config=config)
 

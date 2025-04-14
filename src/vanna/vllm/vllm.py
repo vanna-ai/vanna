@@ -1,11 +1,12 @@
 import re
+from abc import ABC
 
 import requests
 
 from ..base import VannaBase
 
 
-class Vllm(VannaBase):
+class Vllm(VannaBase, ABC):
     def __init__(self, config=None):
         if config is None or "vllm_host" not in config:
             self.host = "http://localhost:8000"
@@ -80,9 +81,9 @@ class Vllm(VannaBase):
         }
 
         if self.auth_key is not None:
-            headers = { 
-            'Content-Type': 'application/json', 
-            'Authorization': f'Bearer {self.auth_key}' 
+            headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.auth_key}'
             }
 
             response = requests.post(url, headers=headers,json=data)

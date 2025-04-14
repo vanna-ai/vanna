@@ -1,10 +1,9 @@
 import re
+from abc import ABC
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
 from ..base import VannaBase
 
-
-class Hf(VannaBase):
+class Hf(VannaBase, ABC):
     def __init__(self, config=None):
         model_name_or_path = self.config.get(
             "model_name_or_path", None

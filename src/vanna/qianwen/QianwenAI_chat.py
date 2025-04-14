@@ -1,11 +1,12 @@
 import os
+from abc import ABC
 
 from openai import OpenAI
 
 from ..base import VannaBase
 
 
-class QianWenAI_Chat(VannaBase):
+class QianWenAI_Chat(VannaBase, ABC):
   def __init__(self, client=None, config=None):
     VannaBase.__init__(self, config=config)
 

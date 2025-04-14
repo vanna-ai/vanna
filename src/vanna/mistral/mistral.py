@@ -1,4 +1,5 @@
 import os
+from abc import ABC
 
 from mistralai import Mistral as MistralClient
 from mistralai import UserMessage
@@ -6,7 +7,7 @@ from mistralai import UserMessage
 from ..base import VannaBase
 
 
-class Mistral(VannaBase):
+class Mistral(VannaBase, ABC):
     def __init__(self, config=None):
         if config is None:
             raise ValueError(

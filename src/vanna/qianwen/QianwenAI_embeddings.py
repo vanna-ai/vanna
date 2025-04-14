@@ -1,9 +1,11 @@
+from abc import ABC
+
 from openai import OpenAI
 
 from ..base import VannaBase
 
 
-class QianWenAI_Embeddings(VannaBase):
+class QianWenAI_Embeddings(VannaBase, ABC):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 

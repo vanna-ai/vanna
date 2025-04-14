@@ -1,5 +1,6 @@
 import base64
 import uuid
+from abc import ABC
 from typing import List
 
 import pandas as pd
@@ -7,8 +8,7 @@ from opensearchpy import OpenSearch
 
 from ..base import VannaBase
 
-
-class OpenSearch_VectorStore(VannaBase):
+class OpenSearch_VectorStore(VannaBase, ABC):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
     document_index = "vanna_document_index"
