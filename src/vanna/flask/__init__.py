@@ -618,45 +618,107 @@ class VannaFlaskAPI:
                 if not vn.run_sql_is_set:
                     current_order = self.cache.get_order(user=user)
                     if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                        return jsonify(
-                            {
-                                "type": "error",
-                                "error": "Please connect to a database using vn.connect_to_... in order to run SQL queries.",
-                            }
-                        )
-
+                        return jsonify({
+                            "type": "error",
+                            "error": "Please connect to a database using vn.connect_to_... in order to run SQL queries."
+                        })
                     return jsonify()
 
                 df = vn.run_sql(sql=sql)
 
-                self.cache.set(user=user, id=id, field="df", value=df)
+                # ----- Ticket 1: Handling Empty Results (No Data Returned) -----
+                df_clean = df.dropna(how="all")
+                only_zero_or_na = (df_clean.fillna(0) == 0).all(axis=1).all()
+                is_effectively_empty = df_clean.empty or only_zero_or_na
+                if df.empty or is_effectively_empty:
+                    no_data_prompt = (
+                        f"The SQL query returned no data. This might be due to an incorrect filter "
+                        f"(for example, a title/platform that doesn't exist, wrong date range, or incorrect "
+                        f"metric/percentage name), failed joins, or unmaterialized tables/partitions in lower environments. "
+                        f"Original SQL: {sql}"
+                    )
+                    try:
+                        fixed_sql = vn.generate_sql(question=no_data_prompt + "\nPlease rewrite the SQL query to address these issues and return data.")
+                        fixed_df = vn.run_sql(sql=fixed_sql)
+                        if not fixed_df.empty:
+                            self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
+                            self.cache.set(user=user, id=id, field="df", value=fixed_df)
+                            return jsonify({
+                                "type": "df",
+                                "id": id,
+                                "df": fixed_df.head(10).to_json(orient="records", date_format="iso"),
+                                "should_generate_chart": self.chart and vn.should_generate_chart(fixed_df),
+                                "fix": fixed_sql,
+                                "message": "Autofix applied automatically for a query returning no data."
+                            })
+                        else:
+                            return jsonify({
+                                "type": "no_data_error",
+                                "id": id,
+                                "error": "The query returned no data even after an autofix. Possible reasons include incorrect filters, failed joins, or environmental issues."
+                            })
+                    except Exception as autofix_exception:
+                        return jsonify({
+                            "type": "no_data_error",
+                            "id": id,
+                            "error": f"The query returned no data and autofix failed with error: {str(autofix_exception)}"
+                        })
 
+                self.cache.set(user=user, id=id, field="df", value=df)
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify(
-                        {
-                            "type": "df",
-                            "id": id,
-                            "df": df.head(10).to_json(orient="records", date_format="iso"),
-                            "should_generate_chart": self.chart
-                            and vn.should_generate_chart(df),
-                        }
-                    )
-
+                    return jsonify({
+                        "type": "df",
+                        "id": id,
+                        "df": df.head(10).to_json(orient="records", date_format="iso"),
+                        "should_generate_chart": self.chart and vn.should_generate_chart(df),
+                    })
                 return jsonify()
 
             except HTTPError as e:
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                  return jsonify({"type": "error", "error": str(e)})
-
+                    return jsonify({"type": "error", "error": str(e)})
                 return jsonify()
+
             except Exception as e:
+                # ----- Ticket 2: Handling SQL Execution Errors -----
                 current_order = self.cache.get_order(user=user)
                 if current_order[-1]["step"] == "answer" and current_order[-1]["id"] == id:
-                    return jsonify({"type": "sql_error", "error": str(e)})
-
+                    fix_prompt = (
+                        f"The generated query returned this error: {str(e)}. "
+                        f"Usually prompting the model to autofix the query resolves these issues. "
+                        f"You may need to do so a few times before receiving the correct results. "
+                        f"Original SQL: {sql}"
+                    )
+                    try:
+                        fixed_sql = vn.generate_sql(question=fix_prompt + "\nPlease rewrite the SQL query to resolve the error.")
+                        fixed_df = vn.run_sql(sql=fixed_sql)
+                        if not fixed_df.empty:
+                            self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
+                            self.cache.set(user=user, id=id, field="df", value=fixed_df)
+                            return jsonify({
+                                "type": "df",
+                                "id": id,
+                                "df": fixed_df.head(10).to_json(orient="records", date_format="iso"),
+                                "should_generate_chart": self.chart and vn.should_generate_chart(fixed_df),
+                                "fix": fixed_sql,
+                                "message": "Autofix applied automatically for an SQL error."
+                            })
+                        else:
+                            error_message = (
+                                f"The generated query returned this error: {str(e)}. "
+                                f"Autofix was attempted but resulted in no data. Please review your query."
+                            )
+                            return jsonify({"type": "sql_error", "error": error_message})
+                    except Exception as autofix_exception:
+                        error_message = (
+                            f"The generated query returned this error: {str(e)}. "
+                            f"Autofix attempt failed with error: {str(autofix_exception)}"
+                        )
+                        return jsonify({"type": "sql_error", "error": error_message})
                 return jsonify()
+
 
         @self.flask_app.route("/api/v0/fix_sql", methods=["POST"])
         @self.requires_auth
@@ -690,28 +752,41 @@ class VannaFlaskAPI:
                       type: string
             """
             try:
+                error = flask.request.json.get("error")
+                if error is None:
+                    return jsonify({"type": "error", "error": "No error provided"})
 
-              error = flask.request.json.get("error")
+                attempts = self.cache.get(user=user, id=id, field="fix_attempts") or 0
+                attempts += 1
+                self.cache.set(user=user, id=id, field="fix_attempts", value=attempts)
 
-              if error is None:
-                  return jsonify({"type": "error", "error": "No error provided"})
+                question = (
+                    f"I have an error: {error}\n\n"
+                    f"Here is the SQL I tried to run: {sql}\n\n"
+                    f"This is the question I was trying to answer: {question}\n\n"
+                    f"Can you rewrite the SQL to fix the error?"
+                )
+                fixed_sql = vn.generate_sql(question=question)
 
-              question = f"I have an error: {error}\n\nHere is the SQL I tried to run: {sql}\n\nThis is the question I was trying to answer: {question}\n\nCan you rewrite the SQL to fix the error?"
-
-              fixed_sql = vn.generate_sql(question=question)
-
-              self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
-
-              return jsonify(
-                  {
-                      "type": "sql",
-                      "id": id,
-                      "text": fixed_sql,
-                  }
-              )
+                try:
+                    vn.run_sql(fixed_sql)
+                    self.cache.set(user=user, id=id, field="sql", value=fixed_sql)
+                    self.cache.set(user=user, id=id, field="fix_attempts", value=0)
+                    return jsonify({"type": "sql", "id": id, "text": fixed_sql})
+                except Exception:
+                    if attempts >= 3:
+                        error_message = (
+                            f"The generated query returned this error: {error}. "
+                            f"Usually prompting the model to autofix the query resolves these issues. "
+                            f"You may need to do so a few times before receiving the correct results. fixixixixi"
+                        )
+                        return jsonify({"type": "sql_error", "id": id, "error": error_message})
+                    else:
+                        # Recursive call with the fixed SQL; in practice, ensure you have a limit to avoid infinite loops.
+                        return fix_sql(user, id, question, fixed_sql)
 
             except HTTPError as e:
-              return jsonify({"type": "error", "error": str(e)})
+                return jsonify({"type": "error", "error": str(e)})
 
 
         @self.flask_app.route("/api/v0/update_sql", methods=["POST"])
