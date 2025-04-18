@@ -1679,7 +1679,7 @@ class VannaBase(ABC):
             user (str): Username
             password (str): Password
             database (str): Default database
-            port (int): Port number, default 2883
+            port (int): Port number, default 2881
         """
         try:
           import pymysql  # OceanBase uses MySQL protocol
@@ -1693,7 +1693,7 @@ class VannaBase(ABC):
         user = user or os.getenv("OCEANBASE_USER")
         password = password or os.getenv("OCEANBASE_PASSWORD")
         database = database or os.getenv("OCEANBASE_DATABASE")
-        port = database or os.getenv("OCEANBASE_PORT")
+        port = port or os.getenv("OCEANBASE_PORT")
 
         # Parameter validation
         if not all([host, user, password, database, port]):
