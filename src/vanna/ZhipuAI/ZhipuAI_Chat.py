@@ -1,4 +1,5 @@
 import re
+from abc import ABC
 from typing import List
 
 import pandas as pd
@@ -7,7 +8,7 @@ from zhipuai import ZhipuAI
 from ..base import VannaBase
 
 
-class ZhipuAI_Chat(VannaBase):
+class ZhipuAI_Chat(VannaBase, ABC):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
         if config is None:

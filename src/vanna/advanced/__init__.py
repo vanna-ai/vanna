@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-
 class VannaAdvanced(ABC):
     def __init__(self, config=None):
         self.config = config

@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from abc import ABC
 from io import StringIO
 
 import pandas as pd
@@ -21,7 +22,7 @@ from ..types import (
 from ..utils import sanitize_model_name
 
 
-class VannaDB_VectorStore(VannaBase, VannaAdvanced):
+class VannaDB_VectorStore(VannaBase, VannaAdvanced, ABC):
     def __init__(self, vanna_model: str, vanna_api_key: str, config=None):
         VannaBase.__init__(self, config=config)
 

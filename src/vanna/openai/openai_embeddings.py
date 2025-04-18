@@ -1,9 +1,9 @@
-from openai import OpenAI
+from abc import ABC
 
+from openai import OpenAI
 from ..base import VannaBase
 
-
-class OpenAI_Embeddings(VannaBase):
+class OpenAI_Embeddings(VannaBase, ABC):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 

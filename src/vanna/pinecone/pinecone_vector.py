@@ -1,4 +1,5 @@
 import json
+from abc import ABC
 from typing import List
 
 from pinecone import Pinecone, PodSpec, ServerlessSpec
@@ -9,7 +10,7 @@ from ..utils import deterministic_uuid
 from fastembed import TextEmbedding
 
 
-class PineconeDB_VectorStore(VannaBase):
+class PineconeDB_VectorStore(VannaBase, ABC):
     """
     Vectorstore using PineconeDB
 

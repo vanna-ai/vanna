@@ -1,3 +1,4 @@
+from abc import ABC
 from functools import cached_property
 from typing import List, Tuple
 
@@ -10,7 +11,7 @@ from ..utils import deterministic_uuid
 SCROLL_SIZE = 1000
 
 
-class Qdrant_VectorStore(VannaBase):
+class Qdrant_VectorStore(VannaBase, ABC):
     """
     Vectorstore implementation using Qdrant - https://qdrant.tech/
 

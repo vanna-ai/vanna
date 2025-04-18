@@ -1,4 +1,5 @@
 import json
+from abc import ABC
 
 import pandas as pd
 from langchain_community.vectorstores import OpenSearchVectorSearch
@@ -7,7 +8,7 @@ from ..base import VannaBase
 from ..utils import deterministic_uuid
 
 
-class OpenSearch_Semantic_VectorStore(VannaBase):
+class OpenSearch_Semantic_VectorStore(VannaBase, ABC):
   def __init__(self, config=None):
     VannaBase.__init__(self, config=config)
     if config is None:

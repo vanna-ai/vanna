@@ -1,6 +1,7 @@
-import os 
+import os
 import json
 import uuid
+from abc import ABC
 from typing import List, Dict, Any
 
 import faiss
@@ -10,13 +11,13 @@ import pandas as pd
 from ..base import VannaBase
 from ..exceptions import DependencyError
 
-class FAISS(VannaBase):
+class FAISS(VannaBase, ABC):
     def __init__(self, config=None):
         if config is None:
             config = {}
-        
+
         VannaBase.__init__(self, config=config)
-        
+
         try:
             import faiss
         except ImportError:
@@ -30,7 +31,7 @@ class FAISS(VannaBase):
             raise DependencyError(
                 "SentenceTransformer is not installed. Please install it with 'pip install sentence-transformers'."
             )
-        
+
         self.path = config.get("path", ".")
         self.embedding_dim = config.get('embedding_dim', 384)
         self.n_results_sql = config.get('n_results_sql', config.get("n_results", 10))
@@ -96,7 +97,7 @@ class FAISS(VannaBase):
         entry_id = str(uuid.uuid4())
         metadata_list.append({"id": entry_id, **(extra_metadata or {})})
         return entry_id
-    
+
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         entry_id = self._add_to_index(self.sql_index, self.sql_metadata, question + " " + sql, {"question": question, "sql": sql})
         self._save_index(self.sql_index, 'sql_index.faiss')
@@ -122,7 +123,7 @@ class FAISS(VannaBase):
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         return self._get_similar(self.sql_index, self.sql_metadata, question, self.n_results_sql)
-    
+
     def get_related_ddl(self, question: str, **kwargs) -> list:
         return [metadata["ddl"] for metadata in self._get_similar(self.ddl_index, self.ddl_metadata, question, self.n_results_ddl)]
 
@@ -155,11 +156,11 @@ class FAISS(VannaBase):
                     if embeddings:
                         new_index.add(np.array(embeddings, dtype=np.float32))
                     setattr(self, index_name.split('.')[0], new_index)
-                    
+
                     if self.curr_client == 'persistent':
                         self._save_index(new_index, index_name)
                         self._save_metadata(metadata_list, f"{index_name.split('.')[0]}_metadata.json")
-                    
+
                     return True
         return False
 
@@ -167,10 +168,10 @@ class FAISS(VannaBase):
         if collection_name in ["sql", "ddl", "documentation"]:
             setattr(self, f"{collection_name}_index", faiss.IndexFlatL2(self.embedding_dim))
             setattr(self, f"{collection_name}_metadata", [])
-            
+
             if self.curr_client == 'persistent':
                 self._save_index(getattr(self, f"{collection_name}_index"), f"{collection_name}_index.faiss")
                 self._save_metadata([], f"{collection_name}_metadata.json")
-            
+
             return True
         return False

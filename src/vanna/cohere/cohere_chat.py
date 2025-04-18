@@ -1,11 +1,10 @@
 import os
+from abc import ABC
 
 from openai import OpenAI
-
 from ..base import VannaBase
 
-
-class Cohere_Chat(VannaBase):
+class Cohere_Chat(VannaBase, ABC):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
@@ -25,15 +24,15 @@ class Cohere_Chat(VannaBase):
 
         # Check for API key in environment variable
         api_key = os.getenv("COHERE_API_KEY")
-        
+
         # Check for API key in config
         if config is not None and "api_key" in config:
             api_key = config["api_key"]
-            
+
         # Validate API key
         if not api_key:
             raise ValueError("Cohere API key is required. Please provide it via config or set the COHERE_API_KEY environment variable.")
-            
+
         # Initialize client with validated API key
         self.client = OpenAI(
             base_url="https://api.cohere.ai/compatibility/v1",
@@ -74,21 +73,21 @@ class Cohere_Chat(VannaBase):
                 messages=prompt,
                 temperature=self.temperature,
             )
-            
+
             # Check if response has expected structure
             if not response or not hasattr(response, 'choices') or not response.choices:
                 raise ValueError("Received empty or malformed response from API")
-                
+
             if not response.choices[0] or not hasattr(response.choices[0], 'message'):
                 raise ValueError("Response is missing expected 'message' field")
-                
+
             if not hasattr(response.choices[0].message, 'content'):
                 raise ValueError("Response message is missing expected 'content' field")
-                
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             # Log the error and raise a more informative exception
             error_msg = f"Error processing Cohere chat response: {str(e)}"
             print(error_msg)
-            raise Exception(error_msg) 
+            raise Exception(error_msg)

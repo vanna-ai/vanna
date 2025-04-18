@@ -1,9 +1,11 @@
+from abc import ABC
+
 import qianfan
 
 from ..base import VannaBase
 
 
-class Qianfan_Embeddings(VannaBase):
+class Qianfan_Embeddings(VannaBase, ABC):
   def __init__(self, client=None, config=None):
     VannaBase.__init__(self, config=config)
 

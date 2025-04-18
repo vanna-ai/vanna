@@ -1,3 +1,5 @@
+from abc import ABC
+
 from xinference_client.client.restful.restful_client import (
   Client,
   RESTfulChatModelHandle,
@@ -6,7 +8,7 @@ from xinference_client.client.restful.restful_client import (
 from ..base import VannaBase
 
 
-class Xinference(VannaBase):
+class Xinference(VannaBase, ABC):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 
