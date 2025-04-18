@@ -1661,6 +1661,78 @@ class VannaBase(ABC):
       self.run_sql_is_set = True
       self.run_sql = run_sql_hive
 
+
+      def connect_to_oceanbase(
+        self,
+        host: str = None,
+        user: str = None,
+        password: str = None,
+        database: str = None,
+        port: int = None,
+        **kwargs
+      ):
+        """
+        Connect to OceanBase database
+
+        Args:
+            host (str): OceanBase server address
+            user (str): Username
+            password (str): Password
+            database (str): Default database
+            port (int): Port number, default 2881
+        """
+        try:
+          import pymysql  # OceanBase uses MySQL protocol
+        except ImportError:
+          raise DependencyError(
+            "Required package: pip install pymysql"
+          )
+
+        # Get parameters from environment variables if not provided
+        host = host or os.getenv("OCEANBASE_HOST")
+        user = user or os.getenv("OCEANBASE_USER")
+        password = password or os.getenv("OCEANBASE_PASSWORD")
+        database = database or os.getenv("OCEANBASE_DATABASE")
+        port = port or os.getenv("OCEANBASE_PORT")
+
+        # Parameter validation
+        if not all([host, user, password, database, port]):
+          raise ImproperlyConfigured("Missing OceanBase connection parameters")
+
+        try:
+          # Establish connection
+          conn = pymysql.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            port=port,
+            cursorclass=pymysql.cursors.DictCursor,
+            **kwargs
+          )
+        except pymysql.Error as e:
+          raise ValidationError(f"Connection failed: {e}")
+
+        # Define SQL execution function
+        def run_sql_oceanbase(sql: str) -> pd.DataFrame:
+          try:
+            with conn.cursor() as cursor:
+              cursor.execute(sql)
+              result = cursor.fetchall()
+              df = pd.DataFrame(result)
+              return df
+          except pymysql.Error as e:
+            conn.rollback()
+            raise ValidationError(f"SQL execution error: {e}")
+          except Exception as e:
+            conn.rollback()
+            raise e
+
+        # Set class properties
+        self.dialect = "OceanBase/MySQL"  # MySQL compatible mode
+        self.run_sql = run_sql_oceanbase
+        self.run_sql_is_set = True
+
     def run_sql(self, sql: str, **kwargs) -> pd.DataFrame:
         """
         Example:
