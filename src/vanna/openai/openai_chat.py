@@ -6,7 +6,7 @@ from ..base import VannaBase
 
 class OpenAI_Chat(VannaBase, ABC):
 
-    temperature : float = 0.7
+    temperature : float = 0
     client : Any = None
     model : str = "gpt-3.5-turbo"
     max_retries : int = DEFAULT_MAX_RETRIES
@@ -15,7 +15,7 @@ class OpenAI_Chat(VannaBase, ABC):
         VannaBase.__init__(self, config=config)
 
         # default parameters - can be override using config
-        self.temperature = 0.7
+        self.temperature = 0
 
         # default max_tokens - can be override using config
         if "temperature" in config:
