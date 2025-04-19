@@ -197,6 +197,13 @@ class VannaBase(ABC):
             self.log(title="Extracted SQL", message=f"{sql}")
             return sql
 
+        # Priority check for WITH ROLLUP clause.
+        sqls = re.findall(r"(?s)\bSELECT\b.*?WITH\s+ROLLUP.*?;", llm_response, re.IGNORECASE)
+        if sqls:
+            sql = sqls[-1]
+            self.log(title="Extracted SQL", message=f"{sql}")
+            return sql
+        
         # Match WITH clause (CTEs)
         sqls = re.findall(r"\bWITH\b .*?;", llm_response, re.DOTALL | re.IGNORECASE)
         if sqls:
