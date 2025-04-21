@@ -1,9 +1,10 @@
+from abc import ABC
 from typing import List
 
 from ..base import VannaBase
 
 
-class MockEmbedding(VannaBase):
+class MockEmbedding(VannaBase, ABC):
     def __init__(self, config=None):
         pass
 

@@ -1,6 +1,7 @@
 import datetime
 import os
 import uuid
+from abc import ABC
 from typing import List, Optional
 from vertexai.language_models import (
   TextEmbeddingInput,
@@ -9,11 +10,9 @@ from vertexai.language_models import (
 
 import pandas as pd
 from google.cloud import bigquery
-
 from ..base import VannaBase
 
-
-class BigQuery_VectorStore(VannaBase):
+class BigQuery_VectorStore(VannaBase, ABC):
     def __init__(self, config: dict, **kwargs):
         self.config = config
 

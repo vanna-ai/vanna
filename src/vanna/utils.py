@@ -6,7 +6,6 @@ from typing import Union
 
 from .exceptions import ImproperlyConfigured, ValidationError
 
-
 def validate_config_path(path):
     if not os.path.exists(path):
         raise ImproperlyConfigured(

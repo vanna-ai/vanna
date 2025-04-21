@@ -1,19 +1,32 @@
 import os
-
-from openai import OpenAI
-
+from abc import ABC
+from typing import Any
+from openai import OpenAI, DEFAULT_MAX_RETRIES
 from ..base import VannaBase
 
+class OpenAI_Chat(VannaBase, ABC):
 
-class OpenAI_Chat(VannaBase):
+    temperature : float = 0
+    client : Any = None
+    model : str = "gpt-3.5-turbo"
+    max_retries : int = DEFAULT_MAX_RETRIES
+
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
 
-        # default parameters - can be overrided using config
-        self.temperature = 0.7
+        # default parameters - can be override using config
+        self.temperature = 0
 
+        # default max_tokens - can be override using config
         if "temperature" in config:
             self.temperature = config["temperature"]
+
+        # default model - can be override using config
+        if "model" in config:
+            self.model = config["model"]
+
+        if "max_retries" in config:
+            self.max_retries = config["max_retries"]
 
         if "api_type" in config:
             raise Exception(
@@ -35,11 +48,13 @@ class OpenAI_Chat(VannaBase):
             return
 
         if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"),
+                                 max_retries = self.max_retries)
             return
 
         if "api_key" in config:
-            self.client = OpenAI(api_key=config["api_key"])
+            self.client = OpenAI(api_key=config["api_key"],
+                                 max_retries = self.max_retries)
 
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}
@@ -68,6 +83,7 @@ class OpenAI_Chat(VannaBase):
             print(
                 f"Using model {model} for {num_tokens} tokens (approx)"
             )
+            # claude required system message is a single filed
             response = self.client.chat.completions.create(
                 model=model,
                 messages=prompt,
@@ -89,6 +105,7 @@ class OpenAI_Chat(VannaBase):
             print(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
+            # claude required system message is a single filed
             response = self.client.chat.completions.create(
                 engine=self.config["engine"],
                 messages=prompt,
@@ -99,6 +116,7 @@ class OpenAI_Chat(VannaBase):
             print(
                 f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
             )
+            # claude required system message is a single filed
             response = self.client.chat.completions.create(
                 model=self.config["model"],
                 messages=prompt,
@@ -106,10 +124,15 @@ class OpenAI_Chat(VannaBase):
                 temperature=self.temperature,
             )
         else:
-            if num_tokens > 3500:
-                model = "gpt-3.5-turbo-16k"
+
+            # Default to gpt-3.5-turbo if no model is specified
+            if self.model is None:
+              if num_tokens > 3500:
+                  model = "gpt-3.5-turbo-16k"
+              else:
+                  model = "gpt-3.5-turbo"
             else:
-                model = "gpt-3.5-turbo"
+              model = self.model
 
             print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(

@@ -1,4 +1,5 @@
 import uuid
+from abc import ABC
 
 import marqo
 import pandas as pd
@@ -6,7 +7,7 @@ import pandas as pd
 from ..base import VannaBase
 
 
-class Marqo_VectorStore(VannaBase):
+class Marqo_VectorStore(VannaBase, ABC):
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 

@@ -1,8 +1,9 @@
+from abc import ABC
 
 from ..base import VannaBase
 
 
-class MockLLM(VannaBase):
+class MockLLM(VannaBase, ABC):
     def __init__(self, config=None):
         pass
 

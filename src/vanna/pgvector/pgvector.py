@@ -2,6 +2,7 @@ import ast
 import json
 import logging
 import uuid
+from abc import ABC
 
 import pandas as pd
 from langchain_core.documents import Document
@@ -12,8 +13,7 @@ from .. import ValidationError
 from ..base import VannaBase
 from ..types import TrainingPlan, TrainingPlanItem
 
-
-class PG_VectorStore(VannaBase):
+class PG_VectorStore(VannaBase, ABC):
     def __init__(self, config=None):
         if not config or "connection_string" not in config:
             raise ValueError(
