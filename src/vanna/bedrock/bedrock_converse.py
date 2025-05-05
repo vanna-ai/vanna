@@ -48,14 +48,16 @@ class Bedrock_Converse(VannaBase):
     def assistant_message(self, message: str) -> dict:
         return {"role": "assistant", "content": message}
 
-    def submit_prompt(self, prompt, **kwargs) -> str:
+    def submit_prompt(self, prompt, additional_model_fields=None, **kwargs) -> str:
         inference_config = {
             "temperature": self.temperature,
             "maxTokens": self.max_tokens
         }
-        additional_model_fields = {
-            "top_p": 1,  # setting top_p value for nucleus sampling
-        }
+      
+        if additional_model_fields is None:
+            additional_model_fields = {
+                "top_p": 1,  # setting top_p value for nucleus sampling
+            }
 
         system_message = None
         no_system_prompt = []
