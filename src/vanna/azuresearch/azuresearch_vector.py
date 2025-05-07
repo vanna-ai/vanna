@@ -3,7 +3,6 @@ import json
 from typing import List
 
 import pandas as pd
-from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -30,12 +29,9 @@ class AzureAISearch_VectorStore(VannaBase):
     AzureAISearch_VectorStore is a class that provides a vector store for Azure AI Search.
 
     Args:
-        config (dict): Configuration dictionary. Defaults to {}. You must provide an API key in the config.
-            - azure_search_endpoint (str, optional): Azure Search endpoint. Defaults to "https://azcognetive.search.windows.net".
-            - azure_search_api_key (str): Azure Search API key.
+        config (dict): Configuration dictionary. Defaults to {}.
             - dimensions (int, optional): Dimensions of the embeddings. Defaults to 384 which corresponds to the dimensions of BAAI/bge-small-en-v1.5.
             - fastembed_model (str, optional): Fastembed model to use. Defaults to "BAAI/bge-small-en-v1.5".
-            - index_name (str, optional): Name of the index. Defaults to "vanna-index".
             - n_results (int, optional): Number of results to return. Defaults to 10.
             - n_results_ddl (int, optional): Number of results to return for DDL queries. Defaults to the value of n_results.
             - n_results_sql (int, optional): Number of results to return for SQL queries. Defaults to the value of n_results.
@@ -44,7 +40,7 @@ class AzureAISearch_VectorStore(VannaBase):
     Raises:
         ValueError: If config is None, or if 'azure_search_api_key' is not provided in the config.
     """
-    def __init__(self, config=None):
+    def __init__(self, azure_search_client, azure_index_client, config=None):
         VannaBase.__init__(self, config=config)
 
         self.config = config or None
@@ -53,9 +49,6 @@ class AzureAISearch_VectorStore(VannaBase):
             raise ValueError(
                 "config is required, pass an API key, 'azure_search_api_key', in the config."
             )
-
-        azure_search_endpoint = config.get("azure_search_endpoint", "https://azcognetive.search.windows.net")
-        azure_search_api_key = config.get("azure_search_api_key")
 
         self.dimensions = config.get("dimensions", 384)
         self.fastembed_model = config.get("fastembed_model", "BAAI/bge-small-en-v1.5")
@@ -66,21 +59,20 @@ class AzureAISearch_VectorStore(VannaBase):
         self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
         self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
 
-        if not azure_search_api_key:
+        if not azure_search_client:
             raise ValueError(
-                "'azure_search_api_key' is required in config to use AzureAISearch_VectorStore"
+                "'azure_search_client' is required in config to use AzureAISearch_VectorStore"
         )
 
-        self.index_client = SearchIndexClient(
-            endpoint=azure_search_endpoint,
-            credential=AzureKeyCredential(azure_search_api_key)
+        if not azure_search_client:
+            raise ValueError(
+                "'azure_index_client' is required in config to use AzureAISearch_VectorStore"
         )
 
-        self.search_client = SearchClient(
-            endpoint=azure_search_endpoint,
-            index_name=self.index_name,
-            credential=AzureKeyCredential(azure_search_api_key)
-        )
+        self.index_client = azure_index_client
+        self.search_client = azure_search_client
+
+        print(f"Azure Search client initialized with index name: {self.index_name}")
 
         if self.index_name not in self._get_indexes():
             self._create_index()
