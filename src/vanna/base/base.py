@@ -189,6 +189,14 @@ class VannaBase(ABC):
         - CREATE TABLE AS SELECT
         - Markdown code blocks
         """
+        
+        reasoning_tags = ["reasoning", "reason", "thoughts", "think"]
+        cleaned_response = llm_response
+        for tag_name in reasoning_tags:
+            pattern = rf"<{re.escape(tag_name)}>(.*?)</{re.escape(tag_name)}>"
+            cleaned_response = re.sub(pattern, "", cleaned_response, flags=re.DOTALL)
+
+        cleaned_response = re.sub(r'\n\s*\n', '\n', cleaned_response).strip()
 
         # Match CREATE TABLE ... AS SELECT
         sqls = re.findall(r"\bCREATE\s+TABLE\b.*?\bAS\b.*?;", llm_response, re.DOTALL | re.IGNORECASE)
