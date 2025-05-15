@@ -28,7 +28,7 @@ class GoogleGeminiChat(VannaBase):
 
         self.region = None
         if "region" in config:
-            self.project_id = config["region"]
+            self.region = config["region"]
 
         self.google_api_key = None
 
