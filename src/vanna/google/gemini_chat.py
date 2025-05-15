@@ -14,26 +14,37 @@ class GoogleGeminiChat(VannaBase):
             self.temperature = config["temperature"]
 
         if "model_name" in config:
-            model_name = config["model_name"]
+            self.model_name = config["model_name"]
         else:
-            model_name = "gemini-1.5-pro"
+            self.model_name = "gemini-1.5-pro"
+
+        self.use_vertex_ai = None
+        if "use_vertex_ai" in config:
+            self.use_vertex_ai = config["use_vertex_ai"]
+
+        self.project_id = None
+        if "project_id" in config:
+            self.project_id = config["project_id"]
+
+        self.region = None
+        if "region" in config:
+            self.project_id = config["region"]
 
         self.google_api_key = None
+
+        from google import genai
 
         if "api_key" in config or os.getenv("GOOGLE_API_KEY"):
             """
             If Google api_key is provided through config
             or set as an environment variable, assign it.
             """
-            import google.generativeai as genai
 
-            genai.configure(api_key=config["api_key"])
-            self.chat_model = genai.GenerativeModel(model_name)
+            self.chat_model = genai.Client(api_key=config["api_key"], project=self.project_id, location=self.region)
         else:
             # Authenticate using VertexAI
             import google.auth
             import vertexai
-            from vertexai.generative_models import GenerativeModel
 
             json_file_path = config.get("google_credentials")  # Assuming the JSON file path is provided in the config
 
@@ -47,7 +58,7 @@ class GoogleGeminiChat(VannaBase):
                 # Initialize VertexAI with the credentials
                 credentials, _ = google.auth.default()
                 vertexai.init(credentials=credentials)
-                self.chat_model = GenerativeModel(model_name)
+                self.chat_model = genai.Client(vertexai=self.use_vertex_ai, credentials=credentials, project=self.project_id, location=self.region)
             except google.auth.exceptions.DefaultCredentialsError as e:
                 raise RuntimeError(f"Default credentials error: {e}")
             except google.auth.exceptions.TransportError as e:
@@ -65,10 +76,11 @@ class GoogleGeminiChat(VannaBase):
         return message
 
     def submit_prompt(self, prompt, **kwargs) -> str:
-        response = self.chat_model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": self.temperature,
-            },
+        response = self.chat_model.models.generate_content(
+          model=self.model_name,
+          contents=prompt,
+          config={
+            "temperature": self.temperature,
+          },
         )
         return response.text
