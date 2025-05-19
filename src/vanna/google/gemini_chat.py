@@ -5,7 +5,7 @@ from ..base import VannaBase
 
 class GoogleGeminiChat(VannaBase):
     """
-      Gemini AI was using google-generativeai until vanna 0.7.9.
+      GoogleGeminiChat was using google-generativeai until vanna 0.7.9.
       Google announced deprecation of google-generativeai
       and introduced google-genai SDK for python for both Gemini and Vertex AI.
     """
