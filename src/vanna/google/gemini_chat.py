@@ -4,6 +4,11 @@ from ..base import VannaBase
 
 
 class GoogleGeminiChat(VannaBase):
+    """
+      Gemini AI was using google-generativeai until vanna 0.7.9.
+      Google announced deprecation of google-generativeai
+      and introduced google-genai SDK for python for both Gemini and Vertex AI.
+    """
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 
@@ -20,14 +25,26 @@ class GoogleGeminiChat(VannaBase):
 
         self.use_vertex_ai = None
         if "use_vertex_ai" in config:
+            """
+             If use_vertex_ai is provided through config
+             or set as an environment variable GOOGLE_GENAI_USE_VERTEXAI, assign it.
+             """
             self.use_vertex_ai = config["use_vertex_ai"]
 
         self.project_id = None
         if "project_id" in config:
+            """
+            If project_id is provided through config
+            or set as an environment variable GOOGLE_CLOUD_PROJECT, assign it.
+            """
             self.project_id = config["project_id"]
 
         self.region = None
         if "region" in config:
+            """
+            If region is provided through config
+            or set as an environment variable GOOGLE_CLOUD_LOCATION, assign it.
+            """
             self.region = config["region"]
 
         self.google_api_key = None
@@ -37,7 +54,7 @@ class GoogleGeminiChat(VannaBase):
         if "api_key" in config or os.getenv("GOOGLE_API_KEY"):
             """
             If Google api_key is provided through config
-            or set as an environment variable, assign it.
+            or set as an environment variable GOOGLE_API_KEY, assign it.
             """
 
             self.chat_model = genai.Client(api_key=config["api_key"], project=self.project_id, location=self.region)
