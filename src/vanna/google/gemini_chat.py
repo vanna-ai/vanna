@@ -1,33 +1,22 @@
 import os
-
 from ..base import VannaBase
-
 
 class GoogleGeminiChat(VannaBase):
     def __init__(self, config=None):
-        VannaBase.__init__(self, config=config)
+        super().__init__(config=config)
 
-        # default temperature - can be overrided using config
-        self.temperature = 0.7
-
-        if "temperature" in config:
-            self.temperature = config["temperature"]
-
-        if "model_name" in config:
-            model_name = config["model_name"]
-        else:
-            model_name = "gemini-1.5-pro"
-
+        # Always use self.config (already sanitized by VannaBase)
+        self.temperature = self.config.get("temperature", 0.7)
+        model_name = self.config.get("model_name", "gemini-1.5-pro")
         self.google_api_key = None
 
-        if "api_key" in config or os.getenv("GOOGLE_API_KEY"):
+        if "api_key" in self.config or os.getenv("GOOGLE_API_KEY"):
             """
             If Google api_key is provided through config
             or set as an environment variable, assign it.
             """
             import google.generativeai as genai
-
-            genai.configure(api_key=config["api_key"])
+            genai.configure(api_key=self.config.get("api_key", os.getenv("GOOGLE_API_KEY")))
             self.chat_model = genai.GenerativeModel(model_name)
         else:
             # Authenticate using VertexAI
@@ -35,16 +24,13 @@ class GoogleGeminiChat(VannaBase):
             import vertexai
             from vertexai.generative_models import GenerativeModel
 
-            json_file_path = config.get("google_credentials")  # Assuming the JSON file path is provided in the config
+            json_file_path = self.config.get("google_credentials")
 
             if not json_file_path or not os.path.exists(json_file_path):
                 raise FileNotFoundError(f"JSON credentials file not found at: {json_file_path}")
 
             try:
-                # Validate and set the JSON file path for GOOGLE_APPLICATION_CREDENTIALS
                 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = json_file_path
-
-                # Initialize VertexAI with the credentials
                 credentials, _ = google.auth.default()
                 vertexai.init(credentials=credentials)
                 self.chat_model = GenerativeModel(model_name)
