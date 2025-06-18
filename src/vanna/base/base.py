@@ -939,7 +939,7 @@ class VannaBase(ABC):
             password = os.getenv("PASSWORD")
 
         if password is None:
-          raise ImproperlyConfigured("Please set your postgres password")
+            raise ImproperlyConfigured("Please set your postgres password")
 
         if not port:
             port = os.getenv("PORT")
