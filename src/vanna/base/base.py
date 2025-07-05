@@ -205,7 +205,7 @@ class VannaBase(ABC):
             return sql
 
         # Match SELECT ... ;
-        sqls = re.findall(r"\bSELECT\b .*?;", llm_response, re.DOTALL | re.IGNORECASE)
+        sqls = re.findall(r"\bSELECT.*?;", llm_response, re.DOTALL | re.IGNORECASE)
         if sqls:
             sql = sqls[-1]
             self.log(title="Extracted SQL", message=f"{sql}")
