@@ -3,6 +3,7 @@ from typing import List
 
 import chromadb
 import pandas as pd
+from chromadb import DEFAULT_DATABASE
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
@@ -20,40 +21,51 @@ class ChromaDB_VectorStore(VannaBase):
 
         path = config.get("path", ".")
         self.embedding_function = config.get("embedding_function", default_ef)
-        curr_client = config.get("client", "persistent")
-        collection_metadata = config.get("collection_metadata", None)
-        self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
-        self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
-        self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
 
-        if curr_client == "persistent":
-            self.chroma_client = chromadb.PersistentClient(
-                path=path, settings=Settings(anonymized_telemetry=False)
+        self._admin_client = chromadb.AdminClient(
+            Settings(
+                is_persistent=True,
+                persist_directory=path,
             )
-        elif curr_client == "in-memory":
-            self.chroma_client = chromadb.EphemeralClient(
-                settings=Settings(anonymized_telemetry=False)
-            )
-        elif isinstance(curr_client, chromadb.api.client.Client):
-            # allow providing client directly
-            self.chroma_client = curr_client
-        else:
-            raise ValueError(f"Unsupported client was set in config: {curr_client}")
+        )
+        self.chroma_client = chromadb.PersistentClient(path=path)
 
-        self.documentation_collection = self.chroma_client.get_or_create_collection(
+        self.collection_metadata = config.get("collection_metadata", None)
+        self.n_results_sql = config.get("n_results_sql", config.get("n_results", 50))
+        self.n_results_documentation = config.get(
+            "n_results_documentation", config.get("n_results", 50)
+        )
+        self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 50))
+
+    def create_tenant(self, tenant: str):
+        self._admin_client.create_tenant(tenant)
+        self._admin_client.create_database(DEFAULT_DATABASE, tenant)
+
+    def set_tenant(self, tenant: str):
+        self.chroma_client.set_tenant(tenant)
+
+    @property
+    def documentation_collection(self):
+        return self.chroma_client.get_or_create_collection(
             name="documentation",
             embedding_function=self.embedding_function,
-            metadata=collection_metadata,
+            metadata=self.collection_metadata,
         )
-        self.ddl_collection = self.chroma_client.get_or_create_collection(
+
+    @property
+    def ddl_collection(self):
+        return self.chroma_client.get_or_create_collection(
             name="ddl",
             embedding_function=self.embedding_function,
-            metadata=collection_metadata,
+            metadata=self.collection_metadata,
         )
-        self.sql_collection = self.chroma_client.get_or_create_collection(
+
+    @property
+    def sql_collection(self):
+        return self.chroma_client.get_or_create_collection(
             name="sql",
             embedding_function=self.embedding_function,
-            metadata=collection_metadata,
+            metadata=self.collection_metadata,
         )
 
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
