@@ -33,6 +33,11 @@ class Ollama(VannaBase):
     self.keep_alive = config.get('keep_alive', None)
     self.ollama_options = config.get('options', {})
     self.num_ctx = self.ollama_options.get('num_ctx', 2048)
+
+    # Controls display of "thinking" indicators in Ollama responses
+    # When disabled, simplifies JSON parsing by removing intermediate thoughts
+    # Default: True (backward compatible with previous behavior)
+    self.think = config.get('think', True)
     self.__pull_model_if_ne(self.ollama_client, self.model)
 
   @staticmethod
@@ -96,7 +101,8 @@ class Ollama(VannaBase):
                                             messages=prompt,
                                             stream=False,
                                             options=self.ollama_options,
-                                            keep_alive=self.keep_alive)
+                                            keep_alive=self.keep_alive,
+                                            think=self.think)
 
     self.log(f"Ollama Response:\n{str(response_dict)}")
 
