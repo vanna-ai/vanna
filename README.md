@@ -11,6 +11,31 @@ https://github.com/vanna-ai/vanna/assets/7146154/1901f47a-515d-4982-af50-f12761a
 
 ![vanna-quadrants](https://github.com/vanna-ai/vanna/assets/7146154/1c7c88ba-c144-4ecf-a028-cf5ba7344ca2)
 
+## Quick Start (No API Key Required)
+If you want to try Vanna instantly, you can use the built-in mock LLM and vector database. This requires no API keys or setup:
+
+```python
+from vanna.mock.llm import MockLLM
+from vanna.mock.vectordb import MockVectorDB
+
+class MyVanna(MockVectorDB, MockLLM):
+    pass
+
+vn = MyVanna()
+
+vn.train(ddl="""
+    CREATE TABLE IF NOT EXISTS customers (
+        id INT PRIMARY KEY,
+        name VARCHAR(100),
+        age INT
+    )
+""")
+
+print(vn.ask("Show all customers over 30"))
+```
+
+This will output a mock SQL query. For real use, see the sections below for connecting to actual LLMs and vector databases.
+
 ## How Vanna works
 
 ![Screen Recording 2024-01-24 at 11 21 37 AM](https://github.com/vanna-ai/vanna/assets/7146154/1d2718ad-12a8-4a76-afa2-c61754462f93)

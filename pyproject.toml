@@ -25,6 +25,9 @@ dependencies = [
 "Homepage" = "https://github.com/vanna-ai/vanna"
 "Bug Tracker" = "https://github.com/vanna-ai/vanna/issues"
 
+[project.scripts]
+vanna = "vanna.cli:main"
+
 [project.optional-dependencies]
 postgres = ["psycopg2-binary", "db-dtypes"]
 mysql = ["PyMySQL"]
