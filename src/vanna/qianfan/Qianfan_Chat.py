@@ -99,14 +99,13 @@ class Qianfan_Chat(VannaBase):
       for i, example in question_sql_list:
         if example is None:
           print("example is None")
-        else:
-          if example is not None and "question" in example and "sql" in example:
-            if i == 0:
-              initial_prompt = initial_prompt + f"question: {example['question']}"
-              message_log.append(self.user_message(initial_prompt))
-            else:
-              message_log.append(self.user_message(example["question"]))
-            message_log.append(self.assistant_message(example["sql"]))
+        elif "question" in example and "sql" in example:
+          if i == 0:
+            initial_prompt = initial_prompt + f"question: {example['question']}"
+            message_log.append(self.user_message(initial_prompt))
+          else:
+            message_log.append(self.user_message(example["question"]))
+          message_log.append(self.assistant_message(example["sql"]))
 
       message_log.append(self.user_message(question))
     return message_log
