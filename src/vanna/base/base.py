@@ -821,13 +821,13 @@ class VannaBase(ABC):
             cs = conn.cursor()
 
             if role is not None:
-                cs.execute(f"USE ROLE {role}")
+                cs.execute(text(f"USE ROLE {role}"))
 
             if warehouse is not None:
-                cs.execute(f"USE WAREHOUSE {warehouse}")
-            cs.execute(f"USE DATABASE {database}")
+                cs.execute(text(f"USE WAREHOUSE {warehouse}"))
+            cs.execute(text(f"USE DATABASE {database}"))
 
-            cur = cs.execute(sql)
+            cur = cs.execute(text(sql))
 
             results = cur.fetchall()
 
@@ -971,7 +971,7 @@ class VannaBase(ABC):
             try:
                 conn = connect_to_db()  # Initial connection attempt
                 cs = conn.cursor()
-                cs.execute(sql)
+                cs.execute(text(sql))
                 results = cs.fetchall()
 
                 # Create a pandas dataframe from the results
@@ -984,7 +984,7 @@ class VannaBase(ABC):
                     conn.close()  # Ensure any existing connection is closed
                 conn = connect_to_db()
                 cs = conn.cursor()
-                cs.execute(sql)
+                cs.execute(text(sql))
                 results = cs.fetchall()
 
                 # Create a pandas dataframe from the results
@@ -1073,7 +1073,7 @@ class VannaBase(ABC):
                 try:
                     conn.ping(reconnect=True)
                     cs = conn.cursor()
-                    cs.execute(sql)
+                    cs.execute(text(sql))
                     results = cs.fetchall()
 
                     # Create a pandas dataframe from the results
@@ -1243,7 +1243,7 @@ class VannaBase(ABC):
                         sql = sql[:-1]
 
                     cs = conn.cursor()
-                    cs.execute(sql)
+                    cs.execute(text(sql))
                     results = cs.fetchall()
 
                     # Create a pandas dataframe from the results
@@ -1431,7 +1431,7 @@ class VannaBase(ABC):
             "mssql+pyodbc", query={"odbc_connect": odbc_conn_str}
         )
 
-        from sqlalchemy import create_engine
+        from sqlalchemy import text, create_engine
 
         engine = create_engine(connection_url, **kwargs)
 
@@ -1544,7 +1544,7 @@ class VannaBase(ABC):
             if sql.endswith(';'):
                 sql = sql[:-1]
             cs = conn.cursor()
-            cs.execute(sql)
+            cs.execute(text(sql))
             results = cs.fetchall()
 
             # Create a pandas dataframe from the results
@@ -1641,7 +1641,7 @@ class VannaBase(ABC):
         if conn:
           try:
             cs = conn.cursor()
-            cs.execute(sql)
+            cs.execute(text(sql))
             results = cs.fetchall()
 
             # Create a pandas dataframe from the results
