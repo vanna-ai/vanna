@@ -315,7 +315,6 @@ class OpenSearch_VectorStore(VannaBase):
       body={"query": {"match_all": {}}},
       size=1000
     )
-    print(query)
     # records = [hit['_source'] for hit in response['hits']['hits']]
     for hit in response['hits']['hits']:
       data.append(
