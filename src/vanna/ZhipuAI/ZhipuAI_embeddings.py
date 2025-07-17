@@ -30,7 +30,7 @@ class ZhipuAI_Embeddings(VannaBase):
 
 class ZhipuAIEmbeddingFunction(EmbeddingFunction[Documents]):
     """
-    A embeddingFunction that uses ZhipuAI to generate embeddings which can use in chromadb.
+    An embedding function that uses ZhipuAI to generate embeddings which can use in chromadb.
     usage: 
     class MyVanna(ChromaDB_VectorStore, ZhipuAI_Chat):
         def __init__(self, config=None):
