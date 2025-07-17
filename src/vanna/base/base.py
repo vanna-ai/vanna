@@ -629,10 +629,9 @@ class VannaBase(ABC):
         for example in question_sql_list:
             if example is None:
                 print("example is None")
-            else:
-                if example is not None and "question" in example and "sql" in example:
-                    message_log.append(self.user_message(example["question"]))
-                    message_log.append(self.assistant_message(example["sql"]))
+            elif "question" in example and "sql" in example:
+                message_log.append(self.user_message(example["question"]))
+                message_log.append(self.assistant_message(example["sql"]))
 
         message_log.append(self.user_message(question))
 
