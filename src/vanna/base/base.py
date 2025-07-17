@@ -821,11 +821,11 @@ class VannaBase(ABC):
             cs = conn.cursor()
 
             if role is not None:
-                cs.execute(f"USE ROLE {role}")
+                cs.execute(text("USE ROLE :role"), locals())
 
             if warehouse is not None:
-                cs.execute(f"USE WAREHOUSE {warehouse}")
-            cs.execute(f"USE DATABASE {database}")
+                cs.execute(text("USE WAREHOUSE :warehouse"), locals())
+            cs.execute(text(f"USE DATABASE {database}"))
 
             cur = cs.execute(sql)
 
@@ -1419,7 +1419,8 @@ class VannaBase(ABC):
             )
 
         try:
-            import sqlalchemy as sa
+            import sqlalchemy
+from sqlalchemy import text as sa
             from sqlalchemy.engine import URL
         except ImportError:
             raise DependencyError(
@@ -1431,7 +1432,7 @@ class VannaBase(ABC):
             "mssql+pyodbc", query={"odbc_connect": odbc_conn_str}
         )
 
-        from sqlalchemy import create_engine
+        from sqlalchemy import create_engine, text
 
         engine = create_engine(connection_url, **kwargs)
 
