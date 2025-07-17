@@ -120,7 +120,7 @@ DDL statements contain information about the table names, columns, data types, a
 
 ```python
 vn.train(ddl="""
-    CREATE TABLE IF NOT EXISTS my-table (
+    CREATE TABLE IF NOT EXISTS my_table (
         id INT PRIMARY KEY,
         name VARCHAR(100),
         age INT
@@ -139,7 +139,7 @@ vn.train(documentation="Our business defines XYZ as ...")
 You can also add SQL queries to your training data. This is useful if you have some queries already laying around. You can just copy and paste those from your editor to begin generating new SQL.
 
 ```python
-vn.train(sql="SELECT name, age FROM my-table WHERE name = 'John Doe'")
+vn.train(sql="SELECT name, age FROM my_table WHERE name = 'John Doe'")
 ```
 
 
