@@ -821,7 +821,6 @@ class VannaBase(ABC):
             cs = conn.cursor()
 
             if role is not None:
-        # SECURITY FIX: Using parameterized query to prevent SQL injection
                 cs.execute("USE ROLE ?")
 
             if warehouse is not None:
