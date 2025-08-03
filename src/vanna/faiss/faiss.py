@@ -142,35 +142,55 @@ class FAISS(VannaBase):
         return pd.concat([sql_data, ddl_data, doc_data], ignore_index=True)
 
     def remove_training_data(self, id: str, **kwargs) -> bool:
-        for metadata_list, index, index_name in [
-            (self.sql_metadata, self.sql_index, 'sql_index.faiss'),
-            (self.ddl_metadata, self.ddl_index, 'ddl_index.faiss'),
-            (self.doc_metadata, self.doc_index, 'doc_index.faiss')
-        ]:
-            for i, item in enumerate(metadata_list):
-                if item['id'] == id:
-                    del metadata_list[i]
-                    new_index = faiss.IndexFlatL2(self.embedding_dim)
-                    embeddings = [self.generate_embedding(json.dumps(m)) for m in metadata_list]
-                    if embeddings:
-                        new_index.add(np.array(embeddings, dtype=np.float32))
-                    setattr(self, index_name.split('.')[0], new_index)
-                    
-                    if self.curr_client == 'persistent':
-                        self._save_index(new_index, index_name)
-                        self._save_metadata(metadata_list, f"{index_name.split('.')[0]}_metadata.json")
-                    
-                    return True
-        return False
+        try:
+            for metadata_list, index, index_name in [
+                (self.sql_metadata, self.sql_index, 'sql_index.faiss'),
+                (self.ddl_metadata, self.ddl_index, 'ddl_index.faiss'),
+                (self.doc_metadata, self.doc_index, 'doc_index.faiss')
+            ]:
+                for i, item in enumerate(metadata_list):
+                    if item['id'] == id:
+                        del metadata_list[i]
+                        new_index = faiss.IndexFlatL2(self.embedding_dim)
+                        # Use original training text for embeddings
+                        if index_name == 'sql_index.faiss':
+                            embeddings = [self.generate_embedding(m["question"] + " " + m["sql"]) for m in metadata_list if "question" in m and "sql" in m]
+                        elif index_name == 'ddl_index.faiss':
+                            embeddings = [self.generate_embedding(m["ddl"]) for m in metadata_list if "ddl" in m]
+                        elif index_name == 'doc_index.faiss':
+                            embeddings = [self.generate_embedding(m["documentation"]) for m in metadata_list if "documentation" in m]
+                        else:
+                            embeddings = []
+                        if embeddings:
+                            new_index.add(np.array(embeddings, dtype=np.float32))
+                        setattr(self, index_name.split('.')[0], new_index)
+                        if self.curr_client == 'persistent':
+                            try:
+                                self._save_index(new_index, index_name)
+                                self._save_metadata(metadata_list, f"{index_name.split('.')[0]}_metadata.json")
+                            except Exception as e:
+                                print(f"Error saving FAISS index or metadata: {e}")
+                                raise DependencyError(f"Failed to save FAISS index or metadata: {e}")
+                        return True
+            return False
+        except Exception as e:
+            print(f"Error in remove_training_data: {e}")
+            return False
 
     def remove_collection(self, collection_name: str) -> bool:
-        if collection_name in ["sql", "ddl", "documentation"]:
-            setattr(self, f"{collection_name}_index", faiss.IndexFlatL2(self.embedding_dim))
-            setattr(self, f"{collection_name}_metadata", [])
-            
-            if self.curr_client == 'persistent':
-                self._save_index(getattr(self, f"{collection_name}_index"), f"{collection_name}_index.faiss")
-                self._save_metadata([], f"{collection_name}_metadata.json")
-            
-            return True
-        return False
+        try:
+            if collection_name in ["sql", "ddl", "documentation"]:
+                setattr(self, f"{collection_name}_index", faiss.IndexFlatL2(self.embedding_dim))
+                setattr(self, f"{collection_name}_metadata", [])
+                if self.curr_client == 'persistent':
+                    try:
+                        self._save_index(getattr(self, f"{collection_name}_index"), f"{collection_name}_index.faiss")
+                        self._save_metadata([], f"{collection_name}_metadata.json")
+                    except Exception as e:
+                        print(f"Error saving FAISS index or metadata: {e}")
+                        raise DependencyError(f"Failed to save FAISS index or metadata: {e}")
+                return True
+            return False
+        except Exception as e:
+            print(f"Error in remove_collection: {e}")
+            return False
