@@ -1269,6 +1269,7 @@ class VannaBase(ABC):
         project_id: str = None,
         **kwargs
     ):
+        print("Trying to instantiate BQ Client")
         """
         Connect to gcs using the bigquery connector. This is just a helper function to set [`vn.run_sql`][vanna.base.base.VannaBase.run_sql]
         **Example:**
@@ -1350,6 +1351,161 @@ class VannaBase(ABC):
         self.dialect = "BigQuery SQL"
         self.run_sql_is_set = True
         self.run_sql = run_sql_bigquery
+
+    def connect_to_databricks(
+        self,
+        server_hostname: str,
+        http_path: str,
+        access_token: str,
+        *,
+        catalog: str | None = None,
+        schema: str | None = None,
+        init_sql: str | None = None,
+        engine: str = "sql-warehouse",   # "sql-warehouse" or "cluster-odbc"
+        **kwargs,
+    ):
+        """
+        Connect to a Databricks SQL Warehouse (recommended) or an all-purpose cluster (ODBC),
+        and set `self.run_sql` for Vanna the same way as your DuckDB helper.
+
+        Args:
+            server_hostname: Your Databricks workspace hostname (e.g., "adb-1234567890123456.10.azuredatabricks.net").
+            http_path: The HTTP Path from the SQL Warehouse or Cluster JDBC/ODBC tab.
+            access_token: A Databricks personal access token with SQL permissions.
+            catalog: Optional Unity Catalog to USE after connect.
+            schema: Optional schema (database) to USE after connect.
+            init_sql: Optional SQL to run on connect (runs after USE commands if provided).
+            engine: "sql-warehouse" (uses databricks-sql-connector) or "cluster-odbc" (uses pyodbc).
+            **kwargs: Passed through to the underlying connector (e.g., session_configuration).
+
+        Returns:
+            None
+        """
+        import pandas as pd
+
+        if engine == "sql-warehouse":
+            # pip install databricks-sql-connector
+            try:
+                from databricks import sql as dbsql
+            except ImportError:
+                raise ImportError(
+                    "Missing dependency. Install with:\n  pip install databricks-sql-connector"
+                )
+
+            conn = dbsql.connect(
+                server_hostname=server_hostname,
+                http_path=http_path,
+                access_token=access_token,
+                **kwargs,  # e.g., session_configuration={"ansi_mode": "true"}
+            )
+
+            # Run optional setup (catalog/schema/init)
+            with conn.cursor() as c:
+                if catalog:
+                    c.execute(f"USE CATALOG {catalog}")
+                if schema:
+                    # In UC, SCHEMA == database
+                    c.execute(f"USE {schema}")
+                if init_sql:
+                    c.execute(init_sql)
+
+            def run_sql_databricks(sql: str):
+                with conn.cursor() as c:
+                    c.execute(sql)
+                    # If the statement returns rows, fetch and build a DataFrame
+                    try:
+                        rows = c.fetchall()
+                    except Exception:
+                        # No result set (e.g., DDL/DML); return empty DataFrame
+                        return pd.DataFrame()
+
+                    if not rows:
+                        return pd.DataFrame()
+
+                    cols = [d[0] for d in c.description]
+                    return pd.DataFrame.from_records(rows, columns=cols)
+
+            self.dialect = "Spark SQL (Databricks)"
+            self.run_sql = run_sql_databricks
+            self.run_sql_is_set = True
+            return
+
+        elif engine == "cluster-odbc":
+            # Requires Databricks ODBC driver installed on the machine and pyodbc in Python.
+            # pip install pyodbc
+            try:
+                import pyodbc
+            except ImportError:
+                raise ImportError(
+                    "Missing dependency. Install with:\n  pip install pyodbc\n"
+                    "Also install the Databricks ODBC driver and ensure the driver name below matches your system."
+                )
+
+            # Adjust the DRIVER name below to match your OS installation:
+            # Windows:  {Simba Spark ODBC Driver}  or  {Databricks ODBC Driver}
+            # macOS:    {Simba Spark ODBC Driver}
+            # Linux:    {Simba Spark ODBC Driver}
+            DRIVER_NAME = "Simba Spark ODBC Driver"
+
+            # Typical Databricks ODBC params
+            odbc_conn_str = (
+                f"Driver={{{DRIVER_NAME}}};"
+                f"HOST={server_hostname};"
+                "PORT=443;"
+                f"HTTPPath={http_path};"
+                "SSL=1;"
+                "AuthMech=3;"            # Token auth
+                "UID=token;"
+                f"PWD={access_token};"
+                "SparkServerType=3;"     # 3 = Databricks
+                "ThriftTransport=2;"     # HTTP transport
+                "SSLOptions=3;"
+            )
+
+            # Substitute driver name
+            odbc_conn_str = odbc_conn_str.replace("{DRIVER_NAME}", DRIVER_NAME)
+
+            conn = pyodbc.connect(odbc_conn_str, autocommit=True)
+
+            # Optional setup
+            def _exec_setup(sql_cmd: str):
+                cur = conn.cursor()
+                try:
+                    cur.execute(sql_cmd)
+                finally:
+                    cur.close()
+
+            if catalog:
+                _exec_setup(f"USE CATALOG {catalog}")
+            if schema:
+                _exec_setup(f"USE {schema}")
+            if init_sql:
+                _exec_setup(init_sql)
+
+            def run_sql_databricks_odbc(sql: str):
+                cur = conn.cursor()
+                try:
+                    cur.execute(sql)
+                    try:
+                        cols = [c[0] for c in cur.description] if cur.description else []
+                    except Exception:
+                        cols = []
+                    rows = cur.fetchall() if cols else []
+                finally:
+                    cur.close()
+
+                if not cols:
+                    return pd.DataFrame()
+                return pd.DataFrame.from_records(rows, columns=cols)
+
+            self.dialect = "Spark SQL (Databricks)"
+            self.run_sql = run_sql_databricks_odbc
+            self.run_sql_is_set = True
+            return
+
+        else:
+            raise ValueError('engine must be "sql-warehouse" or "cluster-odbc"')
+
 
     def connect_to_duckdb(self, url: str, init_sql: str = None, **kwargs):
         """
