@@ -2088,6 +2088,39 @@ class VannaBase(ABC):
             exec(plotly_code, globals(), ldict)
 
             fig = ldict.get("fig", None)
+
+            # Post-validation: if the dataframe is categorical-only but LLM code produced a chart,
+            # override with a count-based chart to avoid misleading 0..N index plots.
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            categorical_cols = df.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
+            if fig is not None and len(numeric_cols) == 0 and len(categorical_cols) >= 1:
+                # Purely categorical data: always show counts, not a line over the index
+                category = categorical_cols[0]
+                vc = df[category].value_counts(dropna=False).reset_index()
+                vc.columns = [category, "count"]
+                if vc[category].nunique() <= 10:
+                    fig = px.pie(vc, names=category, values="count")
+                else:
+                    fig = px.bar(vc, x=category, y="count")
+            elif fig is not None and len(numeric_cols) >= 1 and len(categorical_cols) >= 1:
+                # Mixed data: if the LLM produced a plot that uses a 0..N-1 x-axis (likely px.line default),
+                # replace with a categorical vs numeric bar chart for clarity.
+                try:
+                    # Attempt to inspect first trace x values
+                    trace = fig.data[0] if len(fig.data) > 0 else None
+                    x_values = list(getattr(trace, "x", [])) if trace is not None else []
+                    looks_like_default_index = (
+                        len(x_values) == len(df)
+                        and all(isinstance(v, (int, float)) for v in x_values)
+                        and x_values == list(range(len(df)))
+                    )
+                    if looks_like_default_index:
+                        fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
+                except Exception:
+                    # If inspection fails, leave the LLM chart as-is
+                    pass
         except Exception as e:
             # Inspect data types
             numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -2102,9 +2135,18 @@ class VannaBase(ABC):
             elif len(numeric_cols) == 1 and len(categorical_cols) >= 1:
                 # Use a bar plot if there's one numeric and one categorical column
                 fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
-            elif len(categorical_cols) >= 1 and df[categorical_cols[0]].nunique() < 10:
-                # Use a pie chart for categorical data with fewer unique values
-                fig = px.pie(df, names=categorical_cols[0])
+            elif len(categorical_cols) >= 1:
+                # For purely categorical data (or when no numeric columns are usable),
+                # aggregate counts to avoid misleading equal-sized slices.
+                category = categorical_cols[0]
+                vc = df[category].value_counts(dropna=False).reset_index()
+                # value_counts returns columns like ['index', 'category']; normalize names
+                vc.columns = [category, "count"]
+                # Prefer pie if number of unique categories is small, otherwise bar
+                if vc[category].nunique() <= 10:
+                    fig = px.pie(vc, names=category, values="count")
+                else:
+                    fig = px.bar(vc, x=category, y="count")
             else:
                 # Default to a simple line plot if above conditions are not met
                 fig = px.line(df)
