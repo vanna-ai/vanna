@@ -9,6 +9,7 @@ def test_regular_imports():
     from vanna.faiss.faiss import FAISS
     from vanna.google.bigquery_vector import BigQuery_VectorStore
     from vanna.google.gemini_chat import GoogleGeminiChat
+    from vanna.hana.hana import HANA_VectorStore
     from vanna.hf.hf import Hf
     from vanna.local import LocalContext_OpenAI
     from vanna.marqo.marqo import Marqo_VectorStore
@@ -42,6 +43,7 @@ def test_shortcut_imports():
     from vanna.chromadb import ChromaDB_VectorStore
     from vanna.cohere import Cohere_Chat, Cohere_Embeddings
     from vanna.faiss import FAISS
+    from vanna.hana import HANA_VectorStore
     from vanna.hf import Hf
     from vanna.marqo import Marqo_VectorStore
     from vanna.milvus import Milvus_VectorStore

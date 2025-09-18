@@ -60,6 +60,7 @@ These are some of the user interfaces that we've built using Vanna. You can use 
 - [Qdrant](https://github.com/vanna-ai/vanna/tree/main/src/vanna/qdrant)
 - [Weaviate](https://github.com/vanna-ai/vanna/tree/main/src/vanna/weaviate)
 - [Oracle](https://github.com/vanna-ai/vanna/tree/main/src/vanna/oracle)
+- [SAP HANA](https://github.com/vanna-ai/vanna/tree/main/src/vanna/hana)
 
 ## Supported Databases
 
