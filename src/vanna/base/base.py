@@ -2096,6 +2096,7 @@ class VannaBase(ABC):
                 include=["object", "category"]
             ).columns.tolist()
             if fig is not None and len(numeric_cols) == 0 and len(categorical_cols) >= 1:
+                # Purely categorical data: always show counts, not a line over the index
                 category = categorical_cols[0]
                 vc = df[category].value_counts(dropna=False).reset_index()
                 vc.columns = [category, "count"]
@@ -2103,6 +2104,23 @@ class VannaBase(ABC):
                     fig = px.pie(vc, names=category, values="count")
                 else:
                     fig = px.bar(vc, x=category, y="count")
+            elif fig is not None and len(numeric_cols) >= 1 and len(categorical_cols) >= 1:
+                # Mixed data: if the LLM produced a plot that uses a 0..N-1 x-axis (likely px.line default),
+                # replace with a categorical vs numeric bar chart for clarity.
+                try:
+                    # Attempt to inspect first trace x values
+                    trace = fig.data[0] if len(fig.data) > 0 else None
+                    x_values = list(getattr(trace, "x", [])) if trace is not None else []
+                    looks_like_default_index = (
+                        len(x_values) == len(df)
+                        and all(isinstance(v, (int, float)) for v in x_values)
+                        and x_values == list(range(len(df)))
+                    )
+                    if looks_like_default_index:
+                        fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
+                except Exception:
+                    # If inspection fails, leave the LLM chart as-is
+                    pass
         except Exception as e:
             # Inspect data types
             numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()

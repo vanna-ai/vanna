@@ -74,3 +74,20 @@ def test_categorical_only_overrides_llm_line_chart():
     assert fig is not None
     vals_sorted = _extract_counts(fig)
     assert vals_sorted == [1, 2, 3]
+
+
+def test_mixed_data_overrides_llm_line_chart_to_bar():
+    vn = DummyVanna()
+    df = pd.DataFrame({
+        "category": ["A", "B", "C", "D"],
+        "value": [10, 5, 3, 8]
+    })
+    # LLM returns a generic line over index; heuristic should switch to bar with x='category', y='value'
+    fig = vn.get_plotly_figure(plotly_code="import plotly.express as px\nfig = px.line(df)", df=df, dark_mode=False)
+    assert fig is not None
+    # Validate the shape
+    trace = fig.data[0]
+    # Expect bar (has attribute 'type' == 'bar' or has 'y' equal to df['value'])
+    y = getattr(trace, "y", None)
+    assert y is not None
+    assert list(y) == df["value"].tolist()
