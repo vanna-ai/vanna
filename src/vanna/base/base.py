@@ -2088,6 +2088,21 @@ class VannaBase(ABC):
             exec(plotly_code, globals(), ldict)
 
             fig = ldict.get("fig", None)
+
+            # Post-validation: if the dataframe is categorical-only but LLM code produced a chart,
+            # override with a count-based chart to avoid misleading 0..N index plots.
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            categorical_cols = df.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
+            if fig is not None and len(numeric_cols) == 0 and len(categorical_cols) >= 1:
+                category = categorical_cols[0]
+                vc = df[category].value_counts(dropna=False).reset_index()
+                vc.columns = [category, "count"]
+                if vc[category].nunique() <= 10:
+                    fig = px.pie(vc, names=category, values="count")
+                else:
+                    fig = px.bar(vc, x=category, y="count")
         except Exception as e:
             # Inspect data types
             numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()

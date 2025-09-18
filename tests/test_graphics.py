@@ -46,6 +46,14 @@ class DummyVanna(VannaBase):
         return ""
 
 
+def _extract_counts(fig):
+    trace = fig.data[0]
+    values = getattr(trace, "values", None)
+    if values is None:
+        values = getattr(trace, "y", None)
+    return sorted(list(values))
+
+
 def test_categorical_only_uses_counts_in_chart():
     vn = DummyVanna()
     df = pd.DataFrame({"animal": ["cat", "dog", "cat", "bird", "dog", "dog"]})
@@ -53,12 +61,16 @@ def test_categorical_only_uses_counts_in_chart():
     fig = vn.get_plotly_figure(plotly_code="raise Exception('force fallback')", df=df, dark_mode=False)
     # The fallback should aggregate counts for categorical-only data
     assert fig is not None
-    # Extract values from the first trace
-    trace = fig.data[0]
-    # Plotly pie or bar will store counts in 'values' (pie) or 'y' (bar)
-    values = getattr(trace, "values", None)
-    if values is None:
-        values = getattr(trace, "y", None)
-    # The counts should be [3, 2, 1] for dog, cat, bird in some order
-    vals_sorted = sorted(list(values))
+    vals_sorted = _extract_counts(fig)
+    # The counts should be [3, 2, 1] in some order
+    assert vals_sorted == [1, 2, 3]
+
+
+def test_categorical_only_overrides_llm_line_chart():
+    vn = DummyVanna()
+    df = pd.DataFrame({"animal": ["cat", "dog", "cat", "bird", "dog", "dog"]})
+    # Provide a runnable line plot over the default index; our post-validation should override it
+    fig = vn.get_plotly_figure(plotly_code="import plotly.express as px\nfig = px.line(df)", df=df, dark_mode=False)
+    assert fig is not None
+    vals_sorted = _extract_counts(fig)
     assert vals_sorted == [1, 2, 3]
