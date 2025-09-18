@@ -2102,9 +2102,18 @@ class VannaBase(ABC):
             elif len(numeric_cols) == 1 and len(categorical_cols) >= 1:
                 # Use a bar plot if there's one numeric and one categorical column
                 fig = px.bar(df, x=categorical_cols[0], y=numeric_cols[0])
-            elif len(categorical_cols) >= 1 and df[categorical_cols[0]].nunique() < 10:
-                # Use a pie chart for categorical data with fewer unique values
-                fig = px.pie(df, names=categorical_cols[0])
+            elif len(categorical_cols) >= 1:
+                # For purely categorical data (or when no numeric columns are usable),
+                # aggregate counts to avoid misleading equal-sized slices.
+                category = categorical_cols[0]
+                vc = df[category].value_counts(dropna=False).reset_index()
+                # value_counts returns columns like ['index', 'category']; normalize names
+                vc.columns = [category, "count"]
+                # Prefer pie if number of unique categories is small, otherwise bar
+                if vc[category].nunique() <= 10:
+                    fig = px.pie(vc, names=category, values="count")
+                else:
+                    fig = px.bar(vc, x=category, y="count")
             else:
                 # Default to a simple line plot if above conditions are not met
                 fig = px.line(df)
