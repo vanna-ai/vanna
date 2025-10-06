@@ -237,7 +237,7 @@ try:
     COHERE_API_KEY = os.environ['COHERE_API_KEY']
     vn_cohere = VannaCohere(config={'api_key': COHERE_API_KEY, 'model': 'command-a-03-2025'})
     vn_cohere.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
-    
+
     def test_vn_cohere():
         sql = vn_cohere.generate_sql("What are the top 10 customers by sales?")
         df = vn_cohere.run_sql(sql)
@@ -259,3 +259,63 @@ def test_training_plan():
 
     plan = vn_dummy.get_training_plan_generic(df_information_schema)
     assert len(plan._plan) == 8
+
+
+def test_snowflake_keypair_auth_mock(monkeypatch=None):
+    # Ensure key-pair mode uses JWT and sets proper params without real file or network
+    from unittest import mock
+
+    from vanna.remote import VannaDefault
+
+    fake_path = '/tmp/fake_private_key.p8'
+
+    with mock.patch('os.path.isfile', return_value=True):
+
+        captured_params = {}
+
+        class FakeCursor:
+            def execute(self, sql):
+                # Minimal behavior for USE statements and query
+                class FakeDesc:
+                    def __init__(self, name):
+                        self.name = name
+                # Return self to allow .fetchall and .description
+                return self
+            @property
+            def description(self):
+                return [('COL1',), ('COL2',)]
+            def fetchall(self):
+                return [(1, 2)]
+
+        class FakeConn:
+            def cursor(self):
+                return FakeCursor()
+
+        def fake_connect(**kwargs):
+            nonlocal captured_params
+            captured_params = kwargs
+            return FakeConn()
+
+        with mock.patch.dict('sys.modules', {'snowflake': mock.MagicMock(), 'snowflake.connector': mock.MagicMock()}):
+            import snowflake.connector as sfconn
+            sfconn.connect = fake_connect
+
+            vn = VannaDefault(model=MY_VANNA_MODEL, api_key=MY_VANNA_API_KEY)
+            vn.connect_to_snowflake(
+                account='acct',
+                username='user',
+                password='to-skip',
+                database='db',
+                private_key_file=fake_path,
+                private_key_file_pwd='secret',
+            )
+
+            assert captured_params.get('authenticator') == 'SNOWFLAKE_JWT'
+            assert captured_params.get('private_key_file') == fake_path
+            assert captured_params.get('private_key_file_pwd') == 'secret'
+            # Ensure password not set
+            assert 'password' not in captured_params
+
+            assert vn.run_sql_is_set is True
+            df = vn.run_sql('SELECT 1')
+            # Our fake returns a dataframe in base code; here we only verify no exception
