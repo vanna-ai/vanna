@@ -786,9 +786,6 @@ class VannaBase(ABC):
             else:
                 raise ImproperlyConfigured("Please set your Snowflake username.")
 
-        if password == "mypassword":
-            password = os.getenv("SNOWFLAKE_PASSWORD")
-
         if account == "my-account":
             account_env = os.getenv("SNOWFLAKE_ACCOUNT")
 
@@ -814,18 +811,27 @@ class VannaBase(ABC):
             "client_session_keep_alive": True,
         }
 
+        # Private key auth (JWT)
         if private_key_file:
+            if not os.path.isfile(private_key_file):
+                raise ImproperlyConfigured("private_key_file path is invalid.")
+
             conn_params["authenticator"] = "SNOWFLAKE_JWT"
             conn_params["private_key_file"] = private_key_file
             if private_key_file_pwd:
                 conn_params["private_key_file_pwd"] = private_key_file_pwd
-
         else:
-            if not password:
-                raise ImproperlyConfigured(
-                    "Neither password nor private_key_file provided. Please configure authentication."
-                )
-            conn_params["password"] = password
+            # Password auth
+            if not password or password == "mypassword":
+                password = os.getenv("SNOWFLAKE_PASSWORD")
+
+            if password:
+                conn_params["password"] = password
+
+        if "password" not in conn_params and "private_key_file" not in conn_params:
+            raise ImproperlyConfigured(
+                "Snowflake authentication not configured. Provide a password or a valid private_key_file."
+            )
 
         conn = snowflake.connector.connect(**conn_params, **kwargs)
 
