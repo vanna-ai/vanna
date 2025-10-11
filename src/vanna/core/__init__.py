@@ -1,43 +1,33 @@
 """
-Vanna Agents - A modular framework for building LLM agents.
+Core components of the Vanna Agents framework.
 
-This package provides a flexible framework for creating conversational AI agents
-with tool execution, conversation management, and user scoping.
+This package contains the fundamental abstractions and implementations
+that form the foundation of the agent framework.
 """
 
-# Version information
-__version__ = "0.1.0"
+# Core domains - re-export from new structure
+from .tool import T, Tool, ToolCall, ToolContext, ToolResult, ToolSchema
+from .llm import LlmMessage, LlmRequest, LlmResponse, LlmService, LlmStreamChunk
+from .storage import Conversation, ConversationStore, Message
+from .user import User, UserService
+from .agent import Agent, AgentConfig
+from .system_prompt import DefaultSystemPromptBuilder, SystemPromptBuilder
+from .lifecycle import LifecycleHook
+from .middleware import LlmMiddleware
+from .recovery import ErrorRecoveryStrategy, RecoveryAction, RecoveryActionType
+from .enricher import ContextEnricher
+from .filter import ConversationFilter
+from .observability import ObservabilityProvider, Span, Metric
 
-# Import core framework components
-from .core import (
-    # Interfaces
-    Agent,
-    ConversationStore,
-    LlmService,
-    SystemPromptBuilder,
-    Tool,
-    UserService,
-    T,
-    # Models
-    Conversation,
-    LlmMessage,
-    LlmRequest,
-    LlmResponse,
-    LlmStreamChunk,
-    Message,
-    ToolCall,
-    ToolContext,
-    ToolResult,
-    ToolSchema,
-    User,
-    # UI Components
-    UiComponent,
+# UI Components
+from .components import UiComponent
+from .rich_component import RichComponent
+from ..components import (
     SimpleComponent,
     SimpleComponentType,
-    SimpleTextComponent,
     SimpleImageComponent,
     SimpleLinkComponent,
-    # Rich Components
+    SimpleTextComponent,
     ArtifactComponent,
     BadgeComponent,
     CardComponent,
@@ -51,12 +41,24 @@ from .core import (
     StatusCardComponent,
     TaskListComponent,
     ToolExecutionComponent,
-    # Core implementations
-    Agent,
-    AgentConfig,
-    DefaultSystemPromptBuilder,
-    ToolRegistry,
-    # Evaluation
+)
+
+# Exceptions
+from .errors import (
+    AgentError,
+    ConversationNotFoundError,
+    LlmServiceError,
+    PermissionError,
+    ToolExecutionError,
+    ToolNotFoundError,
+    ValidationError,
+)
+
+# Core implementations
+from .registry import ToolRegistry
+
+# Evaluation framework
+from .evaluation import (
     Evaluator,
     TestCase,
     ExpectedOutcome,
@@ -72,31 +74,15 @@ from .core import (
     EvaluationReport,
     ComparisonReport,
     EvaluationDataset,
-    # Exceptions
-    AgentError,
-    ConversationNotFoundError,
-    LlmServiceError,
-    PermissionError,
-    ToolExecutionError,
-    ToolNotFoundError,
-    ValidationError,
 )
 
-# Import basic implementations
-from .integrations import MemoryConversationStore, MockLlmService
+# Rebuild models to resolve forward references after all imports
+from .tool.models import ToolContext, ToolResult
+from .components import UiComponent  # Import UiComponent to ensure it's available
+ToolContext.model_rebuild()
+ToolResult.model_rebuild()
 
-# Main exports
 __all__ = [
-    # Version
-    "__version__",
-    # Core interfaces
-    "Agent",
-    "Tool",
-    "LlmService",
-    "ConversationStore",
-    "UserService",
-    "SystemPromptBuilder",
-    "T",
     # Models
     "User",
     "Message",
@@ -109,14 +95,34 @@ __all__ = [
     "LlmRequest",
     "LlmResponse",
     "LlmStreamChunk",
+    "RecoveryAction",
+    "RecoveryActionType",
+    "Span",
+    "Metric",
+    # Interfaces
+    "Tool",
+    "Agent",
+    "LlmService",
+    "ConversationStore",
+    "UserService",
+    "SystemPromptBuilder",
+    "LifecycleHook",
+    "LlmMiddleware",
+    "ErrorRecoveryStrategy",
+    "ContextEnricher",
+    "ConversationFilter",
+    "ObservabilityProvider",
+    "T",
     # UI Components
     "UiComponent",
+    # Simple Components
     "SimpleComponent",
     "SimpleComponentType",
     "SimpleTextComponent",
     "SimpleImageComponent",
     "SimpleLinkComponent",
     # Rich Components
+    "RichComponent",
     "ArtifactComponent",
     "BadgeComponent",
     "CardComponent",
@@ -131,9 +137,9 @@ __all__ = [
     "TaskListComponent",
     "ToolExecutionComponent",
     # Core implementations
+    "ToolRegistry",
     "Agent",
     "AgentConfig",
-    "ToolRegistry",
     "DefaultSystemPromptBuilder",
     # Evaluation
     "Evaluator",
@@ -151,16 +157,6 @@ __all__ = [
     "EvaluationReport",
     "ComparisonReport",
     "EvaluationDataset",
-    # Basic implementations
-    "MemoryConversationStore",
-    "MockLlmService",
-    # Server components
-    "VannaFlaskServer",
-    "VannaFastAPIServer",
-    "ChatHandler",
-    "ChatRequest",
-    "ChatStreamChunk",
-    "ExampleAgentLoader",
     # Exceptions
     "AgentError",
     "ToolExecutionError",

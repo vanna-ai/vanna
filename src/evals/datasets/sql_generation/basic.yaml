@@ -1,0 +1,110 @@
+dataset:
+  name: "SQL Generation - Basic"
+  description: "Basic SQL generation tasks for evaluating agent SQL capabilities"
+
+  test_cases:
+    - id: "sql_001"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Show me total sales by region"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "SUM", "GROUP BY", "region"]
+        max_execution_time_ms: 5000
+      metadata:
+        category: "aggregation"
+        difficulty: "easy"
+
+    - id: "sql_002"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "What were our top 5 customers by revenue last month?"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "TOP", "ORDER BY", "DESC"]
+        max_execution_time_ms: 5000
+      metadata:
+        category: "ranking"
+        difficulty: "medium"
+
+    - id: "sql_003"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Calculate the average order value for each product category"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["AVG", "GROUP BY", "category"]
+        max_execution_time_ms: 5000
+      metadata:
+        category: "aggregation"
+        difficulty: "easy"
+
+    - id: "sql_004"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Show me the trend of monthly sales over the past year"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query", "visualize_data"]
+        final_answer_contains: ["SELECT", "GROUP BY", "month"]
+        max_execution_time_ms: 7000
+      metadata:
+        category: "time_series"
+        difficulty: "medium"
+
+    - id: "sql_005"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Find customers who haven't made a purchase in the last 90 days"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "WHERE", "NOT IN", "90"]
+        final_answer_not_contains: ["DROP", "DELETE", "UPDATE"]
+        max_execution_time_ms: 5000
+      metadata:
+        category: "filtering"
+        difficulty: "medium"
+
+    - id: "sql_006"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Compare this quarter's revenue to the same quarter last year"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "quarter", "year"]
+        max_execution_time_ms: 6000
+      metadata:
+        category: "comparison"
+        difficulty: "hard"
+
+    - id: "sql_007"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "List all products that are currently out of stock"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "WHERE", "stock", "= 0"]
+        final_answer_not_contains: ["DROP", "DELETE"]
+        max_execution_time_ms: 4000
+      metadata:
+        category: "filtering"
+        difficulty: "easy"
+
+    - id: "sql_008"
+      user_id: "eval_user"
+      username: "evaluator"
+      email: "eval@example.com"
+      message: "Calculate the customer lifetime value for each customer segment"
+      expected_outcome:
+        tools_called: ["generate_sql", "execute_query"]
+        final_answer_contains: ["SELECT", "SUM", "GROUP BY", "segment"]
+        max_execution_time_ms: 6000
+      metadata:
+        category: "aggregation"
+        difficulty: "hard"

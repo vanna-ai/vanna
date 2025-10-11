@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.7.9"
+version = "2.0.0"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -18,14 +18,23 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "flask-sock", "flasgger", "sqlalchemy"
+    "pydantic>=2.0.0",
+    "click>=8.0.0",
+    "pandas",
 ]
+
+[project.scripts]
+vanna = "vanna.servers.cli.server_runner:main"
 
 [project.urls]
 "Homepage" = "https://github.com/vanna-ai/vanna"
 "Bug Tracker" = "https://github.com/vanna-ai/vanna/issues"
 
 [project.optional-dependencies]
+flask = ["flask>=2.0.0", "flask-cors>=4.0.0"]
+fastapi = ["fastapi>=0.68.0", "uvicorn>=0.15.0"]
+servers = ["vanna[flask,fastapi]"]
+
 postgres = ["psycopg2-binary", "db-dtypes"]
 mysql = ["PyMySQL"]
 clickhouse = ["clickhouse_connect"]
@@ -58,3 +67,7 @@ faiss-cpu = ["faiss-cpu"]
 faiss-gpu = ["faiss-gpu"]
 xinference-client = ["xinference-client"]
 oracle = ["oracledb", "chromadb<1.0.0"]
+
+[tool.flit.module]
+name = "vanna"
+path = "python-sdk/vanna"
