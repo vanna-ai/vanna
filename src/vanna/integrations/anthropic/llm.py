@@ -45,7 +45,7 @@ class AnthropicLlmService(LlmService):
             import anthropic
         except Exception as e:  # pragma: no cover
             raise ImportError(
-                "anthropic package is required. Install with: pip install 'vanna-agents[anthropic]'"
+                "anthropic package is required. Install with: pip install 'vanna[anthropic]'"
             ) from e
 
         # Model selection with alias support

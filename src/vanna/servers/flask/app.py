@@ -57,7 +57,7 @@ class VannaFlaskServer:
         # Add health check
         @app.route("/health")
         def health_check() -> Dict[str, str]:
-            return {"status": "healthy", "service": "vanna-agents"}
+            return {"status": "healthy", "service": "vanna"}
 
         return app
 

@@ -76,7 +76,7 @@ class VannaFastAPIServer:
         # Add health check
         @app.get("/health")
         async def health_check() -> Dict[str, str]:
-            return {"status": "healthy", "service": "vanna-agents"}
+            return {"status": "healthy", "service": "vanna"}
 
         return app
 
