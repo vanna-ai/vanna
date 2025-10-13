@@ -5,9 +5,8 @@ This example shows how to use lifecycle hooks to add custom functionality
 like quota management without creating custom agent runner subclasses.
 """
 
-from typing import Any, AsyncGenerator, Dict, Optional
-from vanna.core import Agent, LifecycleHook, User, UiComponent, Conversation
-from vanna.components import SimpleTextComponent, RichTextComponent
+from typing import Any, Dict, Optional
+from vanna.core import Agent, LifecycleHook, User
 from vanna.core.errors import AgentError
 
 
@@ -94,35 +93,7 @@ async def run_example() -> None:
     """
     from vanna.core.registry import ToolRegistry
     from vanna.integrations.anthropic import AnthropicLlmService
-    from vanna.core.storage import ConversationStore
-
-    # Note: In a real application, you would use a proper conversation store implementation
-    # For this example, we'll use a mock implementation
-    class MemoryConversationStore(ConversationStore):
-        """Simple in-memory conversation store for demonstration."""
-        def __init__(self) -> None:
-            self._conversations: Dict[str, Conversation] = {}
-
-        async def get_conversation(self, conversation_id: str, user_id: str) -> Optional[Conversation]:
-            return self._conversations.get(conversation_id)
-
-        async def create_conversation(self, user_id: str, title: str) -> Conversation:
-            conv = Conversation(id=str(len(self._conversations)), user_id=user_id, messages=[])
-            self._conversations[conv.id] = conv
-            return conv
-
-        async def update_conversation(self, conversation: Conversation) -> None:
-            self._conversations[conversation.id] = conversation
-
-        async def delete_conversation(self, conversation_id: str, user_id: str) -> bool:
-            if conversation_id in self._conversations:
-                del self._conversations[conversation_id]
-                return True
-            return False
-
-        async def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0) -> list[Conversation]:
-            user_convs = [c for c in self._conversations.values() if c.user_id == user_id]
-            return user_convs[offset:offset + limit]
+    from vanna.integrations.local import MemoryConversationStore
 
     # Create quota hook
     quota_hook = QuotaCheckHook(default_quota=10)

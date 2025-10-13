@@ -5,10 +5,8 @@ This module provides a simple in-memory implementation of the ConversationStore
 interface, useful for testing and development.
 """
 
-import uuid
 from typing import Dict, List, Optional
 
-from vanna.core.errors import ConversationNotFoundError
 from vanna.core.storage import ConversationStore, Conversation, Message
 
 
@@ -19,10 +17,9 @@ class MemoryConversationStore(ConversationStore):
         self._conversations: Dict[str, Conversation] = {}
 
     async def create_conversation(
-        self, user_id: str, initial_message: str
+        self, conversation_id: str, user_id: str, initial_message: str
     ) -> Conversation:
-        """Create a new conversation."""
-        conversation_id = str(uuid.uuid4())
+        """Create a new conversation with the specified ID."""
         conversation = Conversation(
             id=conversation_id,
             user_id=user_id,

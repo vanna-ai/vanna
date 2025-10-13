@@ -15,9 +15,9 @@ class ConversationStore(ABC):
 
     @abstractmethod
     async def create_conversation(
-        self, user_id: str, initial_message: str
+        self, conversation_id: str, user_id: str, initial_message: str
     ) -> Conversation:
-        """Create a new conversation."""
+        """Create a new conversation with the specified ID."""
         pass
 
     @abstractmethod

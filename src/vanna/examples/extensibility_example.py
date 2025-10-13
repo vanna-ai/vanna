@@ -213,11 +213,17 @@ async def run_example() -> None:
         ) -> Optional[Conversation]:
             return None
 
-        async def create_conversation(self, uid: str, title: str) -> Conversation:
-            return Conversation(id="1", user_id=uid, messages=[Message(role="user", content=title)])
+        async def create_conversation(self, cid: str, uid: str, title: str) -> Conversation:
+            return Conversation(id=cid, user_id=uid, messages=[Message(role="user", content=title)])
 
         async def update_conversation(self, conv: Conversation) -> None:
             pass
+
+        async def delete_conversation(self, cid: str, uid: str) -> bool:
+            return False
+
+        async def list_conversations(self, uid: str, limit: int = 50, offset: int = 0) -> List[Conversation]:
+            return []
 
     # Create agent with all extensibility components
     agent = Agent(

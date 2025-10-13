@@ -160,7 +160,7 @@ class Agent:
         )
         if not conversation:
             conversation = await self.conversation_store.create_conversation(
-                user.id, message
+                conversation_id, user.id, message
             )
         else:
             # Add user message
