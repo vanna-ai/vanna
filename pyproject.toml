@@ -21,6 +21,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "click>=8.0.0",
     "pandas",
+    "httpx>=0.28.0",
 ]
 
 [project.scripts]
