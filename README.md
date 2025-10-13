@@ -80,6 +80,10 @@ server.run(host='0.0.0.0', port=5000)
 
 ---
 
+![Vanna2 Diagram](img/vanna2.svg)
+
+---
+
 ## What Makes Vanna Unique
 
 ### 1. User-Aware by Design
