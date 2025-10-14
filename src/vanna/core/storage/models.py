@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from ..tool.models import ToolCall
+from ..user.models import User
 
 
 class Message(BaseModel):
@@ -29,7 +30,7 @@ class Conversation(BaseModel):
     """Conversation containing multiple messages."""
 
     id: str = Field(description="Unique conversation identifier")
-    user_id: str = Field(description="ID of the user this conversation belongs to")
+    user: User = Field(description="User this conversation belongs to")
     messages: List[Message] = Field(
         default_factory=list, description="Messages in conversation"
     )

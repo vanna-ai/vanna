@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from ..tool.models import ToolCall
+from ..user.models import User
 
 
 class LlmMessage(BaseModel):
@@ -27,7 +28,7 @@ class LlmRequest(BaseModel):
     tools: Optional[List[Any]] = Field(
         default=None, description="Available tools"
     )  # Will be ToolSchema but avoiding circular import
-    user_id: str = Field(description="User ID for scoping")
+    user: User = Field(description="User making the request")
     stream: bool = Field(default=False, description="Whether to stream response")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0)

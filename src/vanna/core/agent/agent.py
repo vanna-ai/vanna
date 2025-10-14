@@ -156,11 +156,11 @@ class Agent:
 
         # Load or create conversation
         conversation = await self.conversation_store.get_conversation(
-            conversation_id, user.id
+            conversation_id, user
         )
         if not conversation:
             conversation = await self.conversation_store.create_conversation(
-                conversation_id, user.id, message
+                conversation_id, user, message
             )
         else:
             # Add user message
@@ -202,7 +202,7 @@ class Agent:
         )
 
         # Build LLM request
-        request = await self._build_llm_request(conversation, tool_schemas, user.id, system_prompt)
+        request = await self._build_llm_request(conversation, tool_schemas, user, system_prompt)
 
         # Process with tool loop
         tool_iterations = 0
@@ -336,7 +336,7 @@ class Agent:
                     conversation.add_message(tool_response_message)
 
                 # Rebuild request with tool responses
-                request = await self._build_llm_request(conversation, tool_schemas, user.id, system_prompt)
+                request = await self._build_llm_request(conversation, tool_schemas, user, system_prompt)
             else:
                 # Update status to idle and set completion message
                 yield UiComponent(  # type: ignore
@@ -390,7 +390,7 @@ class Agent:
         return self.tool_registry.get_schemas(user)
 
     async def _build_llm_request(
-        self, conversation: Conversation, tool_schemas: List[ToolSchema], user_id: str, system_prompt: Optional[str] = None
+        self, conversation: Conversation, tool_schemas: List[ToolSchema], user: User, system_prompt: Optional[str] = None
     ) -> LlmRequest:
         """Build LLM request from conversation and tools."""
         # Apply conversation filters
@@ -411,7 +411,7 @@ class Agent:
         return LlmRequest(
             messages=messages,
             tools=tool_schemas if tool_schemas else None,
-            user_id=user_id,
+            user=user,
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
             stream=self.config.stream_responses,

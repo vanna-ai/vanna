@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from .models import Conversation
+from ..user.models import User
 
 
 class ConversationStore(ABC):
@@ -15,14 +16,14 @@ class ConversationStore(ABC):
 
     @abstractmethod
     async def create_conversation(
-        self, conversation_id: str, user_id: str, initial_message: str
+        self, conversation_id: str, user: User, initial_message: str
     ) -> Conversation:
         """Create a new conversation with the specified ID."""
         pass
 
     @abstractmethod
     async def get_conversation(
-        self, conversation_id: str, user_id: str
+        self, conversation_id: str, user: User
     ) -> Optional[Conversation]:
         """Get conversation by ID, scoped to user."""
         pass
@@ -33,13 +34,13 @@ class ConversationStore(ABC):
         pass
 
     @abstractmethod
-    async def delete_conversation(self, conversation_id: str, user_id: str) -> bool:
+    async def delete_conversation(self, conversation_id: str, user: User) -> bool:
         """Delete conversation."""
         pass
 
     @abstractmethod
     async def list_conversations(
-        self, user_id: str, limit: int = 50, offset: int = 0
+        self, user: User, limit: int = 50, offset: int = 0
     ) -> List[Conversation]:
         """List conversations for user."""
         pass
