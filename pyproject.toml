@@ -58,3 +58,5 @@ faiss-cpu = ["faiss-cpu"]
 faiss-gpu = ["faiss-gpu"]
 xinference-client = ["xinference-client"]
 oracle = ["oracledb", "chromadb<1.0.0"]
+llamacpp = ["llama-cpp-python>=0.2.90"]
+

@@ -1173,8 +1173,8 @@ class VannaFlaskApp(VannaFlaskAPI):
         auth: AuthInterface = NoAuth(),
         debug=True,
         allow_llm_to_see_data=False,
-        logo="https://img.vanna.ai/vanna-flask.svg",
-        title="Welcome to Vanna.AI",
+        logo="https://cdn.jsdelivr.net/gh/Dhineshkumar11/logo/W1g6H701.svg",
+        title="Welcome to Ligaments.AI",
         subtitle="Your AI-powered copilot for SQL queries.",
         show_training_data=True,
         suggested_questions=True,
@@ -1272,7 +1272,7 @@ class VannaFlaskApp(VannaFlaskAPI):
         # Proxy the /vanna.svg file to the remote server
         @self.flask_app.route("/vanna.svg")
         def proxy_vanna_svg():
-            remote_url = "https://vanna.ai/img/vanna.svg"
+            remote_url = "https://cdn.jsdelivr.net/gh/Dhineshkumar11/logo/W1g6H701.svg"
             response = requests.get(remote_url, stream=True)
 
             # Check if the request to the remote URL was successful
