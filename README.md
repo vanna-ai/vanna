@@ -44,7 +44,7 @@ pip install vanna[anthropic]  # or [openai]
 
 ```python
 from vanna import Agent, AgentConfig
-from vanna.servers import VannaFlaskServer
+from vanna.servers.flask import VannaFlaskServer
 from vanna.core.registry import ToolRegistry
 from vanna.core.user import UserResolver, User, RequestContext
 from vanna.integrations.anthropic import AnthropicLlmService

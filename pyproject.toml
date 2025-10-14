@@ -22,6 +22,8 @@ dependencies = [
     "click>=8.0.0",
     "pandas",
     "httpx>=0.28.0",
+    "PyYAML",
+    "plotly",
 ]
 
 [project.scripts]

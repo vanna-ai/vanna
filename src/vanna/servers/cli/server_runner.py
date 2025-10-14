@@ -9,9 +9,6 @@ from typing import Dict, Optional, Any, cast, TextIO, Union
 import click
 
 from ...core import Agent
-from ..flask.app import VannaFlaskServer
-from ..fastapi.app import VannaFastAPIServer
-
 
 class ExampleAgentLoader:
     """Loads example agents for the CLI."""
@@ -155,6 +152,9 @@ def main(
         except ImportError as e:
             click.echo(f"Error: Could not create basic agent: {e}", err=True)
             return
+
+    from ..flask.app import VannaFlaskServer
+    from ..fastapi.app import VannaFastAPIServer
 
     # Create and run server
     server: Union[VannaFlaskServer, VannaFastAPIServer]
