@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from ..components import UiComponent
     from ..user.models import User
+    from ..observability import ObservabilityProvider
 
 
 class ToolCall(BaseModel):
@@ -28,6 +29,12 @@ class ToolContext(BaseModel):
     conversation_id: str
     request_id: str = Field(description="Unique request identifier for tracing")
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    observability_provider: Optional["ObservabilityProvider"] = Field(
+        default=None, description="Optional observability provider for metrics and spans"
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class ToolResult(BaseModel):

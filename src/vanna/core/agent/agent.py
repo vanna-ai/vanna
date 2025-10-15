@@ -118,8 +118,23 @@ class Agent:
         Yields:
             UiComponent instances for UI updates
         """
-        # Resolve user from request context
+        # Resolve user from request context with observability
+        user_resolution_span = None
+        if self.observability_provider:
+            user_resolution_span = await self.observability_provider.create_span(
+                "agent.user_resolution",
+                attributes={"has_context": request_context is not None}
+            )
+
         user = await self.user_resolver.resolve_user(request_context)
+
+        if self.observability_provider and user_resolution_span:
+            user_resolution_span.set_attribute("user_id", user.id)
+            await self.observability_provider.end_span(user_resolution_span)
+            if user_resolution_span.duration_ms():
+                await self.observability_provider.record_metric(
+                    "agent.user_resolution.duration", user_resolution_span.duration_ms() or 0, "ms"
+                )
 
         # Create observability span for entire message processing
         message_span = None
@@ -129,12 +144,28 @@ class Agent:
                 attributes={"user_id": user.id, "conversation_id": conversation_id or "new"}
             )
 
-        # Run before_message hooks
+        # Run before_message hooks with observability
         modified_message = message
         for hook in self.lifecycle_hooks:
+            hook_span = None
+            if self.observability_provider:
+                hook_span = await self.observability_provider.create_span(
+                    "agent.hook.before_message",
+                    attributes={"hook": hook.__class__.__name__}
+                )
+
             hook_result = await hook.before_message(user, modified_message)
             if hook_result is not None:
                 modified_message = hook_result
+
+            if self.observability_provider and hook_span:
+                hook_span.set_attribute("modified_message", hook_result is not None)
+                await self.observability_provider.end_span(hook_span)
+                if hook_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.hook.duration", hook_span.duration_ms() or 0, "ms",
+                        tags={"hook": hook.__class__.__name__, "phase": "before_message"}
+                    )
 
         # Use the potentially modified message
         message = modified_message
@@ -154,10 +185,20 @@ class Agent:
             )
         )
 
-        # Load or create conversation
+        # Load or create conversation with observability
+        conversation_span = None
+        if self.observability_provider:
+            conversation_span = await self.observability_provider.create_span(
+                "agent.conversation.load",
+                attributes={"conversation_id": conversation_id, "user_id": user.id}
+            )
+
         conversation = await self.conversation_store.get_conversation(
             conversation_id, user
         )
+
+        is_new_conversation = conversation is None
+
         if not conversation:
             conversation = await self.conversation_store.create_conversation(
                 conversation_id, user, message
@@ -165,6 +206,16 @@ class Agent:
         else:
             # Add user message
             conversation.add_message(Message(role="user", content=message))
+
+        if self.observability_provider and conversation_span:
+            conversation_span.set_attribute("is_new", is_new_conversation)
+            conversation_span.set_attribute("message_count", len(conversation.messages))
+            await self.observability_provider.end_span(conversation_span)
+            if conversation_span.duration_ms():
+                await self.observability_provider.record_metric(
+                    "agent.conversation.load.duration", conversation_span.duration_ms() or 0, "ms",
+                    tags={"is_new": str(is_new_conversation)}
+                )
 
         # Add initial task
         context_task = Task(
@@ -176,17 +227,51 @@ class Agent:
             rich_component=TaskTrackerUpdateComponent.add_task(context_task)
         )
 
-        # Create context
+        # Create context with observability provider
         context = ToolContext(
-            user=user, conversation_id=conversation_id, request_id=request_id
+            user=user,
+            conversation_id=conversation_id,
+            request_id=request_id,
+            observability_provider=self.observability_provider
         )
 
-        # Enrich context with additional data
+        # Enrich context with additional data with observability
         for enricher in self.context_enrichers:
+            enrichment_span = None
+            if self.observability_provider:
+                enrichment_span = await self.observability_provider.create_span(
+                    "agent.context.enrichment",
+                    attributes={"enricher": enricher.__class__.__name__}
+                )
+
             context = await enricher.enrich_context(context)
 
-        # Get available tools for user
+            if self.observability_provider and enrichment_span:
+                await self.observability_provider.end_span(enrichment_span)
+                if enrichment_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.enrichment.duration", enrichment_span.duration_ms() or 0, "ms",
+                        tags={"enricher": enricher.__class__.__name__}
+                    )
+
+        # Get available tools for user with observability
+        schema_span = None
+        if self.observability_provider:
+            schema_span = await self.observability_provider.create_span(
+                "agent.tool_schemas.fetch",
+                attributes={"user_id": user.id}
+            )
+
         tool_schemas = self.tool_registry.get_schemas(user)
+
+        if self.observability_provider and schema_span:
+            schema_span.set_attribute("schema_count", len(tool_schemas))
+            await self.observability_provider.end_span(schema_span)
+            if schema_span.duration_ms():
+                await self.observability_provider.record_metric(
+                    "agent.tool_schemas.duration", schema_span.duration_ms() or 0, "ms",
+                    tags={"schema_count": str(len(tool_schemas))}
+                )
 
         # Update task status to completed
         yield UiComponent(  # type: ignore
@@ -196,10 +281,25 @@ class Agent:
             )
         )
 
-        # Build system prompt
+        # Build system prompt with observability
+        prompt_span = None
+        if self.observability_provider:
+            prompt_span = await self.observability_provider.create_span(
+                "agent.system_prompt.build",
+                attributes={"tool_count": len(tool_schemas)}
+            )
+
         system_prompt = await self.system_prompt_builder.build_system_prompt(
             user, tool_schemas
         )
+
+        if self.observability_provider and prompt_span:
+            prompt_span.set_attribute("prompt_length", len(system_prompt) if system_prompt else 0)
+            await self.observability_provider.end_span(prompt_span)
+            if prompt_span.duration_ms():
+                await self.observability_provider.record_metric(
+                    "agent.system_prompt.duration", prompt_span.duration_ms() or 0, "ms"
+                )
 
         # Build LLM request
         request = await self._build_llm_request(conversation, tool_schemas, user, system_prompt)
@@ -275,20 +375,69 @@ class Agent:
                         simple_component=SimpleTextComponent(text=response_str or "")
                     )
 
-                    # Run before_tool hooks
+                    # Run before_tool hooks with observability
                     tool = self.tool_registry.get_tool(tool_call.name)
                     if tool:
                         for hook in self.lifecycle_hooks:
+                            hook_span = None
+                            if self.observability_provider:
+                                hook_span = await self.observability_provider.create_span(
+                                    "agent.hook.before_tool",
+                                    attributes={"hook": hook.__class__.__name__, "tool": tool_call.name}
+                                )
+
                             await hook.before_tool(tool, context)
 
-                    # Execute tool
+                            if self.observability_provider and hook_span:
+                                await self.observability_provider.end_span(hook_span)
+                                if hook_span.duration_ms():
+                                    await self.observability_provider.record_metric(
+                                        "agent.hook.duration", hook_span.duration_ms() or 0, "ms",
+                                        tags={"hook": hook.__class__.__name__, "phase": "before_tool", "tool": tool_call.name}
+                                    )
+
+                    # Execute tool with observability
+                    tool_exec_span = None
+                    if self.observability_provider:
+                        tool_exec_span = await self.observability_provider.create_span(
+                            "agent.tool.execute",
+                            attributes={"tool": tool_call.name, "arg_count": len(tool_call.arguments)}
+                        )
+
                     result = await self.tool_registry.execute(tool_call, context)
 
-                    # Run after_tool hooks
+                    if self.observability_provider and tool_exec_span:
+                        tool_exec_span.set_attribute("success", result.success)
+                        if not result.success:
+                            tool_exec_span.set_attribute("error", result.error or "unknown")
+                        await self.observability_provider.end_span(tool_exec_span)
+                        if tool_exec_span.duration_ms():
+                            await self.observability_provider.record_metric(
+                                "agent.tool.duration", tool_exec_span.duration_ms() or 0, "ms",
+                                tags={"tool": tool_call.name, "success": str(result.success)}
+                            )
+
+                    # Run after_tool hooks with observability
                     for hook in self.lifecycle_hooks:
+                        hook_span = None
+                        if self.observability_provider:
+                            hook_span = await self.observability_provider.create_span(
+                                "agent.hook.after_tool",
+                                attributes={"hook": hook.__class__.__name__, "tool": tool_call.name}
+                            )
+
                         modified_result = await hook.after_tool(result)
                         if modified_result is not None:
                             result = modified_result
+
+                        if self.observability_provider and hook_span:
+                            hook_span.set_attribute("modified_result", modified_result is not None)
+                            await self.observability_provider.end_span(hook_span)
+                            if hook_span.duration_ms():
+                                await self.observability_provider.record_metric(
+                                    "agent.hook.duration", hook_span.duration_ms() or 0, "ms",
+                                    tags={"hook": hook.__class__.__name__, "phase": "after_tool", "tool": tool_call.name}
+                                )
 
                     # Update status card to show completion
                     final_status = "success" if result.success else "error"
@@ -369,11 +518,40 @@ class Agent:
 
         # Save conversation if configured
         if self.config.auto_save_conversations:
+            save_span = None
+            if self.observability_provider:
+                save_span = await self.observability_provider.create_span(
+                    "agent.conversation.save",
+                    attributes={"conversation_id": conversation_id, "message_count": len(conversation.messages)}
+                )
+
             await self.conversation_store.update_conversation(conversation)
 
-        # Run after_message hooks
+            if self.observability_provider and save_span:
+                await self.observability_provider.end_span(save_span)
+                if save_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.conversation.save.duration", save_span.duration_ms() or 0, "ms"
+                    )
+
+        # Run after_message hooks with observability
         for hook in self.lifecycle_hooks:
+            hook_span = None
+            if self.observability_provider:
+                hook_span = await self.observability_provider.create_span(
+                    "agent.hook.after_message",
+                    attributes={"hook": hook.__class__.__name__}
+                )
+
             await hook.after_message(conversation)
+
+            if self.observability_provider and hook_span:
+                await self.observability_provider.end_span(hook_span)
+                if hook_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.hook.duration", hook_span.duration_ms() or 0, "ms",
+                        tags={"hook": hook.__class__.__name__, "phase": "after_message"}
+                    )
 
         # End observability span and record metrics
         if self.observability_provider and message_span:
@@ -393,10 +571,29 @@ class Agent:
         self, conversation: Conversation, tool_schemas: List[ToolSchema], user: User, system_prompt: Optional[str] = None
     ) -> LlmRequest:
         """Build LLM request from conversation and tools."""
-        # Apply conversation filters
+        # Apply conversation filters with observability
         filtered_messages = conversation.messages
         for filter in self.conversation_filters:
+            filter_span = None
+            if self.observability_provider:
+                filter_span = await self.observability_provider.create_span(
+                    "agent.conversation.filter",
+                    attributes={
+                        "filter": filter.__class__.__name__,
+                        "message_count_before": len(filtered_messages)
+                    }
+                )
+
             filtered_messages = await filter.filter_messages(filtered_messages)
+
+            if self.observability_provider and filter_span:
+                filter_span.set_attribute("message_count_after", len(filtered_messages))
+                await self.observability_provider.end_span(filter_span)
+                if filter_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.filter.duration", filter_span.duration_ms() or 0, "ms",
+                        tags={"filter": filter.__class__.__name__}
+                    )
 
         messages = []
         for msg in filtered_messages:
@@ -420,9 +617,24 @@ class Agent:
 
     async def _send_llm_request(self, request: LlmRequest) -> LlmResponse:
         """Send LLM request with middleware and observability."""
-        # Apply before_llm_request middlewares
+        # Apply before_llm_request middlewares with observability
         for middleware in self.llm_middlewares:
+            mw_span = None
+            if self.observability_provider:
+                mw_span = await self.observability_provider.create_span(
+                    "agent.middleware.before_llm",
+                    attributes={"middleware": middleware.__class__.__name__}
+                )
+
             request = await middleware.before_llm_request(request)
+
+            if self.observability_provider and mw_span:
+                await self.observability_provider.end_span(mw_span)
+                if mw_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.middleware.duration", mw_span.duration_ms() or 0, "ms",
+                        tags={"middleware": middleware.__class__.__name__, "phase": "before_llm"}
+                    )
 
         # Create observability span for LLM call
         llm_span = None
@@ -446,20 +658,60 @@ class Agent:
                     "llm.request.duration", llm_span.duration_ms() or 0, "ms"
                 )
 
-        # Apply after_llm_response middlewares
+        # Apply after_llm_response middlewares with observability
         for middleware in self.llm_middlewares:
+            mw_span = None
+            if self.observability_provider:
+                mw_span = await self.observability_provider.create_span(
+                    "agent.middleware.after_llm",
+                    attributes={"middleware": middleware.__class__.__name__}
+                )
+
             response = await middleware.after_llm_response(request, response)
+
+            if self.observability_provider and mw_span:
+                await self.observability_provider.end_span(mw_span)
+                if mw_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.middleware.duration", mw_span.duration_ms() or 0, "ms",
+                        tags={"middleware": middleware.__class__.__name__, "phase": "after_llm"}
+                    )
 
         return response
 
     async def _handle_streaming_response(self, request: LlmRequest) -> LlmResponse:
         """Handle streaming response from LLM."""
-        # Apply before_llm_request middlewares
+        # Apply before_llm_request middlewares with observability
         for middleware in self.llm_middlewares:
+            mw_span = None
+            if self.observability_provider:
+                mw_span = await self.observability_provider.create_span(
+                    "agent.middleware.before_llm",
+                    attributes={"middleware": middleware.__class__.__name__, "stream": True}
+                )
+
             request = await middleware.before_llm_request(request)
+
+            if self.observability_provider and mw_span:
+                await self.observability_provider.end_span(mw_span)
+                if mw_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.middleware.duration", mw_span.duration_ms() or 0, "ms",
+                        tags={"middleware": middleware.__class__.__name__, "phase": "before_llm", "stream": "true"}
+                    )
 
         accumulated_content = ""
         accumulated_tool_calls = []
+
+        # Create span for streaming
+        stream_span = None
+        if self.observability_provider:
+            stream_span = await self.observability_provider.create_span(
+                "llm.stream",
+                attributes={
+                    "model": getattr(self.llm_service, "model", "unknown")
+                }
+            )
 
         async for chunk in self.llm_service.stream_request(request):
             if chunk.content:
@@ -469,13 +721,38 @@ class Agent:
             if chunk.tool_calls:
                 accumulated_tool_calls.extend(chunk.tool_calls)
 
+        # End streaming span
+        if self.observability_provider and stream_span:
+            stream_span.set_attribute("content_length", len(accumulated_content))
+            stream_span.set_attribute("tool_call_count", len(accumulated_tool_calls))
+            await self.observability_provider.end_span(stream_span)
+            if stream_span.duration_ms():
+                await self.observability_provider.record_metric(
+                    "llm.stream.duration", stream_span.duration_ms() or 0, "ms"
+                )
+
         response = LlmResponse(
             content=accumulated_content if accumulated_content else None,
             tool_calls=accumulated_tool_calls if accumulated_tool_calls else None,
         )
 
-        # Apply after_llm_response middlewares
+        # Apply after_llm_response middlewares with observability
         for middleware in self.llm_middlewares:
+            mw_span = None
+            if self.observability_provider:
+                mw_span = await self.observability_provider.create_span(
+                    "agent.middleware.after_llm",
+                    attributes={"middleware": middleware.__class__.__name__, "stream": True}
+                )
+
             response = await middleware.after_llm_response(request, response)
+
+            if self.observability_provider and mw_span:
+                await self.observability_provider.end_span(mw_span)
+                if mw_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.middleware.duration", mw_span.duration_ms() or 0, "ms",
+                        tags={"middleware": middleware.__class__.__name__, "phase": "after_llm", "stream": "true"}
+                    )
 
         return response
