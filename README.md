@@ -44,7 +44,7 @@ pip install vanna[anthropic]  # or [openai]
 
 ```python
 from vanna import Agent, AgentConfig
-from vanna.servers.flask import VannaFlaskServer
+from vanna.servers.fastapi import VannaFastAPIServer
 from vanna.core.registry import ToolRegistry
 from vanna.core.user import UserResolver, User, RequestContext
 from vanna.integrations.anthropic import AnthropicLlmService
@@ -72,10 +72,11 @@ agent = Agent(
 )
 
 # 4. Create and run server
-server = VannaFlaskServer(agent)
-server.run(host='0.0.0.0', port=5000)
+server = VannaFastAPIServer(agent)
+app = server.create_app()
 
-# Visit http://localhost:5000 to see the web UI
+# Run with: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# Visit http://localhost:8000 to see the web UI
 ```
 
 ---
@@ -293,31 +294,31 @@ RichTextComponent          # "Here are your top customers..."
 
 ---
 
-## Add to Existing Flask App
+## Add to Existing FastAPI App
 
-If you already have a Flask application, you can add Vanna as additional routes:
+If you already have a FastAPI application, you can add Vanna as additional routes:
 
 ```python
-from flask import Flask
+from fastapi import FastAPI
 from vanna import Agent, AgentConfig
 from vanna.servers.base import ChatHandler
-from vanna.servers.flask.routes import register_chat_routes
+from vanna.servers.fastapi.routes import register_chat_routes
 from vanna.core.registry import ToolRegistry
 from vanna.core.user import UserResolver, User, RequestContext
 from vanna.integrations.anthropic import AnthropicLlmService
 from vanna.tools import RunSqlTool
 from vanna.integrations.sqlite import SqliteRunner
 
-# Your existing Flask app
-app = Flask(__name__)
+# Your existing FastAPI app
+app = FastAPI()
 
 # Your existing routes
-@app.route('/api/users')
-def get_users():
+@app.get('/api/users')
+async def get_users():
     return {'users': [...]}
 
-@app.route('/api/products')
-def get_products():
+@app.get('/api/products')
+async def get_products():
     return {'products': [...]}
 
 # Add Vanna agent
@@ -349,33 +350,16 @@ agent = Agent(
 chat_handler = ChatHandler(agent)
 register_chat_routes(app, chat_handler)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+# Run with: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-This adds these endpoints to your existing Flask app:
+This adds these endpoints to your existing FastAPI app:
 - `GET /` - Vanna web component UI (you may want to change this)
 - `POST /api/vanna/v2/chat_sse` - Server-Sent Events streaming
 - `POST /api/vanna/v2/chat_poll` - Polling endpoint
 - `GET /health` - Health check
 
 To customize the routes or serve the UI at a different path, see the [server configuration docs](https://docs.vanna.ai).
-
----
-
-## FastAPI Integration
-
-```python
-from fastapi import FastAPI
-from vanna import Agent, AgentConfig
-from vanna.servers import VannaFastAPIServer
-# ... (same agent setup as Flask)
-
-server = VannaFastAPIServer(agent)
-app = server.create_app()
-
-# Run with: uvicorn main:app --reload
-```
 
 ---
 

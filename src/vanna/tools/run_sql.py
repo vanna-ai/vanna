@@ -47,7 +47,7 @@ class RunSqlTool(Tool[RunSqlToolArgs]):
                     result = "Query executed successfully. No rows returned."
                     ui_component = UiComponent(
                         rich_component=DataFrameComponent(
-                            data=[],
+                            rows=[],
                             columns=[],
                             title="Query Results",
                             description="No rows returned"

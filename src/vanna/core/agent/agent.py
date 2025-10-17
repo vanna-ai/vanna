@@ -262,7 +262,7 @@ class Agent:
                 attributes={"user_id": user.id}
             )
 
-        tool_schemas = self.tool_registry.get_schemas(user)
+        tool_schemas = await self.tool_registry.get_schemas(user)
 
         if self.observability_provider and schema_span:
             schema_span.set_attribute("schema_count", len(tool_schemas))
@@ -376,7 +376,7 @@ class Agent:
                     )
 
                     # Run before_tool hooks with observability
-                    tool = self.tool_registry.get_tool(tool_call.name)
+                    tool = await self.tool_registry.get_tool(tool_call.name)
                     if tool:
                         for hook in self.lifecycle_hooks:
                             hook_span = None
@@ -565,7 +565,7 @@ class Agent:
 
     async def get_available_tools(self, user: User) -> List[ToolSchema]:
         """Get tools available to the user."""
-        return self.tool_registry.get_schemas(user)
+        return await self.tool_registry.get_schemas(user)
 
     async def _build_llm_request(
         self, conversation: Conversation, tool_schemas: List[ToolSchema], user: User, system_prompt: Optional[str] = None

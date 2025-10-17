@@ -23,23 +23,23 @@ class ToolRegistry:
             raise ValueError(f"Tool '{tool.name}' already registered")
         self._tools[tool.name] = tool
 
-    def get_tool(self, name: str) -> Optional[Tool[Any]]:
+    async def get_tool(self, name: str) -> Optional[Tool[Any]]:
         """Get a tool by name."""
         return self._tools.get(name)
 
-    def list_tools(self) -> List[str]:
+    async def list_tools(self) -> List[str]:
         """List all registered tool names."""
         return list(self._tools.keys())
 
-    def get_schemas(self, user: Optional[User] = None) -> List[ToolSchema]:
+    async def get_schemas(self, user: Optional[User] = None) -> List[ToolSchema]:
         """Get schemas for all tools accessible to user."""
         schemas = []
         for tool in self._tools.values():
-            if user is None or self._validate_tool_permissions(tool, user):
+            if user is None or await self._validate_tool_permissions(tool, user):
                 schemas.append(tool.get_schema())
         return schemas
 
-    def _validate_tool_permissions(self, tool: Tool[Any], user: User) -> bool:
+    async def _validate_tool_permissions(self, tool: Tool[Any], user: User) -> bool:
         """Validate if user has permissions for tool."""
         required_permissions = tool.required_permissions
         if not required_permissions:
@@ -55,7 +55,7 @@ class ToolRegistry:
         context: ToolContext,
     ) -> ToolResult:
         """Execute a tool call with validation."""
-        tool = self.get_tool(tool_call.name)
+        tool = await self.get_tool(tool_call.name)
         if not tool:
             msg = f"Tool '{tool_call.name}' not found"
             return ToolResult(
@@ -66,7 +66,7 @@ class ToolRegistry:
             )
 
         # Validate permissions
-        if not self._validate_tool_permissions(tool, context.user):
+        if not await self._validate_tool_permissions(tool, context.user):
             msg = f"Insufficient permissions for tool '{tool_call.name}'"
             return ToolResult(
                 success=False,

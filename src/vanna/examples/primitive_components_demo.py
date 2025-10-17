@@ -85,7 +85,7 @@ class PrimitiveComponentsAgent(Agent):
         stages = [
             ("Data Loading", "📊", 0.2),
             ("Data Validation", "✅", 0.4),
-            ("Statistical Analysis", "📈", 0.6),
+            ("Statistical Analysis", "🧮", 0.6),
             ("Report Generation", "📄", 0.8),
             ("Finalization", "🎯", 1.0)
         ]

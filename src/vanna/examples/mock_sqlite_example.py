@@ -171,8 +171,9 @@ async def main() -> None:
     print(f"Tables in database:\n{result.result_for_llm if result.success else result.error}")
 
     # Show available tools
+    schemas = await tool_registry.get_schemas(user)
     print(
-        f"\nAvailable tools for user: {[schema.name for schema in tool_registry.get_schemas(user)]}"
+        f"\nAvailable tools for user: {[schema.name for schema in schemas]}"
     )
 
     # Demonstrate the mock LLM triggering SQL queries
