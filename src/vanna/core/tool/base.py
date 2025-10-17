@@ -29,8 +29,8 @@ class Tool(ABC, Generic[T]):
         pass
 
     @property
-    def required_permissions(self) -> List[str]:
-        """Permissions required to use this tool."""
+    def access_groups(self) -> List[str]:
+        """Groups permitted to access this tool."""
         return []
 
     @abstractmethod
@@ -66,5 +66,5 @@ class Tool(ABC, Generic[T]):
             name=self.name,
             description=self.description,
             parameters=schema,
-            required_permissions=self.required_permissions,
+            access_groups=self.access_groups,
         )

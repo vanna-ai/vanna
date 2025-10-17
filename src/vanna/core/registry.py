@@ -5,10 +5,38 @@ This module provides the ToolRegistry class for managing and executing tools.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from .tool import Tool, ToolCall, ToolContext, ToolResult, ToolSchema
 from .user import User
+
+T = TypeVar("T")
+
+
+class _LocalToolWrapper(Tool[T]):
+    """Wrapper for tools with configurable access groups."""
+    
+    def __init__(self, wrapped_tool: Tool[T], access_groups: List[str]):
+        self._wrapped_tool = wrapped_tool
+        self._access_groups = access_groups
+    
+    @property
+    def name(self) -> str:
+        return self._wrapped_tool.name
+    
+    @property
+    def description(self) -> str:
+        return self._wrapped_tool.description
+    
+    @property
+    def access_groups(self) -> List[str]:
+        return self._access_groups
+    
+    def get_args_schema(self) -> Type[T]:
+        return self._wrapped_tool.get_args_schema()
+    
+    async def execute(self, context: ToolContext, args: T) -> ToolResult:
+        return await self._wrapped_tool.execute(context, args)
 
 
 class ToolRegistry:
@@ -16,12 +44,25 @@ class ToolRegistry:
 
     def __init__(self) -> None:
         self._tools: Dict[str, Tool[Any]] = {}
-
-    def register(self, tool: Tool[Any]) -> None:
-        """Register a tool."""
+    
+    def register_local_tool(self, tool: Tool[Any], access_groups: List[str]) -> None:
+        """Register a local tool with optional access group restrictions.
+        
+        Args:
+            tool: The tool to register
+            access_groups: List of groups that can access this tool. 
+                          If None or empty, tool is accessible to all users.
+        """
         if tool.name in self._tools:
             raise ValueError(f"Tool '{tool.name}' already registered")
-        self._tools[tool.name] = tool
+        
+        if access_groups:
+            # Wrap the tool with access groups
+            wrapped_tool = _LocalToolWrapper(tool, access_groups)
+            self._tools[tool.name] = wrapped_tool
+        else:
+            # No access restrictions, register as-is
+            self._tools[tool.name] = tool
 
     async def get_tool(self, name: str) -> Optional[Tool[Any]]:
         """Get a tool by name."""
@@ -40,14 +81,19 @@ class ToolRegistry:
         return schemas
 
     async def _validate_tool_permissions(self, tool: Tool[Any], user: User) -> bool:
-        """Validate if user has permissions for tool."""
-        required_permissions = tool.required_permissions
-        if not required_permissions:
+        """Validate if user has access to tool based on group membership.
+
+        Checks for intersection between user's group memberships and tool's access groups.
+        If tool has no access groups specified, it's accessible to all users.
+        """
+        tool_access_groups = tool.access_groups
+        if not tool_access_groups:
             return True
 
-        user_permissions = set(user.permissions)
-        required_permissions_set = set(required_permissions)
-        return required_permissions_set.issubset(user_permissions)
+        user_groups = set(user.group_memberships)
+        tool_groups = set(tool_access_groups)
+        # Grant access if any group in user.group_memberships exists in tool.access_groups
+        return bool(user_groups & tool_groups)
 
     async def execute(
         self,
@@ -65,9 +111,9 @@ class ToolRegistry:
                 error=msg,
             )
 
-        # Validate permissions
+        # Validate group access
         if not await self._validate_tool_permissions(tool, context.user):
-            msg = f"Insufficient permissions for tool '{tool_call.name}'"
+            msg = f"Insufficient group access for tool '{tool_call.name}'"
             return ToolResult(
                 success=False,
                 result_for_llm=msg,

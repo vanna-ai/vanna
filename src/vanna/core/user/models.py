@@ -18,6 +18,8 @@ class User(BaseModel):
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional user metadata"
     )
-    permissions: List[str] = Field(default_factory=list, description="User permissions")
+    group_memberships: List[str] = Field(
+        default_factory=list, description="Groups the user belongs to"
+    )
 
     model_config = ConfigDict(extra="allow")
