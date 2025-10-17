@@ -1,7 +1,7 @@
 """
-System prompt domain interface.
+System prompt builder interface.
 
-This module contains the abstract base class for building system prompts.
+This module contains the abstract base class for system prompt builders.
 """
 
 from abc import ABC, abstractmethod
@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 class SystemPromptBuilder(ABC):
-    """Abstract base class for building system prompts.
+    """Abstract base class for system prompt builders.
 
-    Allows dynamic generation of system prompts based on user context
-    and available tools.
+    Subclasses should implement the build_system_prompt method to generate
+    system prompts based on user context and available tools.
     """
 
     @abstractmethod
