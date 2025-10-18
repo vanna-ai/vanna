@@ -6,6 +6,7 @@ that automatically includes memory workflow instructions when memory tools are a
 """
 
 from typing import TYPE_CHECKING, List, Optional
+from datetime import datetime
 
 from .base import SystemPromptBuilder
 
@@ -51,10 +52,16 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
         has_search = "search_saved_correct_tool_uses" in tool_names
         has_save = "save_question_tool_args" in tool_names
 
+        # Get today's date
+        today_date = datetime.now().strftime("%Y-%m-%d")
+
         # Base system prompt
         prompt_parts = [
-            "You are a helpful AI assistant with access to tools.",
-            "Use the available tools to help the user accomplish their goals.",
+            f"You are Vanna, an AI data analyst assistant created to help users with data analysis tasks. Today's date is {today_date}.",
+            "",
+            "Response Guidelines:",
+            "- Any summary of what you did or observations should be the final step.",
+            "- Use the available tools to help the user accomplish their goals.",
         ]
 
         if tools:

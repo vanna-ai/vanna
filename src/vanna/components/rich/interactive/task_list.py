@@ -13,7 +13,7 @@ class Task(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: Optional[str] = None
-    status: str = "pending"  # "pending", "running", "completed", "failed"
+    status: str = "pending"  # "pending", "in_progress", "completed", "error"
     progress: Optional[float] = None  # 0.0 to 1.0
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     completed_at: Optional[str] = None
