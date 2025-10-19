@@ -85,18 +85,19 @@ def get_index_html(
         <div id="loginContainer" class="max-w-md mx-auto mb-10 bg-white p-8 rounded-xl shadow-lg">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">Login to Continue</h2>
-                <p class="text-sm text-gray-600">Enter your email to access the chat</p>
+                <p class="text-sm text-gray-600">Select your email to access the chat</p>
             </div>
 
             <div class="mb-5">
                 <label for="emailInput" class="block mb-2 text-sm font-medium text-gray-700">Email Address</label>
-                <input
-                    type="email"
+                <select
                     id="emailInput"
-                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="your.email@example.com"
-                    autocomplete="email"
-                />
+                    class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                >
+                    <option value="">Select an email...</option>
+                    <option value="admin@example.com">admin@example.com</option>
+                    <option value="user@example.com">user@example.com</option>
+                </select>
             </div>
 
             <button id="loginButton" class="w-full px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
@@ -181,8 +182,8 @@ def get_index_html(
             // Login button
             loginButton.addEventListener('click', () => {{
                 const email = emailInput.value.trim();
-                if (!email || !email.includes('@')) {{
-                    alert('Please enter a valid email address');
+                if (!email) {{
+                    alert('Please select an email address');
                     return;
                 }}
                 setCookie('vanna_email', email);

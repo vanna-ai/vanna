@@ -37,6 +37,12 @@ from vanna.core.filter import ConversationFilter
 from vanna.core.observability import ObservabilityProvider
 from vanna.core.user.resolver import UserResolver
 from vanna.core.user.request_context import RequestContext
+from vanna.core.agent.config import UiFeature
+
+import logging
+logger = logging.getLogger(__name__)
+
+logger.info("Loaded vanna.core.agent.agent module")
 
 if TYPE_CHECKING:
     pass
@@ -99,6 +105,8 @@ class Agent:
         self.context_enrichers = context_enrichers
         self.conversation_filters = conversation_filters
         self.observability_provider = observability_provider
+
+        logger.info("Initialized Agent")
 
     async def send_message(
         self,
@@ -356,9 +364,13 @@ class Agent:
                         description=f"Running tool with provided arguments",
                         status="in_progress"
                     )
-                    yield UiComponent(  # type: ignore
-                        rich_component=TaskTrackerUpdateComponent.add_task(tool_task)
-                    )
+
+                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user):
+                        yield UiComponent(  # type: ignore
+                            rich_component=TaskTrackerUpdateComponent.add_task(tool_task)
+                        )
+                    else:
+                        logger.info(f"The user {user} does not have access to view tool names.")
 
                     response_str = response.content
 
@@ -370,10 +382,14 @@ class Agent:
                         icon="⚙️",
                         metadata=tool_call.arguments
                     )
-                    yield UiComponent(
-                        rich_component=tool_status_card,
-                        simple_component=SimpleTextComponent(text=response_str or "")
-                    )
+
+                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user):
+                        yield UiComponent(
+                            rich_component=tool_status_card,
+                            simple_component=SimpleTextComponent(text=response_str or "")
+                        )
+                    else:
+                        logger.info(f"The user {user} does not have access to view tool arguments.")
 
                     # Run before_tool hooks with observability
                     tool = await self.tool_registry.get_tool(tool_call.name)
@@ -447,22 +463,36 @@ class Agent:
                         else f"Tool failed: {result.error or 'Unknown error'}"
                     )
 
-                    yield UiComponent(  # type: ignore
-                        rich_component=tool_status_card.set_status(final_status, final_description)
-                    )
-
-                    # Update tool task to completed
-                    yield UiComponent(  # type: ignore
-                        rich_component=TaskTrackerUpdateComponent.update_task(
-                            tool_task.id,
-                            status="completed" if result.success else "failed",
-                            detail=f"Tool {'completed successfully' if result.success else 'failed'}"
+                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user):
+                        yield UiComponent(
+                            rich_component=tool_status_card.set_status(final_status, final_description)
                         )
-                    )
+                    else:
+                        logger.info(f"The user {user} does not have access to view tool arguments.")
+
+                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user):
+                        # Update tool task to completed
+                        yield UiComponent(  # type: ignore
+                            rich_component=TaskTrackerUpdateComponent.update_task(
+                                tool_task.id,
+                                status="completed",
+                                detail=f"Tool {'completed successfully' if result.success else 'return an error'}"
+                            )
+                        )
+                    else:
+                        logger.info(f"The user {user} does not have access to view tool names.")
 
                     # Yield tool result
                     if result.ui_component:
-                        yield result.ui_component
+                        # For errors, check if user has access to see error details
+                        if not result.success:
+                            if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ERROR, user):
+                                yield result.ui_component
+                            else:
+                                logger.info(f"The user {user} does not have access to view tool error details.")
+                        else:
+                            # Success results are always shown if they exist
+                            yield result.ui_component
 
                     # Collect tool result data
                     tool_results.append({
