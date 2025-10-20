@@ -5,10 +5,14 @@ This module provides the ToolRegistry class for managing and executing tools.
 """
 
 import time
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar
 
 from .tool import Tool, ToolCall, ToolContext, ToolResult, ToolSchema
 from .user import User
+
+if TYPE_CHECKING:
+    from .audit import AuditLogger
+    from .agent.config import AuditConfig
 
 T = TypeVar("T")
 
@@ -42,8 +46,18 @@ class _LocalToolWrapper(Tool[T]):
 class ToolRegistry:
     """Registry for managing tools."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        audit_logger: Optional["AuditLogger"] = None,
+        audit_config: Optional["AuditConfig"] = None,
+    ) -> None:
         self._tools: Dict[str, Tool[Any]] = {}
+        self.audit_logger = audit_logger
+        if audit_config is not None:
+            self.audit_config = audit_config
+        else:
+            from .agent.config import AuditConfig
+            self.audit_config = AuditConfig()
     
     def register_local_tool(self, tool: Tool[Any], access_groups: List[str]) -> None:
         """Register a local tool with optional access group restrictions.
@@ -114,6 +128,18 @@ class ToolRegistry:
         # Validate group access
         if not await self._validate_tool_permissions(tool, context.user):
             msg = f"Insufficient group access for tool '{tool_call.name}'"
+
+            # Audit access denial
+            if self.audit_logger and self.audit_config and self.audit_config.log_tool_access_checks:
+                await self.audit_logger.log_tool_access_check(
+                    user=context.user,
+                    tool_name=tool_call.name,
+                    access_granted=False,
+                    required_groups=tool.access_groups,
+                    context=context,
+                    reason=msg,
+                )
+
             return ToolResult(
                 success=False,
                 result_for_llm=msg,
@@ -134,6 +160,28 @@ class ToolRegistry:
                 error=msg,
             )
 
+        # Audit successful access check
+        if self.audit_logger and self.audit_config and self.audit_config.log_tool_access_checks:
+            await self.audit_logger.log_tool_access_check(
+                user=context.user,
+                tool_name=tool_call.name,
+                access_granted=True,
+                required_groups=tool.access_groups,
+                context=context,
+            )
+
+        # Audit tool invocation
+        if self.audit_logger and self.audit_config and self.audit_config.log_tool_invocations:
+            # Get UI features if available from context
+            ui_features = context.metadata.get("ui_features_available", [])
+            await self.audit_logger.log_tool_invocation(
+                user=context.user,
+                tool_call=tool_call,
+                ui_features=ui_features,
+                context=context,
+                sanitize_parameters=self.audit_config.sanitize_tool_parameters,
+            )
+
         # Execute tool with context-first signature
         try:
             start_time = time.perf_counter()
@@ -142,6 +190,15 @@ class ToolRegistry:
 
             # Add execution time to metadata
             result.metadata["execution_time_ms"] = execution_time_ms
+
+            # Audit tool result
+            if self.audit_logger and self.audit_config and self.audit_config.log_tool_results:
+                await self.audit_logger.log_tool_result(
+                    user=context.user,
+                    tool_call=tool_call,
+                    result=result,
+                    context=context,
+                )
 
             return result
         except Exception as e:

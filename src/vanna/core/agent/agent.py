@@ -38,6 +38,7 @@ from vanna.core.observability import ObservabilityProvider
 from vanna.core.user.resolver import UserResolver
 from vanna.core.user.request_context import RequestContext
 from vanna.core.agent.config import UiFeature
+from vanna.core.audit import AuditLogger
 
 import logging
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ class Agent:
         context_enrichers: List[ContextEnricher] = [],
         conversation_filters: List[ConversationFilter] = [],
         observability_provider: Optional[ObservabilityProvider] = None,
+        audit_logger: Optional[AuditLogger] = None,
     ):
         self.llm_service = llm_service
         self.tool_registry = tool_registry
@@ -105,6 +107,12 @@ class Agent:
         self.context_enrichers = context_enrichers
         self.conversation_filters = conversation_filters
         self.observability_provider = observability_provider
+        self.audit_logger = audit_logger
+
+        # Wire audit logger into tool registry
+        if self.audit_logger and self.config.audit_config.enabled:
+            self.tool_registry.audit_logger = self.audit_logger
+            self.tool_registry.audit_config = self.config.audit_config
 
         logger.info("Initialized Agent")
 
@@ -235,12 +243,19 @@ class Agent:
             rich_component=TaskTrackerUpdateComponent.add_task(context_task)
         )
 
-        # Create context with observability provider
+        # Collect available UI features for auditing
+        ui_features_available = []
+        for feature_name in self.config.ui_features.feature_group_access.keys():
+            if self.config.ui_features.can_user_access_feature(feature_name, user):
+                ui_features_available.append(feature_name)
+
+        # Create context with observability provider and UI features
         context = ToolContext(
             user=user,
             conversation_id=conversation_id,
             request_id=request_id,
-            observability_provider=self.observability_provider
+            observability_provider=self.observability_provider,
+            metadata={"ui_features_available": ui_features_available}
         )
 
         # Enrich context with additional data with observability
@@ -365,12 +380,23 @@ class Agent:
                         status="in_progress"
                     )
 
-                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user):
+                    has_tool_names_access = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user)
+
+                    # Audit UI feature access check
+                    if self.audit_logger and self.config.audit_config.enabled and self.config.audit_config.log_ui_feature_checks:
+                        await self.audit_logger.log_ui_feature_access(
+                            user=user,
+                            feature_name=UiFeature.UI_FEATURE_SHOW_TOOL_NAMES,
+                            access_granted=has_tool_names_access,
+                            required_groups=self.config.ui_features.feature_group_access.get(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, []),
+                            conversation_id=conversation.id,
+                            request_id=request_id,
+                        )
+
+                    if has_tool_names_access:
                         yield UiComponent(  # type: ignore
                             rich_component=TaskTrackerUpdateComponent.add_task(tool_task)
                         )
-                    else:
-                        logger.info(f"The user {user} does not have access to view tool names.")
 
                     response_str = response.content
 
@@ -383,13 +409,24 @@ class Agent:
                         metadata=tool_call.arguments
                     )
 
-                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user):
+                    has_tool_args_access = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user)
+
+                    # Audit UI feature access check
+                    if self.audit_logger and self.config.audit_config.enabled and self.config.audit_config.log_ui_feature_checks:
+                        await self.audit_logger.log_ui_feature_access(
+                            user=user,
+                            feature_name=UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS,
+                            access_granted=has_tool_args_access,
+                            required_groups=self.config.ui_features.feature_group_access.get(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, []),
+                            conversation_id=conversation.id,
+                            request_id=request_id,
+                        )
+
+                    if has_tool_args_access:
                         yield UiComponent(
                             rich_component=tool_status_card,
                             simple_component=SimpleTextComponent(text=response_str or "")
                         )
-                    else:
-                        logger.info(f"The user {user} does not have access to view tool arguments.")
 
                     # Run before_tool hooks with observability
                     tool = await self.tool_registry.get_tool(tool_call.name)
@@ -463,14 +500,38 @@ class Agent:
                         else f"Tool failed: {result.error or 'Unknown error'}"
                     )
 
-                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user):
+                    has_tool_args_access_2 = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, user)
+
+                    # Audit UI feature access check
+                    if self.audit_logger and self.config.audit_config.enabled and self.config.audit_config.log_ui_feature_checks:
+                        await self.audit_logger.log_ui_feature_access(
+                            user=user,
+                            feature_name=UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS,
+                            access_granted=has_tool_args_access_2,
+                            required_groups=self.config.ui_features.feature_group_access.get(UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS, []),
+                            conversation_id=conversation.id,
+                            request_id=request_id,
+                        )
+
+                    if has_tool_args_access_2:
                         yield UiComponent(
                             rich_component=tool_status_card.set_status(final_status, final_description)
                         )
-                    else:
-                        logger.info(f"The user {user} does not have access to view tool arguments.")
 
-                    if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user):
+                    has_tool_names_access_2 = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user)
+
+                    # Audit UI feature access check
+                    if self.audit_logger and self.config.audit_config.enabled and self.config.audit_config.log_ui_feature_checks:
+                        await self.audit_logger.log_ui_feature_access(
+                            user=user,
+                            feature_name=UiFeature.UI_FEATURE_SHOW_TOOL_NAMES,
+                            access_granted=has_tool_names_access_2,
+                            required_groups=self.config.ui_features.feature_group_access.get(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, []),
+                            conversation_id=conversation.id,
+                            request_id=request_id,
+                        )
+
+                    if has_tool_names_access_2:
                         # Update tool task to completed
                         yield UiComponent(  # type: ignore
                             rich_component=TaskTrackerUpdateComponent.update_task(
@@ -479,17 +540,26 @@ class Agent:
                                 detail=f"Tool {'completed successfully' if result.success else 'return an error'}"
                             )
                         )
-                    else:
-                        logger.info(f"The user {user} does not have access to view tool names.")
 
                     # Yield tool result
                     if result.ui_component:
                         # For errors, check if user has access to see error details
                         if not result.success:
-                            if self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ERROR, user):
+                            has_tool_error_access = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_ERROR, user)
+
+                            # Audit UI feature access check
+                            if self.audit_logger and self.config.audit_config.enabled and self.config.audit_config.log_ui_feature_checks:
+                                await self.audit_logger.log_ui_feature_access(
+                                    user=user,
+                                    feature_name=UiFeature.UI_FEATURE_SHOW_TOOL_ERROR,
+                                    access_granted=has_tool_error_access,
+                                    required_groups=self.config.ui_features.feature_group_access.get(UiFeature.UI_FEATURE_SHOW_TOOL_ERROR, []),
+                                    conversation_id=conversation.id,
+                                    request_id=request_id,
+                                )
+
+                            if has_tool_error_access:
                                 yield result.ui_component
-                            else:
-                                logger.info(f"The user {user} does not have access to view tool error details.")
                         else:
                             # Success results are always shown if they exist
                             yield result.ui_component

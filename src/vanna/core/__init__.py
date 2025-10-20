@@ -18,6 +18,16 @@ from .recovery import ErrorRecoveryStrategy, RecoveryAction, RecoveryActionType
 from .enricher import ContextEnricher
 from .filter import ConversationFilter
 from .observability import ObservabilityProvider, Span, Metric
+from .audit import (
+    AuditLogger,
+    AuditEvent,
+    AuditEventType,
+    ToolAccessCheckEvent,
+    ToolInvocationEvent,
+    ToolResultEvent,
+    UiFeatureAccessCheckEvent,
+    AiResponseEvent,
+)
 
 # UI Components
 from .components import UiComponent
@@ -112,7 +122,16 @@ __all__ = [
     "ContextEnricher",
     "ConversationFilter",
     "ObservabilityProvider",
+    "AuditLogger",
     "T",
+    # Audit
+    "AuditEvent",
+    "AuditEventType",
+    "ToolAccessCheckEvent",
+    "ToolInvocationEvent",
+    "ToolResultEvent",
+    "UiFeatureAccessCheckEvent",
+    "AiResponseEvent",
     # UI Components
     "UiComponent",
     # Simple Components

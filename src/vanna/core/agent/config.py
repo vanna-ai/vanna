@@ -73,12 +73,40 @@ class UiFeatures(BaseModel):
     
     def register_feature(self, name: str, access_groups: List[str]) -> None:
         """Register a custom UI feature with group access control.
-        
+
         Args:
             name: Name of the custom feature
             access_groups: List of groups that can access this feature
         """
         self.feature_group_access[name] = access_groups
+
+
+class AuditConfig(BaseModel):
+    """Configuration for audit logging."""
+
+    enabled: bool = Field(default=True, description="Enable audit logging")
+    log_tool_access_checks: bool = Field(
+        default=True, description="Log tool access permission checks"
+    )
+    log_tool_invocations: bool = Field(
+        default=True, description="Log tool invocations with parameters"
+    )
+    log_tool_results: bool = Field(
+        default=True, description="Log tool execution results"
+    )
+    log_ui_feature_checks: bool = Field(
+        default=False, description="Log UI feature access checks (can be noisy)"
+    )
+    log_ai_responses: bool = Field(
+        default=True, description="Log AI-generated responses"
+    )
+    include_full_ai_responses: bool = Field(
+        default=False,
+        description="Include full AI response text in logs (privacy concern)",
+    )
+    sanitize_tool_parameters: bool = Field(
+        default=True, description="Sanitize sensitive parameters (passwords, tokens)"
+    )
 
 
 class AgentConfig(BaseModel):
@@ -91,3 +119,4 @@ class AgentConfig(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0)
     ui_features: UiFeatures = Field(default_factory=UiFeatures)
+    audit_config: AuditConfig = Field(default_factory=AuditConfig)
