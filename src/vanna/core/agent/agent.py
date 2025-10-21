@@ -31,6 +31,7 @@ from vanna.core.registry import ToolRegistry
 from vanna.core.system_prompt import DefaultSystemPromptBuilder
 from vanna.core.lifecycle import LifecycleHook
 from vanna.core.middleware import LlmMiddleware
+from vanna.core.workflow import WorkflowTrigger
 from vanna.core.recovery import ErrorRecoveryStrategy, RecoveryActionType
 from vanna.core.enricher import ContextEnricher
 from vanna.core.filter import ConversationFilter
@@ -83,6 +84,7 @@ class Agent:
         system_prompt_builder: SystemPromptBuilder = DefaultSystemPromptBuilder(),
         lifecycle_hooks: List[LifecycleHook] = [],
         llm_middlewares: List[LlmMiddleware] = [],
+        workflow_trigger: Optional[WorkflowTrigger] = None,
         error_recovery_strategy: Optional[ErrorRecoveryStrategy] = None,
         context_enrichers: List[ContextEnricher] = [],
         conversation_filters: List[ConversationFilter] = [],
@@ -103,6 +105,7 @@ class Agent:
         self.system_prompt_builder = system_prompt_builder
         self.lifecycle_hooks = lifecycle_hooks
         self.llm_middlewares = llm_middlewares
+        self.workflow_trigger = workflow_trigger
         self.error_recovery_strategy = error_recovery_strategy
         self.context_enrichers = context_enrichers
         self.conversation_filters = conversation_filters
@@ -127,7 +130,7 @@ class Agent:
         Process a user message and yield UI components.
 
         Args:
-            request_context: Request context for user resolution
+            request_context: Request context for user resolution (includes metadata)
             message: User's message content
             conversation_id: Optional conversation ID; if None, creates new conversation
 
@@ -151,6 +154,78 @@ class Agent:
                 await self.observability_provider.record_metric(
                     "agent.user_resolution.duration", user_resolution_span.duration_ms() or 0, "ms"
                 )
+
+        # Check if this is a starter UI request (empty message or explicit metadata flag)
+        is_starter_request = (not message.strip()) or request_context.metadata.get("starter_ui_request", False)
+        
+        if is_starter_request and self.workflow_trigger:
+            # Handle starter UI request with observability
+            starter_span = None
+            if self.observability_provider:
+                starter_span = await self.observability_provider.create_span(
+                    "agent.workflow_trigger.starter_ui",
+                    attributes={"user_id": user.id}
+                )
+            
+            try:
+                # Load or create conversation for context
+                if conversation_id is None:
+                    conversation_id = str(uuid.uuid4())
+                
+                conversation = await self.conversation_store.get_conversation(conversation_id, user)
+                if not conversation:
+                    conversation = await self.conversation_store.create_conversation(
+                        conversation_id, user, ""
+                    )
+                
+                # Get starter UI from workflow trigger
+                components = await self.workflow_trigger.get_starter_ui(self, user, conversation)
+                
+                if self.observability_provider and starter_span:
+                    starter_span.set_attribute("has_components", components is not None)
+                    starter_span.set_attribute("component_count", len(components) if components else 0)
+                
+                if components:
+                    # Yield the starter UI components
+                    for component in components:
+                        yield component
+                    
+                    # Yield finalization components
+                    yield UiComponent(  # type: ignore
+                        rich_component=StatusBarUpdateComponent(
+                            status="idle",
+                            message="Ready",
+                            detail="Choose an option or type a message"
+                        )
+                    )
+                    yield UiComponent(  # type: ignore
+                        rich_component=ChatInputUpdateComponent(
+                            placeholder="Ask a question...",
+                            disabled=False
+                        )
+                    )
+                
+                if self.observability_provider and starter_span:
+                    await self.observability_provider.end_span(starter_span)
+                    if starter_span.duration_ms():
+                        await self.observability_provider.record_metric(
+                            "agent.workflow_trigger.starter_ui.duration", 
+                            starter_span.duration_ms() or 0, 
+                            "ms"
+                        )
+                
+                return  # Exit without calling LLM
+                
+            except Exception as e:
+                logger.error(f"Error generating starter UI: {e}", exc_info=True)
+                if self.observability_provider and starter_span:
+                    starter_span.set_attribute("error", str(e))
+                    await self.observability_provider.end_span(starter_span)
+                # Fall through to normal processing on error
+        
+        # Don't process actual empty messages (that aren't starter requests)
+        if not message.strip():
+            return
 
         # Create observability span for entire message processing
         message_span = None
@@ -201,7 +276,7 @@ class Agent:
             )
         )
 
-        # Load or create conversation with observability
+        # Load or create conversation with observability (but don't add message yet)
         conversation_span = None
         if self.observability_provider:
             conversation_span = await self.observability_provider.create_span(
@@ -216,12 +291,10 @@ class Agent:
         is_new_conversation = conversation is None
 
         if not conversation:
+            # Create conversation without message (will add after workflow trigger check)
             conversation = await self.conversation_store.create_conversation(
-                conversation_id, user, message
+                conversation_id, user, ""
             )
-        else:
-            # Add user message
-            conversation.add_message(Message(role="user", content=message))
 
         if self.observability_provider and conversation_span:
             conversation_span.set_attribute("is_new", is_new_conversation)
@@ -232,6 +305,77 @@ class Agent:
                     "agent.conversation.load.duration", conversation_span.duration_ms() or 0, "ms",
                     tags={"is_new": str(is_new_conversation)}
                 )
+        
+        # Try workflow trigger before adding message to conversation
+        if self.workflow_trigger:
+            trigger_span = None
+            if self.observability_provider:
+                trigger_span = await self.observability_provider.create_span(
+                    "agent.workflow_trigger.try_trigger",
+                    attributes={"user_id": user.id, "conversation_id": conversation_id}
+                )
+            
+            try:
+                result = await self.workflow_trigger.try_trigger(self, user, conversation, message)
+                
+                if self.observability_provider and trigger_span:
+                    trigger_span.set_attribute("triggered", result.triggered)
+                
+                if result.triggered:
+                    # Workflow was triggered, short-circuit LLM
+                    
+                    # Apply conversation mutation if provided
+                    if result.conversation_mutation:
+                        await result.conversation_mutation(conversation)
+                    
+                    # Stream components
+                    if result.components:
+                        if isinstance(result.components, list):
+                            for component in result.components:
+                                yield component
+                        else:
+                            # AsyncGenerator
+                            async for component in result.components:
+                                yield component
+                    
+                    # Finalize response (status bar + chat input)
+                    yield UiComponent(  # type: ignore
+                        rich_component=StatusBarUpdateComponent(
+                            status="idle",
+                            message="Workflow complete",
+                            detail="Ready for next message"
+                        )
+                    )
+                    yield UiComponent(  # type: ignore
+                        rich_component=ChatInputUpdateComponent(
+                            placeholder="Ask a question...",
+                            disabled=False
+                        )
+                    )
+                    
+                    # Save conversation if auto-save enabled
+                    if self.config.auto_save_conversations:
+                        await self.conversation_store.update_conversation(conversation)
+                    
+                    if self.observability_provider and trigger_span:
+                        await self.observability_provider.end_span(trigger_span)
+                    
+                    # Exit without calling LLM
+                    return
+            
+            except Exception as e:
+                logger.error(f"Error in workflow trigger: {e}", exc_info=True)
+                if self.observability_provider and trigger_span:
+                    trigger_span.set_attribute("error", str(e))
+                    await self.observability_provider.end_span(trigger_span)
+                # Fall through to normal LLM processing on error
+            
+            finally:
+                if self.observability_provider and trigger_span:
+                    await self.observability_provider.end_span(trigger_span)
+        
+        # Not triggered, add user message to conversation now
+        conversation.add_message(Message(role="user", content=message))
 
         # Add initial task
         context_task = Task(

@@ -44,6 +44,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             cookies=dict(http_request.cookies),
             headers=dict(http_request.headers),
             remote_addr=http_request.client.host if http_request.client else None,
+            metadata=chat_request.metadata,
         )
 
         async def generate() -> AsyncGenerator[str, None]:
@@ -84,10 +85,12 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                     data = await websocket.receive_json()
 
                     # Extract request context for user resolution
+                    metadata = data.get('metadata', {})
                     data['request_context'] = RequestContext(
                         cookies=dict(websocket.cookies),
                         headers=dict(websocket.headers),
                         remote_addr=websocket.client.host if websocket.client else None,
+                        metadata=metadata,
                     )
 
                     chat_request = ChatRequest(**data)
@@ -140,6 +143,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             cookies=dict(http_request.cookies),
             headers=dict(http_request.headers),
             remote_addr=http_request.client.host if http_request.client else None,
+            metadata=chat_request.metadata,
         )
 
         try:

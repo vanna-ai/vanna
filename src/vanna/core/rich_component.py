@@ -34,6 +34,8 @@ class ComponentType(str, Enum):
     # Interactive components
     TASK_LIST = "task_list"
     PROGRESS_BAR = "progress_bar"
+    BUTTON = "button"
+    BUTTON_GROUP = "button_group"
 
     # Data components
     TABLE = "table"

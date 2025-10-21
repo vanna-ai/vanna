@@ -43,6 +43,8 @@ from .rich import (
     TaskTrackerUpdateComponent,
     ChatInputUpdateComponent,
     TaskOperation,
+    ButtonComponent,
+    ButtonGroupComponent,
     # Containers
     CardComponent,
     ContainerComponent,
@@ -89,6 +91,8 @@ __all__ = [
     "TaskTrackerUpdateComponent",
     "ChatInputUpdateComponent",
     "TaskOperation",
+    "ButtonComponent",
+    "ButtonGroupComponent",
     # Rich components - Containers
     "CardComponent",
     "ContainerComponent",
