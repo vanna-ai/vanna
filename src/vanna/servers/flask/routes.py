@@ -4,6 +4,7 @@ Flask route implementations for Vanna Agents.
 
 import asyncio
 import json
+import traceback
 from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
 
 from flask import Flask, Response, jsonify, request
@@ -53,6 +54,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
 
             chat_request = ChatRequest(**data)
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"error": f"Invalid request: {str(e)}"}), 400
 
         def generate() -> Generator[str, None, None]:
@@ -111,6 +113,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
 
             chat_request = ChatRequest(**data)
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"error": f"Invalid request: {str(e)}"}), 400
 
         # Run async handler in new event loop
@@ -120,6 +123,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
             result = loop.run_until_complete(chat_handler.handle_poll(chat_request))
             return jsonify(result.model_dump())
         except Exception as e:
+            traceback.print_exc()
             return jsonify({"error": f"Chat failed: {str(e)}"}), 500
         finally:
             loop.close()

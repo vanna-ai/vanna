@@ -3,6 +3,7 @@ FastAPI route implementations for Vanna Agents.
 """
 
 import json
+import traceback
 from typing import Any, AsyncGenerator, Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -55,6 +56,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                     yield f"data: {json.dumps(chunk_json)}\n\n"
                 yield "data: [DONE]\n\n"
             except Exception as e:
+                traceback.print_exc()
                 error_data = {
                     "type": "error",
                     "data": {"message": str(e)},
@@ -95,6 +97,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
 
                     chat_request = ChatRequest(**data)
                 except Exception as e:
+                    traceback.print_exc()
                     await websocket.send_json({
                         "type": "error",
                         "data": {"message": f"Invalid request: {str(e)}"},
@@ -115,6 +118,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                     })
 
                 except Exception as e:
+                    traceback.print_exc()
                     await websocket.send_json({
                         "type": "error",
                         "data": {"message": str(e)},
@@ -125,6 +129,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
         except WebSocketDisconnect:
             pass
         except Exception as e:
+            traceback.print_exc()
             try:
                 await websocket.send_json({
                     "type": "error",
@@ -150,4 +155,5 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             result = await chat_handler.handle_poll(chat_request)
             return result
         except Exception as e:
+            traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")

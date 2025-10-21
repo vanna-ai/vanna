@@ -174,8 +174,11 @@ class Agent:
                 
                 conversation = await self.conversation_store.get_conversation(conversation_id, user)
                 if not conversation:
-                    conversation = await self.conversation_store.create_conversation(
-                        conversation_id, user, ""
+                    # Create empty conversation (will be saved if workflow produces components)
+                    conversation = Conversation(
+                        id=conversation_id,
+                        user=user,
+                        messages=[]
                     )
                 
                 # Get starter UI from workflow trigger
@@ -213,6 +216,10 @@ class Agent:
                             starter_span.duration_ms() or 0, 
                             "ms"
                         )
+                
+                # Save the conversation if it was newly created
+                if self.config.auto_save_conversations:
+                    await self.conversation_store.update_conversation(conversation)
                 
                 return  # Exit without calling LLM
                 
@@ -291,9 +298,11 @@ class Agent:
         is_new_conversation = conversation is None
 
         if not conversation:
-            # Create conversation without message (will add after workflow trigger check)
-            conversation = await self.conversation_store.create_conversation(
-                conversation_id, user, ""
+            # Create empty conversation (will add message after workflow trigger check)
+            conversation = Conversation(
+                id=conversation_id,
+                user=user,
+                messages=[]
             )
 
         if self.observability_provider and conversation_span:
@@ -373,6 +382,10 @@ class Agent:
             finally:
                 if self.observability_provider and trigger_span:
                     await self.observability_provider.end_span(trigger_span)
+        
+        # Persist new conversation to store before adding message
+        if is_new_conversation:
+            await self.conversation_store.update_conversation(conversation)
         
         # Not triggered, add user message to conversation now
         conversation.add_message(Message(role="user", content=message))
