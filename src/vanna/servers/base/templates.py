@@ -29,7 +29,7 @@ def get_vanna_component_script(
 def get_index_html(
     dev_mode: bool = False,
     static_path: str = "/static",
-    cdn_url: str = "https://unpkg.com/@vanna-ai/web-components@latest/dist/index.js",
+    cdn_url: str = "https://img.vanna.ai/vanna-components.js",
     api_base_url: str = ""
 ) -> str:
     """Generate index HTML with configurable component loading.

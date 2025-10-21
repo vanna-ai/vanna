@@ -91,7 +91,7 @@ class ExampleAgentLoader:
 @click.option("--debug", is_flag=True, help="Enable debug mode")
 @click.option("--dev", is_flag=True, help="Enable development mode (load components from local assets)")
 @click.option("--static-folder", default=None, help="Static folder path for development mode")
-@click.option("--cdn-url", default="https://unpkg.com/@vanna-ai/web-components@latest/dist/index.js", help="CDN URL for web components")
+@click.option("--cdn-url", default="https://img.vanna.ai/vanna-components.js", help="CDN URL for web components")
 def main(
     framework: str,
     port: int,

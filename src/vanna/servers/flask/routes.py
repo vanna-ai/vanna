@@ -28,7 +28,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
     def index() -> str:
         """Serve the main chat interface."""
         dev_mode = config.get("dev_mode", False)
-        cdn_url = config.get("cdn_url", "https://unpkg.com/@vanna-ai/web-components@latest/dist/index.js")
+        cdn_url = config.get("cdn_url", "https://img.vanna.ai/vanna-components.js")
         api_base_url = config.get("api_base_url", "")
 
         return get_index_html(
