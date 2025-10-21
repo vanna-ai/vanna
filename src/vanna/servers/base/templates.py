@@ -53,7 +53,7 @@ def get_index_html(
     <title>Vanna Agents Chat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Signika:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {{
@@ -67,7 +67,7 @@ def get_index_html(
                         'vanna-magenta': '#bf1363',
                     }},
                     fontFamily: {{
-                        'sans': ['Signika', 'ui-sans-serif', 'system-ui'],
+                        'sans': ['Space Grotesk', 'ui-sans-serif', 'system-ui'],
                         'serif': ['Roboto Slab', 'ui-serif', 'Georgia'],
                         'mono': ['Space Mono', 'ui-monospace', 'monospace'],
                     }}
