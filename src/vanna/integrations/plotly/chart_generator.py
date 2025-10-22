@@ -10,6 +10,18 @@ import plotly.io as pio
 class PlotlyChartGenerator:
     """Generate Plotly charts using heuristics based on DataFrame characteristics."""
 
+    # Vanna brand colors from landing page
+    THEME_COLORS = {
+        'navy': '#023d60',
+        'cream': '#e7e1cf',
+        'teal': '#15a8a8',
+        'orange': '#fe5d26',
+        'magenta': '#bf1363'
+    }
+
+    # Color palette for charts (excluding cream as it's too light for data)
+    COLOR_PALETTE = ['#15a8a8', '#fe5d26', '#bf1363', '#023d60']
+
     def generate_chart(self, df: pd.DataFrame, title: str = "Chart") -> Dict[str, Any]:
         """Generate a Plotly chart based on DataFrame shape and types.
 
@@ -73,29 +85,29 @@ class PlotlyChartGenerator:
         return result
 
     def _apply_standard_layout(self, fig: go.Figure) -> go.Figure:
-        """Apply consistent white background and dark text to all charts.
+        """Apply consistent Vanna brand styling to all charts.
 
-        This ensures charts look good in any theme context without needing
-        to detect or adapt to the frontend theme.
+        Uses Vanna brand colors from the landing page for a cohesive look.
 
         Args:
             fig: Plotly figure to update
 
         Returns:
-            Updated figure with standard layout
+            Updated figure with Vanna brand styling
         """
         fig.update_layout(
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            font={'color': '#1f2937'},  # Dark gray for readability
+            # paper_bgcolor='white',
+            # plot_bgcolor='white',
+            font={'color': self.THEME_COLORS['navy']},  # Navy for text
             autosize=True,  # Allow chart to resize responsively
+            colorway=self.COLOR_PALETTE,  # Use Vanna brand colors for data
             # Don't set width/height - let frontend handle sizing
         )
         return fig
 
     def _create_histogram(self, df: pd.DataFrame, column: str, title: str) -> go.Figure:
         """Create a histogram for a single numeric column."""
-        fig = px.histogram(df, x=column, title=title)
+        fig = px.histogram(df, x=column, title=title, color_discrete_sequence=[self.THEME_COLORS['teal']])
         fig.update_layout(
             xaxis_title=column,
             yaxis_title="Count",
@@ -108,7 +120,7 @@ class PlotlyChartGenerator:
         """Create a bar chart for categorical vs numeric data."""
         # Aggregate if needed
         agg_df = df.groupby(x_col)[y_col].sum().reset_index()
-        fig = px.bar(agg_df, x=x_col, y=y_col, title=title)
+        fig = px.bar(agg_df, x=x_col, y=y_col, title=title, color_discrete_sequence=[self.THEME_COLORS['orange']])
         fig.update_layout(
             xaxis_title=x_col,
             yaxis_title=y_col
@@ -118,7 +130,7 @@ class PlotlyChartGenerator:
 
     def _create_scatter_plot(self, df: pd.DataFrame, x_col: str, y_col: str, title: str) -> go.Figure:
         """Create a scatter plot for two numeric columns."""
-        fig = px.scatter(df, x=x_col, y=y_col, title=title)
+        fig = px.scatter(df, x=x_col, y=y_col, title=title, color_discrete_sequence=[self.THEME_COLORS['magenta']])
         fig.update_layout(
             xaxis_title=x_col,
             yaxis_title=y_col
@@ -129,13 +141,19 @@ class PlotlyChartGenerator:
     def _create_correlation_heatmap(self, df: pd.DataFrame, columns: List[str], title: str) -> go.Figure:
         """Create a correlation heatmap for multiple numeric columns."""
         corr_matrix = df[columns].corr()
+        # Custom Vanna color scale: navy (negative) -> cream (neutral) -> teal (positive)
+        vanna_colorscale = [
+            [0.0, self.THEME_COLORS['navy']],
+            [0.5, self.THEME_COLORS['cream']],
+            [1.0, self.THEME_COLORS['teal']]
+        ]
         fig = px.imshow(
             corr_matrix,
             title=title,
             labels=dict(color="Correlation"),
             x=columns,
             y=columns,
-            color_continuous_scale='RdBu_r',
+            color_continuous_scale=vanna_colorscale,
             zmin=-1,
             zmax=1
         )
@@ -146,12 +164,14 @@ class PlotlyChartGenerator:
         """Create a time series line chart."""
         fig = go.Figure()
 
-        for col in value_cols[:5]:  # Limit to 5 lines for readability
+        for i, col in enumerate(value_cols[:5]):  # Limit to 5 lines for readability
+            color = self.COLOR_PALETTE[i % len(self.COLOR_PALETTE)]
             fig.add_trace(go.Scatter(
                 x=df[time_col],
                 y=df[col],
                 mode='lines',
-                name=col
+                name=col,
+                line=dict(color=color)
             ))
 
         fig.update_layout(
@@ -175,7 +195,8 @@ class PlotlyChartGenerator:
                 y='count',
                 color=categorical_cols[1],
                 title=title,
-                barmode='group'
+                barmode='group',
+                color_discrete_sequence=self.COLOR_PALETTE
             )
             self._apply_standard_layout(fig)
             return fig
@@ -183,7 +204,7 @@ class PlotlyChartGenerator:
             # Single categorical: value counts
             counts = df[categorical_cols[0]].value_counts().reset_index()
             counts.columns = [categorical_cols[0], 'count']
-            fig = px.bar(counts, x=categorical_cols[0], y='count', title=title)
+            fig = px.bar(counts, x=categorical_cols[0], y='count', title=title, color_discrete_sequence=[self.THEME_COLORS['teal']])
             self._apply_standard_layout(fig)
             return fig
 
@@ -194,6 +215,6 @@ class PlotlyChartGenerator:
             return self._create_scatter_plot(df, col1, col2, title)
         else:
             # Treat first as categorical, second as value
-            fig = px.bar(df, x=col1, y=col2, title=title)
+            fig = px.bar(df, x=col1, y=col2, title=title, color_discrete_sequence=[self.THEME_COLORS['orange']])
             self._apply_standard_layout(fig)
             return fig
