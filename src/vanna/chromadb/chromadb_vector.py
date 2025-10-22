@@ -216,7 +216,7 @@ class ChromaDB_VectorStore(VannaBase):
 
         Returns:
             List[str] or None: The extracted documents, or an empty list or
-            single document if an error occurred.
+            single document list if an error occurred.
         """
         if query_results is None:
             return []
@@ -228,7 +228,7 @@ class ChromaDB_VectorStore(VannaBase):
                 try:
                     documents = [json.loads(doc) for doc in documents[0]]
                 except Exception as e:
-                    return documents[0]
+                    return [documents[0]]
 
             return documents
 
