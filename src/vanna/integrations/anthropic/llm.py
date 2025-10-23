@@ -10,7 +10,6 @@ non-streaming call as ToolCall entries.
 from __future__ import annotations
 
 import os
-import warnings
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 from vanna.core.llm import (
@@ -26,9 +25,8 @@ class AnthropicLlmService(LlmService):
     """Anthropic Messages-backed LLM service.
 
     Args:
-        model: Anthropic model (e.g., "claude-sonnet-4-20250514"). Also accepts
-            the alias "claude-sonnet-4", which is resolved to the dated Sonnet-4
-            model identifier used in examples.
+        model: Anthropic model name (e.g., "claude-sonnet-4-5", "claude-opus-4").
+            Defaults to "claude-sonnet-4-5". Can also be set via ANTHROPIC_MODEL env var.
         api_key: API key; falls back to env `ANTHROPIC_API_KEY`.
         base_url: Optional custom base URL; env `ANTHROPIC_BASE_URL` if unset.
         extra_client_kwargs: Extra kwargs forwarded to `anthropic.Anthropic()`.
@@ -48,14 +46,8 @@ class AnthropicLlmService(LlmService):
                 "anthropic package is required. Install with: pip install 'vanna[anthropic]'"
             ) from e
 
-        # Model selection with alias support
-        requested_model = model or os.getenv(
-            "ANTHROPIC_MODEL", "claude-sonnet-4-20250514"
-        )
-        # requested_model should never be None due to the default, but ensure it's a string
-        if not requested_model:
-            requested_model = "claude-sonnet-4-20250514"
-        self.model = self._resolve_model_alias(requested_model)
+        # Model selection - use environment variable or default
+        self.model = model or os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
         api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         base_url = base_url or os.getenv("ANTHROPIC_BASE_URL")
 
@@ -66,27 +58,6 @@ class AnthropicLlmService(LlmService):
             client_kwargs["base_url"] = base_url
 
         self._client = anthropic.Anthropic(**client_kwargs)
-
-    @staticmethod
-    def _resolve_model_alias(name: str) -> str:
-        """Resolve friendly aliases to official Anthropic model IDs.
-
-        Currently maps "claude-sonnet-4" to a supported Sonnet model id.
-        If the name is not an alias, returns it unchanged.
-        """
-        aliases: Dict[str, str] = {
-            # Alias requested in examples; map to the dated Sonnet 4 model ID
-            "claude-sonnet-4": "claude-sonnet-4-20250514",
-            # Accept some alternative alias formats shown in SDK docs
-            "claude-sonnet-4@20250514": "claude-sonnet-4-20250514",
-        }
-        resolved = aliases.get(name, name)
-        if resolved != name:
-            warnings.warn(
-                f"Resolved model alias '{name}' to '{resolved}'. Set ANTHROPIC_MODEL to override.",
-                RuntimeWarning,
-            )
-        return resolved
 
     async def send_request(self, request: LlmRequest) -> LlmResponse:
         """Send a non-streaming request to Anthropic and return the response."""

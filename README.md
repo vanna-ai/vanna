@@ -8,6 +8,9 @@
 > pip install --force-reinstall --no-cache-dir 'vanna[flask,anthropic] @ git+https://github.com/vanna-ai/vanna.git@v2'
 > ```
 
+> [!IMPORTANT]
+> If you're upgrading from an older version of Vanna, use the [Migration Guide](MIGRATION_GUIDE.md).
+
 > **Turn natural language into data insights — with enterprise-grade security baked in**
 
 Vanna is purpose-built for **data analytics** with **user awareness** as a first-class concern. Drop in our web component, connect your existing auth, and start querying data securely.
@@ -64,7 +67,7 @@ class SimpleUserResolver(UserResolver):
     async def resolve_user(self, request_context: RequestContext) -> User:
         # In production, validate cookies/JWTs here
         user_id = request_context.get_cookie('user_id') or 'demo_user'
-        return User(id=user_id, permissions=['read_sales'])
+        return User(id=user_id, group_memberships=['read_sales'])
 
 # 2. Set up LLM and tools
 llm = AnthropicLlmService(model="claude-sonnet-4-5")
@@ -75,8 +78,7 @@ tools.register(RunSqlTool(sql_runner=SqliteRunner(database_path="./data.db")))
 agent = Agent(
     llm_service=llm,
     tool_registry=tools,
-    user_resolver=SimpleUserResolver(),
-    config=AgentConfig()
+    user_resolver=SimpleUserResolver()
 )
 
 # 4. Create and run server
@@ -111,7 +113,7 @@ sequenceDiagram
     U->>W: "Show Q4 sales"
     W->>S: POST /api/vanna/v2/chat_sse
     S->>R: Extract user identity
-    R->>A: User(id=alice, permissions=[read_sales])
+    R->>A: User(id=alice, group_memberships=[read_sales])
     A->>A: Generate personalized system prompt
     A->>T: Execute SQL tool (user-aware)
     T->>T: Apply row-level security
@@ -235,7 +237,7 @@ class MyUserResolver(UserResolver):
         return User(
             id=user_data['id'],
             email=user_data['email'],
-            permissions=user_data['permissions'],  # Key!
+            group_memberships=user_data['groups'],  # Key!
             metadata={'role': user_data['role']}
         )
 ```
@@ -260,8 +262,8 @@ class CustomSQLTool(Tool[QueryArgs]):
         return "Execute a SQL query against the database"
 
     @property
-    def required_permissions(self) -> list[str]:
-        return ["read_sales"]  # Only users with this permission
+    def access_groups(self) -> list[str]:
+        return ["read_sales"]  # Only users in this group can use this tool
 
     def get_args_schema(self) -> Type[QueryArgs]:
         return QueryArgs
@@ -335,13 +337,13 @@ class CookieUserResolver(UserResolver):
         user_id = request_context.get_cookie('user_id') or 'anonymous'
         role = request_context.get_cookie('role') or 'guest'
 
-        permissions = []
+        groups = []
         if role == 'admin':
-            permissions = ['read_sales', 'read_confidential', 'admin']
+            groups = ['read_sales', 'read_confidential', 'admin']
         elif role == 'analyst':
-            permissions = ['read_sales']
+            groups = ['read_sales']
 
-        return User(id=user_id, permissions=permissions)
+        return User(id=user_id, group_memberships=groups)
 
 # Set up agent
 llm = AnthropicLlmService(model="claude-sonnet-4-5")
@@ -396,8 +398,8 @@ class EmailTool(Tool[EmailArgs]):
         return "Send an email to a user"
 
     @property
-    def required_permissions(self) -> list[str]:
-        return ["send_email"]  # Only users with this permission
+    def access_groups(self) -> list[str]:
+        return ["send_email"]  # Only users in this group can use this tool
 
     def get_args_schema(self) -> Type[EmailArgs]:
         return EmailArgs
@@ -509,12 +511,13 @@ agent = Agent(
 )
 
 # List user's conversations
-conversations = await store.list_conversations(user_id="alice")
+alice = User(id="alice")
+conversations = await store.list_conversations(user=alice)
 
 # Get conversation history
 conversation = await store.get_conversation(
     conversation_id="conv_123",
-    user_id="alice"
+    user=alice
 )
 ```
 
@@ -630,6 +633,8 @@ agent = Agent(
 
 ---
 
-## Support
+## Documentation
+
+- **Migration Guide**: [Migrating from Vanna 1.x to 2.0+](MIGRATION_GUIDE.md)
 - **GitHub Discussions**: [GitHub Discussions](https://github.com/vanna-ai/vanna/discussions)
-- **Email:** support@vanna.ai
+- **Email**: support@vanna.ai
