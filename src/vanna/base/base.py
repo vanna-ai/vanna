@@ -541,7 +541,7 @@ class VannaBase(ABC):
             initial_prompt += "\n===Additional Context \n\n"
 
             for documentation in documentation_list:
-                if (
+                if documentation is not None and(
                     self.str_to_approx_token_count(initial_prompt)
                     + self.str_to_approx_token_count(documentation)
                     < max_tokens
