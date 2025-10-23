@@ -1,5 +1,13 @@
 # Vanna 2.0+: Web-First, User-Aware Agent Framework
 
+> [!WARNING]
+> This version of Vanna is actively under development and may contain breaking changes until it is officially released to PyPI.
+>
+> To install while in development, use:
+> ```bash
+> pip install --force-reinstall --no-cache-dir 'vanna[flask,anthropic] @ git+https://github.com/vanna-ai/vanna.git@v2'
+> ```
+
 > **Turn natural language into data insights — with enterprise-grade security baked in**
 
 Vanna is purpose-built for **data analytics** with **user awareness** as a first-class concern. Drop in our web component, connect your existing auth, and start querying data securely.
