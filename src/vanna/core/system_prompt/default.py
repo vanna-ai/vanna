@@ -62,6 +62,7 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
             "Response Guidelines:",
             "- Any summary of what you did or observations should be the final step.",
             "- Use the available tools to help the user accomplish their goals.",
+            "- When you execute a query, that raw result is shown to the user outside of your response so YOU DO NOT need to include it in your response. Focus on summarizing and interpreting the results.",
         ]
 
         if tools:
