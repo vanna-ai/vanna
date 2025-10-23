@@ -513,19 +513,30 @@ class Agent:
 
                 if response.content is not None:
                     # Yield any partial content from the assistant before tool execution
-                    yield UiComponent(
-                        rich_component=RichTextComponent(content=response.content, markdown=True),
-                        simple_component=SimpleTextComponent(text=response.content)
-                    )
+                    has_tool_invocation_message_in_chat = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT, user)
+                    if has_tool_invocation_message_in_chat:
+                        yield UiComponent(
+                            rich_component=RichTextComponent(content=response.content, markdown=True),
+                            simple_component=SimpleTextComponent(text=response.content)
+                        )
 
-                # Update status to executing tools
-                yield UiComponent(  # type: ignore
-                    rich_component=StatusBarUpdateComponent(
-                        status="working",
-                        message="Executing tools...",
-                        detail=f"Running {len(response.tool_calls or [])} tools"
-                    )
-                )
+                        # Update status to executing tools
+                        yield UiComponent(  # type: ignore
+                            rich_component=StatusBarUpdateComponent(
+                                status="working",
+                                message="Executing tools...",
+                                detail=f"Running {len(response.tool_calls or [])} tools"
+                            )
+                        )
+                    else:
+                        # Yield as a status update instead
+                        yield UiComponent(  # type: ignore
+                            rich_component=StatusBarUpdateComponent(
+                                status="working",
+                                message=response.content,
+                                detail=""
+                            )
+                        )
 
                 # Collect all tool results first
                 tool_results = []

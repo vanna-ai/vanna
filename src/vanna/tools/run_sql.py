@@ -11,23 +11,33 @@ from vanna.integrations.local import LocalFileSystem
 class RunSqlTool(Tool[RunSqlToolArgs]):
     """Tool that executes SQL queries using an injected SqlRunner implementation."""
 
-    def __init__(self, sql_runner: SqlRunner, file_system: Optional[FileSystem] = None):
+    def __init__(
+        self,
+        sql_runner: SqlRunner,
+        file_system: Optional[FileSystem] = None,
+        custom_tool_name: Optional[str] = None,
+        custom_tool_description: Optional[str] = None
+    ):
         """Initialize the tool with a SqlRunner implementation.
 
         Args:
             sql_runner: SqlRunner implementation that handles actual query execution
             file_system: FileSystem implementation for saving results (defaults to LocalFileSystem)
+            custom_tool_name: Optional custom name for the tool (overrides default "run_sql")
+            custom_tool_description: Optional custom description for the tool (overrides default description)
         """
         self.sql_runner = sql_runner
         self.file_system = file_system or LocalFileSystem()
+        self._custom_name = custom_tool_name
+        self._custom_description = custom_tool_description
 
     @property
     def name(self) -> str:
-        return "run_sql"
+        return self._custom_name if self._custom_name else "run_sql"
 
     @property
     def description(self) -> str:
-        return "Execute SQL queries against the configured database"
+        return self._custom_description if self._custom_description else "Execute SQL queries against the configured database"
 
     def get_args_schema(self) -> Type[RunSqlToolArgs]:
         return RunSqlToolArgs

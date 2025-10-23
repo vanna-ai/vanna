@@ -23,12 +23,14 @@ class UiFeature(StrEnum):
     UI_FEATURE_SHOW_TOOL_NAMES = "tool_names"
     UI_FEATURE_SHOW_TOOL_ARGUMENTS = "tool_arguments"
     UI_FEATURE_SHOW_TOOL_ERROR = "tool_error"
+    UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT = "tool_invocation_message_in_chat"
 
 # Optional: you can also define defaults if you want a shared baseline
 DEFAULT_UI_FEATURES: Dict[str, List[str]] = {
     UiFeature.UI_FEATURE_SHOW_TOOL_NAMES: ["admin", "user"],
     UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS: ["admin"],
     UiFeature.UI_FEATURE_SHOW_TOOL_ERROR: ["admin"],
+    UiFeature.UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT: ["admin"],
 }
 
 class UiFeatures(BaseModel):

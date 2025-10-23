@@ -161,6 +161,7 @@ async def main():
     except Exception as e:
         print(f"❌ Error running benchmark: {e}")
         import traceback
+        traceback.print_stack()
         traceback.print_exc()
 
 

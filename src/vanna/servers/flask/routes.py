@@ -54,6 +54,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
 
             chat_request = ChatRequest(**data)
         except Exception as e:
+            traceback.print_stack()
             traceback.print_exc()
             return jsonify({"error": f"Invalid request: {str(e)}"}), 400
 
@@ -65,8 +66,8 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
             try:
                 async def async_generate() -> AsyncGenerator[str, None]:
                     async for chunk in chat_handler.handle_stream(chat_request):
-                        chunk_json = chunk.model_dump()
-                        yield f"data: {json.dumps(chunk_json)}\n\n"
+                        chunk_json = chunk.model_dump_json()
+                        yield f"data: {chunk_json}\n\n"
 
                 gen = async_generate()
                 try:
@@ -113,6 +114,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
 
             chat_request = ChatRequest(**data)
         except Exception as e:
+            traceback.print_stack()
             traceback.print_exc()
             return jsonify({"error": f"Invalid request: {str(e)}"}), 400
 
@@ -123,6 +125,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
             result = loop.run_until_complete(chat_handler.handle_poll(chat_request))
             return jsonify(result.model_dump())
         except Exception as e:
+            traceback.print_stack()
             traceback.print_exc()
             return jsonify({"error": f"Chat failed: {str(e)}"}), 500
         finally:

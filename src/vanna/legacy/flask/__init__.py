@@ -705,6 +705,7 @@ class VannaFlaskAPI:
                 # Print the stack trace
                 import traceback
 
+                traceback.print_stack()
                 traceback.print_exc()
 
                 return jsonify({"type": "error", "error": str(e)})

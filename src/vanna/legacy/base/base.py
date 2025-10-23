@@ -1776,6 +1776,7 @@ class VannaBase(ABC):
                             fig.show()
                 except Exception as e:
                     # Print stack trace
+                    traceback.print_stack()
                     traceback.print_exc()
                     print("Couldn't run plotly code: ", e)
                     if print_results:
