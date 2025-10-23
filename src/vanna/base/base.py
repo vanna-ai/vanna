@@ -513,6 +513,8 @@ class VannaBase(ABC):
         pass
 
     def str_to_approx_token_count(self, string: str) -> int:
+        if string is None:
+            return 0
         return len(string) / 4
 
     def add_ddl_to_prompt(
@@ -541,7 +543,7 @@ class VannaBase(ABC):
             initial_prompt += "\n===Additional Context \n\n"
 
             for documentation in documentation_list:
-                if documentation is not None and(
+                if (
                     self.str_to_approx_token_count(initial_prompt)
                     + self.str_to_approx_token_count(documentation)
                     < max_tokens
