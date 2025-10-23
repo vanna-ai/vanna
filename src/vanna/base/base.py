@@ -513,6 +513,8 @@ class VannaBase(ABC):
         pass
 
     def str_to_approx_token_count(self, string: str) -> int:
+        if string is None:
+            return 0
         return len(string) / 4
 
     def add_ddl_to_prompt(
