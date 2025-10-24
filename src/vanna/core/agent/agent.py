@@ -5,6 +5,7 @@ This module provides the main Agent class that orchestrates the interaction
 between LLM services, tools, and conversation storage.
 """
 
+import traceback
 import uuid
 from typing import TYPE_CHECKING, AsyncGenerator, List, Optional
 
@@ -127,7 +128,88 @@ class Agent:
         conversation_id: Optional[str] = None,
     ) -> AsyncGenerator[UiComponent, None]:
         """
-        Process a user message and yield UI components.
+        Process a user message and yield UI components with error handling.
+
+        Args:
+            request_context: Request context for user resolution (includes metadata)
+            message: User's message content
+            conversation_id: Optional conversation ID; if None, creates new conversation
+
+        Yields:
+            UiComponent instances for UI updates
+        """
+        try:
+            # Delegate to internal method
+            async for component in self._send_message(request_context, message, conversation_id=conversation_id):
+                yield component
+        except Exception as e:
+            # Log full stack trace
+            stack_trace = traceback.format_exc()
+            logger.error(
+                f"Error in send_message (conversation_id={conversation_id}): {e}\n{stack_trace}",
+                exc_info=True
+            )
+
+            # Log to observability provider if available
+            if self.observability_provider:
+                try:
+                    error_span = await self.observability_provider.create_span(
+                        "agent.send_message.error",
+                        attributes={
+                            "error_type": type(e).__name__,
+                            "error_message": str(e),
+                            "conversation_id": conversation_id or "none"
+                        }
+                    )
+                    await self.observability_provider.end_span(error_span)
+                    await self.observability_provider.record_metric(
+                        "agent.error.count", 1.0, "count",
+                        tags={"error_type": type(e).__name__}
+                    )
+                except Exception as obs_error:
+                    logger.error(f"Failed to log error to observability provider: {obs_error}", exc_info=True)
+
+            # Yield error component to UI (simple, user-friendly message)
+            error_description = "An unexpected error occurred while processing your message. Please try again."
+            if conversation_id:
+                error_description += f"\n\nConversation ID: {conversation_id}"
+
+            yield UiComponent(  # type: ignore
+                rich_component=StatusCardComponent(
+                    title="Error Processing Message",
+                    status="error",
+                    description=error_description,
+                    icon="⚠️"
+                ),
+                simple_component=SimpleTextComponent(text=f"Error: An unexpected error occurred. Please try again.{f' (Conversation ID: {conversation_id})' if conversation_id else ''}")
+            )
+
+            # Update status bar to show error state
+            yield UiComponent(  # type: ignore
+                rich_component=StatusBarUpdateComponent(
+                    status="error",
+                    message="Error occurred",
+                    detail="An unexpected error occurred while processing your message"
+                )
+            )
+
+            # Re-enable chat input so user can try again
+            yield UiComponent(  # type: ignore
+                rich_component=ChatInputUpdateComponent(
+                    placeholder="Try again...",
+                    disabled=False
+                )
+            )
+
+    async def _send_message(
+        self,
+        request_context: RequestContext,
+        message: str,
+        *,
+        conversation_id: Optional[str] = None,
+    ) -> AsyncGenerator[UiComponent, None]:
+        """
+        Internal method to process a user message and yield UI components.
 
         Args:
             request_context: Request context for user resolution (includes metadata)

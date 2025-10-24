@@ -2,7 +2,6 @@ build
 **.egg-info
 venv
 .DS_Store
-notebooks/*
 tests/__pycache__
 __pycache__/
 .idea

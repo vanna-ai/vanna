@@ -83,11 +83,40 @@ class VannaFastAPIServer:
     def run(self, **kwargs: Any) -> None:
         """Run the FastAPI server.
 
+        This method automatically detects if running in an async environment
+        (Jupyter, Colab, IPython, etc.) and:
+        - Uses appropriate async handling for existing event loops
+        - Sets up port forwarding if in Google Colab
+        - Displays the correct URL for accessing the app
+
         Args:
-            **kwargs: Arguments passed to uvicorn.run()
+            **kwargs: Arguments passed to uvicorn configuration
         """
+        import sys
+        import asyncio
         import uvicorn
 
+        # Check if we're in an environment with a running event loop FIRST
+        in_async_env = False
+        try:
+            asyncio.get_running_loop()
+            in_async_env = True
+        except RuntimeError:
+            in_async_env = False
+
+        # If in async environment, apply nest_asyncio BEFORE creating the app
+        if in_async_env:
+            try:
+                import nest_asyncio
+                nest_asyncio.apply()
+            except ImportError:
+                print("Warning: nest_asyncio not installed. Installing...")
+                import subprocess
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "nest_asyncio"])
+                import nest_asyncio
+                nest_asyncio.apply()
+
+        # Now create the app after nest_asyncio is applied
         app = self.create_app()
 
         # Set defaults
@@ -98,4 +127,34 @@ class VannaFastAPIServer:
             **kwargs
         }
 
-        uvicorn.run(app, **run_kwargs)
+        # Get the port and other config from run_kwargs
+        port = run_kwargs.get("port", 8000)
+        host = run_kwargs.get("host", "0.0.0.0")
+        log_level = run_kwargs.get("log_level", "info")
+
+        # Check if we're specifically in Google Colab for port forwarding
+        in_colab = "google.colab" in sys.modules
+
+        if in_colab:
+            try:
+                from google.colab import output
+                output.serve_kernel_port_as_window(port)
+                from google.colab.output import eval_js
+                print("Your app is running at:")
+                print(eval_js(f"google.colab.kernel.proxyPort({port})"))
+            except Exception as e:
+                print(f"Warning: Could not set up Colab port forwarding: {e}")
+                print(f"Your app is running at: http://localhost:{port}")
+        else:
+            print("Your app is running at:")
+            print(f"http://localhost:{port}")
+
+        if in_async_env:
+            # In Jupyter/Colab, create config with loop="asyncio" and use asyncio.run()
+            # This matches the working pattern from Colab
+            config = uvicorn.Config(app, host=host, port=port, log_level=log_level, loop="asyncio")
+            server = uvicorn.Server(config)
+            asyncio.run(server.serve())
+        else:
+            # Normal execution outside of Jupyter/Colab
+            uvicorn.run(app, **run_kwargs)
