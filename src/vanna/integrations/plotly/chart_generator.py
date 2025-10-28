@@ -26,6 +26,7 @@ class PlotlyChartGenerator:
         """Generate a Plotly chart based on DataFrame shape and types.
 
         Heuristics:
+        - 4+ columns: table
         - 1 numeric column: histogram
         - 2 columns (1 categorical, 1 numeric): bar chart
         - 2 numeric columns: scatter plot
@@ -45,6 +46,12 @@ class PlotlyChartGenerator:
         """
         if df.empty:
             raise ValueError("Cannot visualize empty DataFrame")
+
+        # Heuristic: If 4 or more columns, render as a table
+        if len(df.columns) >= 4:
+            fig = self._create_table(df, title)
+            result: Dict[str, Any] = json.loads(pio.to_json(fig))
+            return result
 
         # Identify column types
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
@@ -218,3 +225,34 @@ class PlotlyChartGenerator:
             fig = px.bar(df, x=col1, y=col2, title=title, color_discrete_sequence=[self.THEME_COLORS['orange']])
             self._apply_standard_layout(fig)
             return fig
+
+    def _create_table(self, df: pd.DataFrame, title: str) -> go.Figure:
+        """Create a Plotly table for DataFrames with 4 or more columns."""
+        # Prepare header
+        header_values = list(df.columns)
+
+        # Prepare cell values (transpose to get columns)
+        cell_values = [df[col].tolist() for col in df.columns]
+
+        # Create the table
+        fig = go.Figure(data=[go.Table(
+            header=dict(
+                values=header_values,
+                fill_color=self.THEME_COLORS['navy'],
+                font=dict(color='white', size=12),
+                align='left'
+            ),
+            cells=dict(
+                values=cell_values,
+                fill_color=[[self.THEME_COLORS['cream'] if i % 2 == 0 else 'white' for i in range(len(df))]],
+                font=dict(color=self.THEME_COLORS['navy'], size=11),
+                align='left'
+            )
+        )])
+
+        fig.update_layout(
+            title=title,
+            font={'color': self.THEME_COLORS['navy']}
+        )
+
+        return fig
