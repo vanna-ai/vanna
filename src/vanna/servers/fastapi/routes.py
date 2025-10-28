@@ -45,6 +45,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             cookies=dict(http_request.cookies),
             headers=dict(http_request.headers),
             remote_addr=http_request.client.host if http_request.client else None,
+            query_params=dict(http_request.query_params),
             metadata=chat_request.metadata,
         )
 
@@ -93,6 +94,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                         cookies=dict(websocket.cookies),
                         headers=dict(websocket.headers),
                         remote_addr=websocket.client.host if websocket.client else None,
+                        query_params=dict(websocket.query_params),
                         metadata=metadata,
                     )
 
@@ -152,6 +154,7 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             cookies=dict(http_request.cookies),
             headers=dict(http_request.headers),
             remote_addr=http_request.client.host if http_request.client else None,
+            query_params=dict(http_request.query_params),
             metadata=chat_request.metadata,
         )
 

@@ -50,6 +50,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
                 cookies=dict(request.cookies),
                 headers=dict(request.headers),
                 remote_addr=request.remote_addr,
+                query_params=dict(request.args),
             )
 
             chat_request = ChatRequest(**data)
@@ -110,6 +111,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
                 cookies=dict(request.cookies),
                 headers=dict(request.headers),
                 remote_addr=request.remote_addr,
+                query_params=dict(request.args),
             )
 
             chat_request = ChatRequest(**data)
