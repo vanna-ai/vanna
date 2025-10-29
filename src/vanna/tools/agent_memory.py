@@ -6,8 +6,11 @@ allowing for different implementations (local vector DB, remote cloud service, e
 The tools accept an AgentMemory instance via dependency injection.
 """
 
+import logging
 from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 from vanna.core.tool import Tool, ToolContext, ToolResult
 from vanna.capabilities.agent_memory import AgentMemory
@@ -144,6 +147,8 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 results_text += f"{i}. {memory.tool_name} (similarity: {result.similarity_score:.2f})\n"
                 results_text += f"   Question: {memory.question}\n"
                 results_text += f"   Args: {memory.args}\n\n"
+
+            logger.info(f"Agent memory search results: {results_text.strip()}")
 
             return ToolResult(
                 success=True,

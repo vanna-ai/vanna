@@ -9,8 +9,11 @@ non-streaming call as ToolCall entries.
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 from vanna.core.llm import (
     LlmService,
@@ -65,6 +68,8 @@ class AnthropicLlmService(LlmService):
 
         resp = self._client.messages.create(**payload)
 
+        logger.info(f"Anthropic response: {resp}")
+
         text_content, tool_calls = self._parse_message_content(resp)
 
         usage: Dict[str, int] = {}
@@ -94,6 +99,8 @@ class AnthropicLlmService(LlmService):
         """
         payload = self._build_payload(request)
 
+        logger.info(f"Anthropic streaming payload: {payload}")
+
         # SDK provides a streaming context manager with a text_stream iterator.
         with self._client.messages.stream(**payload) as stream:
             for text in stream.text_stream:
@@ -101,6 +108,7 @@ class AnthropicLlmService(LlmService):
                     yield LlmStreamChunk(content=text)
 
             final = stream.get_final_message()
+            logger.info(f"Anthropic stream response: {final}")
             _, tool_calls = self._parse_message_content(final)
             if tool_calls:
                 yield LlmStreamChunk(

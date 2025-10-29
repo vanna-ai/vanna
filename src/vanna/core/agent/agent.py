@@ -866,6 +866,43 @@ class Agent:
                     )
                 break
 
+        # Check if we hit the tool iteration limit
+        if tool_iterations >= self.config.max_tool_iterations:
+            # The loop exited due to hitting the limit, not due to a natural completion
+            logger.warning(f"Tool iteration limit reached: {tool_iterations}/{self.config.max_tool_iterations}")
+
+            # Update status bar to show warning
+            yield UiComponent(  # type: ignore
+                rich_component=StatusBarUpdateComponent(
+                    status="warning",
+                    message="Tool limit reached",
+                    detail=f"Stopped after {tool_iterations} tool executions. The task may be incomplete."
+                )
+            )
+
+            # Provide detailed warning message to user
+            warning_message = f"""⚠️ **Tool Execution Limit Reached**
+
+The agent stopped after executing {tool_iterations} tools (the configured maximum). The task may not be fully complete.
+
+You can:
+- Ask me to continue where I left off
+- Adjust the `max_tool_iterations` setting if you need more tool calls
+- Break the task into smaller steps"""
+
+            yield UiComponent(
+                rich_component=RichTextComponent(content=warning_message, markdown=True),
+                simple_component=SimpleTextComponent(text=f"Tool limit reached after {tool_iterations} executions. Task may be incomplete.")
+            )
+
+            # Update chat input to suggest follow-up
+            yield UiComponent(  # type: ignore
+                rich_component=ChatInputUpdateComponent(
+                    placeholder="Continue the task or ask me something else...",
+                    disabled=False
+                )
+            )
+
         # Save conversation if configured
         if self.config.auto_save_conversations:
             save_span = None
@@ -906,11 +943,19 @@ class Agent:
         # End observability span and record metrics
         if self.observability_provider and message_span:
             message_span.set_attribute("tool_iterations", tool_iterations)
+
+            # Track if we hit the tool iteration limit
+            hit_tool_limit = tool_iterations >= self.config.max_tool_iterations
+            message_span.set_attribute("hit_tool_limit", hit_tool_limit)
+            if hit_tool_limit:
+                message_span.set_attribute("incomplete_response", True)
+                logger.info(f"Tool limit reached - marking response as potentially incomplete")
+
             await self.observability_provider.end_span(message_span)
             if message_span.duration_ms():
                 await self.observability_provider.record_metric(
                     "agent.message.duration", message_span.duration_ms() or 0, "ms",
-                    tags={"user_id": user.id}
+                    tags={"user_id": user.id, "hit_tool_limit": str(hit_tool_limit)}
                 )
 
     async def get_available_tools(self, user: User) -> List[ToolSchema]:
