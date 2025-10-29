@@ -10,14 +10,10 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel, Field
 
 from vanna.core.tool import Tool, ToolContext, ToolResult
-from vanna.capabilities.agent_memory import AgentMemory, MemorySearchResult
+from vanna.capabilities.agent_memory import AgentMemory
 from vanna.components import (
     UiComponent,
-    CardComponent,
-    NotificationComponent,
-    ComponentType,
-    SimpleTextComponent,
-    RichTextComponent,
+    StatusBarUpdateComponent,
 )
 
 
@@ -75,8 +71,11 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                 success=True,
                 result_for_llm=success_msg,
                 ui_component=UiComponent(
-                    rich_component=RichTextComponent(content=success_msg),
-                    simple_component=SimpleTextComponent(text=success_msg)
+                    rich_component=StatusBarUpdateComponent(
+                        status="success",
+                        message="Saved to memory",
+                        detail=f"Saved pattern for '{args.tool_name}'"
+                    )
                 )
             )
             
@@ -86,8 +85,11 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                 success=False,
                 result_for_llm=error_message,
                 ui_component=UiComponent(
-                    rich_component=RichTextComponent(content=error_message),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    rich_component=StatusBarUpdateComponent(
+                        status="error",
+                        message="Failed to save memory",
+                        detail=str(e)
+                    )
                 ),
                 error=str(e)
             )
@@ -127,12 +129,15 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                     success=True,
                     result_for_llm=no_results_msg,
                     ui_component=UiComponent(
-                        rich_component=RichTextComponent(content=no_results_msg),
-                        simple_component=SimpleTextComponent(text=no_results_msg)
+                        rich_component=StatusBarUpdateComponent(
+                            status="idle",
+                            message="No similar patterns found",
+                            detail="Searched agent memory"
+                        )
                     )
                 )
-            
-            # Format results for LLM and UI
+
+            # Format results for LLM
             results_text = f"Found {len(results)} similar tool usage pattern(s):\n\n"
             for i, result in enumerate(results, 1):
                 memory = result.memory
@@ -144,8 +149,11 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 success=True,
                 result_for_llm=results_text.strip(),
                 ui_component=UiComponent(
-                    rich_component=RichTextComponent(content=results_text.strip()),
-                    simple_component=SimpleTextComponent(text=results_text.strip())
+                    rich_component=StatusBarUpdateComponent(
+                        status="success",
+                        message=f"Found {len(results)} similar pattern(s)",
+                        detail="Retrieved from agent memory"
+                    )
                 )
             )
 
@@ -155,8 +163,11 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 success=False,
                 result_for_llm=error_message,
                 ui_component=UiComponent(
-                    rich_component=RichTextComponent(content=error_message),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    rich_component=StatusBarUpdateComponent(
+                        status="error",
+                        message="Failed to search memory",
+                        detail=str(e)
+                    )
                 ),
                 error=str(e)
             )
