@@ -24,6 +24,9 @@ dependencies = [
     "httpx>=0.28.0",
     "PyYAML",
     "plotly",
+    "tabulate",
+    "sqlparse",
+    "sqlalchemy",
 ]
 
 [project.scripts]
