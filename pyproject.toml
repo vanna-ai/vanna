@@ -27,6 +27,7 @@ dependencies = [
     "tabulate",
     "sqlparse",
     "sqlalchemy",
+    "requests",
 ]
 
 [project.scripts]
@@ -74,6 +75,9 @@ faiss-cpu = ["faiss-cpu"]
 faiss-gpu = ["faiss-gpu"]
 xinference-client = ["xinference-client"]
 oracle = ["oracledb", "chromadb<1.0.0"]
+hive = ["pyhive", "thrift"]
+presto = ["pyhive", "thrift"]
+mssql = ["pyodbc"]
 
 [tool.flit.module]
 name = "vanna"
