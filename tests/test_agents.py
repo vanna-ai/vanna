@@ -52,17 +52,8 @@ def create_agent(llm_service, sql_runner):
     )
 
 
-@pytest.mark.anthropic
-@pytest.mark.asyncio
-async def test_anthropic_top_artist(chinook_db):
-    """Test Anthropic agent finding the top artist by sales."""
-    from vanna.integrations.anthropic import AnthropicLlmService
-
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    llm = AnthropicLlmService(api_key=api_key, model="claude-sonnet-4-5")
-
-    agent = create_agent(llm, chinook_db)
-
+async def test_agent_top_artist(agent, expected_artist="Iron Maiden"):
+    """Common test logic for testing agent responses about top artist by sales."""
     # Create a simple request context
     request_context = RequestContext(cookies={}, headers={})
 
@@ -85,21 +76,34 @@ async def test_anthropic_top_artist(chinook_db):
             print(f"  Content: {str(component.content)[:200]}...")
         print(f"  Full: {component}")
 
-    # Look for "Iron Maiden" in any component
-    found_iron_maiden = False
+    # Look for the expected artist in any component
+    found_artist = False
     for component in components:
         # Check rich_component.content
         if hasattr(component, 'rich_component') and hasattr(component.rich_component, 'content'):
-            if 'Iron Maiden' in component.rich_component.content:
-                found_iron_maiden = True
+            if expected_artist in component.rich_component.content:
+                found_artist = True
                 break
         # Check simple_component.text
         if hasattr(component, 'simple_component') and hasattr(component.simple_component, 'text'):
-            if 'Iron Maiden' in component.simple_component.text:
-                found_iron_maiden = True
+            if expected_artist in component.simple_component.text:
+                found_artist = True
                 break
 
-    assert found_iron_maiden, f"Response should mention 'Iron Maiden' as the top artist. Got {len(components)} components."
+    assert found_artist, f"Response should mention '{expected_artist}' as the top artist. Got {len(components)} components."
+
+
+@pytest.mark.anthropic
+@pytest.mark.asyncio
+async def test_anthropic_top_artist(chinook_db):
+    """Test Anthropic agent finding the top artist by sales."""
+    from vanna.integrations.anthropic import AnthropicLlmService
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    llm = AnthropicLlmService(api_key=api_key, model="claude-sonnet-4-5")
+
+    agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)
 
 
 @pytest.mark.openai
@@ -112,41 +116,17 @@ async def test_openai_top_artist(chinook_db):
     llm = OpenAILlmService(api_key=api_key, model="gpt-5")
 
     agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)
 
-    # Create a simple request context
-    request_context = RequestContext(cookies={}, headers={})
 
-    # Collect all components from the async generator
-    components = []
-    async for component in agent.send_message(request_context, "Who is the top artist by sales?"):
-        components.append(component)
+@pytest.mark.openai
+@pytest.mark.asyncio
+async def test_openai_responses_top_artist(chinook_db):
+    """Test OpenAI Responses API agent finding the top artist by sales."""
+    from vanna.integrations.openai import OpenAIResponsesService
 
-    # Validate we got components
-    assert len(components) > 0, "Should receive at least one component"
+    api_key = os.getenv("OPENAI_API_KEY")
+    llm = OpenAIResponsesService(api_key=api_key, model="gpt-5")
 
-    # Print all components for debugging
-    print(f"\n\n=== Received {len(components)} components ===")
-    for i, component in enumerate(components):
-        print(f"\nComponent {i+1}:")
-        print(f"  Type: {component.type if hasattr(component, 'type') else 'no type'}")
-        if hasattr(component, 'text'):
-            print(f"  Text: {component.text[:200]}..." if len(component.text) > 200 else f"  Text: {component.text}")
-        if hasattr(component, 'content'):
-            print(f"  Content: {str(component.content)[:200]}...")
-        print(f"  Full: {component}")
-
-    # Look for "Iron Maiden" in any component
-    found_iron_maiden = False
-    for component in components:
-        # Check rich_component.content
-        if hasattr(component, 'rich_component') and hasattr(component.rich_component, 'content'):
-            if 'Iron Maiden' in component.rich_component.content:
-                found_iron_maiden = True
-                break
-        # Check simple_component.text
-        if hasattr(component, 'simple_component') and hasattr(component.simple_component, 'text'):
-            if 'Iron Maiden' in component.simple_component.text:
-                found_iron_maiden = True
-                break
-
-    assert found_iron_maiden, f"Response should mention 'Iron Maiden' as the top artist. Got {len(components)} components."
+    agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)
