@@ -36,7 +36,7 @@ class OpenAIResponsesService(LlmService):
     management, persistent reasoning, and enhanced tool support.
 
     Args:
-        model: OpenAI model name (e.g., "gpt-4o", "gpt-4o-mini").
+        model: OpenAI model name (e.g., "gpt-5").
         api_key: API key; falls back to env `OPENAI_API_KEY`.
         organization: Optional org; env `OPENAI_ORG` if unset.
         base_url: Optional custom base URL; env `OPENAI_BASE_URL` if unset.
@@ -62,7 +62,7 @@ class OpenAIResponsesService(LlmService):
                 "openai package is required. Install with: pip install 'vanna[openai]'"
             ) from e
 
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-5")
         self.instructions = instructions
         self.enable_web_search = enable_web_search
         api_key = api_key or os.getenv("OPENAI_API_KEY")

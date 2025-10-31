@@ -485,7 +485,7 @@ export ANTHROPIC_MODEL="claude-sonnet-4-5"
 
 # OpenAI
 export OPENAI_API_KEY="sk-..."
-export OPENAI_MODEL="gpt-4"
+export OPENAI_MODEL="gpt-5"
 
 # Database
 export DATABASE_URL="postgresql://localhost/mydb"

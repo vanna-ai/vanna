@@ -28,7 +28,7 @@ class OpenAILlmService(LlmService):
     """OpenAI Chat Completions-backed LLM service.
 
     Args:
-        model: OpenAI model name (e.g., "gpt-4o-mini").
+        model: OpenAI model name (e.g., "gpt-5").
         api_key: API key; falls back to env `OPENAI_API_KEY`.
         organization: Optional org; env `OPENAI_ORG` if unset.
         base_url: Optional custom base URL; env `OPENAI_BASE_URL` if unset.
@@ -50,7 +50,7 @@ class OpenAILlmService(LlmService):
                 "openai package is required. Install with: pip install 'vanna[openai]'"
             ) from e
 
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-5")
         api_key = api_key or os.getenv("OPENAI_API_KEY")
         organization = organization or os.getenv("OPENAI_ORG")
         base_url = base_url or os.getenv("OPENAI_BASE_URL")
@@ -230,7 +230,6 @@ class OpenAILlmService(LlmService):
         payload: Dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "temperature": request.temperature,
         }
         if request.max_tokens is not None:
             payload["max_tokens"] = request.max_tokens

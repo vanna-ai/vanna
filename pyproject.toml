@@ -49,7 +49,8 @@ snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
 google = ["google-generativeai", "google-cloud-aiplatform"]
 all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai>=1.0.0", "chromadb<1.0.0", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone", "pymilvus[model]","weaviate-client", "azure-search-documents", "azure-identity", "azure-common", "faiss-cpu", "boto", "boto3", "botocore", "langchain_core", "langchain_postgres", "langchain-community", "langchain-huggingface", "xinference-client"]
-test = ["tox"]
+test = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest-cov>=4.0.0", "tox>=4.0.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest-cov>=4.0.0", "tox>=4.0.0", "mypy", "ruff"]
 chromadb = ["chromadb<1.0.0"]
 openai = ["openai"]
 qianfan = ["qianfan"]
@@ -77,3 +78,21 @@ oracle = ["oracledb", "chromadb<1.0.0"]
 [tool.flit.module]
 name = "vanna"
 path = "python-sdk/vanna"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "anthropic: marks tests requiring Anthropic API key",
+    "openai: marks tests requiring OpenAI API key",
+    "slow: marks tests as slow running",
+    "postgres: marks tests requiring PostgreSQL",
+    "mysql: marks tests requiring MySQL",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

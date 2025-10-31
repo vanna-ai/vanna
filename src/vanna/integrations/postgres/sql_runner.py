@@ -1,8 +1,6 @@
 """PostgreSQL implementation of SqlRunner interface."""
 from typing import Optional
 import pandas as pd
-import psycopg2
-import psycopg2.extras
 
 from vanna.capabilities.sql_runner import SqlRunner, RunSqlToolArgs
 from vanna.core.tool import ToolContext
@@ -35,6 +33,15 @@ class PostgresRunner(SqlRunner):
             password: Database password
             **kwargs: Additional psycopg2 connection parameters (sslmode, connect_timeout, etc.)
         """
+        try:
+            import psycopg2
+            import psycopg2.extras
+            self.psycopg2 = psycopg2
+        except Exception as e:
+            raise ImportError(
+                "psycopg2 package is required. Install with: pip install 'vanna[postgres]'"
+            ) from e
+
         if connection_string:
             self.connection_string = connection_string
             self.connection_params = None
@@ -68,11 +75,11 @@ class PostgresRunner(SqlRunner):
         """
         # Connect to the database using either connection string or parameters
         if self.connection_string:
-            conn = psycopg2.connect(self.connection_string)
+            conn = self.psycopg2.connect(self.connection_string)
         else:
-            conn = psycopg2.connect(**self.connection_params)
+            conn = self.psycopg2.connect(**self.connection_params)
 
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor(cursor_factory=self.psycopg2.extras.RealDictCursor)
 
         try:
             # Execute the query
