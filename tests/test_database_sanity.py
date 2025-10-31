@@ -348,6 +348,105 @@ class TestSnowflakeRunner:
         assert runner is not None
         assert runner.account == "test-account"
 
+    def test_snowflake_runner_key_pair_auth_with_path(self, tmp_path):
+        """Test that SnowflakeRunner can be instantiated with RSA key-pair authentication using path."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+
+        # Create a temporary private key file
+        private_key_file = tmp_path / "test_private_key.p8"
+        private_key_file.write_text("-----BEGIN PRIVATE KEY-----\ntest_key_content\n-----END PRIVATE KEY-----")
+
+        runner = SnowflakeRunner(
+            account="test-account",
+            username="test-user",
+            private_key_path=str(private_key_file),
+            private_key_passphrase="test-passphrase",
+            database="test-db"
+        )
+        assert runner is not None
+        assert runner.account == "test-account"
+        assert runner.username == "test-user"
+        assert runner.password is None
+        assert runner.private_key_path == str(private_key_file)
+        assert runner.private_key_passphrase == "test-passphrase"
+
+    def test_snowflake_runner_key_pair_auth_with_content(self):
+        """Test that SnowflakeRunner can be instantiated with RSA key-pair authentication using content."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+
+        private_key_content = b"-----BEGIN PRIVATE KEY-----\ntest_key_content\n-----END PRIVATE KEY-----"
+
+        runner = SnowflakeRunner(
+            account="test-account",
+            username="test-user",
+            private_key_content=private_key_content,
+            database="test-db"
+        )
+        assert runner is not None
+        assert runner.account == "test-account"
+        assert runner.username == "test-user"
+        assert runner.password is None
+        assert runner.private_key_content == private_key_content
+
+    def test_snowflake_runner_key_pair_auth_without_passphrase(self, tmp_path):
+        """Test that SnowflakeRunner works with unencrypted private key (no passphrase)."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+
+        # Create a temporary private key file
+        private_key_file = tmp_path / "test_private_key_unencrypted.p8"
+        private_key_file.write_text("-----BEGIN PRIVATE KEY-----\ntest_key_content\n-----END PRIVATE KEY-----")
+
+        runner = SnowflakeRunner(
+            account="test-account",
+            username="test-user",
+            private_key_path=str(private_key_file),
+            database="test-db"
+        )
+        assert runner is not None
+        assert runner.private_key_passphrase is None
+
+    def test_snowflake_runner_missing_auth_raises_error(self):
+        """Test that SnowflakeRunner raises error when no authentication method is provided."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+        import pytest
+
+        with pytest.raises(ValueError, match="Either password or private_key_path/private_key_content must be provided"):
+            SnowflakeRunner(
+                account="test-account",
+                username="test-user",
+                database="test-db"
+            )
+
+    def test_snowflake_runner_invalid_key_path_raises_error(self):
+        """Test that SnowflakeRunner raises error when private key file doesn't exist."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+        import pytest
+
+        with pytest.raises(FileNotFoundError, match="Private key file not found"):
+            SnowflakeRunner(
+                account="test-account",
+                username="test-user",
+                private_key_path="/nonexistent/path/to/key.p8",
+                database="test-db"
+            )
+
+    def test_snowflake_runner_password_auth_backwards_compatible(self):
+        """Test that SnowflakeRunner maintains backward compatibility with password auth."""
+        from vanna.integrations.snowflake import SnowflakeRunner
+
+        runner = SnowflakeRunner(
+            account="test-account",
+            username="test-user",
+            password="test-password",
+            database="test-db",
+            role="test-role",
+            warehouse="test-warehouse"
+        )
+        assert runner is not None
+        assert runner.password == "test-password"
+        assert runner.private_key_path is None
+        assert runner.private_key_content is None
+
 
 class TestMySQLRunner:
     """Sanity tests for MySQLRunner implementation."""
