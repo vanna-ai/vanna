@@ -7,6 +7,7 @@ This package contains concrete implementations of core abstractions and capabili
 from .anthropic import AnthropicLlmService
 from .local import MemoryConversationStore
 from .mock import MockLlmService
+from .ollama import OllamaLlmService
 from .openai import OpenAILlmService, OpenAIResponsesService
 from .plotly import PlotlyChartGenerator
 from .postgres import PostgresRunner
@@ -16,6 +17,7 @@ __all__ = [
     "OpenAILlmService",
     "OpenAIResponsesService",
     "AnthropicLlmService",
+    "OllamaLlmService",
     "MockLlmService",
     "MemoryConversationStore",
     "SqliteRunner",

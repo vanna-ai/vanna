@@ -130,3 +130,18 @@ async def test_openai_responses_top_artist(chinook_db):
 
     agent = create_agent(llm, chinook_db)
     await test_agent_top_artist(agent)
+
+
+@pytest.mark.ollama
+@pytest.mark.asyncio
+async def test_ollama_top_artist(chinook_db):
+    """Test Ollama agent finding the top artist by sales."""
+    from vanna.integrations.ollama import OllamaLlmService
+
+    llm = OllamaLlmService(
+        model="gpt-oss:20b-cloud",
+        host=os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    )
+
+    agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)

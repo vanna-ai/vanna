@@ -19,6 +19,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "openai: marks tests requiring OpenAI API key"
     )
+    config.addinivalue_line(
+        "markers", "ollama: marks tests requiring Ollama"
+    )
 
 
 def pytest_collection_modifyitems(config, items):
