@@ -22,6 +22,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "ollama: marks tests requiring Ollama"
     )
+    config.addinivalue_line(
+        "markers", "chromadb: marks tests requiring ChromaDB"
+    )
 
 
 def pytest_collection_modifyitems(config, items):

@@ -5,6 +5,7 @@ This package contains concrete implementations of core abstractions and capabili
 """
 
 from .anthropic import AnthropicLlmService
+from .chromadb import ChromaAgentMemory
 from .local import MemoryConversationStore
 from .mock import MockLlmService
 from .ollama import OllamaLlmService
@@ -19,6 +20,7 @@ __all__ = [
     "AnthropicLlmService",
     "OllamaLlmService",
     "MockLlmService",
+    "ChromaAgentMemory",
     "MemoryConversationStore",
     "SqliteRunner",
     "PostgresRunner",
