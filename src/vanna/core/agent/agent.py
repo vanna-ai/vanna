@@ -32,7 +32,7 @@ from vanna.core.registry import ToolRegistry
 from vanna.core.system_prompt import DefaultSystemPromptBuilder
 from vanna.core.lifecycle import LifecycleHook
 from vanna.core.middleware import LlmMiddleware
-from vanna.core.workflow import WorkflowTrigger
+from vanna.core.workflow import WorkflowHandler, DefaultWorkflowHandler
 from vanna.core.recovery import ErrorRecoveryStrategy, RecoveryActionType
 from vanna.core.enricher import ContextEnricher
 from vanna.core.filter import ConversationFilter
@@ -85,7 +85,7 @@ class Agent:
         system_prompt_builder: SystemPromptBuilder = DefaultSystemPromptBuilder(),
         lifecycle_hooks: List[LifecycleHook] = [],
         llm_middlewares: List[LlmMiddleware] = [],
-        workflow_trigger: Optional[WorkflowTrigger] = None,
+        workflow_handler: Optional[WorkflowHandler] = None,
         error_recovery_strategy: Optional[ErrorRecoveryStrategy] = None,
         context_enrichers: List[ContextEnricher] = [],
         conversation_filters: List[ConversationFilter] = [],
@@ -106,7 +106,12 @@ class Agent:
         self.system_prompt_builder = system_prompt_builder
         self.lifecycle_hooks = lifecycle_hooks
         self.llm_middlewares = llm_middlewares
-        self.workflow_trigger = workflow_trigger
+        
+        # Use DefaultWorkflowHandler if none provided
+        if workflow_handler is None:
+            workflow_handler = DefaultWorkflowHandler()
+        self.workflow_handler = workflow_handler
+        
         self.error_recovery_strategy = error_recovery_strategy
         self.context_enrichers = context_enrichers
         self.conversation_filters = conversation_filters
@@ -240,12 +245,12 @@ class Agent:
         # Check if this is a starter UI request (empty message or explicit metadata flag)
         is_starter_request = (not message.strip()) or request_context.metadata.get("starter_ui_request", False)
         
-        if is_starter_request and self.workflow_trigger:
+        if is_starter_request and self.workflow_handler:
             # Handle starter UI request with observability
             starter_span = None
             if self.observability_provider:
                 starter_span = await self.observability_provider.create_span(
-                    "agent.workflow_trigger.starter_ui",
+                    "agent.workflow_handler.starter_ui",
                     attributes={"user_id": user.id}
                 )
             
@@ -263,8 +268,8 @@ class Agent:
                         messages=[]
                     )
                 
-                # Get starter UI from workflow trigger
-                components = await self.workflow_trigger.get_starter_ui(self, user, conversation)
+                # Get starter UI from workflow handler
+                components = await self.workflow_handler.get_starter_ui(self, user, conversation)
                 
                 if self.observability_provider and starter_span:
                     starter_span.set_attribute("has_components", components is not None)
@@ -294,7 +299,7 @@ class Agent:
                     await self.observability_provider.end_span(starter_span)
                     if starter_span.duration_ms():
                         await self.observability_provider.record_metric(
-                            "agent.workflow_trigger.starter_ui.duration", 
+                            "agent.workflow_handler.starter_ui.duration", 
                             starter_span.duration_ms() or 0, 
                             "ms"
                         )
@@ -380,7 +385,7 @@ class Agent:
         is_new_conversation = conversation is None
 
         if not conversation:
-            # Create empty conversation (will add message after workflow trigger check)
+            # Create empty conversation (will add message after workflow handler check)
             conversation = Conversation(
                 id=conversation_id,
                 user=user,
@@ -397,17 +402,17 @@ class Agent:
                     tags={"is_new": str(is_new_conversation)}
                 )
         
-        # Try workflow trigger before adding message to conversation
-        if self.workflow_trigger:
+        # Try workflow handler before adding message to conversation
+        if self.workflow_handler:
             trigger_span = None
             if self.observability_provider:
                 trigger_span = await self.observability_provider.create_span(
-                    "agent.workflow_trigger.try_trigger",
+                    "agent.workflow_handler.try_handle",
                     attributes={"user_id": user.id, "conversation_id": conversation_id}
                 )
             
             try:
-                result = await self.workflow_trigger.try_trigger(self, user, conversation, message)
+                result = await self.workflow_handler.try_handle(self, user, conversation, message)
                 
                 if self.observability_provider and trigger_span:
                     trigger_span.set_attribute("triggered", result.triggered)
@@ -455,7 +460,7 @@ class Agent:
                     return
             
             except Exception as e:
-                logger.error(f"Error in workflow trigger: {e}", exc_info=True)
+                logger.error(f"Error in workflow handler: {e}", exc_info=True)
                 if self.observability_provider and trigger_span:
                     trigger_span.set_attribute("error", str(e))
                     await self.observability_provider.end_span(trigger_span)

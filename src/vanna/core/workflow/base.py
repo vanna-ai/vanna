@@ -1,5 +1,5 @@
 """
-Base workflow trigger interface.
+Base workflow handler interface.
 
 Workflow triggers allow you to execute deterministic workflows in response to
 user messages before they are sent to the LLM. This is useful for:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class TriggerResult:
-    """Result from a workflow trigger attempt.
+    """Result from a workflow handler attempt.
     
     When a workflow is triggered, it can optionally return UI components to stream
     to the user and/or mutate the conversation state.
@@ -60,8 +60,8 @@ class TriggerResult:
     conversation_mutation: Optional[Callable[["Conversation"], Awaitable[None]]] = None
 
 
-class WorkflowTrigger(ABC):
-    """Base class for triggering deterministic workflows before LLM processing.
+class WorkflowHandler(ABC):
+    """Base class for handling deterministic workflows before LLM processing.
     
     Implement this interface to intercept user messages and execute deterministic
     workflows instead of sending to the LLM. This is the first extensibility point
@@ -78,8 +78,8 @@ class WorkflowTrigger(ABC):
     - Starter UI (buttons, welcome messages) when conversation begins
     
     Example:
-        class CommandWorkflow(WorkflowTrigger):
-            async def try_trigger(self, agent, user, conversation, message):
+        class CommandWorkflow(WorkflowHandler):
+            async def try_handle(self, agent, user, conversation, message):
                 if message.startswith("/help"):
                     return TriggerResult(
                         triggered=True,
@@ -110,24 +110,24 @@ class WorkflowTrigger(ABC):
             llm_service=...,
             tool_registry=...,
             user_resolver=...,
-            workflow_trigger=CommandWorkflow()
+            workflow_handler=CommandWorkflow()
         )
     
     Observability:
-        The agent automatically creates an "agent.workflow_trigger" span when
-        a WorkflowTrigger is configured, allowing you to monitor trigger
+        The agent automatically creates an "agent.workflow_handler" span when
+        a WorkflowHandler is configured, allowing you to monitor handler
         performance and outcomes.
     """
     
     @abstractmethod
-    async def try_trigger(
+    async def try_handle(
         self,
         agent: "Agent",
         user: "User",
         conversation: "Conversation",
         message: str
     ) -> TriggerResult:
-        """Attempt to trigger a workflow for the given message.
+        """Attempt to handle a workflow for the given message.
         
         This method is called for every user message before it reaches the LLM.
         Inspect the message content, user context, and conversation state to
@@ -158,7 +158,7 @@ class WorkflowTrigger(ABC):
             - Normal agent processing continues (LLM call, tool execution, etc.)
         
         Example:
-            async def try_trigger(self, agent, user, conversation, message):
+            async def try_handle(self, agent, user, conversation, message):
                 # Pattern matching with tool execution
                 if message.startswith("/report"):
                     # Execute tool from registry

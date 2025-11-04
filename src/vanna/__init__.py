@@ -55,6 +55,7 @@ from .core import (
     Agent,
     AgentConfig,
     DefaultSystemPromptBuilder,
+    DefaultWorkflowHandler,
     ToolRegistry,
     # Evaluation
     Evaluator,
@@ -135,6 +136,7 @@ __all__ = [
     "AgentConfig",
     "ToolRegistry",
     "DefaultSystemPromptBuilder",
+    "DefaultWorkflowHandler",
     # Evaluation
     "Evaluator",
     "TestCase",
