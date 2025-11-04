@@ -6,7 +6,7 @@ and executing deterministic workflows before they reach the LLM. This is useful
 for command handling, pattern-based routing, and state-based workflows.
 """
 
-from .base import WorkflowHandler, TriggerResult
+from .base import WorkflowHandler, WorkflowResult
 from .default import DefaultWorkflowHandler
 
-__all__ = ["WorkflowHandler", "TriggerResult", "DefaultWorkflowHandler"]
+__all__ = ["WorkflowHandler", "WorkflowResult", "DefaultWorkflowHandler"]

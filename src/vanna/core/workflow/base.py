@@ -21,41 +21,41 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class TriggerResult:
+class WorkflowResult:
     """Result from a workflow handler attempt.
-    
-    When a workflow is triggered, it can optionally return UI components to stream
+
+    When a workflow handles a message, it can optionally return UI components to stream
     to the user and/or mutate the conversation state.
-    
+
     Attributes:
-        triggered: If True, a workflow was executed and LLM processing is skipped.
-                   If False, the message continues to the agent/LLM.
+        should_skip_llm: If True, the workflow handled the message and LLM processing is skipped.
+                         If False, the message continues to the agent/LLM.
         components: Optional UI components to stream back to the user.
                     Can be a list or async generator for streaming responses.
         conversation_mutation: Optional async callback to modify conversation state
                                (e.g., clearing messages, adding system events).
-    
+
     Example:
         # Simple command response
-        TriggerResult(
-            triggered=True,
+        WorkflowResult(
+            should_skip_llm=True,
             components=[RichTextComponent(content="Help text here")]
         )
-        
+
         # With conversation mutation
         async def clear_history(conv):
             conv.messages.clear()
-        
-        TriggerResult(
-            triggered=True,
+
+        WorkflowResult(
+            should_skip_llm=True,
             components=[StatusCardComponent(...)],
             conversation_mutation=clear_history
         )
-        
-        # Not triggered, continue to agent
-        TriggerResult(triggered=False)
+
+        # Not handled, continue to agent
+        WorkflowResult(should_skip_llm=False)
     """
-    triggered: bool
+    should_skip_llm: bool
     components: Optional[Union[List["UiComponent"], AsyncGenerator["UiComponent", None]]] = None
     conversation_mutation: Optional[Callable[["Conversation"], Awaitable[None]]] = None
 
@@ -81,8 +81,8 @@ class WorkflowHandler(ABC):
         class CommandWorkflow(WorkflowHandler):
             async def try_handle(self, agent, user, conversation, message):
                 if message.startswith("/help"):
-                    return TriggerResult(
-                        triggered=True,
+                    return WorkflowResult(
+                        should_skip_llm=True,
                         components=[
                             RichTextComponent(
                                 content="Available commands:\\n- /help\\n- /reset",
@@ -90,15 +90,15 @@ class WorkflowHandler(ABC):
                             )
                         ]
                     )
-                
+
                 # Execute tool for reports
                 if message.startswith("/report"):
                     tool = await agent.tool_registry.get_tool("generate_report")
                     result = await tool.execute(ToolContext(user=user), {})
-                    return TriggerResult(triggered=True, components=[result.ui_component])
-                
-                # Not triggered, continue to agent
-                return TriggerResult(triggered=False)
+                    return WorkflowResult(should_skip_llm=True, components=[result.ui_component])
+
+                # Not handled, continue to agent
+                return WorkflowResult(should_skip_llm=False)
             
             async def get_starter_ui(self, agent, user, conversation):
                 return [
@@ -126,14 +126,14 @@ class WorkflowHandler(ABC):
         user: "User",
         conversation: "Conversation",
         message: str
-    ) -> TriggerResult:
+    ) -> WorkflowResult:
         """Attempt to handle a workflow for the given message.
-        
+
         This method is called for every user message before it reaches the LLM.
         Inspect the message content, user context, and conversation state to
         decide whether to execute a deterministic workflow or allow normal
         agent processing.
-        
+
         Args:
             agent: The agent instance, providing access to tool_registry, config,
                    and observability_provider for tool execution and logging.
@@ -142,18 +142,18 @@ class WorkflowHandler(ABC):
             conversation: The current conversation context, including message history.
                           Can be inspected for state-based workflows.
             message: The user's raw message content.
-        
+
         Returns:
-            TriggerResult with triggered=True to execute a workflow and skip LLM,
-            or triggered=False to continue normal agent processing.
-            
-            When triggered=True:
+            WorkflowResult with should_skip_llm=True to execute a workflow and skip LLM,
+            or should_skip_llm=False to continue normal agent processing.
+
+            When should_skip_llm=True:
             - The message is NOT added to conversation history automatically
             - The components are streamed to the user
             - The conversation_mutation callback (if provided) is executed
             - The agent returns without calling the LLM
-            
-            When triggered=False:
+
+            When should_skip_llm=False:
             - The message is added to conversation history
             - Normal agent processing continues (LLM call, tool execution, etc.)
         
@@ -165,25 +165,25 @@ class WorkflowHandler(ABC):
                     tool = await agent.tool_registry.get_tool("generate_sales_report")
                     context = ToolContext(user=user, conversation=conversation)
                     result = await tool.execute(context, {})
-                    
-                    return TriggerResult(
-                        triggered=True,
+
+                    return WorkflowResult(
+                        should_skip_llm=True,
                         components=[TableComponent(data=result.data)]
                     )
-                
+
                 # State-based workflow
                 if user.metadata.get("needs_onboarding"):
                     return await self._onboarding_flow(agent, user, message)
-                
+
                 # Permission check
                 if message.startswith("/admin") and "admin" not in user.permissions:
-                    return TriggerResult(
-                        triggered=True,
+                    return WorkflowResult(
+                        should_skip_llm=True,
                         components=[RichTextComponent(content="Access denied.")]
                     )
-                
+
                 # Continue to agent
-                return TriggerResult(triggered=False)
+                return WorkflowResult(should_skip_llm=False)
         """
         pass
     

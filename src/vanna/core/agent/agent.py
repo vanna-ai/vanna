@@ -418,10 +418,10 @@ class Agent:
                 result = await self.workflow_handler.try_handle(self, user, conversation, message)
                 
                 if self.observability_provider and trigger_span:
-                    trigger_span.set_attribute("triggered", result.triggered)
-                
-                if result.triggered:
-                    # Workflow was triggered, short-circuit LLM
+                    trigger_span.set_attribute("should_skip_llm", result.should_skip_llm)
+
+                if result.should_skip_llm:
+                    # Workflow handled the message, short-circuit LLM
                     
                     # Apply conversation mutation if provided
                     if result.conversation_mutation:

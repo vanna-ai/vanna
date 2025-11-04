@@ -14,7 +14,7 @@ from .agent import Agent, AgentConfig
 from .system_prompt import DefaultSystemPromptBuilder, SystemPromptBuilder
 from .lifecycle import LifecycleHook
 from .middleware import LlmMiddleware
-from .workflow import WorkflowHandler, TriggerResult, DefaultWorkflowHandler
+from .workflow import WorkflowHandler, WorkflowResult, DefaultWorkflowHandler
 from .recovery import ErrorRecoveryStrategy, RecoveryAction, RecoveryActionType
 from .enricher import ContextEnricher
 from .filter import ConversationFilter
@@ -121,7 +121,7 @@ __all__ = [
     "LlmMiddleware",
     "WorkflowHandler",
     "DefaultWorkflowHandler",
-    "TriggerResult",
+    "WorkflowResult",
     "ErrorRecoveryStrategy",
     "ContextEnricher",
     "ConversationFilter",

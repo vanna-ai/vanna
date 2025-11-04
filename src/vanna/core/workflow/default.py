@@ -8,7 +8,7 @@ that provides a smart starter UI based on available tools and setup status.
 from typing import TYPE_CHECKING, List, Optional
 import traceback
 import uuid
-from .base import WorkflowHandler, TriggerResult
+from .base import WorkflowHandler, WorkflowResult
 
 if TYPE_CHECKING:
     from ..agent.agent import Agent
@@ -47,17 +47,17 @@ class DefaultWorkflowHandler(WorkflowHandler):
 
     async def try_handle(
         self,
-        agent: "Agent", 
-        user: "User", 
-        conversation: "Conversation", 
+        agent: "Agent",
+        user: "User",
+        conversation: "Conversation",
         message: str
-    ) -> TriggerResult:
+    ) -> WorkflowResult:
         """Handle basic commands, but mostly passes through to LLM."""
         
         # Handle basic help command
         if message.strip().lower() in ["/help", "help", "/h"]:
-            return TriggerResult(
-                triggered=True,
+            return WorkflowResult(
+                should_skip_llm=True,
                 components=[
                     RichTextComponent(
                         content="## 🤖 Vanna AI Assistant\n\n"
@@ -75,17 +75,17 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     )
                 ]
             )
-        
+
         # Handle status check command
         if message.strip().lower() in ["/status", "status"]:
             return await self._generate_status_check(agent, user)
-        
+
         # Handle get recent memories command
         if message.strip().lower() in ["/memories", "memories", "/recent_memories", "recent_memories"]:
             return await self._get_recent_memories(agent, user, conversation)
-        
+
         # Don't handle other messages, pass to LLM
-        return TriggerResult(triggered=False)
+        return WorkflowResult(should_skip_llm=False)
 
     async def get_starter_ui(
         self, 
@@ -372,57 +372,57 @@ class DefaultWorkflowHandler(WorkflowHandler):
             rich_component=RichTextComponent(content=content, markdown=True)
         )
 
-    async def _generate_status_check(self, agent: "Agent", user: "User") -> TriggerResult:
+    async def _generate_status_check(self, agent: "Agent", user: "User") -> WorkflowResult:
         """Generate a detailed status check response."""
-        
-        # Get available tools  
+
+        # Get available tools
         tools = await agent.tool_registry.get_schemas(user)
         tool_names = [tool.name for tool in tools]
         analysis = self._analyze_setup(tool_names)
-        
+
         # Generate status report
         status_content = "# 🔍 Setup Status Report\n\n"
-        
+
         if analysis["is_complete"]:
             status_content += "🎉 **Excellent!** Your Vanna AI setup is complete and optimized.\n\n"
         elif analysis["is_functional"]:
             status_content += "✅ **Good!** Your setup is functional with room for improvement.\n\n"
         else:
             status_content += "⚠️ **Action Required** - Your setup needs configuration.\n\n"
-        
+
         status_content += f"**Tools Detected:** {analysis['tool_count']} total\n\n"
-        
+
         # Tool breakdown
         status_content += "## Tool Status\n\n"
         status_content += f"- **SQL Connection:** {'✅ Available' if analysis['has_sql'] else '❌ Missing (Required)'}\n"
         status_content += f"- **Memory System:** {'✅ Complete' if analysis['has_memory'] else '⚠️ Incomplete' if analysis['has_search'] or analysis['has_save'] else '❌ Missing'}\n"
         status_content += f"- **Visualization:** {'✅ Available' if analysis['has_viz'] else '📋 Text/Tables Only'}\n"
         status_content += f"- **Calculator:** {'✅ Available' if analysis['has_calculator'] else '➖ Not Available'}\n\n"
-        
+
         if analysis["tool_names"]:
             status_content += f"**Available Tools:** {', '.join(sorted(analysis['tool_names']))}"
-        
+
         components = [
             RichTextComponent(content=status_content, markdown=True)
         ]
-        
+
         # Add status cards
         components.extend(self._generate_setup_status_cards(analysis))
-        
+
         # Add guidance if needed
         guidance = self._generate_setup_guidance(analysis)
         if guidance:
             components.append(guidance)
-        
-        return TriggerResult(triggered=True, components=components)
 
-    async def _get_recent_memories(self, agent: "Agent", user: "User", conversation: "Conversation") -> TriggerResult:
+        return WorkflowResult(should_skip_llm=True, components=components)
+
+    async def _get_recent_memories(self, agent: "Agent", user: "User", conversation: "Conversation") -> WorkflowResult:
         """Get and display recent memories from agent memory."""
         try:
             # Check if agent has memory capability
             if not hasattr(agent, 'agent_memory') or agent.agent_memory is None:
-                return TriggerResult(
-                    triggered=True,
+                return WorkflowResult(
+                    should_skip_llm=True,
                     components=[
                         RichTextComponent(
                             content="# ⚠️ No Memory System\n\n"
@@ -446,8 +446,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
             memories = await agent.agent_memory.get_recent_memories(context=context, limit=10)
 
             if not memories:
-                return TriggerResult(
-                    triggered=True,
+                return WorkflowResult(
+                    should_skip_llm=True,
                     components=[
                         RichTextComponent(
                             content="# 🧠 Recent Memories\n\n"
@@ -471,8 +471,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     memories_content += f"**Timestamp:** {memory.timestamp}\n\n"
                 memories_content += "---\n\n"
 
-            return TriggerResult(
-                triggered=True,
+            return WorkflowResult(
+                should_skip_llm=True,
                 components=[
                     RichTextComponent(content=memories_content, markdown=True)
                 ]
@@ -480,8 +480,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
 
         except Exception as e:
             traceback.print_exc()
-            return TriggerResult(
-                triggered=True,
+            return WorkflowResult(
+                should_skip_llm=True,
                 components=[
                     RichTextComponent(
                         content=f"# ❌ Error Retrieving Memories\n\n"
