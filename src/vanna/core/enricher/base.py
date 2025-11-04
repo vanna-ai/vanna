@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..tool.models import ToolContext
 
 
-class ContextEnricher(ABC):
+class ToolContextEnricher(ABC):
     """Enricher for adding data to ToolContext.
 
     Subclass this to create custom enrichers that can:
@@ -23,7 +23,7 @@ class ContextEnricher(ABC):
     - Add environment-specific configuration
 
     Example:
-        class UserPreferencesEnricher(ContextEnricher):
+        class UserPreferencesEnricher(ToolContextEnricher):
             def __init__(self, db):
                 self.db = db
 

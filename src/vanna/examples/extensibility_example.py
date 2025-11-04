@@ -4,7 +4,7 @@ Comprehensive example demonstrating all extensibility interfaces.
 This example shows how to use:
 - LlmMiddleware for caching
 - ErrorRecoveryStrategy for retry logic
-- ContextEnricher for adding user preferences
+- ToolContextEnricher for adding user preferences
 - ConversationFilter for context window management
 - ObservabilityProvider for monitoring
 """
@@ -17,7 +17,7 @@ from vanna.core import (
     Agent,
     LlmMiddleware,
     ErrorRecoveryStrategy,
-    ContextEnricher,
+    ToolContextEnricher,
     ConversationFilter,
     ObservabilityProvider,
     User,
@@ -113,8 +113,8 @@ class ExponentialBackoffStrategy(ErrorRecoveryStrategy):
         )
 
 
-# 3. ContextEnricher Example: Add User Preferences
-class UserPreferencesEnricher(ContextEnricher):
+# 3. ToolContextEnricher Example: Add User Preferences
+class UserPreferencesEnricher(ToolContextEnricher):
     """Enrich context with user preferences."""
 
     def __init__(self) -> None:

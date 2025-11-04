@@ -5,6 +5,6 @@ This module provides interfaces for enriching ToolContext with additional
 data before tool execution.
 """
 
-from .base import ContextEnricher
+from .base import ToolContextEnricher
 
-__all__ = ["ContextEnricher"]
+__all__ = ["ToolContextEnricher"]

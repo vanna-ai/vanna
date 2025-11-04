@@ -34,7 +34,8 @@ from vanna.core.lifecycle import LifecycleHook
 from vanna.core.middleware import LlmMiddleware
 from vanna.core.workflow import WorkflowHandler, DefaultWorkflowHandler
 from vanna.core.recovery import ErrorRecoveryStrategy, RecoveryActionType
-from vanna.core.enricher import ContextEnricher
+from vanna.core.enricher import ToolContextEnricher
+from vanna.core.enhancer import LlmContextEnhancer, DefaultLlmContextEnhancer
 from vanna.core.filter import ConversationFilter
 from vanna.core.observability import ObservabilityProvider
 from vanna.core.user.resolver import UserResolver
@@ -56,12 +57,13 @@ class Agent:
     """Main agent implementation.
 
     The Agent class orchestrates LLM interactions, tool execution, and conversation
-    management. It provides 6 extensibility points for customization:
+    management. It provides 7 extensibility points for customization:
 
     - lifecycle_hooks: Hook into message and tool execution lifecycle
     - llm_middlewares: Intercept and transform LLM requests/responses
     - error_recovery_strategy: Handle errors with retry logic
     - context_enrichers: Add data to tool execution context
+    - llm_context_enhancer: Enhance LLM system prompts and messages with context
     - conversation_filters: Filter conversation history before LLM calls
     - observability_provider: Collect telemetry and monitoring data
 
@@ -72,6 +74,7 @@ class Agent:
             conversation_store=store,
             lifecycle_hooks=[QuotaCheckHook()],
             llm_middlewares=[CachingMiddleware()],
+            llm_context_enhancer=DefaultLlmContextEnhancer(agent_memory),
             observability_provider=LoggingProvider()
         )
     """
@@ -89,7 +92,8 @@ class Agent:
         llm_middlewares: List[LlmMiddleware] = [],
         workflow_handler: Optional[WorkflowHandler] = None,
         error_recovery_strategy: Optional[ErrorRecoveryStrategy] = None,
-        context_enrichers: List[ContextEnricher] = [],
+        context_enrichers: List[ToolContextEnricher] = [],
+        llm_context_enhancer: Optional[LlmContextEnhancer] = None,
         conversation_filters: List[ConversationFilter] = [],
         observability_provider: Optional[ObservabilityProvider] = None,
         audit_logger: Optional[AuditLogger] = None,
@@ -114,9 +118,15 @@ class Agent:
         if workflow_handler is None:
             workflow_handler = DefaultWorkflowHandler()
         self.workflow_handler = workflow_handler
-        
+
         self.error_recovery_strategy = error_recovery_strategy
         self.context_enrichers = context_enrichers
+
+        # Use DefaultLlmContextEnhancer if none provided
+        if llm_context_enhancer is None:
+            llm_context_enhancer = DefaultLlmContextEnhancer(agent_memory)
+        self.llm_context_enhancer = llm_context_enhancer
+
         self.conversation_filters = conversation_filters
         self.observability_provider = observability_provider
         self.audit_logger = audit_logger
@@ -564,6 +574,29 @@ class Agent:
             user, tool_schemas
         )
 
+        # Enhance system prompt with LLM context enhancer
+        if self.llm_context_enhancer:
+            enhancement_span = None
+            if self.observability_provider:
+                enhancement_span = await self.observability_provider.create_span(
+                    "agent.llm_context.enhance_system_prompt",
+                    attributes={"enhancer": self.llm_context_enhancer.__class__.__name__}
+                )
+
+            system_prompt = await self.llm_context_enhancer.enhance_system_prompt(
+                system_prompt, message, user
+            )
+
+            if self.observability_provider and enhancement_span:
+                await self.observability_provider.end_span(enhancement_span)
+                if enhancement_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.llm_context.enhance_system_prompt.duration",
+                        enhancement_span.duration_ms() or 0,
+                        "ms",
+                        tags={"enhancer": self.llm_context_enhancer.__class__.__name__}
+                    )
+
         if self.observability_provider and prompt_span:
             prompt_span.set_attribute("prompt_length", len(system_prompt) if system_prompt else 0)
             await self.observability_provider.end_span(prompt_span)
@@ -1008,6 +1041,31 @@ You can:
                 tool_call_id=msg.tool_call_id,
             )
             messages.append(llm_msg)
+
+        # Enhance messages with LLM context enhancer
+        if self.llm_context_enhancer:
+            enhancement_span = None
+            if self.observability_provider:
+                enhancement_span = await self.observability_provider.create_span(
+                    "agent.llm_context.enhance_user_messages",
+                    attributes={
+                        "enhancer": self.llm_context_enhancer.__class__.__name__,
+                        "message_count": len(messages)
+                    }
+                )
+
+            messages = await self.llm_context_enhancer.enhance_user_messages(messages, user)
+
+            if self.observability_provider and enhancement_span:
+                enhancement_span.set_attribute("message_count_after", len(messages))
+                await self.observability_provider.end_span(enhancement_span)
+                if enhancement_span.duration_ms():
+                    await self.observability_provider.record_metric(
+                        "agent.llm_context.enhance_user_messages.duration",
+                        enhancement_span.duration_ms() or 0,
+                        "ms",
+                        tags={"enhancer": self.llm_context_enhancer.__class__.__name__}
+                    )
 
         return LlmRequest(
             messages=messages,

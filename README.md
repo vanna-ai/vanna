@@ -601,10 +601,10 @@ agent = Agent(
 ### 5. Context Enrichers
 
 ```python
-from vanna.core.enricher import ContextEnricher
+from vanna.core.enricher import ToolContextEnricher
 from vanna.core.tool import ToolContext
 
-class UserMetadataEnricher(ContextEnricher):
+class UserMetadataEnricher(ToolContextEnricher):
     async def enrich_context(self, context: ToolContext) -> ToolContext:
         # Add additional user metadata from database
         user_metadata = await self.db.get_user_metadata(context.user.id)
@@ -618,6 +618,56 @@ agent = Agent(
     context_enrichers=[UserMetadataEnricher()]
 )
 ```
+
+### 6. LLM Context Enhancers
+
+Enhance LLM system prompts and messages with additional context (e.g., from memory, RAG, documentation):
+
+```python
+from vanna.core.enhancer import LlmContextEnhancer, DefaultLlmContextEnhancer
+from vanna.core.llm import LlmMessage
+from vanna.core.user import User
+
+class CustomLlmContextEnhancer(LlmContextEnhancer):
+    async def enhance_system_prompt(
+        self,
+        system_prompt: str,
+        user_message: str,
+        user: User
+    ) -> str:
+        # Add relevant context to system prompt based on user message
+        relevant_docs = await self.search_documentation(user_message)
+        return system_prompt + f"\n\nRelevant documentation:\n{relevant_docs}"
+
+    async def enhance_user_messages(
+        self,
+        messages: list[LlmMessage],
+        user: User
+    ) -> list[LlmMessage]:
+        # Optionally modify user messages
+        return messages
+
+# Use default implementation (uses AgentMemory for RAG)
+agent = Agent(
+    llm_service=llm,
+    tool_registry=tools,
+    user_resolver=user_resolver,
+    agent_memory=agent_memory,
+    llm_context_enhancer=DefaultLlmContextEnhancer(agent_memory)  # Default if not provided
+)
+
+# Or use custom implementation
+agent = Agent(
+    llm_service=llm,
+    tool_registry=tools,
+    user_resolver=user_resolver,
+    llm_context_enhancer=CustomLlmContextEnhancer()
+)
+```
+
+**Key difference:**
+- **Context Enrichers** (ToolContextEnricher): Enrich tool execution context
+- **LLM Context Enhancers** (LlmContextEnhancer): Enhance LLM prompts and messages
 
 ---
 
