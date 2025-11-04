@@ -6,6 +6,8 @@ that provides a smart starter UI based on available tools and setup status.
 """
 
 from typing import TYPE_CHECKING, List, Optional
+import traceback
+import uuid
 from .base import WorkflowHandler, TriggerResult
 
 if TYPE_CHECKING:
@@ -66,7 +68,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                         "- \"Create a chart of revenue by month\"\n\n"
                         "**🔧 Commands**\n"
                         "- `/help` - Show this help message\n"
-                        "- `/status` - Check setup status\n\n"
+                        "- `/status` - Check setup status\n"
+                        "- `/memories` - View recent memories\n\n"
                         "Just ask me anything about your data in plain English!",
                         markdown=True
                     )
@@ -76,6 +79,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
         # Handle status check command
         if message.strip().lower() in ["/status", "status"]:
             return await self._generate_status_check(agent, user)
+        
+        # Handle get recent memories command
+        if message.strip().lower() in ["/memories", "memories", "/recent_memories", "recent_memories"]:
+            return await self._get_recent_memories(agent, user, conversation)
         
         # Don't handle other messages, pass to LLM
         return TriggerResult(triggered=False)
@@ -291,6 +298,14 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 }
             ])
         
+        # Add memory button if memory tools are available
+        if analysis["has_memory"]:
+            buttons.append({
+                "label": "🧠 Recent Memories",
+                "action": "/memories",
+                "variant": "secondary"
+            })
+        
         # Add visualization suggestion if viz tools available
         if analysis["has_viz"]:
             buttons.append({
@@ -400,3 +415,79 @@ class DefaultWorkflowHandler(WorkflowHandler):
             components.append(guidance)
         
         return TriggerResult(triggered=True, components=components)
+
+    async def _get_recent_memories(self, agent: "Agent", user: "User", conversation: "Conversation") -> TriggerResult:
+        """Get and display recent memories from agent memory."""
+        try:
+            # Check if agent has memory capability
+            if not hasattr(agent, 'agent_memory') or agent.agent_memory is None:
+                return TriggerResult(
+                    triggered=True,
+                    components=[
+                        RichTextComponent(
+                            content="# ⚠️ No Memory System\n\n"
+                            "Agent memory is not configured. Recent memories are not available.\n\n"
+                            "To enable memory, configure an AgentMemory implementation in your agent setup.",
+                            markdown=True
+                        )
+                    ]
+                )
+
+            # Create tool context
+            from vanna.core.tool import ToolContext
+            context = ToolContext(
+                user=user,
+                conversation_id=conversation.id,
+                request_id=str(uuid.uuid4()),
+                agent_memory=agent.agent_memory
+            )
+
+            # Get recent memories
+            memories = await agent.agent_memory.get_recent_memories(context=context, limit=10)
+
+            if not memories:
+                return TriggerResult(
+                    triggered=True,
+                    components=[
+                        RichTextComponent(
+                            content="# 🧠 Recent Memories\n\n"
+                            "No recent memories found. As you use tools and ask questions, "
+                            "successful patterns will be saved here for future reference.",
+                            markdown=True
+                        )
+                    ]
+                )
+
+            # Format memories for display
+            memories_content = "# 🧠 Recent Memories\n\n"
+            memories_content += f"Found {len(memories)} recent memor{'y' if len(memories) == 1 else 'ies'}:\n\n"
+
+            for i, memory in enumerate(memories, 1):
+                memories_content += f"## {i}. {memory.tool_name}\n"
+                memories_content += f"**Question:** {memory.question}\n\n"
+                memories_content += f"**Arguments:** `{memory.args}`\n\n"
+                memories_content += f"**Success:** {'✅ Yes' if memory.success else '❌ No'}\n\n"
+                if memory.timestamp:
+                    memories_content += f"**Timestamp:** {memory.timestamp}\n\n"
+                memories_content += "---\n\n"
+
+            return TriggerResult(
+                triggered=True,
+                components=[
+                    RichTextComponent(content=memories_content, markdown=True)
+                ]
+            )
+
+        except Exception as e:
+            traceback.print_exc()
+            return TriggerResult(
+                triggered=True,
+                components=[
+                    RichTextComponent(
+                        content=f"# ❌ Error Retrieving Memories\n\n"
+                        f"Failed to get recent memories: {str(e)}\n\n"
+                        f"This may indicate an issue with the agent memory configuration.",
+                        markdown=True
+                    )
+                ]
+            )
