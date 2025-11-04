@@ -10,6 +10,7 @@ from vanna.core.tool import Tool, ToolContext, ToolResult, ToolCall
 from vanna.core.user import User
 from vanna.core.registry import ToolRegistry
 from vanna.components import UiComponent, SimpleTextComponent
+from vanna.integrations.local.agent_memory import DemoAgentMemory
 
 
 class SimpleToolArgs(BaseModel):
@@ -39,6 +40,12 @@ class MockTool(Tool[SimpleToolArgs]):
             success=True,
             result_for_llm=f"Mock tool executed: {args.message}"
         )
+
+
+@pytest.fixture
+def agent_memory():
+    """Agent memory for testing."""
+    return DemoAgentMemory(max_items=100)
 
 
 @pytest.fixture
@@ -86,21 +93,22 @@ def guest_user():
 
 
 @pytest.mark.asyncio
-async def test_tool_access_empty_groups_allows_all(regular_user):
+async def test_tool_access_empty_groups_allows_all(regular_user, agent_memory):
     """Test that empty access_groups allows all users."""
     print("\n=== Empty Access Groups Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("public_tool")
-    
+
     # Register with empty access groups
     registry.register_local_tool(tool, access_groups=[])
-    
+
     # Create context
     context = ToolContext(
         user=regular_user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     # Execute tool
@@ -120,20 +128,21 @@ async def test_tool_access_empty_groups_allows_all(regular_user):
 
 
 @pytest.mark.asyncio
-async def test_tool_access_granted_matching_group(admin_user):
+async def test_tool_access_granted_matching_group(admin_user, agent_memory):
     """Test that user with matching group can access tool."""
     print("\n=== Access Granted Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("admin_tool")
-    
+
     # Register with admin-only access
     registry.register_local_tool(tool, access_groups=['admin'])
-    
+
     context = ToolContext(
         user=admin_user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(
@@ -153,20 +162,21 @@ async def test_tool_access_granted_matching_group(admin_user):
 
 
 @pytest.mark.asyncio
-async def test_tool_access_denied_no_matching_group(regular_user):
+async def test_tool_access_denied_no_matching_group(regular_user, agent_memory):
     """Test that user without matching group cannot access tool."""
     print("\n=== Access Denied Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("admin_tool")
-    
+
     # Register with admin-only access
     registry.register_local_tool(tool, access_groups=['admin'])
-    
+
     context = ToolContext(
         user=regular_user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(
@@ -189,21 +199,22 @@ async def test_tool_access_denied_no_matching_group(regular_user):
 
 
 @pytest.mark.asyncio
-async def test_tool_access_multiple_allowed_groups(analyst_user, admin_user, regular_user):
+async def test_tool_access_multiple_allowed_groups(analyst_user, admin_user, regular_user, agent_memory):
     """Test tool with multiple allowed groups."""
     print("\n=== Multiple Allowed Groups Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("data_tool")
-    
+
     # Allow both admin and analyst groups
     registry.register_local_tool(tool, access_groups=['admin', 'analyst'])
-    
+
     # Test analyst can access
     analyst_context = ToolContext(
         user=analyst_user,
         conversation_id="test_conv",
-        request_id="test_req_1"
+        request_id="test_req_1",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(id="call_1", name="data_tool", arguments={"message": "test"})
@@ -216,19 +227,21 @@ async def test_tool_access_multiple_allowed_groups(analyst_user, admin_user, reg
     admin_context = ToolContext(
         user=admin_user,
         conversation_id="test_conv",
-        request_id="test_req_2"
+        request_id="test_req_2",
+        agent_memory=agent_memory
     )
-    
+
     result = await registry.execute(tool_call, admin_context)
-    
+
     print(f"✓ Admin accessed tool")
     assert result.success is True
-    
+
     # Test regular user cannot access
     user_context = ToolContext(
         user=regular_user,
         conversation_id="test_conv",
-        request_id="test_req_3"
+        request_id="test_req_3",
+        agent_memory=agent_memory
     )
     
     result = await registry.execute(tool_call, user_context)
@@ -238,19 +251,20 @@ async def test_tool_access_multiple_allowed_groups(analyst_user, admin_user, reg
 
 
 @pytest.mark.asyncio
-async def test_tool_access_guest_user_denied(guest_user):
+async def test_tool_access_guest_user_denied(guest_user, agent_memory):
     """Test that guest user with no groups cannot access restricted tools."""
     print("\n=== Guest User Denied Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("restricted_tool")
-    
+
     registry.register_local_tool(tool, access_groups=['user'])
-    
+
     context = ToolContext(
         user=guest_user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(id="call_1", name="restricted_tool", arguments={"message": "test"})
@@ -298,17 +312,18 @@ async def test_get_schemas_filters_by_user(admin_user, regular_user):
 
 
 @pytest.mark.asyncio
-async def test_tool_not_found():
+async def test_tool_not_found(agent_memory):
     """Test execution of non-existent tool."""
     print("\n=== Tool Not Found Test ===")
-    
+
     registry = ToolRegistry()
-    
+
     user = User(id="user", username="user", group_memberships=['user'])
     context = ToolContext(
         user=user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(
@@ -346,21 +361,22 @@ async def test_duplicate_tool_registration():
 
 
 @pytest.mark.asyncio
-async def test_tool_access_group_intersection(admin_user):
+async def test_tool_access_group_intersection(admin_user, agent_memory):
     """Test that access is granted on ANY matching group (not all groups)."""
     print("\n=== Group Intersection Test ===")
-    
+
     registry = ToolRegistry()
     tool = MockTool("multi_group_tool")
-    
+
     # Tool requires either admin OR analyst
     registry.register_local_tool(tool, access_groups=['admin', 'analyst'])
-    
+
     # User has admin (but not analyst) - should still have access
     context = ToolContext(
         user=admin_user,
         conversation_id="test_conv",
-        request_id="test_req"
+        request_id="test_req",
+        agent_memory=agent_memory
     )
     
     tool_call = ToolCall(id="call_1", name="multi_group_tool", arguments={"message": "test"})

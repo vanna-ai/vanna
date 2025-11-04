@@ -41,6 +41,7 @@ from vanna.core.user.resolver import UserResolver
 from vanna.core.user.request_context import RequestContext
 from vanna.core.agent.config import UiFeature
 from vanna.core.audit import AuditLogger
+from vanna.capabilities.agent_memory import AgentMemory
 
 import logging
 logger = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ class Agent:
         llm_service: LlmService,
         tool_registry: ToolRegistry,
         user_resolver: UserResolver,
+        agent_memory: AgentMemory,
         conversation_store: Optional[ConversationStore] = None,
         config: AgentConfig = AgentConfig(),
         system_prompt_builder: SystemPromptBuilder = DefaultSystemPromptBuilder(),
@@ -95,6 +97,7 @@ class Agent:
         self.llm_service = llm_service
         self.tool_registry = tool_registry
         self.user_resolver = user_resolver
+        self.agent_memory = agent_memory
 
         # Import here to avoid circular dependency
         if conversation_store is None:
@@ -498,6 +501,7 @@ class Agent:
             user=user,
             conversation_id=conversation_id,
             request_id=request_id,
+            agent_memory=self.agent_memory,
             observability_provider=self.observability_provider,
             metadata={"ui_features_available": ui_features_available}
         )

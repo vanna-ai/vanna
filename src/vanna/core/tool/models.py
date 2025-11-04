@@ -8,6 +8,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+# Import AgentMemory at runtime for Pydantic model resolution
+from vanna.capabilities.agent_memory import AgentMemory
+
 if TYPE_CHECKING:
     from ..components import UiComponent
     from ..user.models import User
@@ -28,6 +31,7 @@ class ToolContext(BaseModel):
     user: "User"  # Forward reference to avoid circular import
     conversation_id: str
     request_id: str = Field(description="Unique request identifier for tracing")
+    agent_memory: AgentMemory = Field(description="Agent memory for tool usage learning")
     metadata: Dict[str, Any] = Field(default_factory=dict)
     observability_provider: Optional["ObservabilityProvider"] = Field(
         default=None, description="Optional observability provider for metrics and spans"

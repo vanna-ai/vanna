@@ -1,9 +1,9 @@
 """
-Agent memory tools with dependency injection support.
+Agent memory tools.
 
 This module provides agent memory operations through an abstract AgentMemory interface,
 allowing for different implementations (local vector DB, remote cloud service, etc.).
-The tools accept an AgentMemory instance via dependency injection.
+The tools access AgentMemory via ToolContext, which is populated by the Agent.
 """
 
 import logging
@@ -44,9 +44,6 @@ class SearchSavedCorrectToolUsesParams(BaseModel):
 class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
     """Tool for saving successful question-tool-argument combinations."""
 
-    def __init__(self, agent_memory: AgentMemory):
-        self.agent_memory = agent_memory
-
     @property
     def name(self) -> str:
         return "save_question_tool_args"
@@ -61,7 +58,7 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
     async def execute(self, context: ToolContext, args: SaveQuestionToolArgsParams) -> ToolResult:
         """Save the tool usage pattern to agent memory."""
         try:
-            await self.agent_memory.save_tool_usage(
+            await context.agent_memory.save_tool_usage(
                 question=args.question,
                 tool_name=args.tool_name,
                 args=args.args,
@@ -101,9 +98,6 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
 class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
     """Tool for searching saved tool usage patterns."""
 
-    def __init__(self, agent_memory: AgentMemory):
-        self.agent_memory = agent_memory
-
     @property
     def name(self) -> str:
         return "search_saved_correct_tool_uses"
@@ -118,7 +112,7 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
     async def execute(self, context: ToolContext, args: SearchSavedCorrectToolUsesParams) -> ToolResult:
         """Search for similar tool usage patterns."""
         try:
-            results = await self.agent_memory.search_similar_usage(
+            results = await context.agent_memory.search_similar_usage(
                 question=args.question,
                 context=context,
                 limit=args.limit or 10,
@@ -176,11 +170,3 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 ),
                 error=str(e)
             )
-
-
-def create_memory_tools(agent_memory: AgentMemory) -> List[Tool]:
-    """Create agent memory tools with the given implementation."""
-    return [
-        SaveQuestionToolArgsTool(agent_memory),
-        SearchSavedCorrectToolUsesTool(agent_memory)
-    ]

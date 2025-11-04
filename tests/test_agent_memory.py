@@ -12,6 +12,7 @@ import shutil
 import os
 from vanna.core.user import User
 from vanna.core.tool import ToolContext
+from vanna.integrations.local.agent_memory import DemoAgentMemory
 
 
 @pytest.fixture
@@ -25,13 +26,13 @@ def test_user():
     )
 
 
-@pytest.fixture
-def test_context(test_user):
-    """Test context for agent memory operations."""
+def create_test_context(test_user, agent_memory):
+    """Helper to create test context with specific agent memory."""
     return ToolContext(
         user=test_user,
         conversation_id="test_conv",
         request_id="test_req",
+        agent_memory=agent_memory,
         metadata={}
     )
 
@@ -93,10 +94,11 @@ class TestLocalAgentMemory:
     """Tests for local AgentMemory implementations (ChromaDB, Qdrant, FAISS)."""
     
     @pytest.mark.asyncio
-    async def test_save_and_search(self, memory_fixture, test_context, request):
+    async def test_save_and_search(self, memory_fixture, test_user, request):
         """Test saving and searching tool usage patterns."""
         memory = request.getfixturevalue(memory_fixture)
-        
+        test_context = create_test_context(test_user, memory)
+
         await memory.clear_memories(context=test_context)
         
         await memory.save_tool_usage(
@@ -120,9 +122,10 @@ class TestLocalAgentMemory:
         assert results[0].similarity_score > 0.5
     
     @pytest.mark.asyncio
-    async def test_multiple_memories(self, memory_fixture, test_context, request):
+    async def test_multiple_memories(self, memory_fixture, test_user, request):
         """Test storing and searching multiple memories."""
         memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
         
         await memory.clear_memories(context=test_context)
         
@@ -151,9 +154,10 @@ class TestLocalAgentMemory:
         assert len(results) >= 2
     
     @pytest.mark.asyncio
-    async def test_tool_filter(self, memory_fixture, test_context, request):
+    async def test_tool_filter(self, memory_fixture, test_user, request):
         """Test filtering by tool name."""
         memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
         
         await memory.clear_memories(context=test_context)
         
@@ -182,9 +186,10 @@ class TestLocalAgentMemory:
         assert all(r.memory.tool_name == "run_sql" for r in results)
     
     @pytest.mark.asyncio
-    async def test_clear_memories(self, memory_fixture, test_context, request):
+    async def test_clear_memories(self, memory_fixture, test_user, request):
         """Test clearing memories."""
         memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
         
         await memory.clear_memories(context=test_context)
         
@@ -200,9 +205,10 @@ class TestLocalAgentMemory:
         assert deleted >= 0
     
     @pytest.mark.asyncio
-    async def test_get_recent_memories(self, memory_fixture, test_context, request):
+    async def test_get_recent_memories(self, memory_fixture, test_user, request):
         """Test getting recent memories."""
         memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
         
         await memory.clear_memories(context=test_context)
         
@@ -225,10 +231,11 @@ class TestLocalAgentMemory:
             assert all(hasattr(m, 'memory_id') for m in recent)
     
     @pytest.mark.asyncio
-    async def test_delete_by_id(self, memory_fixture, test_context, request):
+    async def test_delete_by_id(self, memory_fixture, test_user, request):
         """Test deleting memories by ID."""
         memory = request.getfixturevalue(memory_fixture)
-        
+        test_context = create_test_context(test_user, memory)
+
         await memory.clear_memories(context=test_context)
         
         await memory.save_tool_usage("Q1", "run_sql", {"sql": "SELECT 1"}, test_context)
