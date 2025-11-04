@@ -5,29 +5,14 @@ This module contains the abstract base class for agent memory operations,
 following the same pattern as the FileSystem interface.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
-from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from vanna.core.tool import ToolContext
-
-
-class ToolMemory(BaseModel):
-    """Represents a stored tool usage memory."""
-    question: str
-    tool_name: str
-    args: Dict[str, Any]
-    timestamp: Optional[str] = None
-    success: bool = True
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class MemorySearchResult(BaseModel):
-    """Represents a search result from memory storage."""
-    memory: ToolMemory
-    similarity_score: float
-    rank: int
+    from .models import ToolMemory, MemorySearchResult
 
 
 class AgentMemory(ABC):
@@ -60,12 +45,21 @@ class AgentMemory(ABC):
         pass
 
     @abstractmethod
-    async def get_tool_usage_stats(
+    async def get_recent_memories(
         self,
         context: "ToolContext",
-        tool_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get usage statistics for tools."""
+        limit: int = 10
+    ) -> List[ToolMemory]:
+        """Get recently added memories. Returns most recent memories first."""
+        pass
+
+    @abstractmethod
+    async def delete_by_id(
+        self,
+        context: "ToolContext",
+        memory_id: str
+    ) -> bool:
+        """Delete a memory by its ID. Returns True if deleted, False if not found."""
         pass
 
     @abstractmethod
@@ -76,12 +70,4 @@ class AgentMemory(ABC):
         before_date: Optional[str] = None
     ) -> int:
         """Clear stored memories. Returns number of memories deleted."""
-        pass
-
-    @abstractmethod
-    async def list_tools_with_memories(
-        self,
-        context: "ToolContext"
-    ) -> List[str]:
-        """List all tool names that have stored memories."""
         pass

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class ToolMemory(BaseModel):
     """Represents a stored tool usage memory."""
+    memory_id: Optional[str] = None
     question: str
     tool_name: str
     args: Dict[str, Any]

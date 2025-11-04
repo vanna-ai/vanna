@@ -50,7 +50,10 @@ class CloudAgentMemory(AgentMemory):
         metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Save a tool usage pattern to premium cloud storage."""
+        import uuid
+        
         payload = {
+            "id": str(uuid.uuid4()),
             "question": question,
             "tool_name": tool_name,
             "args": args,
@@ -105,24 +108,46 @@ class CloudAgentMemory(AgentMemory):
         
         return results
     
-    async def get_tool_usage_stats(
+    async def get_recent_memories(
         self,
         context: ToolContext,
-        tool_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get usage statistics from premium cloud storage."""
-        params = {}
-        if tool_name:
-            params["tool_name"] = tool_name
+        limit: int = 10
+    ) -> List[ToolMemory]:
+        """Get recently added memories from premium cloud storage."""
+        params = {"limit": limit}
         
         response = await self._client.get(
-            "/memory/stats",
+            "/memory/recent",
             params=params,
             headers=self._get_headers()
         )
         response.raise_for_status()
         
-        return response.json()
+        data = response.json()
+        memories = []
+        
+        for item in data.get("memories", []):
+            memory = ToolMemory(**item)
+            memories.append(memory)
+        
+        return memories
+    
+    async def delete_by_id(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Delete a memory by its ID from premium cloud storage."""
+        response = await self._client.delete(
+            f"/memory/{memory_id}",
+            headers=self._get_headers()
+        )
+        
+        if response.status_code == 404:
+            return False
+        
+        response.raise_for_status()
+        return True
     
     async def clear_memories(
         self,
@@ -146,17 +171,3 @@ class CloudAgentMemory(AgentMemory):
         
         data = response.json()
         return data.get("deleted_count", 0)
-    
-    async def list_tools_with_memories(
-        self,
-        context: ToolContext
-    ) -> List[str]:
-        """List all tool names that have stored memories in premium cloud storage."""
-        response = await self._client.get(
-            "/memory/tools",
-            headers=self._get_headers()
-        )
-        response.raise_for_status()
-        
-        data = response.json()
-        return data.get("tools", [])

@@ -131,6 +131,7 @@ class LegacyAgentMemory(AgentMemory):
             # Legacy results are typically dicts with 'question' and 'sql' keys
             if isinstance(result, dict) and "question" in result and "sql" in result:
                 tool_memory = ToolMemory(
+                    memory_id=None,  # Legacy doesn't provide IDs
                     question=result["question"],
                     tool_name="run_sql",
                     args={"sql": result["sql"]},
@@ -152,27 +153,43 @@ class LegacyAgentMemory(AgentMemory):
 
         return memory_results[:limit]
 
-    async def get_tool_usage_stats(
+    async def get_recent_memories(
         self,
         context: ToolContext,
-        tool_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get usage statistics for tools.
+        limit: int = 10
+    ) -> List[ToolMemory]:
+        """Get recently added memories.
 
-        Note: Legacy VannaBase does not provide usage statistics,
-        so this returns a minimal response.
+        Note: Legacy VannaBase does not provide a way to get recent memories,
+        so this returns an empty list.
 
         Args:
             context: Tool execution context
-            tool_name: Optional tool name filter
+            limit: Maximum number of memories to return
 
         Returns:
-            Dictionary with minimal stats (not supported by legacy)
+            Empty list (not supported by legacy)
         """
-        return {
-            "message": "Usage statistics not available in legacy VannaBase",
-            "legacy_mode": True
-        }
+        return []
+
+    async def delete_by_id(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Delete a memory by its ID.
+
+        Note: Legacy VannaBase does not provide a way to delete by ID,
+        so this operation is not supported.
+
+        Args:
+            context: Tool execution context
+            memory_id: ID of the memory to delete
+
+        Returns:
+            False (operation not supported by legacy)
+        """
+        return False
 
     async def clear_memories(
         self,
@@ -194,23 +211,6 @@ class LegacyAgentMemory(AgentMemory):
             0 (operation not supported by legacy)
         """
         return 0
-
-    async def list_tools_with_memories(
-        self,
-        context: ToolContext
-    ) -> List[str]:
-        """List all tool names that have stored memories.
-
-        Note: Legacy VannaBase primarily stores SQL queries,
-        so this returns a hardcoded list.
-
-        Args:
-            context: Tool execution context
-
-        Returns:
-            List containing 'run_sql' if training data exists
-        """
-        return ["run_sql"]
 
 
 class LegacyVannaAdapter(ToolRegistry):

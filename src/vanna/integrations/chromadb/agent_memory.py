@@ -66,10 +66,10 @@ class ChromaAgentMemory(AgentMemory):
                 )
         return self._collection
     
-    def _create_memory_id(self, question: str, tool_name: str, args: Dict[str, Any]) -> str:
+    def _create_memory_id(self) -> str:
         """Create a unique ID for a memory."""
-        content = f"{question}|{tool_name}|{json.dumps(args, sort_keys=True)}"
-        return hashlib.md5(content.encode()).hexdigest()
+        import uuid
+        return str(uuid.uuid4())
     
     async def save_tool_usage(
         self,
@@ -84,7 +84,7 @@ class ChromaAgentMemory(AgentMemory):
         def _save():
             collection = self._get_collection()
             
-            memory_id = self._create_memory_id(question, tool_name, args)
+            memory_id = self._create_memory_id()
             timestamp = datetime.now().isoformat()
             
             # ChromaDB only accepts primitive types in metadata
@@ -152,7 +152,9 @@ class ChromaAgentMemory(AgentMemory):
                         args = json.loads(metadata.get("args_json", "{}"))
                         metadata_dict = json.loads(metadata.get("metadata_json", "{}"))
                         
+                        # Use the ChromaDB document ID as the memory ID
                         memory = ToolMemory(
+                            memory_id=id_,
                             question=metadata["question"],
                             tool_name=metadata["tool_name"],
                             args=args,
@@ -171,65 +173,67 @@ class ChromaAgentMemory(AgentMemory):
         
         return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
     
-    async def get_tool_usage_stats(
+    async def get_recent_memories(
         self,
         context: ToolContext,
-        tool_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get usage statistics."""
-        def _get_stats():
+        limit: int = 10
+    ) -> List[ToolMemory]:
+        """Get recently added memories. Returns most recent memories first."""
+        def _get_recent():
             collection = self._get_collection()
             
-            # Get all memories
-            where_filter = {}
-            if tool_name:
-                where_filter["tool_name"] = tool_name
+            # Get all memories and sort by timestamp
+            results = collection.get()
             
-            results = collection.get(where=where_filter if where_filter else None)
+            if not results["metadatas"] or not results["ids"]:
+                return []
             
-            if not results["metadatas"]:
-                return {
-                    "total_memories": 0,
-                    "unique_tools": 0,
-                    "unique_questions": 0,
-                    "success_rate": 0.0,
-                    "most_used_tools": {}
-                }
-            
-            metadatas = results["metadatas"]
-            total_memories = len(metadatas)
-            
-            unique_tools = set()
-            unique_questions = set()
-            tool_counts = {}
-            successful_count = 0
-            
-            for metadata in metadatas:
-                tool = metadata["tool_name"]
-                question = metadata["question"]
-                success = metadata.get("success", True)
+            # Parse and sort by timestamp
+            memories_with_time = []
+            for i, (doc_id, metadata) in enumerate(zip(results["ids"], results["metadatas"])):
+                args = json.loads(metadata.get("args_json", "{}"))
+                metadata_dict = json.loads(metadata.get("metadata_json", "{}"))
                 
-                unique_tools.add(tool)
-                unique_questions.add(question)
-                tool_counts[tool] = tool_counts.get(tool, 0) + 1
-                
-                if success:
-                    successful_count += 1
+                # Use the ChromaDB document ID as the memory ID
+                memory = ToolMemory(
+                    memory_id=doc_id,
+                    question=metadata["question"],
+                    tool_name=metadata["tool_name"],
+                    args=args,
+                    timestamp=metadata.get("timestamp"),
+                    success=metadata.get("success", True),
+                    metadata=metadata_dict
+                )
+                memories_with_time.append((memory, metadata.get("timestamp", "")))
             
-            success_rate = successful_count / total_memories if total_memories > 0 else 0.0
+            # Sort by timestamp descending (most recent first)
+            memories_with_time.sort(key=lambda x: x[1], reverse=True)
             
-            # Sort tools by usage count
-            most_used_tools = dict(sorted(tool_counts.items(), key=lambda x: x[1], reverse=True))
-            
-            return {
-                "total_memories": total_memories,
-                "unique_tools": len(unique_tools),
-                "unique_questions": len(unique_questions),
-                "success_rate": success_rate,
-                "most_used_tools": most_used_tools
-            }
+            # Return only the memory objects, limited to the requested amount
+            return [m[0] for m in memories_with_time[:limit]]
         
-        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_stats)
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
+    
+    async def delete_by_id(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Delete a memory by its ID. Returns True if deleted, False if not found."""
+        def _delete():
+            collection = self._get_collection()
+            
+            # Check if the ID exists
+            try:
+                results = collection.get(ids=[memory_id])
+                if results["ids"] and len(results["ids"]) > 0:
+                    collection.delete(ids=[memory_id])
+                    return True
+                return False
+            except Exception:
+                return False
+        
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
     
     async def clear_memories(
         self,
@@ -267,24 +271,3 @@ class ChromaAgentMemory(AgentMemory):
             return len(ids_to_delete)
         
         return await asyncio.get_event_loop().run_in_executor(self._executor, _clear)
-    
-    async def list_tools_with_memories(
-        self,
-        context: ToolContext
-    ) -> List[str]:
-        """List all tool names that have stored memories."""
-        def _list_tools():
-            collection = self._get_collection()
-            
-            results = collection.get()
-            
-            if not results["metadatas"]:
-                return []
-            
-            unique_tools = set()
-            for metadata in results["metadatas"]:
-                unique_tools.add(metadata["tool_name"])
-            
-            return sorted(list(unique_tools))
-        
-        return await asyncio.get_event_loop().run_in_executor(self._executor, _list_tools)

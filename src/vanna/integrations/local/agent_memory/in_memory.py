@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import difflib
 import time
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -89,6 +90,7 @@ class DemoAgentMemory(AgentMemory):
     ) -> None:
         """Save a tool usage pattern for future reference."""
         tm = ToolMemory(
+            memory_id=str(uuid.uuid4()),
             question=question,
             tool_name=tool_name,
             args=args,
@@ -138,52 +140,28 @@ class DemoAgentMemory(AgentMemory):
                 out.append(MemorySearchResult(memory=m, similarity_score=s, rank=idx))
             return out
 
-    async def get_tool_usage_stats(
+    async def get_recent_memories(
         self,
         context: ToolContext,
-        tool_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get usage statistics for tools."""
+        limit: int = 10
+    ) -> List[ToolMemory]:
+        """Get recently added memories. Returns most recent memories first."""
         async with self._lock:
-            # Filter by tool name if specified
-            memories = self._memories
-            if tool_name:
-                memories = [m for m in memories if m.tool_name == tool_name]
+            # Return memories in reverse order (most recent first)
+            return list(reversed(self._memories[-limit:]))
 
-            if not memories:
-                return {
-                    "total_memories": 0,
-                    "unique_tools": 0,
-                    "unique_questions": 0,
-                    "success_rate": 0.0,
-                    "most_used_tools": {}
-                }
-
-            total_memories = len(memories)
-            unique_tools = set()
-            unique_questions = set()
-            tool_counts: Dict[str, int] = {}
-            successful_count = 0
-
-            for m in memories:
-                unique_tools.add(m.tool_name)
-                unique_questions.add(m.question)
-                tool_counts[m.tool_name] = tool_counts.get(m.tool_name, 0) + 1
-                if m.success:
-                    successful_count += 1
-
-            success_rate = successful_count / total_memories if total_memories > 0 else 0.0
-
-            # Sort tools by usage count
-            most_used_tools = dict(sorted(tool_counts.items(), key=lambda x: x[1], reverse=True))
-
-            return {
-                "total_memories": total_memories,
-                "unique_tools": len(unique_tools),
-                "unique_questions": len(unique_questions),
-                "success_rate": success_rate,
-                "most_used_tools": most_used_tools
-            }
+    async def delete_by_id(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Delete a memory by its ID. Returns True if deleted, False if not found."""
+        async with self._lock:
+            for i, m in enumerate(self._memories):
+                if m.memory_id == memory_id:
+                    del self._memories[i]
+                    return True
+            return False
 
     async def clear_memories(
         self,
@@ -220,12 +198,3 @@ class DemoAgentMemory(AgentMemory):
             self._memories = kept_memories
             deleted_count = original_count - len(self._memories)
             return deleted_count
-
-    async def list_tools_with_memories(
-        self,
-        context: ToolContext
-    ) -> List[str]:
-        """List all tool names that have stored memories."""
-        async with self._lock:
-            unique_tools = set(m.tool_name for m in self._memories)
-            return sorted(list(unique_tools))
