@@ -10,12 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-try:
-    from enum import StrEnum  # Py 3.11+
-except ImportError:  # Py < 3.11
-    from enum import Enum
-    class StrEnum(str, Enum):  # minimal backport
-        pass
+from .._compat import StrEnum
 
 
 class AuditEventType(StrEnum):

@@ -5,7 +5,7 @@ This module provides a default implementation of the WorkflowHandler interface
 that provides a smart starter UI based on available tools and setup status.
 """
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict, Any
 import traceback
 import uuid
 from .base import WorkflowHandler, WorkflowResult
@@ -59,19 +59,22 @@ class DefaultWorkflowHandler(WorkflowHandler):
             return WorkflowResult(
                 should_skip_llm=True,
                 components=[
-                    RichTextComponent(
-                        content="## 🤖 Vanna AI Assistant\n\n"
-                        "I'm your AI data analyst! Here's what I can help you with:\n\n"
-                        "**💬 Natural Language Queries**\n"
-                        "- \"Show me sales data for last quarter\"\n"
-                        "- \"Which customers have the highest orders?\"\n"
-                        "- \"Create a chart of revenue by month\"\n\n"
-                        "**🔧 Commands**\n"
-                        "- `/help` - Show this help message\n"
-                        "- `/status` - Check setup status\n"
-                        "- `/memories` - View recent memories\n\n"
-                        "Just ask me anything about your data in plain English!",
-                        markdown=True
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content="## 🤖 Vanna AI Assistant\n\n"
+                            "I'm your AI data analyst! Here's what I can help you with:\n\n"
+                            "**💬 Natural Language Queries**\n"
+                            "- \"Show me sales data for last quarter\"\n"
+                            "- \"Which customers have the highest orders?\"\n"
+                            "- \"Create a chart of revenue by month\"\n\n"
+                            "**🔧 Commands**\n"
+                            "- `/help` - Show this help message\n"
+                            "- `/status` - Check setup status\n"
+                            "- `/memories` - View recent memories\n\n"
+                            "Just ask me anything about your data in plain English!",
+                            markdown=True
+                        ),
+                        simple_component=None
                     )
                 ]
             )
@@ -107,9 +110,12 @@ class DefaultWorkflowHandler(WorkflowHandler):
         # Welcome message
         if self.welcome_message:
             components.append(
-                RichTextComponent(
-                    content=self.welcome_message,
-                    markdown=True
+                UiComponent(
+                    rich_component=RichTextComponent(
+                        content=self.welcome_message,
+                        markdown=True
+                    ),
+                    simple_component=None
                 )
             )
         else:
@@ -121,15 +127,19 @@ class DefaultWorkflowHandler(WorkflowHandler):
         
         # Add quick action buttons if setup is good
         if setup_analysis["has_sql"]:
-            components.append(self._generate_quick_actions(setup_analysis))
-        
+            quick_actions = self._generate_quick_actions(setup_analysis)
+            if quick_actions:
+                components.append(quick_actions)
+
         # Add setup guidance if needed
         if not setup_analysis["is_complete"]:
-            components.append(self._generate_setup_guidance(setup_analysis))
+            setup_guidance = self._generate_setup_guidance(setup_analysis)
+            if setup_guidance:
+                components.append(setup_guidance)
         
         return components
 
-    def _analyze_setup(self, tool_names: List[str]) -> dict:
+    def _analyze_setup(self, tool_names: List[str]) -> Dict[str, Any]:
         """Analyze the current tool setup and return status."""
         
         # Critical tools
@@ -169,44 +179,47 @@ class DefaultWorkflowHandler(WorkflowHandler):
             "tool_names": tool_names
         }
 
-    def _generate_welcome_message(self, analysis: dict) -> RichTextComponent:
+    def _generate_welcome_message(self, analysis: Dict[str, Any]) -> UiComponent:
         """Generate a dynamic welcome message based on setup analysis."""
-        
+
         if not analysis["has_sql"]:
             # Critical issue - no SQL tool
             content = "# ⚠️ Setup Required\n\n" \
                      "Welcome to **Vanna AI**! I'm your data analysis assistant, but I need a SQL connection to help you.\n\n" \
                      "Please configure a SQL tool to get started."
-        
+
         elif analysis["is_complete"]:
             # Perfect setup
             content = "# 🎉 Welcome to Vanna AI!\n\n" \
                      "I'm your AI data analyst assistant, ready to help you explore and analyze your data!\n\n" \
                      "✅ **Your setup is complete** - SQL, memory, and visualization tools are all configured.\n\n" \
                      "Ask me anything about your data in plain English, and I'll help you find insights!"
-        
+
         elif analysis["is_functional"]:
             # Functional but could be better
             content = "# 👋 Welcome to Vanna AI!\n\n" \
                      "I'm your AI data analyst assistant, ready to help you explore your data!\n\n" \
                      "✅ **SQL connection detected** - I can query your database.\n\n"
-            
+
             if not analysis["has_memory"]:
                 content += "💡 *Consider adding memory tools to help me learn from successful queries.*\n\n"
             if not analysis["has_viz"]:
                 content += "📊 *Add visualization tools to create charts and graphs.*\n\n"
-                
+
             content += "Go ahead and ask me anything about your data!"
-        
+
         else:
             # Fallback
             content = "# 🤖 Welcome to Vanna AI!\n\n" \
                      "I'm your AI data analyst assistant. Let me help you explore your data!\n\n" \
                      "Ask me anything about your data in natural language."
-        
-        return RichTextComponent(content=content, markdown=True)
 
-    def _generate_setup_status_cards(self, analysis: dict) -> List[UiComponent]:
+        return UiComponent(
+            rich_component=RichTextComponent(content=content, markdown=True),
+            simple_component=None
+        )
+
+    def _generate_setup_status_cards(self, analysis: Dict[str, Any]) -> List[UiComponent]:
         """Generate status cards showing setup health."""
         
         cards = []
@@ -226,8 +239,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 description="No SQL tool detected - this is required for data analysis",
                 icon="❌"
             )
-        cards.append(UiComponent(rich_component=sql_card))
-        
+        cards.append(UiComponent(rich_component=sql_card, simple_component=None))
+
         # Memory Tools Status (Important)
         if analysis["has_memory"]:
             memory_card = StatusCardComponent(
@@ -250,8 +263,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 description="Memory tools not configured - I won't remember successful patterns",
                 icon="⚠️"
             )
-        cards.append(UiComponent(rich_component=memory_card))
-        
+        cards.append(UiComponent(rich_component=memory_card, simple_component=None))
+
         # Visualization Status (Nice to have)
         if analysis["has_viz"]:
             viz_card = StatusCardComponent(
@@ -267,11 +280,11 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 description="No visualization tools - results will be text/tables only",
                 icon="📋"
             )
-        cards.append(UiComponent(rich_component=viz_card))
-        
+        cards.append(UiComponent(rich_component=viz_card, simple_component=None))
+
         return cards
 
-    def _generate_quick_actions(self, analysis: dict) -> UiComponent:
+    def _generate_quick_actions(self, analysis: Dict[str, Any]) -> UiComponent:
         """Generate quick action buttons for common tasks."""
         
         buttons = []
@@ -318,10 +331,11 @@ class DefaultWorkflowHandler(WorkflowHandler):
             rich_component=ButtonGroupComponent(
                 buttons=buttons,
                 orientation="horizontal" if len(buttons) <= 3 else "vertical"
-            )
+            ),
+            simple_component=None
         )
 
-    def _generate_setup_guidance(self, analysis: dict) -> UiComponent:
+    def _generate_setup_guidance(self, analysis: Dict[str, Any]) -> Optional[UiComponent]:
         """Generate setup guidance based on what's missing."""
         
         if not analysis["has_sql"]:
@@ -369,7 +383,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 return None  # No guidance needed
         
         return UiComponent(
-            rich_component=RichTextComponent(content=content, markdown=True)
+            rich_component=RichTextComponent(content=content, markdown=True),
+            simple_component=None
         )
 
     async def _generate_status_check(self, agent: "Agent", user: "User") -> WorkflowResult:
@@ -403,7 +418,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
             status_content += f"**Available Tools:** {', '.join(sorted(analysis['tool_names']))}"
 
         components = [
-            RichTextComponent(content=status_content, markdown=True)
+            UiComponent(
+                rich_component=RichTextComponent(content=status_content, markdown=True),
+                simple_component=None
+            )
         ]
 
         # Add status cards
@@ -424,11 +442,14 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 return WorkflowResult(
                     should_skip_llm=True,
                     components=[
-                        RichTextComponent(
-                            content="# ⚠️ No Memory System\n\n"
-                            "Agent memory is not configured. Recent memories are not available.\n\n"
-                            "To enable memory, configure an AgentMemory implementation in your agent setup.",
-                            markdown=True
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# ⚠️ No Memory System\n\n"
+                                "Agent memory is not configured. Recent memories are not available.\n\n"
+                                "To enable memory, configure an AgentMemory implementation in your agent setup.",
+                                markdown=True
+                            ),
+                            simple_component=None
                         )
                     ]
                 )
@@ -449,11 +470,14 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 return WorkflowResult(
                     should_skip_llm=True,
                     components=[
-                        RichTextComponent(
-                            content="# 🧠 Recent Memories\n\n"
-                            "No recent memories found. As you use tools and ask questions, "
-                            "successful patterns will be saved here for future reference.",
-                            markdown=True
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# 🧠 Recent Memories\n\n"
+                                "No recent memories found. As you use tools and ask questions, "
+                                "successful patterns will be saved here for future reference.",
+                                markdown=True
+                            ),
+                            simple_component=None
                         )
                     ]
                 )
@@ -474,7 +498,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
             return WorkflowResult(
                 should_skip_llm=True,
                 components=[
-                    RichTextComponent(content=memories_content, markdown=True)
+                    UiComponent(
+                        rich_component=RichTextComponent(content=memories_content, markdown=True),
+                        simple_component=None
+                    )
                 ]
             )
 
@@ -483,11 +510,14 @@ class DefaultWorkflowHandler(WorkflowHandler):
             return WorkflowResult(
                 should_skip_llm=True,
                 components=[
-                    RichTextComponent(
-                        content=f"# ❌ Error Retrieving Memories\n\n"
-                        f"Failed to get recent memories: {str(e)}\n\n"
-                        f"This may indicate an issue with the agent memory configuration.",
-                        markdown=True
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content=f"# ❌ Error Retrieving Memories\n\n"
+                            f"Failed to get recent memories: {str(e)}\n\n"
+                            f"This may indicate an issue with the agent memory configuration.",
+                            markdown=True
+                        ),
+                        simple_component=None
                     )
                 ]
             )

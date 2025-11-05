@@ -1,5 +1,5 @@
 """Generic SQL query execution tool with dependency injection."""
-from typing import Optional, Type
+from typing import Any, Dict, List, Optional, Type, cast
 import uuid
 from vanna.core.tool import Tool, ToolContext, ToolResult
 from vanna.components import UiComponent, DataFrameComponent, NotificationComponent, ComponentType, SimpleTextComponent
@@ -91,7 +91,7 @@ class RunSqlTool(Tool[RunSqlToolArgs]):
 
                     # Create DataFrame component for UI
                     dataframe_component = DataFrameComponent.from_records(
-                        records=results_data,
+                        records=cast(List[Dict[str, Any]], results_data),
                         title="Query Results",
                         description=f"SQL query returned {row_count} rows with {len(columns)} columns"
                     )

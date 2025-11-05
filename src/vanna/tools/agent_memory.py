@@ -75,7 +75,8 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                         status="success",
                         message="Saved to memory",
                         detail=f"Saved pattern for '{args.tool_name}'"
-                    )
+                    ),
+                    simple_component=None
                 )
             )
             
@@ -89,7 +90,8 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                         status="error",
                         message="Failed to save memory",
                         detail=str(e)
-                    )
+                    ),
+                    simple_component=None
                 ),
                 error=str(e)
             )
@@ -130,7 +132,8 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                             status="idle",
                             message="No similar patterns found",
                             detail="Searched agent memory"
-                        )
+                        ),
+                        simple_component=None
                     )
                 )
 
@@ -152,7 +155,8 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                         status="success",
                         message=f"Found {len(results)} similar pattern(s)",
                         detail="Retrieved from agent memory"
-                    )
+                    ),
+                    simple_component=None
                 )
             )
 
@@ -166,7 +170,8 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                         status="error",
                         message="Failed to search memory",
                         detail=str(e)
-                    )
+                    ),
+                    simple_component=None
                 ),
                 error=str(e)
             )

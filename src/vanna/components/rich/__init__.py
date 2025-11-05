@@ -82,6 +82,8 @@ __all__ = [
     "TaskTrackerUpdateComponent",
     "ChatInputUpdateComponent",
     "TaskOperation",
+    "ButtonComponent",
+    "ButtonGroupComponent",
     # Containers
     "CardComponent",
     "ContainerComponent",

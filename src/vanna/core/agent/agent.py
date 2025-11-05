@@ -192,7 +192,7 @@ class Agent:
             if conversation_id:
                 error_description += f"\n\nConversation ID: {conversation_id}"
 
-            yield UiComponent(  # type: ignore
+            yield UiComponent(
                 rich_component=StatusCardComponent(
                     title="Error Processing Message",
                     status="error",
@@ -425,26 +425,26 @@ class Agent:
                 )
             
             try:
-                result = await self.workflow_handler.try_handle(self, user, conversation, message)
-                
-                if self.observability_provider and trigger_span:
-                    trigger_span.set_attribute("should_skip_llm", result.should_skip_llm)
+                workflow_result = await self.workflow_handler.try_handle(self, user, conversation, message)
 
-                if result.should_skip_llm:
+                if self.observability_provider and trigger_span:
+                    trigger_span.set_attribute("should_skip_llm", workflow_result.should_skip_llm)
+
+                if workflow_result.should_skip_llm:
                     # Workflow handled the message, short-circuit LLM
-                    
+
                     # Apply conversation mutation if provided
-                    if result.conversation_mutation:
-                        await result.conversation_mutation(conversation)
-                    
+                    if workflow_result.conversation_mutation:
+                        await workflow_result.conversation_mutation(conversation)
+
                     # Stream components
-                    if result.components:
-                        if isinstance(result.components, list):
-                            for component in result.components:
+                    if workflow_result.components:
+                        if isinstance(workflow_result.components, list):
+                            for component in workflow_result.components:
                                 yield component
                         else:
                             # AsyncGenerator
-                            async for component in result.components:
+                            async for component in workflow_result.components:
                                 yield component
                     
                     # Finalize response (status bar + chat input)
@@ -575,7 +575,7 @@ class Agent:
         )
 
         # Enhance system prompt with LLM context enhancer
-        if self.llm_context_enhancer:
+        if self.llm_context_enhancer and system_prompt is not None:
             enhancement_span = None
             if self.observability_provider:
                 enhancement_span = await self.observability_provider.create_span(
@@ -807,7 +807,8 @@ class Agent:
 
                     if has_tool_args_access_2:
                         yield UiComponent(
-                            rich_component=tool_status_card.set_status(final_status, final_description)
+                            rich_component=tool_status_card.set_status(final_status, final_description),
+                            simple_component=SimpleTextComponent(text=final_description)
                         )
 
                     has_tool_names_access_2 = self.config.ui_features.can_user_access_feature(UiFeature.UI_FEATURE_SHOW_TOOL_NAMES, user)

@@ -227,13 +227,13 @@ REASONING: <your explanation>
             from vanna.core.llm import LlmRequest, LlmMessage
 
             request = LlmRequest(
-                user_id=test_case.user.id,
+                user=test_case.user,
                 messages=[LlmMessage(role="user", content=judge_prompt)],
                 temperature=0.0,  # Deterministic judging
             )
 
-            response = await self.judge_llm.send_message(request)
-            judgment = response.content
+            response = await self.judge_llm.send_request(request)
+            judgment = response.content or ""
 
             # Parse response
             score = self._parse_score(judgment)

@@ -7,7 +7,7 @@ especially when comparing multiple LLMs or model versions.
 """
 
 import asyncio
-from typing import List, Dict, Optional, AsyncGenerator
+from typing import Any, List, Dict, Optional, AsyncGenerator
 from datetime import datetime
 
 from .base import (
@@ -145,9 +145,9 @@ class EvaluationRunner:
         Yields:
             Tuples of (variant_name, result, completed_count, total_count)
         """
-        queue: asyncio.Queue = asyncio.Queue()
+        queue: asyncio.Queue[tuple[str, TestCaseResult]] = asyncio.Queue()
 
-        async def worker(variant: AgentVariant):
+        async def worker(variant: AgentVariant) -> None:
             """Worker that runs test cases for one variant."""
             results = await self._run_test_cases_parallel(variant.agent, test_cases)
             for result in results:
@@ -265,7 +265,7 @@ class EvaluationRunner:
         self,
         agent: "Agent",  # type: ignore
         test_case: TestCase,
-    ) -> AgentResult:  # type: ignore
+    ) -> AgentResult:
         """Execute agent and capture full trajectory.
 
         Args:
@@ -276,7 +276,7 @@ class EvaluationRunner:
             AgentResult with all captured data
         """
         components: List[UiComponent] = []
-        tool_calls: List[Dict] = []
+        tool_calls: List[Dict[str, Any]] = []
         error: Optional[str] = None
 
         try:

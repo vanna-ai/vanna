@@ -7,7 +7,7 @@ YAML and JSON files.
 
 import json
 import yaml
-from typing import List
+from typing import Any, Dict, List
 from pathlib import Path
 
 from .base import TestCase, ExpectedOutcome
@@ -73,7 +73,7 @@ class EvaluationDataset:
         return cls._from_dict(data)
 
     @classmethod
-    def _from_dict(cls, data: dict) -> "EvaluationDataset":
+    def _from_dict(cls, data: Dict[str, Any]) -> "EvaluationDataset":
         """Create dataset from dictionary.
 
         Args:
@@ -94,7 +94,7 @@ class EvaluationDataset:
         return cls(name=name, test_cases=test_cases, description=description)
 
     @classmethod
-    def _parse_test_case(cls, data: dict) -> TestCase:
+    def _parse_test_case(cls, data: Dict[str, Any]) -> TestCase:
         """Parse a single test case from dictionary.
 
         Args:
@@ -109,7 +109,6 @@ class EvaluationDataset:
             id=user_id,
             username=data.get('username', user_id),
             email=data.get('email', f'{user_id}@example.com'),
-            permissions=data.get('permissions', []),
         )
 
         # Parse expected outcome if present
@@ -156,7 +155,7 @@ class EvaluationDataset:
         with open(path, 'w') as f:
             json.dump(data, f, indent=2)
 
-    def _to_dict(self) -> dict:
+    def _to_dict(self) -> Dict[str, Any]:
         """Convert dataset to dictionary.
 
         Returns:
@@ -172,7 +171,7 @@ class EvaluationDataset:
             }
         }
 
-    def _test_case_to_dict(self, test_case: TestCase) -> dict:
+    def _test_case_to_dict(self, test_case: TestCase) -> Dict[str, Any]:
         """Convert test case to dictionary.
 
         Args:
@@ -181,7 +180,7 @@ class EvaluationDataset:
         Returns:
             Dictionary representation
         """
-        data = {
+        data: Dict[str, Any] = {
             'id': test_case.id,
             'user_id': test_case.user.id,
             'username': test_case.user.username,
@@ -194,7 +193,7 @@ class EvaluationDataset:
 
         if test_case.expected_outcome:
             outcome = test_case.expected_outcome
-            outcome_dict = {}
+            outcome_dict: Dict[str, Any] = {}
 
             if outcome.tools_called:
                 outcome_dict['tools_called'] = outcome.tools_called
@@ -221,7 +220,7 @@ class EvaluationDataset:
 
         return data
 
-    def filter_by_metadata(self, **kwargs) -> "EvaluationDataset":
+    def filter_by_metadata(self, **kwargs: Any) -> "EvaluationDataset":
         """Filter test cases by metadata fields.
 
         Args:

@@ -1,5 +1,5 @@
 """Plotly-based chart generator with automatic chart type selection."""
-from typing import Dict, Any, List
+from typing import Dict, Any, List, cast
 import json
 import pandas as pd
 import plotly.graph_objects as go
@@ -88,7 +88,7 @@ class PlotlyChartGenerator:
                 raise ValueError("Cannot determine appropriate visualization for this DataFrame")
 
         # Convert to JSON-serializable dict using plotly's JSON encoder
-        result: Dict[str, Any] = json.loads(pio.to_json(fig))
+        result = json.loads(pio.to_json(fig))
         return result
 
     def _apply_standard_layout(self, fig: go.Figure) -> go.Figure:
@@ -154,7 +154,7 @@ class PlotlyChartGenerator:
             [0.5, self.THEME_COLORS['cream']],
             [1.0, self.THEME_COLORS['teal']]
         ]
-        fig = px.imshow(
+        fig = cast(go.Figure, px.imshow(
             corr_matrix,
             title=title,
             labels=dict(color="Correlation"),
@@ -163,7 +163,7 @@ class PlotlyChartGenerator:
             color_continuous_scale=vanna_colorscale,
             zmin=-1,
             zmax=1
-        )
+        ))
         self._apply_standard_layout(fig)
         return fig
 

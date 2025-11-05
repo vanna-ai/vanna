@@ -31,8 +31,8 @@ class LlmService(ABC):
             LlmStreamChunk instances as they arrive
         """
         # This is an async generator method
-        if False:  # pragma: no cover
-            yield  # type: ignore
+        raise NotImplementedError
+        yield  # pragma: no cover - makes this an async generator
 
     @abstractmethod
     async def validate_tools(self, tools: List[Any]) -> List[str]:

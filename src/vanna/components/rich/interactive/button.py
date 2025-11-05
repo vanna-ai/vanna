@@ -1,7 +1,7 @@
 """Button component for interactive actions."""
 
-from typing import Literal, Optional
-from ....core.rich_component import RichComponent
+from typing import Any, Dict, List, Literal, Optional
+from ....core.rich_component import ComponentType, RichComponent
 
 
 class ButtonComponent(RichComponent):
@@ -39,7 +39,7 @@ class ButtonComponent(RichComponent):
         disabled: bool = False,
     ):
         super().__init__(
-            type="button",
+            type=ComponentType.BUTTON,
             data={
                 "label": label,
                 "action": action,
@@ -75,14 +75,14 @@ class ButtonGroupComponent(RichComponent):
 
     def __init__(
         self,
-        buttons: list[dict],
+        buttons: List[Dict[str, Any]],
         orientation: Literal["horizontal", "vertical"] = "horizontal",
         spacing: Literal["small", "medium", "large"] = "medium",
         alignment: Literal["start", "center", "end", "stretch"] = "start",
         full_width: bool = False,
     ):
         super().__init__(
-            type="button_group",
+            type=ComponentType.BUTTON_GROUP,
             data={
                 "buttons": buttons,
                 "orientation": orientation,
