@@ -10,7 +10,13 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from ..capabilities.agent_memory import AgentMemory, ToolMemory, MemorySearchResult
+from ..capabilities.agent_memory import (
+    AgentMemory,
+    TextMemory,
+    TextMemorySearchResult,
+    ToolMemory,
+    ToolMemorySearchResult,
+)
 from ..capabilities.sql_runner import SqlRunner, RunSqlToolArgs
 from ..core.registry import ToolRegistry
 from ..core.tool import Tool, ToolContext, ToolResult
@@ -109,7 +115,7 @@ class LegacyAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7,
         tool_name_filter: Optional[str] = None
-    ) -> List[MemorySearchResult]:
+    ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns using legacy question-sql lookup.
 
         Args:
@@ -125,7 +131,7 @@ class LegacyAgentMemory(AgentMemory):
         # Call the legacy get_similar_question_sql method
         similar_results = self.vn.get_similar_question_sql(question=question)
 
-        # Convert legacy results to MemorySearchResult format
+        # Convert legacy results to ToolMemorySearchResult format
         memory_results = []
         for idx, result in enumerate(similar_results):
             # Legacy results are typically dicts with 'question' and 'sql' keys
@@ -144,7 +150,7 @@ class LegacyAgentMemory(AgentMemory):
                 similarity_score = max(similarity_score, 0.0)
 
                 memory_results.append(
-                    MemorySearchResult(
+                    ToolMemorySearchResult(
                         memory=tool_memory,
                         similarity_score=similarity_score,
                         rank=idx + 1
@@ -152,6 +158,29 @@ class LegacyAgentMemory(AgentMemory):
                 )
 
         return memory_results[:limit]
+
+    async def save_text_memory(
+        self,
+        content: str,
+        context: ToolContext,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ) -> TextMemory:
+        """Legacy adapters do not support text memory storage."""
+        raise NotImplementedError("Legacy agent memory does not support text memories.")
+
+    async def search_text_memories(
+        self,
+        query: str,
+        context: ToolContext,
+        *,
+        limit: int = 10,
+        similarity_threshold: float = 0.7,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemorySearchResult]:
+        """Legacy adapters do not support text memory search."""
+        return []
 
     async def get_recent_memories(
         self,
@@ -172,6 +201,15 @@ class LegacyAgentMemory(AgentMemory):
         """
         return []
 
+    async def get_recent_text_memories(
+        self,
+        context: ToolContext,
+        limit: int = 10,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemory]:
+        """Legacy adapters do not track text memories."""
+        return []
+
     async def delete_by_id(
         self,
         context: ToolContext,
@@ -189,6 +227,14 @@ class LegacyAgentMemory(AgentMemory):
         Returns:
             False (operation not supported by legacy)
         """
+        return False
+
+    async def delete_text_memory(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Legacy adapters do not track text memories."""
         return False
 
     async def clear_memories(

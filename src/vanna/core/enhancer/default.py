@@ -5,13 +5,13 @@ This implementation enriches the system prompt with relevant memories
 based on the user's initial message.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 from .base import LlmContextEnhancer
 
 if TYPE_CHECKING:
     from ..user.models import User
     from ..llm.models import LlmMessage
-    from ...capabilities.agent_memory import AgentMemory
+    from ...capabilities.agent_memory import AgentMemory, TextMemorySearchResult
 
 
 class DefaultLlmContextEnhancer(LlmContextEnhancer):
@@ -46,7 +46,7 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
     ) -> str:
         """Enhance system prompt with relevant memories.
 
-        Searches agent memory for relevant tool use examples based on the
+        Searches agent memory for relevant text memories based on the
         user's message and adds them to the system prompt.
 
         Args:
@@ -73,30 +73,29 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
                 agent_memory=self.agent_memory
             )
 
-            # Search for relevant memories based on user message
-            memories = await self.agent_memory.search_similar_memories(
+            # Search for relevant text memories based on user message
+            memories: List["TextMemorySearchResult"] = await self.agent_memory.search_text_memories(
+                query=user_message,
                 context=context,
-                question=user_message,
                 limit=5
             )
 
             if not memories:
                 return system_prompt
 
-            # Format memories as examples to add to system prompt
-            examples_section = "\n\n## Relevant Examples from Previous Interactions\n\n"
-            examples_section += "Here are some similar questions and how they were successfully handled:\n\n"
+            # Format memories as context snippets to add to system prompt
+            examples_section = "\n\n## Relevant Context from Memory\n\n"
+            examples_section += "Leverage these prior notes and observations when responding:\n\n"
 
-            for i, memory in enumerate(memories, 1):
-                examples_section += f"### Example {i}\n"
-                examples_section += f"**Question:** {memory.question}\n"
-                examples_section += f"**Tool Used:** {memory.tool_name}\n"
-                examples_section += f"**Arguments:** {memory.args}\n"
-                if memory.success:
-                    examples_section += "**Result:** Success ✓\n"
-                else:
-                    examples_section += "**Result:** Failed (use this as a counter-example)\n"
-                examples_section += "\n"
+            for i, result in enumerate(memories, 1):
+                memory = result.memory
+                examples_section += f"### Memory {i}\n"
+                examples_section += f"{memory.content}\n"
+                if memory.metadata:
+                    examples_section += f"\nMetadata: {memory.metadata}"
+                if memory.tags:
+                    examples_section += f"\nTags: {', '.join(memory.tags)}"
+                examples_section += "\n\n"
 
             # Append examples to system prompt
             return system_prompt + examples_section

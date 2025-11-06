@@ -20,7 +20,13 @@ try:
 except ImportError:
     FAISS_AVAILABLE = False
 
-from vanna.capabilities.agent_memory import AgentMemory, ToolMemory, MemorySearchResult
+from vanna.capabilities.agent_memory import (
+    AgentMemory,
+    TextMemory,
+    TextMemorySearchResult,
+    ToolMemory,
+    ToolMemorySearchResult,
+)
 from vanna.core.tool import ToolContext
 
 
@@ -130,7 +136,7 @@ class FAISSAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7,
         tool_name_filter: Optional[str] = None
-    ) -> List[MemorySearchResult]:
+    ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns."""
         def _search():
             embedding = self._create_embedding(question)
@@ -175,7 +181,7 @@ class FAISSAgentMemory(AgentMemory):
                         metadata=metadata.get("metadata", {})
                     )
                     
-                    search_results.append(MemorySearchResult(
+                    search_results.append(ToolMemorySearchResult(
                         memory=memory,
                         similarity_score=similarity_score,
                         rank=rank
@@ -243,7 +249,47 @@ class FAISSAgentMemory(AgentMemory):
             return False
         
         return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
-    
+
+    async def save_text_memory(
+        self,
+        content: str,
+        context: ToolContext,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ) -> TextMemory:
+        """FAISS implementation does not yet support text memories."""
+        raise NotImplementedError("FAISSAgentMemory does not support text memories.")
+
+    async def search_text_memories(
+        self,
+        query: str,
+        context: ToolContext,
+        *,
+        limit: int = 10,
+        similarity_threshold: float = 0.7,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemorySearchResult]:
+        """FAISS implementation does not yet support text memories."""
+        return []
+
+    async def get_recent_text_memories(
+        self,
+        context: ToolContext,
+        limit: int = 10,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemory]:
+        """FAISS implementation does not yet support text memories."""
+        return []
+
+    async def delete_text_memory(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """FAISS implementation does not yet support text memories."""
+        return False
+
     async def clear_memories(
         self,
         context: ToolContext,

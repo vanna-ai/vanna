@@ -35,9 +35,13 @@ class TestAgentMemoryInterface:
 
         required_methods = [
             'save_tool_usage',
+            'save_text_memory',
             'search_similar_usage',
+            'search_text_memories',
             'get_recent_memories',
+            'get_recent_text_memories',
             'delete_by_id',
+            'delete_text_memory',
             'clear_memories'
         ]
 
@@ -52,9 +56,13 @@ class TestAgentMemoryInterface:
 
         methods = [
             'save_tool_usage',
+            'save_text_memory',
             'search_similar_usage',
+            'search_text_memories',
             'get_recent_memories',
+            'get_recent_text_memories',
             'delete_by_id',
+            'delete_text_memory',
             'clear_memories'
         ]
 
@@ -111,17 +119,17 @@ class TestToolMemoryModel:
         assert memory.success is True  # Default value
 
 
-class TestMemorySearchResultModel:
-    """Test the MemorySearchResult model."""
+class TestToolMemorySearchResultModel:
+    """Test the ToolMemorySearchResult model."""
 
     def test_memory_search_result_import(self):
-        """Test that MemorySearchResult can be imported."""
-        from vanna.capabilities.agent_memory import MemorySearchResult
-        assert MemorySearchResult is not None
+        """Test that ToolMemorySearchResult can be imported."""
+        from vanna.capabilities.agent_memory import ToolMemorySearchResult
+        assert ToolMemorySearchResult is not None
 
     def test_memory_search_result_instantiation(self):
-        """Test that MemorySearchResult can be instantiated."""
-        from vanna.capabilities.agent_memory import MemorySearchResult, ToolMemory
+        """Test that ToolMemorySearchResult can be instantiated."""
+        from vanna.capabilities.agent_memory import ToolMemorySearchResult, ToolMemory
 
         memory = ToolMemory(
             question="test",
@@ -129,7 +137,7 @@ class TestMemorySearchResultModel:
             args={}
         )
 
-        result = MemorySearchResult(
+        result = ToolMemorySearchResult(
             memory=memory,
             similarity_score=0.95,
             rank=1
@@ -138,6 +146,82 @@ class TestMemorySearchResultModel:
         assert result.memory == memory
         assert result.similarity_score == 0.95
         assert result.rank == 1
+
+
+class TestTextMemoryModel:
+    """Test the TextMemory model."""
+
+    def test_text_memory_import(self):
+        """Test that TextMemory can be imported."""
+        from vanna.capabilities.agent_memory import TextMemory
+
+        assert TextMemory is not None
+
+    def test_text_memory_is_pydantic_model(self):
+        """Test that TextMemory is a Pydantic model."""
+        from vanna.capabilities.agent_memory import TextMemory
+        from pydantic import BaseModel
+
+        assert issubclass(TextMemory, BaseModel)
+
+    def test_text_memory_has_required_fields(self):
+        """Test that TextMemory has all required fields."""
+        from vanna.capabilities.agent_memory import TextMemory
+
+        required_fields = ['content']
+        optional_fields = ['memory_id', 'timestamp', 'metadata', 'tags']
+
+        model_fields = list(TextMemory.model_fields.keys())
+
+        for field in required_fields:
+            assert field in model_fields, f"Required field '{field}' missing"
+
+        for field in optional_fields:
+            assert field in model_fields, f"Optional field '{field}' missing"
+
+    def test_text_memory_instantiation(self):
+        """Test that TextMemory can be instantiated."""
+        from vanna.capabilities.agent_memory import TextMemory
+
+        memory = TextMemory(
+            memory_id="text-123",
+            content="Remember to handle edge cases",
+            metadata={"source": "review"},
+            tags=["guideline", "reminder"]
+        )
+
+        assert memory.memory_id == "text-123"
+        assert memory.content == "Remember to handle edge cases"
+        assert memory.metadata == {"source": "review"}
+        assert memory.tags == ["guideline", "reminder"]
+
+
+class TestTextMemorySearchResultModel:
+    """Test the TextMemorySearchResult model."""
+
+    def test_text_memory_search_result_import(self):
+        """Test that TextMemorySearchResult can be imported."""
+        from vanna.capabilities.agent_memory import TextMemorySearchResult
+
+        assert TextMemorySearchResult is not None
+
+    def test_text_memory_search_result_instantiation(self):
+        """Test that TextMemorySearchResult can be instantiated."""
+        from vanna.capabilities.agent_memory import TextMemorySearchResult, TextMemory
+
+        memory = TextMemory(
+            content="Example memory"
+        )
+
+        result = TextMemorySearchResult(
+            memory=memory,
+            similarity_score=0.88,
+            rank=2
+        )
+
+        assert result.memory == memory
+        assert result.similarity_score == 0.88
+        assert result.rank == 2
 
 
 class TestChromaDBAgentMemory:
@@ -168,9 +252,13 @@ class TestChromaDBAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -229,9 +317,13 @@ class TestQdrantAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -281,9 +373,13 @@ class TestPineconeAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -321,9 +417,13 @@ class TestMilvusAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -361,9 +461,13 @@ class TestWeaviateAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -401,9 +505,13 @@ class TestFAISSAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -455,9 +563,13 @@ class TestOpenSearchAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -495,9 +607,13 @@ class TestAzureAISearchAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -535,9 +651,13 @@ class TestMarqoAgentMemory:
 
             required_methods = [
                 'save_tool_usage',
+                'save_text_memory',
                 'search_similar_usage',
+                'search_text_memories',
                 'get_recent_memories',
+                'get_recent_text_memories',
                 'delete_by_id',
+                'delete_text_memory',
                 'clear_memories'
             ]
 
@@ -568,9 +688,13 @@ class TestDemoAgentMemory:
 
         required_methods = [
             'save_tool_usage',
+            'save_text_memory',
             'search_similar_usage',
+            'search_text_memories',
             'get_recent_memories',
+            'get_recent_text_memories',
             'delete_by_id',
+            'delete_text_memory',
             'clear_memories'
         ]
 

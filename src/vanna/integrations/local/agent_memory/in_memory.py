@@ -15,7 +15,13 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from vanna.capabilities.agent_memory import AgentMemory, ToolMemory, MemorySearchResult
+from vanna.capabilities.agent_memory import (
+    AgentMemory,
+    TextMemory,
+    TextMemorySearchResult,
+    ToolMemory,
+    ToolMemorySearchResult,
+)
 from vanna.core.tool import ToolContext
 
 
@@ -37,6 +43,7 @@ class DemoAgentMemory(AgentMemory):
                       evicted when this limit is reached (FIFO).
         """
         self._memories: List[ToolMemory] = []
+        self._text_memories: List[TextMemory] = []
         self._lock = asyncio.Lock()
         self._max_items = max_items
 
@@ -105,6 +112,29 @@ class DemoAgentMemory(AgentMemory):
                 overflow = len(self._memories) - self._max_items
                 del self._memories[:overflow]
 
+    async def save_text_memory(
+        self,
+        content: str,
+        context: ToolContext,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ) -> TextMemory:
+        """Store a text memory in RAM."""
+        tm = TextMemory(
+            memory_id=str(uuid.uuid4()),
+            content=content,
+            timestamp=self._now_iso(),
+            metadata=metadata or {},
+            tags=tags or [],
+        )
+        async with self._lock:
+            self._text_memories.append(tm)
+            if len(self._text_memories) > self._max_items:
+                overflow = len(self._text_memories) - self._max_items
+                del self._text_memories[:overflow]
+        return tm
+
     async def search_similar_usage(
         self,
         question: str,
@@ -113,7 +143,7 @@ class DemoAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7,
         tool_name_filter: Optional[str] = None
-    ) -> List[MemorySearchResult]:
+    ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns based on a question."""
         q = self._normalize(question)
 
@@ -135,10 +165,44 @@ class DemoAgentMemory(AgentMemory):
             results.sort(key=lambda x: x[1], reverse=True)
 
             # Build ranked response
-            out: List[MemorySearchResult] = []
+            out: List[ToolMemorySearchResult] = []
             for idx, (m, s) in enumerate(results[:limit], start=1):
-                out.append(MemorySearchResult(memory=m, similarity_score=s, rank=idx))
+                out.append(ToolMemorySearchResult(memory=m, similarity_score=s, rank=idx))
             return out
+
+    async def search_text_memories(
+        self,
+        query: str,
+        context: ToolContext,
+        *,
+        limit: int = 10,
+        similarity_threshold: float = 0.7,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemorySearchResult]:
+        """Search free-form text memories using the demo similarity metric."""
+        normalized_query = self._normalize(query)
+
+        async with self._lock:
+            candidates = self._text_memories
+            if tags:
+                required = set(tags)
+                candidates = [
+                    memory for memory in candidates
+                    if memory.tags and required.issubset(set(memory.tags))
+                ]
+
+            scored: List[tuple[TextMemory, float]] = []
+            for memory in candidates:
+                score = self._similarity(normalized_query, memory.content)
+                scored.append((memory, min(score, 1.0)))
+
+            scored = [(memory, score) for memory, score in scored if score >= similarity_threshold]
+            scored.sort(key=lambda item: item[1], reverse=True)
+
+            results: List[TextMemorySearchResult] = []
+            for idx, (memory, score) in enumerate(scored[:limit], start=1):
+                results.append(TextMemorySearchResult(memory=memory, similarity_score=score, rank=idx))
+            return results
 
     async def get_recent_memories(
         self,
@@ -149,6 +213,37 @@ class DemoAgentMemory(AgentMemory):
         async with self._lock:
             # Return memories in reverse order (most recent first)
             return list(reversed(self._memories[-limit:]))
+
+    async def get_recent_text_memories(
+        self,
+        context: ToolContext,
+        limit: int = 10,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemory]:
+        """Return recently added text memories."""
+        async with self._lock:
+            recent = list(reversed(self._text_memories[-limit:]))
+            if not tags:
+                return recent
+
+            required = set(tags)
+            return [
+                memory for memory in recent
+                if memory.tags and required.issubset(set(memory.tags))
+            ]
+
+    async def delete_text_memory(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Delete a stored text memory by ID."""
+        async with self._lock:
+            for index, memory in enumerate(self._text_memories):
+                if memory.memory_id == memory_id:
+                    del self._text_memories[index]
+                    return True
+            return False
 
     async def delete_by_id(
         self,
@@ -171,7 +266,8 @@ class DemoAgentMemory(AgentMemory):
     ) -> int:
         """Clear stored memories. Returns number of memories deleted."""
         async with self._lock:
-            original_count = len(self._memories)
+            original_tool_count = len(self._memories)
+            original_text_count = len(self._text_memories)
 
             # Filter memories to keep
             kept_memories = []
@@ -196,5 +292,21 @@ class DemoAgentMemory(AgentMemory):
                     kept_memories.append(m)
 
             self._memories = kept_memories
-            deleted_count = original_count - len(self._memories)
-            return deleted_count
+            deleted_tool_count = original_tool_count - len(self._memories)
+
+            # Apply filters to text memories (tool filter ignored)
+            kept_text_memories = []
+            for memory in self._text_memories:
+                should_delete = tool_name is None  # only delete text when not targeting a tool
+
+                if before_date and memory.timestamp:
+                    if memory.timestamp >= before_date:
+                        should_delete = False
+
+                if not should_delete:
+                    kept_text_memories.append(memory)
+
+            self._text_memories = kept_text_memories
+            deleted_text_count = original_text_count - len(self._text_memories)
+
+            return deleted_tool_count + deleted_text_count

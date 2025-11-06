@@ -10,7 +10,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 import httpx
 
-from vanna.capabilities.agent_memory import AgentMemory, ToolMemory, MemorySearchResult
+from vanna.capabilities.agent_memory import (
+    AgentMemory,
+    TextMemory,
+    TextMemorySearchResult,
+    ToolMemory,
+    ToolMemorySearchResult,
+)
 from vanna.core.tool import ToolContext
 
 
@@ -77,7 +83,7 @@ class CloudAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7,
         tool_name_filter: Optional[str] = None
-    ) -> List[MemorySearchResult]:
+    ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns in premium cloud storage."""
         params = {
             "question": question,
@@ -99,7 +105,7 @@ class CloudAgentMemory(AgentMemory):
         
         for item in data.get("results", []):
             memory = ToolMemory(**item["memory"])
-            result = MemorySearchResult(
+            result = ToolMemorySearchResult(
                 memory=memory,
                 similarity_score=item["similarity_score"],
                 rank=item["rank"]
@@ -148,7 +154,47 @@ class CloudAgentMemory(AgentMemory):
         
         response.raise_for_status()
         return True
-    
+
+    async def save_text_memory(
+        self,
+        content: str,
+        context: ToolContext,
+        *,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ) -> TextMemory:
+        """Cloud implementation does not yet support text memories."""
+        raise NotImplementedError("CloudAgentMemory does not support text memories.")
+
+    async def search_text_memories(
+        self,
+        query: str,
+        context: ToolContext,
+        *,
+        limit: int = 10,
+        similarity_threshold: float = 0.7,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemorySearchResult]:
+        """Cloud implementation does not yet support text memories."""
+        return []
+
+    async def get_recent_text_memories(
+        self,
+        context: ToolContext,
+        limit: int = 10,
+        tags: Optional[List[str]] = None
+    ) -> List[TextMemory]:
+        """Cloud implementation does not yet support text memories."""
+        return []
+
+    async def delete_text_memory(
+        self,
+        context: ToolContext,
+        memory_id: str
+    ) -> bool:
+        """Cloud implementation does not yet support text memories."""
+        return False
+
     async def clear_memories(
         self,
         context: ToolContext,

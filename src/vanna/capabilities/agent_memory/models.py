@@ -2,7 +2,8 @@
 Memory storage models and types.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
 
 
@@ -17,9 +18,25 @@ class ToolMemory(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 
-class MemorySearchResult(BaseModel):
-    """Represents a search result from memory storage."""
+class TextMemory(BaseModel):
+    """Represents a stored free-form text memory."""
+    memory_id: Optional[str] = None
+    content: str
+    timestamp: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+
+
+class ToolMemorySearchResult(BaseModel):
+    """Represents a search result from tool memory storage."""
     memory: ToolMemory
+    similarity_score: float
+    rank: int
+
+
+class TextMemorySearchResult(BaseModel):
+    """Represents a search result from text memory storage."""
+    memory: TextMemory
     similarity_score: float
     rank: int
 
