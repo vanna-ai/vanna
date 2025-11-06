@@ -51,6 +51,7 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
         tool_names = [tool.name for tool in tools]
         has_search = "search_saved_correct_tool_uses" in tool_names
         has_save = "save_question_tool_args" in tool_names
+        has_text_memory = "save_text_memory" in tool_names
 
         # Get today's date
         today_date = datetime.now().strftime("%Y-%m-%d")
@@ -71,41 +72,71 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
             )
 
         # Add memory workflow instructions based on available tools
-        if has_search or has_save:
+        if has_search or has_save or has_text_memory:
             prompt_parts.append("\n" + "="*60)
-            prompt_parts.append("IMPORTANT WORKFLOW REQUIREMENTS:")
+            prompt_parts.append("MEMORY SYSTEM:")
             prompt_parts.append("="*60)
+
+        if has_search or has_save:
+            prompt_parts.append("\n1. TOOL USAGE MEMORY (Structured Workflow):")
+            prompt_parts.append("-" * 50)
 
         if has_search:
             prompt_parts.extend([
                 "",
-                "1. BEFORE executing any tool (run_sql, visualize_data, or calculator), you MUST first call search_saved_correct_tool_uses with the user's question to check if there are existing successful patterns for similar questions.",
+                "• BEFORE executing any tool (run_sql, visualize_data, or calculator), you MUST first call search_saved_correct_tool_uses with the user's question to check if there are existing successful patterns for similar questions.",
                 "",
-                "2. Review the search results (if any) to inform your approach before proceeding with other tool calls."
+                "• Review the search results (if any) to inform your approach before proceeding with other tool calls."
             ])
 
         if has_save:
             prompt_parts.extend([
                 "",
-                "3. AFTER successfully executing a tool that produces correct and useful results, you MUST call save_question_tool_args to save the successful pattern for future use."
+                "• AFTER successfully executing a tool that produces correct and useful results, you MUST call save_question_tool_args to save the successful pattern for future use."
             ])
 
         if has_search or has_save:
             prompt_parts.extend([
                 "",
                 "Example workflow:",
-                "• User asks a question",
-                f"• First: Call search_saved_correct_tool_uses(question=\"user's question\")" if has_search else "",
-                "• Then: Execute the appropriate tool(s) based on search results and the question",
-                f"• Finally: If successful, call save_question_tool_args(question=\"user's question\", tool_name=\"tool_used\", args={{the args you used}})" if has_save else "",
+                "  • User asks a question",
+                f"  • First: Call search_saved_correct_tool_uses(question=\"user's question\")" if has_search else "",
+                "  • Then: Execute the appropriate tool(s) based on search results and the question",
+                f"  • Finally: If successful, call save_question_tool_args(question=\"user's question\", tool_name=\"tool_used\", args={{the args you used}})" if has_save else "",
                 "",
                 "Do NOT skip the search step, even if you think you know how to answer. Do NOT forget to save successful executions." if has_search else "",
                 "",
                 "The only exceptions to searching first are:",
-                "• When the user is explicitly asking about the tools themselves (like \"list the tools\")",
-                "• When the user is testing or asking you to demonstrate the save/search functionality itself"
+                "  • When the user is explicitly asking about the tools themselves (like \"list the tools\")",
+                "  • When the user is testing or asking you to demonstrate the save/search functionality itself"
             ])
 
+        if has_text_memory:
+            prompt_parts.extend([
+                "",
+                "2. TEXT MEMORY (Domain Knowledge & Context):",
+                "-" * 50,
+                "",
+                "• save_text_memory: Save important context about the database, schema, or domain",
+                "",
+                "Use text memory to save:",
+                "  • Database schema details (column meanings, data types, relationships)",
+                "  • Company-specific terminology and definitions",
+                "  • Query patterns or best practices for this database",
+                "  • Domain knowledge about the business or data",
+                "  • User preferences for queries or visualizations",
+                "",
+                "DO NOT save:",
+                "  • Information already captured in tool usage memory",
+                "  • One-time query results or temporary observations",
+                "",
+                "Examples:",
+                '  • save_text_memory(content="The status column uses 1 for active, 0 for inactive")',
+                '  • save_text_memory(content="MRR means Monthly Recurring Revenue in our schema")',
+                '  • save_text_memory(content="Always exclude test accounts where email contains \'test\'")'
+            ])
+
+        if has_search or has_save or has_text_memory:
             # Remove empty strings from the list
             prompt_parts = [part for part in prompt_parts if part != ""]
 

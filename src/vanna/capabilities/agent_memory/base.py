@@ -40,10 +40,7 @@ class AgentMemory(ABC):
     async def save_text_memory(
         self,
         content: str,
-        context: "ToolContext",
-        *,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        context: "ToolContext"
     ) -> "TextMemory":
         """Save a free-form text memory."""
         pass
@@ -68,8 +65,7 @@ class AgentMemory(ABC):
         context: "ToolContext",
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7,
-        tags: Optional[List[str]] = None
+        similarity_threshold: float = 0.7
     ) -> List["TextMemorySearchResult"]:
         """Search stored text memories based on a query."""
         pass
@@ -87,8 +83,7 @@ class AgentMemory(ABC):
     async def get_recent_text_memories(
         self,
         context: "ToolContext",
-        limit: int = 10,
-        tags: Optional[List[str]] = None
+        limit: int = 10
     ) -> List["TextMemory"]:
         """Fetch recently stored text memories."""
         pass

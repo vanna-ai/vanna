@@ -197,10 +197,7 @@ class MarqoAgentMemory(AgentMemory):
     async def save_text_memory(
         self,
         content: str,
-        context: ToolContext,
-        *,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        context: ToolContext
     ) -> TextMemory:
         """Marqo implementation does not yet support text memories."""
         raise NotImplementedError("MarqoAgentMemory does not support text memories.")
@@ -211,8 +208,7 @@ class MarqoAgentMemory(AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7,
-        tags: Optional[List[str]] = None
+        similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
         """Marqo implementation does not yet support text memories."""
         return []
@@ -220,8 +216,7 @@ class MarqoAgentMemory(AgentMemory):
     async def get_recent_text_memories(
         self,
         context: ToolContext,
-        limit: int = 10,
-        tags: Optional[List[str]] = None
+        limit: int = 10
     ) -> List[TextMemory]:
         """Marqo implementation does not yet support text memories."""
         return []

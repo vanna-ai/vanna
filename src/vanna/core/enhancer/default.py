@@ -85,17 +85,11 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
 
             # Format memories as context snippets to add to system prompt
             examples_section = "\n\n## Relevant Context from Memory\n\n"
-            examples_section += "Leverage these prior notes and observations when responding:\n\n"
+            examples_section += "The following domain knowledge and context from prior interactions may be relevant:\n\n"
 
-            for i, result in enumerate(memories, 1):
+            for result in memories:
                 memory = result.memory
-                examples_section += f"### Memory {i}\n"
-                examples_section += f"{memory.content}\n"
-                if memory.metadata:
-                    examples_section += f"\nMetadata: {memory.metadata}"
-                if memory.tags:
-                    examples_section += f"\nTags: {', '.join(memory.tags)}"
-                examples_section += "\n\n"
+                examples_section += f"• {memory.content}\n"
 
             # Append examples to system prompt
             return system_prompt + examples_section

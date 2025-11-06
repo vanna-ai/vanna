@@ -162,10 +162,7 @@ class LegacyAgentMemory(AgentMemory):
     async def save_text_memory(
         self,
         content: str,
-        context: ToolContext,
-        *,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        context: ToolContext
     ) -> TextMemory:
         """Legacy adapters do not support text memory storage."""
         raise NotImplementedError("Legacy agent memory does not support text memories.")
@@ -176,8 +173,7 @@ class LegacyAgentMemory(AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7,
-        tags: Optional[List[str]] = None
+        similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
         """Legacy adapters do not support text memory search."""
         return []
@@ -204,8 +200,7 @@ class LegacyAgentMemory(AgentMemory):
     async def get_recent_text_memories(
         self,
         context: ToolContext,
-        limit: int = 10,
-        tags: Optional[List[str]] = None
+        limit: int = 10
     ) -> List[TextMemory]:
         """Legacy adapters do not track text memories."""
         return []

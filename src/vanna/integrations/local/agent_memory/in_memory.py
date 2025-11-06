@@ -115,18 +115,13 @@ class DemoAgentMemory(AgentMemory):
     async def save_text_memory(
         self,
         content: str,
-        context: ToolContext,
-        *,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        context: ToolContext
     ) -> TextMemory:
         """Store a text memory in RAM."""
         tm = TextMemory(
             memory_id=str(uuid.uuid4()),
             content=content,
-            timestamp=self._now_iso(),
-            metadata=metadata or {},
-            tags=tags or [],
+            timestamp=self._now_iso()
         )
         async with self._lock:
             self._text_memories.append(tm)
@@ -176,23 +171,14 @@ class DemoAgentMemory(AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7,
-        tags: Optional[List[str]] = None
+        similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
         """Search free-form text memories using the demo similarity metric."""
         normalized_query = self._normalize(query)
 
         async with self._lock:
-            candidates = self._text_memories
-            if tags:
-                required = set(tags)
-                candidates = [
-                    memory for memory in candidates
-                    if memory.tags and required.issubset(set(memory.tags))
-                ]
-
             scored: List[tuple[TextMemory, float]] = []
-            for memory in candidates:
+            for memory in self._text_memories:
                 score = self._similarity(normalized_query, memory.content)
                 scored.append((memory, min(score, 1.0)))
 
@@ -217,20 +203,11 @@ class DemoAgentMemory(AgentMemory):
     async def get_recent_text_memories(
         self,
         context: ToolContext,
-        limit: int = 10,
-        tags: Optional[List[str]] = None
+        limit: int = 10
     ) -> List[TextMemory]:
         """Return recently added text memories."""
         async with self._lock:
-            recent = list(reversed(self._text_memories[-limit:]))
-            if not tags:
-                return recent
-
-            required = set(tags)
-            return [
-                memory for memory in recent
-                if memory.tags and required.issubset(set(memory.tags))
-            ]
+            return list(reversed(self._text_memories[-limit:]))
 
     async def delete_text_memory(
         self,

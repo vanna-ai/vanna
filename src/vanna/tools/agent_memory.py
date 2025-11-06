@@ -32,13 +32,18 @@ class SearchSavedCorrectToolUsesParams(BaseModel):
     question: str = Field(description="The question to find similar tool usage patterns for")
     limit: Optional[int] = Field(default=10, description="Maximum number of results to return")
     similarity_threshold: Optional[float] = Field(
-        default=0.7, 
+        default=0.7,
         description="Minimum similarity score for results (0.0-1.0)"
     )
     tool_name_filter: Optional[str] = Field(
         default=None,
         description="Filter results to specific tool name"
     )
+
+
+class SaveTextMemoryParams(BaseModel):
+    """Parameters for saving free-form text memories."""
+    content: str = Field(description="The text content to save as a memory")
 
 
 class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
@@ -169,6 +174,59 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                     rich_component=StatusBarUpdateComponent(
                         status="error",
                         message="Failed to search memory",
+                        detail=str(e)
+                    ),
+                    simple_component=None
+                ),
+                error=str(e)
+            )
+
+
+class SaveTextMemoryTool(Tool[SaveTextMemoryParams]):
+    """Tool for saving free-form text memories."""
+
+    @property
+    def name(self) -> str:
+        return "save_text_memory"
+
+    @property
+    def description(self) -> str:
+        return "Save free-form text memory for important insights, observations, or context"
+
+    def get_args_schema(self) -> Type[SaveTextMemoryParams]:
+        return SaveTextMemoryParams
+
+    async def execute(self, context: ToolContext, args: SaveTextMemoryParams) -> ToolResult:
+        """Save a text memory to agent memory."""
+        try:
+            text_memory = await context.agent_memory.save_text_memory(
+                content=args.content,
+                context=context
+            )
+
+            success_msg = f"Successfully saved text memory with ID: {text_memory.memory_id}"
+            return ToolResult(
+                success=True,
+                result_for_llm=success_msg,
+                ui_component=UiComponent(
+                    rich_component=StatusBarUpdateComponent(
+                        status="success",
+                        message="Saved text memory",
+                        detail=f"ID: {text_memory.memory_id}"
+                    ),
+                    simple_component=None
+                )
+            )
+
+        except Exception as e:
+            error_message = f"Failed to save text memory: {str(e)}"
+            return ToolResult(
+                success=False,
+                result_for_llm=error_message,
+                ui_component=UiComponent(
+                    rich_component=StatusBarUpdateComponent(
+                        status="error",
+                        message="Failed to save text memory",
                         detail=str(e)
                     ),
                     simple_component=None

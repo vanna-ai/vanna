@@ -239,10 +239,7 @@ class WeaviateAgentMemory(AgentMemory):
     async def save_text_memory(
         self,
         content: str,
-        context: ToolContext,
-        *,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        context: ToolContext
     ) -> TextMemory:
         """Weaviate implementation does not yet support text memories."""
         raise NotImplementedError("WeaviateAgentMemory does not support text memories.")
@@ -253,8 +250,7 @@ class WeaviateAgentMemory(AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7,
-        tags: Optional[List[str]] = None
+        similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
         """Weaviate implementation does not yet support text memories."""
         return []
@@ -262,8 +258,7 @@ class WeaviateAgentMemory(AgentMemory):
     async def get_recent_text_memories(
         self,
         context: ToolContext,
-        limit: int = 10,
-        tags: Optional[List[str]] = None
+        limit: int = 10
     ) -> List[TextMemory]:
         """Weaviate implementation does not yet support text memories."""
         return []
