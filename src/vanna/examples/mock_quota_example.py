@@ -67,8 +67,12 @@ async def demonstrate_quota_system() -> None:
     agent.set_user_quota(premium_user.id, 5)  # Bob gets 5 messages (premium)
 
     print("📋 User Quotas:")
-    print(f"  • {regular_user.username}: {agent.get_user_quota(regular_user.id)} messages")
-    print(f"  • {premium_user.username}: {agent.get_user_quota(premium_user.id)} messages")
+    print(
+        f"  • {regular_user.username}: {agent.get_user_quota(regular_user.id)} messages"
+    )
+    print(
+        f"  • {premium_user.username}: {agent.get_user_quota(premium_user.id)} messages"
+    )
     print()
 
     # Test regular user within quota
@@ -78,7 +82,7 @@ async def demonstrate_quota_system() -> None:
         async for component in agent.send_message(
             user=regular_user,
             message=f"Hello, this is message {i}",
-            conversation_id="alice-conv"
+            conversation_id="alice-conv",
         ):
             if hasattr(component, "content") and component.content:
                 print(f"    Agent: {component.content}")
@@ -87,10 +91,10 @@ async def demonstrate_quota_system() -> None:
     # Test regular user exceeding quota
     print("⚠️  Testing regular user (Alice) exceeding quota:")
     async for component in agent.send_message(
-            user=regular_user,
-            message="This message should be blocked",
-            conversation_id="alice-conv"
-        ):
+        user=regular_user,
+        message="This message should be blocked",
+        conversation_id="alice-conv",
+    ):
         if hasattr(component, "content") and component.content:
             print(f"    Agent: {component.content}")
     print()
@@ -102,7 +106,7 @@ async def demonstrate_quota_system() -> None:
         async for component in agent.send_message(
             user=premium_user,
             message=f"Premium user message {i}",
-            conversation_id="bob-conv"
+            conversation_id="bob-conv",
         ):
             if hasattr(component, "content") and component.content:
                 print(f"    Agent: {component.content}")
@@ -116,16 +120,20 @@ async def demonstrate_quota_system() -> None:
 
     print("✅ After reset, Alice can send messages again:")
     async for component in agent.send_message(
-            user=regular_user,
-            message="This should work after reset",
-            conversation_id="alice-conv2"
-        ):
+        user=regular_user,
+        message="This should work after reset",
+        conversation_id="alice-conv2",
+    ):
         if hasattr(component, "content") and component.content:
             print(f"    Agent: {component.content}")
 
     print("\n📊 Final Usage Summary:")
-    print(f"  • Alice: {agent.get_user_usage(regular_user.id)}/{agent.get_user_quota(regular_user.id)} used")
-    print(f"  • Bob: {agent.get_user_usage(premium_user.id)}/{agent.get_user_quota(premium_user.id)} used")
+    print(
+        f"  • Alice: {agent.get_user_usage(regular_user.id)}/{agent.get_user_quota(regular_user.id)} used"
+    )
+    print(
+        f"  • Bob: {agent.get_user_usage(premium_user.id)}/{agent.get_user_quota(premium_user.id)} used"
+    )
 
 
 async def main() -> None:

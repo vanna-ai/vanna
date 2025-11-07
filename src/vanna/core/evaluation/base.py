@@ -79,17 +79,19 @@ class AgentResult:
         # Find text components and concatenate
         texts = []
         for component in self.components:
-            if hasattr(component, 'rich_component'):
+            if hasattr(component, "rich_component"):
                 rich_comp = component.rich_component
-                if hasattr(rich_comp, 'type') and rich_comp.type.value == 'text':
-                    content = rich_comp.data.get('content') or getattr(rich_comp, 'content', '')
+                if hasattr(rich_comp, "type") and rich_comp.type.value == "text":
+                    content = rich_comp.data.get("content") or getattr(
+                        rich_comp, "content", ""
+                    )
                     if content:
                         texts.append(content)
-        return '\n'.join(texts)
+        return "\n".join(texts)
 
     def get_tool_names_called(self) -> List[str]:
         """Get list of tool names that were called."""
-        return [call.get('tool_name', '') for call in self.tool_calls]
+        return [call.get("tool_name", "") for call in self.tool_calls]
 
 
 class EvaluationResult(BaseModel):

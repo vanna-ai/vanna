@@ -23,7 +23,9 @@ class ChromaDB_VectorStore(VannaBase):
         curr_client = config.get("client", "persistent")
         collection_metadata = config.get("collection_metadata", None)
         self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
-        self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
+        self.n_results_documentation = config.get(
+            "n_results_documentation", config.get("n_results", 10)
+        )
         self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
 
         if curr_client == "persistent":

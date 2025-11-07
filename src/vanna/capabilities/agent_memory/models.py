@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 class ToolMemory(BaseModel):
     """Represents a stored tool usage memory."""
+
     memory_id: Optional[str] = None
     question: str
     tool_name: str
@@ -20,6 +21,7 @@ class ToolMemory(BaseModel):
 
 class TextMemory(BaseModel):
     """Represents a stored free-form text memory."""
+
     memory_id: Optional[str] = None
     content: str
     timestamp: Optional[str] = None
@@ -27,6 +29,7 @@ class TextMemory(BaseModel):
 
 class ToolMemorySearchResult(BaseModel):
     """Represents a search result from tool memory storage."""
+
     memory: ToolMemory
     similarity_score: float
     rank: int
@@ -34,6 +37,7 @@ class ToolMemorySearchResult(BaseModel):
 
 class TextMemorySearchResult(BaseModel):
     """Represents a search result from text memory storage."""
+
     memory: TextMemory
     similarity_score: float
     rank: int
@@ -41,6 +45,7 @@ class TextMemorySearchResult(BaseModel):
 
 class MemoryStats(BaseModel):
     """Memory storage statistics."""
+
     total_memories: int
     unique_tools: int
     unique_questions: int

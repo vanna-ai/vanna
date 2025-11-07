@@ -12,6 +12,7 @@ except ImportError:  # Py < 3.11
 
     class StrEnum(str, Enum):  # type: ignore[no-redef]
         """Minimal backport of StrEnum for Python < 3.11."""
+
         pass
 
 

@@ -1,4 +1,5 @@
 """Oracle implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -9,13 +10,7 @@ from vanna.core.tool import ToolContext
 class OracleRunner(SqlRunner):
     """Oracle implementation of the SqlRunner interface."""
 
-    def __init__(
-        self,
-        user: str,
-        password: str,
-        dsn: str,
-        **kwargs
-    ):
+    def __init__(self, user: str, password: str, dsn: str, **kwargs):
         """Initialize with Oracle connection parameters.
 
         Args:
@@ -26,6 +21,7 @@ class OracleRunner(SqlRunner):
         """
         try:
             import oracledb
+
             self.oracledb = oracledb
         except ImportError as e:
             raise ImportError(
@@ -52,10 +48,7 @@ class OracleRunner(SqlRunner):
         """
         # Connect to the database
         conn = self.oracledb.connect(
-            user=self.user,
-            password=self.password,
-            dsn=self.dsn,
-            **self.kwargs
+            user=self.user, password=self.password, dsn=self.dsn, **self.kwargs
         )
 
         cursor = conn.cursor()
@@ -63,7 +56,7 @@ class OracleRunner(SqlRunner):
         try:
             # Strip and remove trailing semicolons (Oracle doesn't like them)
             sql = args.sql.rstrip()
-            if sql.endswith(';'):
+            if sql.endswith(";"):
                 sql = sql[:-1]
 
             # Execute the query

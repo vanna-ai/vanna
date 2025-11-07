@@ -35,14 +35,18 @@ class GoogleGeminiChat(VannaBase):
             import vertexai
             from vertexai.generative_models import GenerativeModel
 
-            json_file_path = config.get("google_credentials")  # Assuming the JSON file path is provided in the config
+            json_file_path = config.get(
+                "google_credentials"
+            )  # Assuming the JSON file path is provided in the config
 
             if not json_file_path or not os.path.exists(json_file_path):
-                raise FileNotFoundError(f"JSON credentials file not found at: {json_file_path}")
+                raise FileNotFoundError(
+                    f"JSON credentials file not found at: {json_file_path}"
+                )
 
             try:
                 # Validate and set the JSON file path for GOOGLE_APPLICATION_CREDENTIALS
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = json_file_path
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_file_path
 
                 # Initialize VertexAI with the credentials
                 credentials, _ = google.auth.default()

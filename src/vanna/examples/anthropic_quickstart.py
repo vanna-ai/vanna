@@ -57,7 +57,11 @@ async def main() -> None:
     list_files_tool = ListFilesTool()
     tool_registry.register(list_files_tool)
 
-    agent = Agent(llm_service=llm, config=AgentConfig(stream_responses=False), tool_registry=tool_registry)
+    agent = Agent(
+        llm_service=llm,
+        config=AgentConfig(stream_responses=False),
+        tool_registry=tool_registry,
+    )
 
     user = User(id="demo-user", username="demo")
     conversation_id = "anthropic-demo"
@@ -68,7 +72,7 @@ async def main() -> None:
         message="List the files in the current directory",
         conversation_id=conversation_id,
     ):
-        if hasattr(component, "content") and getattr(component, "content"):
+        if hasattr(component, "content") and component.content:
             print("Assistant:", component.content)
 
 

@@ -40,4 +40,3 @@ class UserResolver(ABC):
             Can raise exceptions for authentication failures
         """
         pass
-

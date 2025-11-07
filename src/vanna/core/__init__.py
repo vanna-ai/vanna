@@ -91,6 +91,7 @@ from .evaluation import (
 # Rebuild models to resolve forward references after all imports
 from .tool.models import ToolContext, ToolResult
 from .components import UiComponent  # Import UiComponent to ensure it's available
+
 ToolContext.model_rebuild()
 ToolResult.model_rebuild()
 

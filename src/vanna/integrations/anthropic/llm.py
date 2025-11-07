@@ -144,18 +144,22 @@ class AnthropicLlmService(LlmService):
                 while i < len(request.messages) and request.messages[i].role == "tool":
                     tool_msg = request.messages[i]
                     if tool_msg.tool_call_id:
-                        tool_content_blocks.append({
-                            "type": "tool_result",
-                            "tool_use_id": tool_msg.tool_call_id,
-                            "content": tool_msg.content
-                        })
+                        tool_content_blocks.append(
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": tool_msg.tool_call_id,
+                                "content": tool_msg.content,
+                            }
+                        )
                     i += 1
 
                 if tool_content_blocks:
-                    messages.append({
-                        "role": "user",
-                        "content": tool_content_blocks,
-                    })
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": tool_content_blocks,
+                        }
+                    )
             else:
                 # Handle non-tool messages normally
                 content_blocks = []
@@ -167,12 +171,14 @@ class AnthropicLlmService(LlmService):
                 # Handle tool_calls for assistant messages (convert to tool_use blocks)
                 if m.role == "assistant" and m.tool_calls:
                     for tc in m.tool_calls:
-                        content_blocks.append({
-                            "type": "tool_use",
-                            "id": tc.id,
-                            "name": tc.name,
-                            "input": tc.arguments  # type: ignore[dict-item]
-                        })
+                        content_blocks.append(
+                            {
+                                "type": "tool_use",
+                                "id": tc.id,
+                                "name": tc.name,
+                                "input": tc.arguments,  # type: ignore[dict-item]
+                            }
+                        )
 
                 # Ensure we have at least one content block for text messages
                 if not content_blocks and m.role in {"user", "assistant"}:
@@ -180,10 +186,12 @@ class AnthropicLlmService(LlmService):
 
                 if content_blocks:
                     role = m.role if m.role in {"user", "assistant"} else "user"
-                    messages.append({
-                        "role": role,
-                        "content": content_blocks,
-                    })
+                    messages.append(
+                        {
+                            "role": role,
+                            "content": content_blocks,
+                        }
+                    )
 
                 i += 1
 

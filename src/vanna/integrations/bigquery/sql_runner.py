@@ -1,4 +1,5 @@
 """BigQuery implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -9,12 +10,7 @@ from vanna.core.tool import ToolContext
 class BigQueryRunner(SqlRunner):
     """BigQuery implementation of the SqlRunner interface."""
 
-    def __init__(
-        self,
-        project_id: str,
-        cred_file_path: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, project_id: str, cred_file_path: Optional[str] = None, **kwargs):
         """Initialize with BigQuery connection parameters.
 
         Args:
@@ -25,6 +21,7 @@ class BigQueryRunner(SqlRunner):
         try:
             from google.cloud import bigquery
             from google.oauth2 import service_account
+
             self.bigquery = bigquery
             self.service_account = service_account
         except ImportError as e:
@@ -45,15 +42,16 @@ class BigQueryRunner(SqlRunner):
 
         if self.cred_file_path:
             import json
+
             with open(self.cred_file_path, "r") as f:
-                credentials = self.service_account.Credentials.from_service_account_info(
-                    json.loads(f.read()),
-                    scopes=["https://www.googleapis.com/auth/cloud-platform"],
+                credentials = (
+                    self.service_account.Credentials.from_service_account_info(
+                        json.loads(f.read()),
+                        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+                    )
                 )
             self._client = self.bigquery.Client(
-                project=self.project_id,
-                credentials=credentials,
-                **self.kwargs
+                project=self.project_id, credentials=credentials, **self.kwargs
             )
         else:
             # Use default credentials

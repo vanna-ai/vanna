@@ -16,11 +16,7 @@ from .routes import register_chat_routes
 class VannaFastAPIServer:
     """FastAPI server factory for Vanna Agents."""
 
-    def __init__(
-        self,
-        agent: Agent,
-        config: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self, agent: Agent, config: Optional[Dict[str, Any]] = None):
         """Initialize FastAPI server.
 
         Args:
@@ -43,7 +39,7 @@ class VannaFastAPIServer:
             title="Vanna Agents API",
             description="API server for Vanna Agents framework",
             version="0.1.0",
-            **app_config
+            **app_config,
         )
 
         # Configure CORS if enabled
@@ -65,8 +61,11 @@ class VannaFastAPIServer:
             static_folder = self.config.get("static_folder", "static")
             try:
                 import os
+
                 if os.path.exists(static_folder):
-                    app.mount("/static", StaticFiles(directory=static_folder), name="static")
+                    app.mount(
+                        "/static", StaticFiles(directory=static_folder), name="static"
+                    )
             except Exception:
                 pass  # Static files not available
 
@@ -108,24 +107,24 @@ class VannaFastAPIServer:
         if in_async_env:
             try:
                 import nest_asyncio
+
                 nest_asyncio.apply()
             except ImportError:
                 print("Warning: nest_asyncio not installed. Installing...")
                 import subprocess
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "nest_asyncio"])
+
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "nest_asyncio"]
+                )
                 import nest_asyncio
+
                 nest_asyncio.apply()
 
         # Now create the app after nest_asyncio is applied
         app = self.create_app()
 
         # Set defaults
-        run_kwargs = {
-            "host": "0.0.0.0",
-            "port": 8000,
-            "log_level": "info",
-            **kwargs
-        }
+        run_kwargs = {"host": "0.0.0.0", "port": 8000, "log_level": "info", **kwargs}
 
         # Get the port and other config from run_kwargs
         port = run_kwargs.get("port", 8000)
@@ -138,8 +137,10 @@ class VannaFastAPIServer:
         if in_colab:
             try:
                 from google.colab import output
+
                 output.serve_kernel_port_as_window(port)
                 from google.colab.output import eval_js
+
                 print("Your app is running at:")
                 print(eval_js(f"google.colab.kernel.proxyPort({port})"))
             except Exception as e:
@@ -152,7 +153,9 @@ class VannaFastAPIServer:
         if in_async_env:
             # In Jupyter/Colab, create config with loop="asyncio" and use asyncio.run()
             # This matches the working pattern from Colab
-            config = uvicorn.Config(app, host=host, port=port, log_level=log_level, loop="asyncio")
+            config = uvicorn.Config(
+                app, host=host, port=port, log_level=log_level, loop="asyncio"
+            )
             server = uvicorn.Server(config)
             asyncio.run(server.serve())
         else:

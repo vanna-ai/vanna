@@ -22,27 +22,36 @@ from vanna.components import (
 
 class SaveQuestionToolArgsParams(BaseModel):
     """Parameters for saving question-tool-argument combinations."""
+
     question: str = Field(description="The original question that was asked")
-    tool_name: str = Field(description="The name of the tool that was used successfully")
-    args: Dict[str, Any] = Field(description="The arguments that were passed to the tool")
+    tool_name: str = Field(
+        description="The name of the tool that was used successfully"
+    )
+    args: Dict[str, Any] = Field(
+        description="The arguments that were passed to the tool"
+    )
 
 
 class SearchSavedCorrectToolUsesParams(BaseModel):
     """Parameters for searching saved tool usage patterns."""
-    question: str = Field(description="The question to find similar tool usage patterns for")
-    limit: Optional[int] = Field(default=10, description="Maximum number of results to return")
+
+    question: str = Field(
+        description="The question to find similar tool usage patterns for"
+    )
+    limit: Optional[int] = Field(
+        default=10, description="Maximum number of results to return"
+    )
     similarity_threshold: Optional[float] = Field(
-        default=0.7,
-        description="Minimum similarity score for results (0.0-1.0)"
+        default=0.7, description="Minimum similarity score for results (0.0-1.0)"
     )
     tool_name_filter: Optional[str] = Field(
-        default=None,
-        description="Filter results to specific tool name"
+        default=None, description="Filter results to specific tool name"
     )
 
 
 class SaveTextMemoryParams(BaseModel):
     """Parameters for saving free-form text memories."""
+
     content: str = Field(description="The text content to save as a memory")
 
 
@@ -55,12 +64,16 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
 
     @property
     def description(self) -> str:
-        return "Save a successful question-tool-argument combination for future reference"
+        return (
+            "Save a successful question-tool-argument combination for future reference"
+        )
 
     def get_args_schema(self) -> Type[SaveQuestionToolArgsParams]:
         return SaveQuestionToolArgsParams
 
-    async def execute(self, context: ToolContext, args: SaveQuestionToolArgsParams) -> ToolResult:
+    async def execute(
+        self, context: ToolContext, args: SaveQuestionToolArgsParams
+    ) -> ToolResult:
         """Save the tool usage pattern to agent memory."""
         try:
             await context.agent_memory.save_tool_usage(
@@ -68,10 +81,12 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                 tool_name=args.tool_name,
                 args=args.args,
                 context=context,
-                success=True
+                success=True,
             )
 
-            success_msg = f"Successfully saved usage pattern for '{args.tool_name}' tool"
+            success_msg = (
+                f"Successfully saved usage pattern for '{args.tool_name}' tool"
+            )
             return ToolResult(
                 success=True,
                 result_for_llm=success_msg,
@@ -79,12 +94,12 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                     rich_component=StatusBarUpdateComponent(
                         status="success",
                         message="Saved to memory",
-                        detail=f"Saved pattern for '{args.tool_name}'"
+                        detail=f"Saved pattern for '{args.tool_name}'",
                     ),
-                    simple_component=None
-                )
+                    simple_component=None,
+                ),
             )
-            
+
         except Exception as e:
             error_message = f"Failed to save memory: {str(e)}"
             return ToolResult(
@@ -92,13 +107,11 @@ class SaveQuestionToolArgsTool(Tool[SaveQuestionToolArgsParams]):
                 result_for_llm=error_message,
                 ui_component=UiComponent(
                     rich_component=StatusBarUpdateComponent(
-                        status="error",
-                        message="Failed to save memory",
-                        detail=str(e)
+                        status="error", message="Failed to save memory", detail=str(e)
                     ),
-                    simple_component=None
+                    simple_component=None,
                 ),
-                error=str(e)
+                error=str(e),
             )
 
 
@@ -116,7 +129,9 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
     def get_args_schema(self) -> Type[SearchSavedCorrectToolUsesParams]:
         return SearchSavedCorrectToolUsesParams
 
-    async def execute(self, context: ToolContext, args: SearchSavedCorrectToolUsesParams) -> ToolResult:
+    async def execute(
+        self, context: ToolContext, args: SearchSavedCorrectToolUsesParams
+    ) -> ToolResult:
         """Search for similar tool usage patterns."""
         try:
             results = await context.agent_memory.search_similar_usage(
@@ -124,11 +139,13 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 context=context,
                 limit=args.limit or 10,
                 similarity_threshold=args.similarity_threshold or 0.7,
-                tool_name_filter=args.tool_name_filter
+                tool_name_filter=args.tool_name_filter,
             )
 
             if not results:
-                no_results_msg = "No similar tool usage patterns found for this question."
+                no_results_msg = (
+                    "No similar tool usage patterns found for this question."
+                )
                 return ToolResult(
                     success=True,
                     result_for_llm=no_results_msg,
@@ -136,10 +153,10 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                         rich_component=StatusBarUpdateComponent(
                             status="idle",
                             message="No similar patterns found",
-                            detail="Searched agent memory"
+                            detail="Searched agent memory",
                         ),
-                        simple_component=None
-                    )
+                        simple_component=None,
+                    ),
                 )
 
             # Format results for LLM
@@ -159,10 +176,10 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                     rich_component=StatusBarUpdateComponent(
                         status="success",
                         message=f"Found {len(results)} similar pattern(s)",
-                        detail="Retrieved from agent memory"
+                        detail="Retrieved from agent memory",
                     ),
-                    simple_component=None
-                )
+                    simple_component=None,
+                ),
             )
 
         except Exception as e:
@@ -172,13 +189,11 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                 result_for_llm=error_message,
                 ui_component=UiComponent(
                     rich_component=StatusBarUpdateComponent(
-                        status="error",
-                        message="Failed to search memory",
-                        detail=str(e)
+                        status="error", message="Failed to search memory", detail=str(e)
                     ),
-                    simple_component=None
+                    simple_component=None,
                 ),
-                error=str(e)
+                error=str(e),
             )
 
 
@@ -196,15 +211,18 @@ class SaveTextMemoryTool(Tool[SaveTextMemoryParams]):
     def get_args_schema(self) -> Type[SaveTextMemoryParams]:
         return SaveTextMemoryParams
 
-    async def execute(self, context: ToolContext, args: SaveTextMemoryParams) -> ToolResult:
+    async def execute(
+        self, context: ToolContext, args: SaveTextMemoryParams
+    ) -> ToolResult:
         """Save a text memory to agent memory."""
         try:
             text_memory = await context.agent_memory.save_text_memory(
-                content=args.content,
-                context=context
+                content=args.content, context=context
             )
 
-            success_msg = f"Successfully saved text memory with ID: {text_memory.memory_id}"
+            success_msg = (
+                f"Successfully saved text memory with ID: {text_memory.memory_id}"
+            )
             return ToolResult(
                 success=True,
                 result_for_llm=success_msg,
@@ -212,10 +230,10 @@ class SaveTextMemoryTool(Tool[SaveTextMemoryParams]):
                     rich_component=StatusBarUpdateComponent(
                         status="success",
                         message="Saved text memory",
-                        detail=f"ID: {text_memory.memory_id}"
+                        detail=f"ID: {text_memory.memory_id}",
                     ),
-                    simple_component=None
-                )
+                    simple_component=None,
+                ),
             )
 
         except Exception as e:
@@ -227,9 +245,9 @@ class SaveTextMemoryTool(Tool[SaveTextMemoryParams]):
                     rich_component=StatusBarUpdateComponent(
                         status="error",
                         message="Failed to save text memory",
-                        detail=str(e)
+                        detail=str(e),
                     ),
-                    simple_component=None
+                    simple_component=None,
                 ),
-                error=str(e)
+                error=str(e),
             )

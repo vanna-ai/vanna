@@ -2,10 +2,7 @@ import datetime
 import os
 import uuid
 from typing import List, Optional
-from vertexai.language_models import (
-  TextEmbeddingInput,
-  TextEmbeddingModel
-)
+from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
 import pandas as pd
 from google.cloud import bigquery
@@ -18,7 +15,9 @@ class BigQuery_VectorStore(VannaBase):
         self.config = config
 
         self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
-        self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
+        self.n_results_documentation = config.get(
+            "n_results_documentation", config.get("n_results", 10)
+        )
         self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
 
         if "api_key" in config or os.getenv("GOOGLE_API_KEY"):
@@ -47,7 +46,7 @@ class BigQuery_VectorStore(VannaBase):
 
         self.conn = bigquery.Client(project=self.project_id)
 
-        dataset_name = self.config.get('bigquery_dataset_name', 'vanna_managed')
+        dataset_name = self.config.get("bigquery_dataset_name", "vanna_managed")
         self.dataset_id = f"{self.project_id}.{dataset_name}"
         dataset = bigquery.Dataset(self.dataset_id)
 
@@ -101,21 +100,35 @@ class BigQuery_VectorStore(VannaBase):
         # except Exception as e:
         #     print(f"Failed to create vector index: {e}")
 
-    def store_training_data(self, training_data_type: str, question: str, content: str, embedding: List[float], **kwargs) -> str:
+    def store_training_data(
+        self,
+        training_data_type: str,
+        question: str,
+        content: str,
+        embedding: List[float],
+        **kwargs,
+    ) -> str:
         id = str(uuid.uuid4())
         created_at = datetime.datetime.now()
-        self.conn.insert_rows_json(self.table_id, [{
-            "id": id,
-            "training_data_type": training_data_type,
-            "question": question,
-            "content": content,
-            "embedding": embedding,
-            "created_at": created_at.isoformat()
-        }])
+        self.conn.insert_rows_json(
+            self.table_id,
+            [
+                {
+                    "id": id,
+                    "training_data_type": training_data_type,
+                    "question": question,
+                    "content": content,
+                    "embedding": embedding,
+                    "created_at": created_at.isoformat(),
+                }
+            ],
+        )
 
         return id
 
-    def fetch_similar_training_data(self, training_data_type: str, question: str, n_results, **kwargs) -> pd.DataFrame:
+    def fetch_similar_training_data(
+        self, training_data_type: str, question: str, n_results, **kwargs
+    ) -> pd.DataFrame:
         question_embedding = self.generate_question_embedding(question)
 
         query = f"""
@@ -145,29 +158,28 @@ class BigQuery_VectorStore(VannaBase):
         embeddings = None
 
         if self.type == "VERTEX_AI":
-          input = [TextEmbeddingInput(data, task)]
-          model = TextEmbeddingModel.from_pretrained("text-embedding-004")
+            input = [TextEmbeddingInput(data, task)]
+            model = TextEmbeddingModel.from_pretrained("text-embedding-004")
 
-          result = model.get_embeddings(input)
+            result = model.get_embeddings(input)
 
-          if len(result) > 0:
-              embeddings = result[0].values
+            if len(result) > 0:
+                embeddings = result[0].values
         else:
-          # Use Gemini Consumer API
-          result = self.genai.embed_content(
-            model="models/text-embedding-004",
-            content=data,
-            task_type=task)
+            # Use Gemini Consumer API
+            result = self.genai.embed_content(
+                model="models/text-embedding-004", content=data, task_type=task
+            )
 
-          if 'embedding' in result:
-            embeddings = result['embedding']
+            if "embedding" in result:
+                embeddings = result["embedding"]
 
         return embeddings
 
     def generate_question_embedding(self, data: str, **kwargs) -> List[float]:
         result = self.get_embeddings(data, "RETRIEVAL_QUERY")
 
-        if result != None:
+        if result is not None:
             return result
         else:
             raise ValueError("No embeddings returned")
@@ -175,7 +187,7 @@ class BigQuery_VectorStore(VannaBase):
     def generate_storage_embedding(self, data: str, **kwargs) -> List[float]:
         result = self.get_embeddings(data, "RETRIEVAL_DOCUMENT")
 
-        if result != None:
+        if result is not None:
             return result
         else:
             raise ValueError("No embeddings returned")
@@ -195,45 +207,66 @@ class BigQuery_VectorStore(VannaBase):
         return self.generate_storage_embedding(data, **kwargs)
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
-        df = self.fetch_similar_training_data(training_data_type="sql", question=question, n_results=self.n_results_sql)
+        df = self.fetch_similar_training_data(
+            training_data_type="sql", question=question, n_results=self.n_results_sql
+        )
 
         # Return a list of dictionaries with only question, sql fields. The content field needs to be renamed to sql
-        return df.rename(columns={"content": "sql"})[["question", "sql"]].to_dict(orient="records")
+        return df.rename(columns={"content": "sql"})[["question", "sql"]].to_dict(
+            orient="records"
+        )
 
     def get_related_ddl(self, question: str, **kwargs) -> list:
-        df = self.fetch_similar_training_data(training_data_type="ddl", question=question, n_results=self.n_results_ddl)
+        df = self.fetch_similar_training_data(
+            training_data_type="ddl", question=question, n_results=self.n_results_ddl
+        )
 
         # Return a list of strings of the content
         return df["content"].tolist()
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
-        df = self.fetch_similar_training_data(training_data_type="documentation", question=question, n_results=self.n_results_documentation)
+        df = self.fetch_similar_training_data(
+            training_data_type="documentation",
+            question=question,
+            n_results=self.n_results_documentation,
+        )
 
         # Return a list of strings of the content
         return df["content"].tolist()
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
-        doc = {
-            "question": question,
-            "sql": sql
-        }
+        doc = {"question": question, "sql": sql}
 
         embedding = self.generate_embedding(str(doc))
 
-        return self.store_training_data(training_data_type="sql", question=question, content=sql, embedding=embedding)
+        return self.store_training_data(
+            training_data_type="sql",
+            question=question,
+            content=sql,
+            embedding=embedding,
+        )
 
     def add_ddl(self, ddl: str, **kwargs) -> str:
         embedding = self.generate_embedding(ddl)
 
-        return self.store_training_data(training_data_type="ddl", question="", content=ddl, embedding=embedding)
+        return self.store_training_data(
+            training_data_type="ddl", question="", content=ddl, embedding=embedding
+        )
 
     def add_documentation(self, documentation: str, **kwargs) -> str:
         embedding = self.generate_embedding(documentation)
 
-        return self.store_training_data(training_data_type="documentation", question="", content=documentation, embedding=embedding)
+        return self.store_training_data(
+            training_data_type="documentation",
+            question="",
+            content=documentation,
+            embedding=embedding,
+        )
 
     def get_training_data(self, **kwargs) -> pd.DataFrame:
-        query = f"SELECT id, training_data_type, question, content FROM `{self.table_id}`"
+        query = (
+            f"SELECT id, training_data_type, question, content FROM `{self.table_id}`"
+        )
 
         return self.conn.query(query).result().to_dataframe()
 

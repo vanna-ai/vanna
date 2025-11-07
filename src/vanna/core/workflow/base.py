@@ -10,7 +10,15 @@ user messages before they are sent to the LLM. This is useful for:
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Union, List, AsyncGenerator, Callable, Awaitable
+from typing import (
+    TYPE_CHECKING,
+    Optional,
+    Union,
+    List,
+    AsyncGenerator,
+    Callable,
+    Awaitable,
+)
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
@@ -55,20 +63,23 @@ class WorkflowResult:
         # Not handled, continue to agent
         WorkflowResult(should_skip_llm=False)
     """
+
     should_skip_llm: bool
-    components: Optional[Union[List["UiComponent"], AsyncGenerator["UiComponent", None]]] = None
+    components: Optional[
+        Union[List["UiComponent"], AsyncGenerator["UiComponent", None]]
+    ] = None
     conversation_mutation: Optional[Callable[["Conversation"], Awaitable[None]]] = None
 
 
 class WorkflowHandler(ABC):
     """Base class for handling deterministic workflows before LLM processing.
-    
+
     Implement this interface to intercept user messages and execute deterministic
     workflows instead of sending to the LLM. This is the first extensibility point
     in the agent's message processing pipeline, running after user resolution and
     conversation loading but before the message is added to conversation history
     or sent to the LLM.
-    
+
     Use cases:
     - Slash commands (/help, /reset, /report)
     - Pattern-based routing (regex matching)
@@ -76,7 +87,7 @@ class WorkflowHandler(ABC):
     - Custom quota enforcement with helpful messages
     - Deterministic report generation
     - Starter UI (buttons, welcome messages) when conversation begins
-    
+
     Example:
         class CommandWorkflow(WorkflowHandler):
             async def try_handle(self, agent, user, conversation, message):
@@ -99,33 +110,29 @@ class WorkflowHandler(ABC):
 
                 # Not handled, continue to agent
                 return WorkflowResult(should_skip_llm=False)
-            
+
             async def get_starter_ui(self, agent, user, conversation):
                 return [
                     RichTextComponent(content=f"Welcome {user.username}!"),
                     ButtonComponent(label="Generate Report", value="/report"),
                 ]
-        
+
         agent = Agent(
             llm_service=...,
             tool_registry=...,
             user_resolver=...,
             workflow_handler=CommandWorkflow()
         )
-    
+
     Observability:
         The agent automatically creates an "agent.workflow_handler" span when
         a WorkflowHandler is configured, allowing you to monitor handler
         performance and outcomes.
     """
-    
+
     @abstractmethod
     async def try_handle(
-        self,
-        agent: "Agent",
-        user: "User",
-        conversation: "Conversation",
-        message: str
+        self, agent: "Agent", user: "User", conversation: "Conversation", message: str
     ) -> WorkflowResult:
         """Attempt to handle a workflow for the given message.
 
@@ -156,7 +163,7 @@ class WorkflowHandler(ABC):
             When should_skip_llm=False:
             - The message is added to conversation history
             - Normal agent processing continues (LLM call, tool execution, etc.)
-        
+
         Example:
             async def try_handle(self, agent, user, conversation, message):
                 # Pattern matching with tool execution
@@ -186,31 +193,28 @@ class WorkflowHandler(ABC):
                 return WorkflowResult(should_skip_llm=False)
         """
         pass
-    
+
     async def get_starter_ui(
-        self,
-        agent: "Agent",
-        user: "User",
-        conversation: "Conversation"
+        self, agent: "Agent", user: "User", conversation: "Conversation"
     ) -> Optional[List["UiComponent"]]:
         """Provide UI components when a conversation starts.
-        
+
         Override this method to show starter buttons, welcome messages,
         or quick actions when a new chat is opened by the user.
-        
+
         This is called by the frontend/server when initializing a new
         conversation, before any user messages are sent.
-        
+
         Args:
             agent: The agent instance, providing access to tool_registry, config,
                    and observability_provider for dynamic UI generation.
             user: The user starting the conversation
             conversation: The new conversation (typically empty)
-        
+
         Returns:
             List of UI components to display, or None for no starter UI.
             Components can include buttons, welcome text, quick actions, etc.
-        
+
         Example:
             async def get_starter_ui(self, agent, user, conversation):
                 # Show role-based quick actions
@@ -220,12 +224,12 @@ class WorkflowHandler(ABC):
                         tool for tool in agent.tool_registry.list_tools()
                         if tool.startswith("report_")
                     ]
-                    
+
                     buttons = [
                         ButtonComponent(label=f"📊 {tool}", value=f"/{tool}")
                         for tool in report_tools
                     ]
-                    
+
                     return [
                         RichTextComponent(
                             content=f"Welcome back, {user.username}!",
@@ -233,7 +237,7 @@ class WorkflowHandler(ABC):
                         ),
                         *buttons
                     ]
-                
+
                 # New user onboarding
                 if user.metadata.get("is_new_user"):
                     return [
@@ -244,7 +248,7 @@ class WorkflowHandler(ABC):
                         ButtonComponent(label="Show Example Query", value="/example"),
                         ButtonComponent(label="View Tutorial", value="/tutorial"),
                     ]
-                
+
                 return None
         """
         return None

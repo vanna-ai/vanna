@@ -8,31 +8,31 @@ import requests
 
 from .base import VannaBase
 from .types import (
-  AccuracyStats,
-  ApiKey,
-  DataFrameJSON,
-  DataResult,
-  Explanation,
-  FullQuestionDocument,
-  NewOrganization,
-  NewOrganizationMember,
-  Organization,
-  OrganizationList,
-  PlotlyResult,
-  Question,
-  QuestionCategory,
-  QuestionId,
-  QuestionList,
-  QuestionSQLPair,
-  QuestionStringList,
-  SQLAnswer,
-  Status,
-  StatusWithId,
-  StringData,
-  TrainingData,
-  UserEmail,
-  UserOTP,
-  Visibility,
+    AccuracyStats,
+    ApiKey,
+    DataFrameJSON,
+    DataResult,
+    Explanation,
+    FullQuestionDocument,
+    NewOrganization,
+    NewOrganizationMember,
+    Organization,
+    OrganizationList,
+    PlotlyResult,
+    Question,
+    QuestionCategory,
+    QuestionId,
+    QuestionList,
+    QuestionSQLPair,
+    QuestionStringList,
+    SQLAnswer,
+    Status,
+    StatusWithId,
+    StringData,
+    TrainingData,
+    UserEmail,
+    UserOTP,
+    Visibility,
 )
 from .vannadb import VannaDB_VectorStore
 
@@ -40,7 +40,9 @@ from .vannadb import VannaDB_VectorStore
 class VannaDefault(VannaDB_VectorStore):
     def __init__(self, model: str, api_key: str, config=None):
         VannaBase.__init__(self, config=config)
-        VannaDB_VectorStore.__init__(self, vanna_model=model, vanna_api_key=api_key, config=config)
+        VannaDB_VectorStore.__init__(
+            self, vanna_model=model, vanna_api_key=api_key, config=config
+        )
 
         self._model = model
         self._api_key = api_key

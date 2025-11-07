@@ -25,15 +25,17 @@ class Cohere_Chat(VannaBase):
 
         # Check for API key in environment variable
         api_key = os.getenv("COHERE_API_KEY")
-        
+
         # Check for API key in config
         if config is not None and "api_key" in config:
             api_key = config["api_key"]
-            
+
         # Validate API key
         if not api_key:
-            raise ValueError("Cohere API key is required. Please provide it via config or set the COHERE_API_KEY environment variable.")
-            
+            raise ValueError(
+                "Cohere API key is required. Please provide it via config or set the COHERE_API_KEY environment variable."
+            )
+
         # Initialize client with validated API key
         self.client = OpenAI(
             base_url="https://api.cohere.ai/compatibility/v1",
@@ -41,7 +43,10 @@ class Cohere_Chat(VannaBase):
         )
 
     def system_message(self, message: str) -> any:
-        return {"role": "developer", "content": message}  # Cohere uses 'developer' for system role
+        return {
+            "role": "developer",
+            "content": message,
+        }  # Cohere uses 'developer' for system role
 
     def user_message(self, message: str) -> any:
         return {"role": "user", "content": message}
@@ -74,21 +79,21 @@ class Cohere_Chat(VannaBase):
                 messages=prompt,
                 temperature=self.temperature,
             )
-            
+
             # Check if response has expected structure
-            if not response or not hasattr(response, 'choices') or not response.choices:
+            if not response or not hasattr(response, "choices") or not response.choices:
                 raise ValueError("Received empty or malformed response from API")
-                
-            if not response.choices[0] or not hasattr(response.choices[0], 'message'):
+
+            if not response.choices[0] or not hasattr(response.choices[0], "message"):
                 raise ValueError("Response is missing expected 'message' field")
-                
-            if not hasattr(response.choices[0].message, 'content'):
+
+            if not hasattr(response.choices[0].message, "content"):
                 raise ValueError("Response message is missing expected 'content' field")
-                
+
             return response.choices[0].message.content
-            
+
         except Exception as e:
             # Log the error and raise a more informative exception
             error_msg = f"Error processing Cohere chat response: {str(e)}"
             print(error_msg)
-            raise Exception(error_msg) 
+            raise Exception(error_msg)

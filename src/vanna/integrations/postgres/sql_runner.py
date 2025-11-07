@@ -1,4 +1,5 @@
 """PostgreSQL implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -17,7 +18,7 @@ class PostgresRunner(SqlRunner):
         database: Optional[str] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with PostgreSQL connection parameters.
 
@@ -36,6 +37,7 @@ class PostgresRunner(SqlRunner):
         try:
             import psycopg2
             import psycopg2.extras
+
             self.psycopg2 = psycopg2
         except Exception as e:
             raise ImportError(
@@ -53,7 +55,7 @@ class PostgresRunner(SqlRunner):
                 "database": database,
                 "user": user,
                 "password": password,
-                **kwargs
+                **kwargs,
             }
         else:
             raise ValueError(
@@ -103,7 +105,7 @@ class PostgresRunner(SqlRunner):
                 conn.commit()
                 rows_affected = cursor.rowcount
                 # Return a DataFrame indicating rows affected
-                return pd.DataFrame({'rows_affected': [rows_affected]})
+                return pd.DataFrame({"rows_affected": [rows_affected]})
 
         finally:
             cursor.close()

@@ -111,7 +111,8 @@ class VannaFlaskAPI:
                         return jsonify({"type": "error", "error": f"No {field} found"})
 
                 field_values = {
-                    field: self.cache.get(id=id, field=field) for field in required_fields
+                    field: self.cache.get(id=id, field=field)
+                    for field in required_fields
                 }
 
                 for field in optional_fields:
@@ -132,7 +133,9 @@ class VannaFlaskAPI:
             user = self.auth.get_user(flask.request)
 
             if not self.auth.is_logged_in(user):
-                return jsonify({"type": "not_logged_in", "html": self.auth.login_form()})
+                return jsonify(
+                    {"type": "not_logged_in", "html": self.auth.login_form()}
+                )
 
             # Pass the user to the function
             return f(*args, user=user, **kwargs)
@@ -166,7 +169,7 @@ class VannaFlaskAPI:
         self.flask_app = Flask(__name__)
 
         self.swagger = Swagger(
-          self.flask_app, template={"info": {"title": "Vanna API"}}
+            self.flask_app, template={"info": {"title": "Vanna API"}}
         )
         self.sock = Sock(self.flask_app)
         self.ws_clients = []
@@ -177,20 +180,26 @@ class VannaFlaskAPI:
         self.allow_llm_to_see_data = allow_llm_to_see_data
         self.chart = chart
         self.config = {
-          "debug": debug,
-          "allow_llm_to_see_data": allow_llm_to_see_data,
-          "chart": chart,
+            "debug": debug,
+            "allow_llm_to_see_data": allow_llm_to_see_data,
+            "chart": chart,
         }
         log = logging.getLogger("werkzeug")
         log.setLevel(logging.ERROR)
 
         if "google.colab" in sys.modules:
             self.debug = False
-            print("Google Colab doesn't support running websocket servers. Disabling debug mode.")
+            print(
+                "Google Colab doesn't support running websocket servers. Disabling debug mode."
+            )
 
         if self.debug:
+
             def log(message, title="Info"):
-                [ws.send(json.dumps({'message': message, 'title': title})) for ws in self.ws_clients]
+                [
+                    ws.send(json.dumps({"message": message, "title": title}))
+                    for ws in self.ws_clients
+                ]
 
             self.vn.log = log
 
@@ -215,12 +224,7 @@ class VannaFlaskAPI:
                       type: object
             """
             config = self.auth.override_config_for_user(user, self.config)
-            return jsonify(
-                {
-                    "type": "config",
-                    "config": config
-                }
-            )
+            return jsonify({"type": "config", "config": config})
 
         @self.flask_app.route("/api/v0/generate_questions", methods=["GET"])
         @self.requires_auth
@@ -332,7 +336,9 @@ class VannaFlaskAPI:
                 return jsonify({"type": "error", "error": "No question provided"})
 
             id = self.cache.generate_id(question=question)
-            sql = vn.generate_sql(question=question, allow_llm_to_see_data=self.allow_llm_to_see_data)
+            sql = vn.generate_sql(
+                question=question, allow_llm_to_see_data=self.allow_llm_to_see_data
+            )
 
             self.cache.set(id=id, field="question", value=question)
             self.cache.set(id=id, field="sql", value=sql)
@@ -374,9 +380,13 @@ class VannaFlaskAPI:
             last_question = flask.request.args.get("last_question")
             new_question = flask.request.args.get("new_question")
 
-            rewritten_question = self.vn.generate_rewritten_question(last_question, new_question)
+            rewritten_question = self.vn.generate_rewritten_question(
+                last_question, new_question
+            )
 
-            return jsonify({"type": "rewritten_question", "question": rewritten_question})
+            return jsonify(
+                {"type": "rewritten_question", "question": rewritten_question}
+            )
 
         @self.flask_app.route("/api/v0/get_function", methods=["GET"])
         @self.requires_auth
@@ -410,7 +420,12 @@ class VannaFlaskAPI:
                 return jsonify({"type": "error", "error": "No question provided"})
 
             if not hasattr(vn, "get_function"):
-                return jsonify({"type": "error", "error": "This setup does not support function generation."})
+                return jsonify(
+                    {
+                        "type": "error",
+                        "error": "This setup does not support function generation.",
+                    }
+                )
 
             id = self.cache.generate_id(question=question)
             function = vn.get_function(question=question)
@@ -418,15 +433,23 @@ class VannaFlaskAPI:
             if function is None:
                 return jsonify({"type": "error", "error": "No function found"})
 
-            if 'instantiated_sql' not in function:
+            if "instantiated_sql" not in function:
                 self.vn.log(f"No instantiated SQL found for {question} in {function}")
                 return jsonify({"type": "error", "error": "No instantiated SQL found"})
 
             self.cache.set(id=id, field="question", value=question)
-            self.cache.set(id=id, field="sql", value=function['instantiated_sql'])
+            self.cache.set(id=id, field="sql", value=function["instantiated_sql"])
 
-            if 'instantiated_post_processing_code' in function and function['instantiated_post_processing_code'] is not None and len(function['instantiated_post_processing_code']) > 0:
-                self.cache.set(id=id, field="plotly_code", value=function['instantiated_post_processing_code'])
+            if (
+                "instantiated_post_processing_code" in function
+                and function["instantiated_post_processing_code"] is not None
+                and len(function["instantiated_post_processing_code"]) > 0
+            ):
+                self.cache.set(
+                    id=id,
+                    field="plotly_code",
+                    value=function["instantiated_post_processing_code"],
+                )
 
             return jsonify(
                 {
@@ -457,7 +480,12 @@ class VannaFlaskAPI:
                       type: array
             """
             if not hasattr(vn, "get_all_functions"):
-                return jsonify({"type": "error", "error": "This setup does not support function generation."})
+                return jsonify(
+                    {
+                        "type": "error",
+                        "error": "This setup does not support function generation.",
+                    }
+                )
 
             functions = vn.get_all_functions()
 
@@ -514,8 +542,9 @@ class VannaFlaskAPI:
                     {
                         "type": "df",
                         "id": id,
-                        "df": df.head(10).to_json(orient='records', date_format='iso'),
-                        "should_generate_chart": self.chart and vn.should_generate_chart(df),
+                        "df": df.head(10).to_json(orient="records", date_format="iso"),
+                        "should_generate_chart": self.chart
+                        and vn.should_generate_chart(df),
                     }
                 )
 
@@ -572,8 +601,7 @@ class VannaFlaskAPI:
                 }
             )
 
-
-        @self.flask_app.route('/api/v0/update_sql', methods=['POST'])
+        @self.flask_app.route("/api/v0/update_sql", methods=["POST"])
         @self.requires_auth
         @self.requires_cache([])
         def update_sql(user: any, id: str):
@@ -604,19 +632,20 @@ class VannaFlaskAPI:
                     text:
                       type: string
             """
-            sql = flask.request.json.get('sql')
+            sql = flask.request.json.get("sql")
 
             if sql is None:
                 return jsonify({"type": "error", "error": "No sql provided"})
 
-            self.cache.set(id=id, field='sql', value=sql)
+            self.cache.set(id=id, field="sql", value=sql)
 
             return jsonify(
                 {
                     "type": "sql",
                     "id": id,
                     "text": sql,
-                })
+                }
+            )
 
         @self.flask_app.route("/api/v0/download_csv", methods=["GET"])
         @self.requires_auth
@@ -674,7 +703,7 @@ class VannaFlaskAPI:
                     fig:
                       type: object
             """
-            chart_instructions = flask.request.args.get('chart_instructions')
+            chart_instructions = flask.request.args.get("chart_instructions")
 
             try:
                 # If chart_instructions is not set then attempt to retrieve the code from the cache
@@ -861,7 +890,9 @@ class VannaFlaskAPI:
             if plotly_code is None:
                 plotly_code = ""
 
-            function_data = self.vn.create_function(question=question, sql=sql, plotly_code=plotly_code)
+            function_data = self.vn.create_function(
+                question=question, sql=sql, plotly_code=plotly_code
+            )
 
             return jsonify(
                 {
@@ -902,7 +933,9 @@ class VannaFlaskAPI:
             print("old_function_name", old_function_name)
             print("updated_function", updated_function)
 
-            updated = vn.update_function(old_function_name=old_function_name, updated_function=updated_function)
+            updated = vn.update_function(
+                old_function_name=old_function_name, updated_function=updated_function
+            )
 
             return jsonify({"success": updated})
 
@@ -967,7 +1000,9 @@ class VannaFlaskAPI:
                 if followup_questions is not None and len(followup_questions) > 5:
                     followup_questions = followup_questions[:5]
 
-                self.cache.set(id=id, field="followup_questions", value=followup_questions)
+                self.cache.set(
+                    id=id, field="followup_questions", value=followup_questions
+                )
 
                 return jsonify(
                     {
@@ -1039,8 +1074,7 @@ class VannaFlaskAPI:
         @self.flask_app.route("/api/v0/load_question", methods=["GET"])
         @self.requires_auth
         @self.requires_cache(
-            ["question", "sql", "df"],
-            optional_fields=["summary", "fig_json"]
+            ["question", "sql", "df"], optional_fields=["summary", "fig_json"]
         )
         def load_question(user: any, id: str, question, sql, df, fig_json, summary):
             """
@@ -1126,13 +1160,16 @@ class VannaFlaskAPI:
             )
 
         if self.debug:
+
             @self.sock.route("/api/v0/log")
             def sock_log(ws):
                 self.ws_clients.append(ws)
 
                 try:
                     while True:
-                        message = ws.receive()  # This example just reads and ignores to keep the socket open
+                        message = (
+                            ws.receive()
+                        )  # This example just reads and ignores to keep the socket open
                 finally:
                     self.ws_clients.remove(ws)
 
@@ -1159,11 +1196,13 @@ class VannaFlaskAPI:
 
                 print("Your app is running at:")
                 print(eval_js("google.colab.kernel.proxyPort(8084)"))
-            except:
+            except Exception:
                 print("Your app is running at:")
                 print("http://localhost:8084")
 
-            self.flask_app.run(host="0.0.0.0", port=8084, debug=self.debug, use_reloader=False)
+            self.flask_app.run(
+                host="0.0.0.0", port=8084, debug=self.debug, use_reloader=False
+            )
 
 
 class VannaFlaskApp(VannaFlaskAPI):
@@ -1237,8 +1276,10 @@ class VannaFlaskApp(VannaFlaskAPI):
         self.config["ask_results_correct"] = ask_results_correct
         self.config["followup_questions"] = followup_questions
         self.config["summarization"] = summarization
-        self.config["function_generation"] = function_generation and hasattr(vn, "get_function")
-        self.config["version"] = importlib.metadata.version('vanna')
+        self.config["function_generation"] = function_generation and hasattr(
+            vn, "get_function"
+        )
+        self.config["version"] = importlib.metadata.version("vanna")
 
         self.index_html_path = index_html_path
         self.assets_folder = assets_folder
@@ -1254,7 +1295,6 @@ class VannaFlaskApp(VannaFlaskAPI):
         @self.flask_app.route("/auth/logout", methods=["GET"])
         def logout():
             return self.auth.logout_handler(flask.request)
-
 
         @self.flask_app.route("/assets/<path:filename>")
         def proxy_assets(filename):

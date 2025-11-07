@@ -83,13 +83,15 @@ class OllamaLlmService(LlmService):
             usage = {
                 "prompt_tokens": resp.get("prompt_eval_count", 0),
                 "completion_tokens": resp.get("eval_count", 0),
-                "total_tokens": resp.get("prompt_eval_count", 0) + resp.get("eval_count", 0),
+                "total_tokens": resp.get("prompt_eval_count", 0)
+                + resp.get("eval_count", 0),
             }
 
         return LlmResponse(
             content=content,
             tool_calls=tool_calls or None,
-            finish_reason=resp.get("done_reason") or ("stop" if resp.get("done") else None),
+            finish_reason=resp.get("done_reason")
+            or ("stop" if resp.get("done") else None),
             usage=usage or None,
         )
 
@@ -115,7 +117,7 @@ class OllamaLlmService(LlmService):
 
         for chunk in stream:
             message = chunk.get("message", {})
-            
+
             # Yield text content
             content = message.get("content")
             if content:
@@ -133,8 +135,7 @@ class OllamaLlmService(LlmService):
         # Emit final chunk with tool calls if any
         if accumulated_tool_calls:
             yield LlmStreamChunk(
-                tool_calls=accumulated_tool_calls,
-                finish_reason=last_finish or "stop"
+                tool_calls=accumulated_tool_calls, finish_reason=last_finish or "stop"
             )
         else:
             # Emit terminal chunk to signal completion
@@ -163,20 +164,17 @@ class OllamaLlmService(LlmService):
         # Convert messages to Ollama format
         for m in request.messages:
             msg: Dict[str, Any] = {"role": m.role, "content": m.content or ""}
-            
+
             # Handle tool calls in assistant messages
             if m.role == "assistant" and m.tool_calls:
                 # Some Ollama models support tool_calls in message
                 tool_calls_payload = []
                 for tc in m.tool_calls:
-                    tool_calls_payload.append({
-                        "function": {
-                            "name": tc.name,
-                            "arguments": tc.arguments
-                        }
-                    })
+                    tool_calls_payload.append(
+                        {"function": {"name": tc.name, "arguments": tc.arguments}}
+                    )
                 msg["tool_calls"] = tool_calls_payload
-            
+
             messages.append(msg)
 
         # Build tools array if tools are provided
@@ -184,14 +182,16 @@ class OllamaLlmService(LlmService):
         if request.tools:
             tools_payload = []
             for t in request.tools:
-                tools_payload.append({
-                    "type": "function",
-                    "function": {
-                        "name": t.name,
-                        "description": t.description,
-                        "parameters": t.parameters,
+                tools_payload.append(
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.parameters,
+                        },
                     }
-                })
+                )
 
         # Build options
         options: Dict[str, Any] = {
@@ -213,10 +213,12 @@ class OllamaLlmService(LlmService):
 
         return payload
 
-    def _extract_tool_calls_from_message(self, message: Dict[str, Any]) -> List[ToolCall]:
+    def _extract_tool_calls_from_message(
+        self, message: Dict[str, Any]
+    ) -> List[ToolCall]:
         """Extract tool calls from Ollama message."""
         tool_calls: List[ToolCall] = []
-        
+
         # Check for tool_calls in message
         raw_tool_calls = message.get("tool_calls", [])
         if not raw_tool_calls:
@@ -235,7 +237,7 @@ class OllamaLlmService(LlmService):
                     arguments = json.loads(arguments)
                 except Exception:
                     arguments = {"_raw": arguments}
-            
+
             if not isinstance(arguments, dict):
                 arguments = {"args": arguments}
 

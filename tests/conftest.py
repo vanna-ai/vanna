@@ -16,18 +16,10 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "anthropic: marks tests requiring Anthropic API key"
     )
-    config.addinivalue_line(
-        "markers", "openai: marks tests requiring OpenAI API key"
-    )
-    config.addinivalue_line(
-        "markers", "ollama: marks tests requiring Ollama"
-    )
-    config.addinivalue_line(
-        "markers", "chromadb: marks tests requiring ChromaDB"
-    )
-    config.addinivalue_line(
-        "markers", "legacy: marks tests for LegacyVannaAdapter"
-    )
+    config.addinivalue_line("markers", "openai: marks tests requiring OpenAI API key")
+    config.addinivalue_line("markers", "ollama: marks tests requiring Ollama")
+    config.addinivalue_line("markers", "chromadb: marks tests requiring ChromaDB")
+    config.addinivalue_line("markers", "legacy: marks tests for LegacyVannaAdapter")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -37,14 +29,18 @@ def pytest_collection_modifyitems(config, items):
         if "anthropic" in item.keywords:
             if not os.getenv("ANTHROPIC_API_KEY"):
                 item.add_marker(
-                    pytest.mark.skip(reason="ANTHROPIC_API_KEY environment variable not set")
+                    pytest.mark.skip(
+                        reason="ANTHROPIC_API_KEY environment variable not set"
+                    )
                 )
 
         # Skip OpenAI tests if no API key
         if "openai" in item.keywords:
             if not os.getenv("OPENAI_API_KEY"):
                 item.add_marker(
-                    pytest.mark.skip(reason="OPENAI_API_KEY environment variable not set")
+                    pytest.mark.skip(
+                        reason="OPENAI_API_KEY environment variable not set"
+                    )
                 )
 
 

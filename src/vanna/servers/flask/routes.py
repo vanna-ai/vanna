@@ -14,7 +14,9 @@ from ..base.templates import get_index_html
 from ...core.user.request_context import RequestContext
 
 
-def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional[Dict[str, Any]] = None) -> None:
+def register_chat_routes(
+    app: Flask, chat_handler: ChatHandler, config: Optional[Dict[str, Any]] = None
+) -> None:
     """Register chat routes on Flask app.
 
     Args:
@@ -32,9 +34,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
         api_base_url = config.get("api_base_url", "")
 
         return get_index_html(
-            dev_mode=dev_mode,
-            cdn_url=cdn_url,
-            api_base_url=api_base_url
+            dev_mode=dev_mode, cdn_url=cdn_url, api_base_url=api_base_url
         )
 
     @app.route("/api/vanna/v2/chat_sse", methods=["POST"])
@@ -46,7 +46,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
                 return jsonify({"error": "JSON body required"}), 400
 
             # Extract request context for user resolution
-            data['request_context'] = RequestContext(
+            data["request_context"] = RequestContext(
                 cookies=dict(request.cookies),
                 headers=dict(request.headers),
                 remote_addr=request.remote_addr,
@@ -65,6 +65,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
             asyncio.set_event_loop(loop)
 
             try:
+
                 async def async_generate() -> AsyncGenerator[str, None]:
                     async for chunk in chat_handler.handle_stream(chat_request):
                         chunk_json = chunk.model_dump_json()
@@ -93,10 +94,12 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
     @app.route("/api/vanna/v2/chat_websocket")
     def chat_websocket() -> tuple[Response, int]:
         """WebSocket endpoint placeholder."""
-        return jsonify({
-            "error": "WebSocket endpoint not implemented in basic Flask example",
-            "suggestion": "Use Flask-SocketIO for WebSocket support"
-        }), 501
+        return jsonify(
+            {
+                "error": "WebSocket endpoint not implemented in basic Flask example",
+                "suggestion": "Use Flask-SocketIO for WebSocket support",
+            }
+        ), 501
 
     @app.route("/api/vanna/v2/chat_poll", methods=["POST"])
     def chat_poll() -> Union[Response, tuple[Response, int]]:
@@ -107,7 +110,7 @@ def register_chat_routes(app: Flask, chat_handler: ChatHandler, config: Optional
                 return jsonify({"error": "JSON body required"}), 400
 
             # Extract request context for user resolution
-            data['request_context'] = RequestContext(
+            data["request_context"] = RequestContext(
                 cookies=dict(request.cookies),
                 headers=dict(request.headers),
                 remote_addr=request.remote_addr,

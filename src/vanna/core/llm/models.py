@@ -32,7 +32,9 @@ class LlmRequest(BaseModel):
     stream: bool = Field(default=False, description="Whether to stream response")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(default=None, gt=0)
-    system_prompt: Optional[str] = Field(default=None, description="System prompt for the LLM")
+    system_prompt: Optional[str] = Field(
+        default=None, description="System prompt for the LLM"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 

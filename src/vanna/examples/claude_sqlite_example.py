@@ -63,12 +63,16 @@ async def main() -> None:
     )
 
     # Get the path to the Chinook database
-    database_path = os.path.join(os.path.dirname(__file__), "..", "..", "Chinook.sqlite")
+    database_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "Chinook.sqlite"
+    )
     database_path = os.path.abspath(database_path)
 
     if not os.path.exists(database_path):
         print(f"[error] Chinook database not found at {database_path}")
-        print("Please download it with: curl -o Chinook.sqlite https://vanna.ai/Chinook.sqlite")
+        print(
+            "Please download it with: curl -o Chinook.sqlite https://vanna.ai/Chinook.sqlite"
+        )
         sys.exit(1)
 
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
@@ -92,7 +96,9 @@ async def main() -> None:
         tool_registry.register(viz_tool)
         print("Visualization tool enabled")
     except ImportError:
-        print("[warn] Plotly not installed. Visualization tool disabled. Install with: pip install -e .[visualization]")
+        print(
+            "[warn] Plotly not installed. Visualization tool disabled. Install with: pip install -e .[visualization]"
+        )
 
     user_resolver = CookieEmailUserResolver()
 
@@ -121,9 +127,9 @@ async def main() -> None:
         "Get data on the top 10 longest tracks and then visualize it",
     ]
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Claude SQLite Database Assistant Demo")
-    print("="*60)
+    print("=" * 60)
     print("This demo shows Claude querying the Chinook music database.")
     print("Claude will intelligently construct SQL queries to answer questions")
     print("and can create visualizations of the results.")
@@ -142,16 +148,19 @@ async def main() -> None:
                 if hasattr(component.simple_component, "text"):
                     print("Assistant:", component.simple_component.text)
             elif hasattr(component, "rich_component") and component.rich_component:
-                if hasattr(component.rich_component, "content") and component.rich_component.content:
+                if (
+                    hasattr(component.rich_component, "content")
+                    and component.rich_component.content
+                ):
                     print("Assistant:", component.rich_component.content)
             elif hasattr(component, "content") and component.content:
                 print("Assistant:", component.content)
 
         print()  # Add spacing between questions
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Demo complete! Claude successfully queried the database.")
-    print("="*60)
+    print("=" * 60)
 
 
 def create_demo_agent() -> "Agent":
@@ -183,11 +192,15 @@ def create_demo_agent() -> "Agent":
     )
 
     # Get the path to the Chinook database
-    database_path = os.path.join(os.path.dirname(__file__), "..", "..", "Chinook.sqlite")
+    database_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "Chinook.sqlite"
+    )
     database_path = os.path.abspath(database_path)
 
     if not os.path.exists(database_path):
-        raise FileNotFoundError(f"Chinook database not found at {database_path}. Please download it from https://vanna.ai/Chinook.sqlite")
+        raise FileNotFoundError(
+            f"Chinook database not found at {database_path}. Please download it from https://vanna.ai/Chinook.sqlite"
+        )
 
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 

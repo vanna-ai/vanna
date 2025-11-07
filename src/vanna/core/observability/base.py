@@ -46,7 +46,11 @@ class ObservabilityProvider(ABC):
     """
 
     async def record_metric(
-        self, name: str, value: float, unit: str = "", tags: Optional[Dict[str, str]] = None
+        self,
+        name: str,
+        value: float,
+        unit: str = "",
+        tags: Optional[Dict[str, str]] = None,
     ) -> None:
         """Record a metric measurement.
 

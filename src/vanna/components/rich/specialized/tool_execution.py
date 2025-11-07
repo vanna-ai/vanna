@@ -40,12 +40,12 @@ class ToolExecutionComponent(RichComponent):
     def start(self) -> "ToolExecutionComponent":
         """Mark tool execution as started."""
         return self.update(
-            status="running",
-            start_time=datetime.utcnow().isoformat(),
-            progress=0.0
+            status="running", start_time=datetime.utcnow().isoformat(), progress=0.0
         )
 
-    def update_progress(self, progress: float, message: Optional[str] = None) -> "ToolExecutionComponent":
+    def update_progress(
+        self, progress: float, message: Optional[str] = None
+    ) -> "ToolExecutionComponent":
         """Update execution progress."""
         updates: Dict[str, Any] = {"progress": progress}
         if message:
@@ -60,14 +60,16 @@ class ToolExecutionComponent(RichComponent):
             "status": "completed",
             "progress": 1.0,
             "end_time": end_time,
-            "result": result
+            "result": result,
         }
 
         # Calculate duration if start_time is available
         if self.start_time:
             try:
-                start_dt = datetime.fromisoformat(self.start_time.replace('Z', '+00:00'))
-                end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                start_dt = datetime.fromisoformat(
+                    self.start_time.replace("Z", "+00:00")
+                )
+                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
                 updates["duration"] = (end_dt - start_dt).total_seconds()
             except ValueError:
                 pass  # Skip duration calculation if parsing fails
@@ -77,12 +79,12 @@ class ToolExecutionComponent(RichComponent):
     def fail(self, error: str) -> "ToolExecutionComponent":
         """Mark tool execution as failed."""
         return self.update(
-            status="failed",
-            error=error,
-            end_time=datetime.utcnow().isoformat()
+            status="failed", error=error, end_time=datetime.utcnow().isoformat()
         )
 
-    def add_log(self, message: str, level: str = "info", data: Optional[Dict[str, Any]] = None) -> "ToolExecutionComponent":
+    def add_log(
+        self, message: str, level: str = "info", data: Optional[Dict[str, Any]] = None
+    ) -> "ToolExecutionComponent":
         """Add a log entry."""
         new_log = LogEntry(message=message, level=level, data=data)
         return self.update(logs=self.logs + [new_log])

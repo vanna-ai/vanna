@@ -163,9 +163,7 @@ class AuditLogger(ABC):
                 else 0
             ),
             ui_component_type=(
-                result.ui_component.__class__.__name__
-                if result.ui_component
-                else None
+                result.ui_component.__class__.__name__ if result.ui_component else None
             ),
         )
         await self.log_event(event)

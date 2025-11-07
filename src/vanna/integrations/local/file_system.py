@@ -61,7 +61,9 @@ class LocalFileSystem(FileSystem):
         try:
             resolved.resolve().relative_to(user_dir.resolve())
         except ValueError:
-            raise PermissionError(f"Access denied: path '{path}' is outside user directory")
+            raise PermissionError(
+                f"Access denied: path '{path}' is outside user directory"
+            )
 
         return resolved
 
@@ -92,9 +94,11 @@ class LocalFileSystem(FileSystem):
         if not file_path.is_file():
             raise IsADirectoryError(f"'{filename}' is a directory, not a file")
 
-        return file_path.read_text(encoding='utf-8')
+        return file_path.read_text(encoding="utf-8")
 
-    async def write_file(self, filename: str, content: str, context: ToolContext, overwrite: bool = False) -> None:
+    async def write_file(
+        self, filename: str, content: str, context: ToolContext, overwrite: bool = False
+    ) -> None:
         """Write content to a file within the user's isolated space."""
         file_path = self._resolve_path(filename, context)
 
@@ -102,9 +106,11 @@ class LocalFileSystem(FileSystem):
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         if file_path.exists() and not overwrite:
-            raise FileExistsError(f"File '{filename}' already exists. Use overwrite=True to replace it.")
+            raise FileExistsError(
+                f"File '{filename}' already exists. Use overwrite=True to replace it."
+            )
 
-        file_path.write_text(content, encoding='utf-8')
+        file_path.write_text(content, encoding="utf-8")
 
     async def exists(self, path: str, context: ToolContext) -> bool:
         """Check if a file or directory exists within the user's isolated space."""
@@ -161,7 +167,9 @@ class LocalFileSystem(FileSystem):
                     size = path.stat().st_size
                 except OSError:
                     if include_entry:
-                        matches.append(FileSearchMatch(path=relative_path, snippet=snippet))
+                        matches.append(
+                            FileSearchMatch(path=relative_path, snippet=snippet)
+                        )
                     continue
 
                 if size <= MAX_SEARCH_FILE_BYTES:
@@ -229,4 +237,6 @@ class LocalFileSystem(FileSystem):
         stdout = stdout_bytes.decode("utf-8", errors="replace")
         stderr = stderr_bytes.decode("utf-8", errors="replace")
 
-        return CommandResult(stdout=stdout, stderr=stderr, returncode=process.returncode or 0)
+        return CommandResult(
+            stdout=stdout, stderr=stderr, returncode=process.returncode or 0
+        )

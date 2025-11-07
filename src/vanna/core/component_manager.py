@@ -96,7 +96,9 @@ class ComponentTree(BaseModel):
     root: Optional[ComponentNode] = None
     flat_index: Dict[str, ComponentNode] = Field(default_factory=dict)
 
-    def add_component(self, component: RichComponent, position: Optional[Position] = None) -> ComponentUpdate:
+    def add_component(
+        self, component: RichComponent, position: Optional[Position] = None
+    ) -> ComponentUpdate:
         """Add a component to the tree."""
         node = ComponentNode(component=component)
         self.flat_index[component.id] = node
@@ -113,10 +115,12 @@ class ComponentTree(BaseModel):
             operation=UpdateOperation.CREATE,
             target_id=component.id,
             component=component,
-            position=position
+            position=position,
         )
 
-    def update_component(self, component_id: str, updates: Dict[str, Any]) -> Optional[ComponentUpdate]:
+    def update_component(
+        self, component_id: str, updates: Dict[str, Any]
+    ) -> Optional[ComponentUpdate]:
         """Update a component's properties."""
         node = self.flat_index.get(component_id)
         if not node:
@@ -135,10 +139,12 @@ class ComponentTree(BaseModel):
             operation=UpdateOperation.UPDATE,
             target_id=component_id,
             component=updated_component,
-            updates=updates
+            updates=updates,
         )
 
-    def replace_component(self, old_id: str, new_component: RichComponent) -> Optional[ComponentUpdate]:
+    def replace_component(
+        self, old_id: str, new_component: RichComponent
+    ) -> Optional[ComponentUpdate]:
         """Replace one component with another."""
         old_node = self.flat_index.get(old_id)
         if not old_node:
@@ -152,9 +158,7 @@ class ComponentTree(BaseModel):
         self.flat_index[new_component.id] = old_node
 
         return ComponentUpdate(
-            operation=UpdateOperation.REPLACE,
-            target_id=old_id,
-            component=new_component
+            operation=UpdateOperation.REPLACE, target_id=old_id, component=new_component
         )
 
     def remove_component(self, component_id: str) -> Optional[ComponentUpdate]:
@@ -175,10 +179,7 @@ class ComponentTree(BaseModel):
         for removed_id in removed_ids:
             self.flat_index.pop(removed_id, None)
 
-        return ComponentUpdate(
-            operation=UpdateOperation.REMOVE,
-            target_id=component_id
-        )
+        return ComponentUpdate(operation=UpdateOperation.REMOVE, target_id=component_id)
 
     def get_component(self, component_id: str) -> Optional[RichComponent]:
         """Get a component by ID."""
@@ -245,7 +246,9 @@ class ComponentManager:
 
         return update
 
-    def update_component(self, component_id: str, **updates: Any) -> Optional[ComponentUpdate]:
+    def update_component(
+        self, component_id: str, **updates: Any
+    ) -> Optional[ComponentUpdate]:
         """Update specific fields of an existing component."""
         update = self.component_tree.update_component(component_id, updates)
         if update and update.component:
@@ -257,7 +260,9 @@ class ComponentManager:
 
         return update
 
-    def replace_component(self, old_id: str, new_component: RichComponent) -> Optional[ComponentUpdate]:
+    def replace_component(
+        self, old_id: str, new_component: RichComponent
+    ) -> Optional[ComponentUpdate]:
         """Replace one component with another."""
         update = self.component_tree.replace_component(old_id, new_component)
         if update:
@@ -301,16 +306,20 @@ class ComponentManager:
         self.active_batch = None
         return batch_id
 
-    def get_updates_since(self, timestamp: Optional[str] = None) -> List[ComponentUpdate]:
+    def get_updates_since(
+        self, timestamp: Optional[str] = None
+    ) -> List[ComponentUpdate]:
         """Get all updates since a given timestamp."""
         if not timestamp:
             return self.update_history.copy()
 
         try:
-            cutoff = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            cutoff = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
             return [
-                update for update in self.update_history
-                if datetime.fromisoformat(update.timestamp.replace('Z', '+00:00')) > cutoff
+                update
+                for update in self.update_history
+                if datetime.fromisoformat(update.timestamp.replace("Z", "+00:00"))
+                > cutoff
             ]
         except ValueError:
             return self.update_history.copy()
@@ -318,4 +327,3 @@ class ComponentManager:
     def clear_history(self) -> None:
         """Clear the update history."""
         self.update_history.clear()
-

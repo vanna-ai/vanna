@@ -20,31 +20,43 @@ class ArtifactDemoAgent(Agent):
 
     def __init__(self, llm_service: Optional[LlmService] = None) -> None:
         if llm_service is None:
-            llm_service = MockLlmService("I'll help you create interactive artifacts! Try asking me to create a chart, dashboard, or interactive HTML widget.")
+            llm_service = MockLlmService(
+                "I'll help you create interactive artifacts! Try asking me to create a chart, dashboard, or interactive HTML widget."
+            )
         super().__init__(
             llm_service=llm_service,
             config=AgentConfig(
                 stream_responses=True,
                 include_thinking_indicators=True,
-            )
+            ),
         )
 
-    async def send_message(self, user: User, message: str, *, conversation_id: Optional[str] = None) -> AsyncGenerator[UiComponent, None]:
+    async def send_message(
+        self, user: User, message: str, *, conversation_id: Optional[str] = None
+    ) -> AsyncGenerator[UiComponent, None]:
         """Handle user messages and create appropriate artifacts."""
         # First send the normal response
-        async for component in super().send_message(user, message, conversation_id=conversation_id):
+        async for component in super().send_message(
+            user, message, conversation_id=conversation_id
+        ):
             yield component
 
         # Then create artifacts based on message content
         message_lower = message.lower()
 
-        if any(word in message_lower for word in ['chart', 'graph', 'visualization', 'd3']):
+        if any(
+            word in message_lower for word in ["chart", "graph", "visualization", "d3"]
+        ):
             async for component in self.create_d3_visualization():
                 yield component
-        elif any(word in message_lower for word in ['dashboard', 'analytics', 'metrics']):
+        elif any(
+            word in message_lower for word in ["dashboard", "analytics", "metrics"]
+        ):
             async for component in self.create_dashboard_artifact():
                 yield component
-        elif any(word in message_lower for word in ['html', 'interactive', 'widget', 'demo']):
+        elif any(
+            word in message_lower for word in ["html", "interactive", "widget", "demo"]
+        ):
             async for component in self.create_html_artifact():
                 yield component
 
@@ -70,7 +82,7 @@ class ArtifactDemoAgent(Agent):
         artifact = ArtifactComponent.create_html(
             content=html_content,
             title="Interactive HTML Demo",
-            description="A simple HTML artifact with interactive elements"
+            description="A simple HTML artifact with interactive elements",
         )
 
         yield UiComponent(rich_component=artifact)
@@ -143,7 +155,7 @@ class ArtifactDemoAgent(Agent):
         artifact = ArtifactComponent.create_d3(
             content=d3_content,
             title="D3.js Bar Chart",
-            description="An interactive bar chart built with D3.js"
+            description="An interactive bar chart built with D3.js",
         )
 
         yield UiComponent(rich_component=artifact)
@@ -200,7 +212,7 @@ class ArtifactDemoAgent(Agent):
             title="Analytics Dashboard",
             description="A sample analytics dashboard with metrics and controls",
             external_renderable=True,
-            fullscreen_capable=True
+            fullscreen_capable=True,
         )
 
         yield UiComponent(rich_component=artifact)
@@ -219,7 +231,9 @@ async def main() -> None:
     """Main demo function."""
     print("🎨 Artifact Demo Agent")
     print("This demo shows how to create different types of artifacts.")
-    print("In a real web application, developers can listen for 'artifact-opened' events.")
+    print(
+        "In a real web application, developers can listen for 'artifact-opened' events."
+    )
     print()
 
     demo_agent = create_demo_agent()

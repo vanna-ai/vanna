@@ -13,7 +13,15 @@ from concurrent.futures import ThreadPoolExecutor
 
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+    from qdrant_client.models import (
+        Distance,
+        VectorParams,
+        PointStruct,
+        Filter,
+        FieldCondition,
+        MatchValue,
+    )
+
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
@@ -30,18 +38,20 @@ from vanna.core.tool import ToolContext
 
 class QdrantAgentMemory(AgentMemory):
     """Qdrant-based implementation of AgentMemory."""
-    
+
     def __init__(
         self,
         collection_name: str = "tool_memories",
         url: Optional[str] = None,
         path: Optional[str] = None,
         api_key: Optional[str] = None,
-        dimension: int = 384
+        dimension: int = 384,
     ):
         if not QDRANT_AVAILABLE:
-            raise ImportError("Qdrant is required for QdrantAgentMemory. Install with: pip install qdrant-client")
-        
+            raise ImportError(
+                "Qdrant is required for QdrantAgentMemory. Install with: pip install qdrant-client"
+            )
+
         self.collection_name = collection_name
         self.url = url
         self.path = path
@@ -49,7 +59,7 @@ class QdrantAgentMemory(AgentMemory):
         self.dimension = dimension
         self._client = None
         self._executor = ThreadPoolExecutor(max_workers=2)
-    
+
     def _get_client(self):
         """Get or create Qdrant client."""
         if self._client is None:
@@ -57,22 +67,25 @@ class QdrantAgentMemory(AgentMemory):
                 self._client = QdrantClient(url=self.url, api_key=self.api_key)
             else:
                 self._client = QdrantClient(path=self.path or ":memory:")
-            
+
             # Create collection if it doesn't exist
             collections = self._client.get_collections().collections
             if not any(c.name == self.collection_name for c in collections):
                 self._client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
+                    vectors_config=VectorParams(
+                        size=self.dimension, distance=Distance.COSINE
+                    ),
                 )
         return self._client
-    
+
     def _create_embedding(self, text: str) -> List[float]:
         """Create a simple embedding from text (placeholder)."""
         import hashlib
+
         hash_val = int(hashlib.md5(text.encode()).hexdigest(), 16)
         return [(hash_val >> i) % 100 / 100.0 for i in range(self.dimension)]
-    
+
     async def save_tool_usage(
         self,
         question: str,
@@ -80,38 +93,32 @@ class QdrantAgentMemory(AgentMemory):
         args: Dict[str, Any],
         context: ToolContext,
         success: bool = True,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Save a tool usage pattern."""
+
         def _save():
             client = self._get_client()
-            
+
             memory_id = str(uuid.uuid4())
             timestamp = datetime.now().isoformat()
             embedding = self._create_embedding(question)
-            
+
             payload = {
                 "question": question,
                 "tool_name": tool_name,
                 "args": args,
                 "timestamp": timestamp,
                 "success": success,
-                "metadata": metadata or {}
+                "metadata": metadata or {},
             }
-            
-            point = PointStruct(
-                id=memory_id,
-                vector=embedding,
-                payload=payload
-            )
-            
-            client.upsert(
-                collection_name=self.collection_name,
-                points=[point]
-            )
-        
+
+            point = PointStruct(id=memory_id, vector=embedding, payload=payload)
+
+            client.upsert(collection_name=self.collection_name, points=[point])
+
         await asyncio.get_event_loop().run_in_executor(self._executor, _save)
-    
+
     async def search_similar_usage(
         self,
         question: str,
@@ -119,35 +126,40 @@ class QdrantAgentMemory(AgentMemory):
         *,
         limit: int = 10,
         similarity_threshold: float = 0.7,
-        tool_name_filter: Optional[str] = None
+        tool_name_filter: Optional[str] = None,
     ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns."""
+
         def _search():
             client = self._get_client()
-            
+
             embedding = self._create_embedding(question)
-            
+
             # Build filter
             query_filter = None
             conditions = [FieldCondition(key="success", match=MatchValue(value=True))]
             if tool_name_filter:
-                conditions.append(FieldCondition(key="tool_name", match=MatchValue(value=tool_name_filter)))
-            
+                conditions.append(
+                    FieldCondition(
+                        key="tool_name", match=MatchValue(value=tool_name_filter)
+                    )
+                )
+
             if conditions:
                 query_filter = Filter(must=conditions)
-            
+
             results = client.search(
                 collection_name=self.collection_name,
                 query_vector=embedding,
                 limit=limit,
                 query_filter=query_filter,
-                score_threshold=similarity_threshold
+                score_threshold=similarity_threshold,
             )
-            
+
             search_results = []
             for i, hit in enumerate(results):
                 payload = hit.payload
-                
+
                 memory = ToolMemory(
                     memory_id=str(hit.id),
                     question=payload["question"],
@@ -155,43 +167,40 @@ class QdrantAgentMemory(AgentMemory):
                     args=payload["args"],
                     timestamp=payload.get("timestamp"),
                     success=payload.get("success", True),
-                    metadata=payload.get("metadata", {})
+                    metadata=payload.get("metadata", {}),
                 )
-                
-                search_results.append(ToolMemorySearchResult(
-                    memory=memory,
-                    similarity_score=hit.score,
-                    rank=i + 1
-                ))
-            
+
+                search_results.append(
+                    ToolMemorySearchResult(
+                        memory=memory, similarity_score=hit.score, rank=i + 1
+                    )
+                )
+
             return search_results
-        
+
         return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
-    
+
     async def get_recent_memories(
-        self,
-        context: ToolContext,
-        limit: int = 10
+        self, context: ToolContext, limit: int = 10
     ) -> List[ToolMemory]:
         """Get recently added memories."""
+
         def _get_recent():
             client = self._get_client()
-            
+
             # Scroll through all points and sort by timestamp
             points, _ = client.scroll(
                 collection_name=self.collection_name,
                 limit=1000,  # Get more than we need to sort
                 with_payload=True,
-                with_vectors=False
+                with_vectors=False,
             )
-            
+
             # Sort by timestamp
             sorted_points = sorted(
-                points,
-                key=lambda p: p.payload.get("timestamp", ""),
-                reverse=True
+                points, key=lambda p: p.payload.get("timestamp", ""), reverse=True
             )
-            
+
             memories = []
             for point in sorted_points[:limit]:
                 payload = point.payload
@@ -202,20 +211,19 @@ class QdrantAgentMemory(AgentMemory):
                     args=payload["args"],
                     timestamp=payload.get("timestamp"),
                     success=payload.get("success", True),
-                    metadata=payload.get("metadata", {})
+                    metadata=payload.get("metadata", {}),
                 )
                 memories.append(memory)
-            
+
             return memories
-        
-        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
-    
-    async def delete_by_id(
-        self,
-        context: ToolContext,
-        memory_id: str
-    ) -> bool:
+
+        return await asyncio.get_event_loop().run_in_executor(
+            self._executor, _get_recent
+        )
+
+    async def delete_by_id(self, context: ToolContext, memory_id: str) -> bool:
         """Delete a memory by its ID. Returns True if deleted, False if not found."""
+
         def _delete():
             client = self._get_client()
 
@@ -225,13 +233,13 @@ class QdrantAgentMemory(AgentMemory):
                     collection_name=self.collection_name,
                     ids=[memory_id],
                     with_payload=False,
-                    with_vectors=False
+                    with_vectors=False,
                 )
 
                 if points and len(points) > 0:
                     client.delete(
                         collection_name=self.collection_name,
-                        points_selector=[memory_id]
+                        points_selector=[memory_id],
                     )
                     return True
                 return False
@@ -240,12 +248,9 @@ class QdrantAgentMemory(AgentMemory):
 
         return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
-    async def save_text_memory(
-        self,
-        content: str,
-        context: ToolContext
-    ) -> TextMemory:
+    async def save_text_memory(self, content: str, context: ToolContext) -> TextMemory:
         """Save a text memory."""
+
         def _save():
             client = self._get_client()
 
@@ -256,25 +261,14 @@ class QdrantAgentMemory(AgentMemory):
             payload = {
                 "content": content,
                 "timestamp": timestamp,
-                "is_text_memory": True
+                "is_text_memory": True,
             }
 
-            point = PointStruct(
-                id=memory_id,
-                vector=embedding,
-                payload=payload
-            )
+            point = PointStruct(id=memory_id, vector=embedding, payload=payload)
 
-            client.upsert(
-                collection_name=self.collection_name,
-                points=[point]
-            )
+            client.upsert(collection_name=self.collection_name, points=[point])
 
-            return TextMemory(
-                memory_id=memory_id,
-                content=content,
-                timestamp=timestamp
-            )
+            return TextMemory(memory_id=memory_id, content=content, timestamp=timestamp)
 
         return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
@@ -284,16 +278,19 @@ class QdrantAgentMemory(AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.7,
     ) -> List[TextMemorySearchResult]:
         """Search for similar text memories."""
+
         def _search():
             client = self._get_client()
 
             embedding = self._create_embedding(query)
 
             query_filter = Filter(
-                must=[FieldCondition(key="is_text_memory", match=MatchValue(value=True))]
+                must=[
+                    FieldCondition(key="is_text_memory", match=MatchValue(value=True))
+                ]
             )
 
             results = client.search(
@@ -301,7 +298,7 @@ class QdrantAgentMemory(AgentMemory):
                 query_vector=embedding,
                 limit=limit,
                 query_filter=query_filter,
-                score_threshold=similarity_threshold
+                score_threshold=similarity_threshold,
             )
 
             search_results = []
@@ -311,25 +308,24 @@ class QdrantAgentMemory(AgentMemory):
                 memory = TextMemory(
                     memory_id=str(hit.id),
                     content=payload.get("content", ""),
-                    timestamp=payload.get("timestamp")
+                    timestamp=payload.get("timestamp"),
                 )
 
-                search_results.append(TextMemorySearchResult(
-                    memory=memory,
-                    similarity_score=hit.score,
-                    rank=i + 1
-                ))
+                search_results.append(
+                    TextMemorySearchResult(
+                        memory=memory, similarity_score=hit.score, rank=i + 1
+                    )
+                )
 
             return search_results
 
         return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
-        self,
-        context: ToolContext,
-        limit: int = 10
+        self, context: ToolContext, limit: int = 10
     ) -> List[TextMemory]:
         """Get recently added text memories."""
+
         def _get_recent():
             client = self._get_client()
 
@@ -337,18 +333,20 @@ class QdrantAgentMemory(AgentMemory):
             points, _ = client.scroll(
                 collection_name=self.collection_name,
                 scroll_filter=Filter(
-                    must=[FieldCondition(key="is_text_memory", match=MatchValue(value=True))]
+                    must=[
+                        FieldCondition(
+                            key="is_text_memory", match=MatchValue(value=True)
+                        )
+                    ]
                 ),
                 limit=1000,
                 with_payload=True,
-                with_vectors=False
+                with_vectors=False,
             )
 
             # Sort by timestamp
             sorted_points = sorted(
-                points,
-                key=lambda p: p.payload.get("timestamp", ""),
-                reverse=True
+                points, key=lambda p: p.payload.get("timestamp", ""), reverse=True
             )
 
             memories = []
@@ -357,20 +355,19 @@ class QdrantAgentMemory(AgentMemory):
                 memory = TextMemory(
                     memory_id=str(point.id),
                     content=payload.get("content", ""),
-                    timestamp=payload.get("timestamp")
+                    timestamp=payload.get("timestamp"),
                 )
                 memories.append(memory)
 
             return memories
 
-        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
+        return await asyncio.get_event_loop().run_in_executor(
+            self._executor, _get_recent
+        )
 
-    async def delete_text_memory(
-        self,
-        context: ToolContext,
-        memory_id: str
-    ) -> bool:
+    async def delete_text_memory(self, context: ToolContext, memory_id: str) -> bool:
         """Delete a text memory by its ID."""
+
         def _delete():
             client = self._get_client()
 
@@ -380,13 +377,13 @@ class QdrantAgentMemory(AgentMemory):
                     collection_name=self.collection_name,
                     ids=[memory_id],
                     with_payload=False,
-                    with_vectors=False
+                    with_vectors=False,
                 )
 
                 if points and len(points) > 0:
                     client.delete(
                         collection_name=self.collection_name,
-                        points_selector=[memory_id]
+                        points_selector=[memory_id],
                     )
                     return True
                 return False
@@ -399,27 +396,32 @@ class QdrantAgentMemory(AgentMemory):
         self,
         context: ToolContext,
         tool_name: Optional[str] = None,
-        before_date: Optional[str] = None
+        before_date: Optional[str] = None,
     ) -> int:
         """Clear stored memories."""
+
         def _clear():
             client = self._get_client()
-            
+
             # Build filter
             conditions = []
             if tool_name:
-                conditions.append(FieldCondition(key="tool_name", match=MatchValue(value=tool_name)))
+                conditions.append(
+                    FieldCondition(key="tool_name", match=MatchValue(value=tool_name))
+                )
             if before_date:
-                conditions.append(FieldCondition(key="timestamp", match=MatchValue(value=before_date)))
-            
+                conditions.append(
+                    FieldCondition(key="timestamp", match=MatchValue(value=before_date))
+                )
+
             if conditions or (tool_name is None and before_date is None):
                 # Delete with filter or delete all
                 query_filter = Filter(must=conditions) if conditions else None
-                
+
                 if query_filter:
                     client.delete(
                         collection_name=self.collection_name,
-                        points_selector=query_filter
+                        points_selector=query_filter,
                     )
                 else:
                     # Delete all points
@@ -427,9 +429,11 @@ class QdrantAgentMemory(AgentMemory):
                     # Recreate empty collection
                     client.create_collection(
                         collection_name=self.collection_name,
-                        vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
+                        vectors_config=VectorParams(
+                            size=self.dimension, distance=Distance.COSINE
+                        ),
                     )
-            
+
             return 0  # Qdrant doesn't return count
-        
+
         return await asyncio.get_event_loop().run_in_executor(self._executor, _clear)

@@ -10,6 +10,7 @@ import click
 
 from ...core import Agent
 
+
 class ExampleAgentLoader:
     """Loads example agents for the CLI."""
 
@@ -82,16 +83,24 @@ class ExampleAgentLoader:
 @click.option(
     "--example", help="Example agent to use (use --list-examples to see options)"
 )
-@click.option(
-    "--list-examples", is_flag=True, help="List available example agents"
-)
+@click.option("--list-examples", is_flag=True, help="List available example agents")
 @click.option(
     "--config", type=click.File("r"), help="JSON config file for server settings"
 )
 @click.option("--debug", is_flag=True, help="Enable debug mode")
-@click.option("--dev", is_flag=True, help="Enable development mode (load components from local assets)")
-@click.option("--static-folder", default=None, help="Static folder path for development mode")
-@click.option("--cdn-url", default="https://img.vanna.ai/vanna-components.js", help="CDN URL for web components")
+@click.option(
+    "--dev",
+    is_flag=True,
+    help="Enable development mode (load components from local assets)",
+)
+@click.option(
+    "--static-folder", default=None, help="Static folder path for development mode"
+)
+@click.option(
+    "--cdn-url",
+    default="https://img.vanna.ai/vanna-components.js",
+    help="CDN URL for web components",
+)
 def main(
     framework: str,
     port: int,
@@ -123,12 +132,14 @@ def main(
         static_folder = "frontend/webcomponent/static" if dev else "static"
 
     # Add CLI options to config
-    server_config.update({
-        "dev_mode": dev,
-        "static_folder": static_folder,
-        "cdn_url": cdn_url,
-        "api_base_url": "",  # Can be overridden in config file
-    })
+    server_config.update(
+        {
+            "dev_mode": dev,
+            "static_folder": static_folder,
+            "cdn_url": cdn_url,
+            "api_base_url": "",  # Can be overridden in config file
+        }
+    )
 
     # Create agent
     if example:
@@ -148,7 +159,9 @@ def main(
                 response_content="Hello! I'm a Vanna Agents demo server. How can I help you?"
             )
             agent = create_basic_agent(llm_service)
-            click.echo("✓ Using basic demo agent (use --example to specify different agent)")
+            click.echo(
+                "✓ Using basic demo agent (use --example to specify different agent)"
+            )
         except ImportError as e:
             click.echo(f"Error: Could not create basic agent: {e}", err=True)
             return
@@ -162,7 +175,9 @@ def main(
         server = VannaFlaskServer(agent, config=server_config)
         click.echo(f"🚀 Starting Flask server on http://{host}:{port}")
         if dev:
-            click.echo(f"📦 Development mode: loading web components from ./{static_folder}/")
+            click.echo(
+                f"📦 Development mode: loading web components from ./{static_folder}/"
+            )
         else:
             click.echo(f"🌍 Production mode: loading web components from CDN")
         try:
@@ -174,7 +189,9 @@ def main(
         click.echo(f"🚀 Starting FastAPI server on http://{host}:{port}")
         click.echo(f"📖 API docs available at http://{host}:{port}/docs")
         if dev:
-            click.echo(f"📦 Development mode: loading web components from ./{static_folder}/")
+            click.echo(
+                f"📦 Development mode: loading web components from ./{static_folder}/"
+            )
         else:
             click.echo(f"🌍 Production mode: loading web components from CDN")
         try:

@@ -60,7 +60,7 @@ class FileSystemConversationStore(ConversationStore):
         }
 
         metadata_path = self._get_metadata_path(conversation.id)
-        with open(metadata_path, 'w') as f:
+        with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
 
     def _load_messages(self, conversation_id: str) -> List[Message]:
@@ -76,7 +76,7 @@ class FileSystemConversationStore(ConversationStore):
 
         for file_path in message_files:
             try:
-                with open(file_path, 'r') as f:
+                with open(file_path, "r") as f:
                     data = json.load(f)
                 message = Message.model_validate(data)
                 messages.append(message)
@@ -86,7 +86,9 @@ class FileSystemConversationStore(ConversationStore):
 
         return messages
 
-    def _append_message(self, conversation_id: str, message: Message, index: int) -> None:
+    def _append_message(
+        self, conversation_id: str, message: Message, index: int
+    ) -> None:
         """Append a message to the conversation."""
         messages_dir = self._get_messages_dir(conversation_id)
         messages_dir.mkdir(parents=True, exist_ok=True)
@@ -96,7 +98,7 @@ class FileSystemConversationStore(ConversationStore):
         filename = f"{timestamp}_{index:06d}.json"
         file_path = messages_dir / filename
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(message.model_dump(mode="json"), f, indent=2)
 
     async def create_conversation(
@@ -128,7 +130,7 @@ class FileSystemConversationStore(ConversationStore):
 
         try:
             # Load metadata
-            with open(metadata_path, 'r') as f:
+            with open(metadata_path, "r") as f:
                 metadata = json.load(f)
 
             # Verify ownership
@@ -165,7 +167,9 @@ class FileSystemConversationStore(ConversationStore):
         existing_count = len(existing_messages)
 
         # Only append new messages (ones not already saved)
-        for i, message in enumerate(conversation.messages[existing_count:], start=existing_count):
+        for i, message in enumerate(
+            conversation.messages[existing_count:], start=existing_count
+        ):
             self._append_message(conversation.id, message, i)
 
     async def delete_conversation(self, conversation_id: str, user: User) -> bool:
@@ -221,7 +225,7 @@ class FileSystemConversationStore(ConversationStore):
 
             try:
                 # Load metadata
-                with open(metadata_path, 'r') as f:
+                with open(metadata_path, "r") as f:
                     metadata = json.load(f)
 
                 # Skip conversations not owned by this user

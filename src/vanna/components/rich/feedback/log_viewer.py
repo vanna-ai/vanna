@@ -27,13 +27,15 @@ class LogViewerComponent(RichComponent):
     show_timestamps: bool = True
     auto_scroll: bool = True
 
-    def add_entry(self, message: str, level: str = "info", data: Optional[Dict[str, Any]] = None) -> "LogViewerComponent":
+    def add_entry(
+        self, message: str, level: str = "info", data: Optional[Dict[str, Any]] = None
+    ) -> "LogViewerComponent":
         """Add a new log entry."""
         new_entry = LogEntry(message=message, level=level, data=data)
         new_entries = self.entries + [new_entry]
 
         # Limit to max_entries
         if len(new_entries) > self.max_entries:
-            new_entries = new_entries[-self.max_entries:]
+            new_entries = new_entries[-self.max_entries :]
 
         return self.update(entries=new_entries)

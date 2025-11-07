@@ -30,6 +30,7 @@ _DB = Path(__file__).resolve().parents[2] / "Chinook.sqlite"
 def create_demo_agent() -> Agent:
     # Load environment variables from .env file
     from dotenv import load_dotenv
+
     load_dotenv()
 
     llm = AnthropicLlmService(model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"))

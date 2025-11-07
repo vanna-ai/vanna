@@ -10,4 +10,6 @@ class SimpleLinkComponent(SimpleComponent):
 
     type: SimpleComponentType = SimpleComponentType.LINK
     url: str = Field(..., description="The URL the link points to.")
-    text: Optional[str] = Field(default=None, description="The display text for the link.")
+    text: Optional[str] = Field(
+        default=None, description="The display text for the link."
+    )

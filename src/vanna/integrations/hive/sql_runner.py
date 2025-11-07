@@ -1,4 +1,5 @@
 """Hive implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -12,12 +13,12 @@ class HiveRunner(SqlRunner):
     def __init__(
         self,
         host: str,
-        database: str = 'default',
+        database: str = "default",
         user: Optional[str] = None,
         password: Optional[str] = None,
         port: int = 10000,
-        auth: str = 'CUSTOM',
-        **kwargs
+        auth: str = "CUSTOM",
+        **kwargs,
     ):
         """Initialize with Hive connection parameters.
 
@@ -32,6 +33,7 @@ class HiveRunner(SqlRunner):
         """
         try:
             from pyhive import hive
+
             self.hive = hive
         except ImportError as e:
             raise ImportError(
@@ -67,7 +69,7 @@ class HiveRunner(SqlRunner):
             database=self.database,
             port=self.port,
             auth=self.auth,
-            **self.kwargs
+            **self.kwargs,
         )
 
         try:

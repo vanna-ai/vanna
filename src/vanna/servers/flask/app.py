@@ -16,11 +16,7 @@ from .routes import register_chat_routes
 class VannaFlaskServer:
     """Flask server factory for Vanna Agents."""
 
-    def __init__(
-        self,
-        agent: Agent,
-        config: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self, agent: Agent, config: Optional[Dict[str, Any]] = None):
         """Initialize Flask server.
 
         Args:
@@ -78,12 +74,7 @@ class VannaFlaskServer:
         app = self.create_app()
 
         # Set defaults
-        run_kwargs = {
-            "host": "0.0.0.0",
-            "port": 5000,
-            "debug": False,
-            **kwargs
-        }
+        run_kwargs = {"host": "0.0.0.0", "port": 5000, "debug": False, **kwargs}
 
         # Get the port from run_kwargs
         port = run_kwargs.get("port", 5000)
@@ -93,6 +84,7 @@ class VannaFlaskServer:
         in_async_env = False
         try:
             import asyncio
+
             try:
                 asyncio.get_running_loop()
                 in_async_env = True
@@ -105,12 +97,17 @@ class VannaFlaskServer:
             # Apply nest_asyncio to allow nested event loops
             try:
                 import nest_asyncio
+
                 nest_asyncio.apply()
             except ImportError:
                 print("Warning: nest_asyncio not installed. Installing...")
                 import subprocess
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "nest_asyncio"])
+
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "nest_asyncio"]
+                )
                 import nest_asyncio
+
                 nest_asyncio.apply()
 
         # Check if we're specifically in Google Colab for port forwarding
@@ -119,8 +116,10 @@ class VannaFlaskServer:
         if in_colab:
             try:
                 from google.colab import output
+
                 output.serve_kernel_port_as_window(port)
                 from google.colab.output import eval_js
+
                 print("Your app is running at:")
                 print(eval_js(f"google.colab.kernel.proxyPort({port})"))
             except Exception as e:

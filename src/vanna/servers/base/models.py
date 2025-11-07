@@ -18,16 +18,25 @@ class ChatRequest(BaseModel):
 
     message: str = Field(description="User message")
     conversation_id: Optional[str] = Field(default=None, description="Conversation ID")
-    request_id: Optional[str] = Field(default=None, description="Request ID for tracing")
-    request_context: RequestContext = Field(default_factory=RequestContext, description="Request context for user resolution")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    request_id: Optional[str] = Field(
+        default=None, description="Request ID for tracing"
+    )
+    request_context: RequestContext = Field(
+        default_factory=RequestContext,
+        description="Request context for user resolution",
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata"
+    )
 
 
 class ChatStreamChunk(BaseModel):
     """Single chunk in a streaming chat response."""
 
     rich: Dict[str, Any] = Field(description="Rich component data for advanced UIs")
-    simple: Optional[Dict[str, Any]] = Field(default=None, description="Simple component data for basic UIs")
+    simple: Optional[Dict[str, Any]] = Field(
+        default=None, description="Simple component data for basic UIs"
+    )
 
     # Stream metadata
     conversation_id: str = Field(description="Conversation ID")
@@ -39,7 +48,7 @@ class ChatStreamChunk(BaseModel):
         cls,
         component: Union[UiComponent, RichComponent],
         conversation_id: str,
-        request_id: str
+        request_id: str,
     ) -> "ChatStreamChunk":
         """Create chunk from UI component or rich component."""
 
@@ -68,10 +77,7 @@ class ChatStreamChunk(BaseModel):
 
     @classmethod
     def from_component_update(
-        cls,
-        update: ComponentUpdate,
-        conversation_id: str,
-        request_id: str
+        cls, update: ComponentUpdate, conversation_id: str, request_id: str
     ) -> "ChatStreamChunk":
         """Create chunk from component update."""
         update_payload = update.serialize_for_frontend()
@@ -95,16 +101,11 @@ class ChatResponse(BaseModel):
     def from_chunks(cls, chunks: List[ChatStreamChunk]) -> "ChatResponse":
         """Create response from chunks."""
         if not chunks:
-            return cls(
-                chunks=[],
-                conversation_id="",
-                request_id="",
-                total_chunks=0
-            )
+            return cls(chunks=[], conversation_id="", request_id="", total_chunks=0)
 
         return cls(
             chunks=chunks,
             conversation_id=chunks[0].conversation_id,
             request_id=chunks[0].request_id,
-            total_chunks=len(chunks)
+            total_chunks=len(chunks),
         )

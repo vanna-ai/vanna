@@ -132,14 +132,18 @@ class OutputEvaluator(Evaluator):
         if expected.final_answer_contains:
             for expected_content in expected.final_answer_contains:
                 if expected_content.lower() not in final_answer:
-                    issues.append(f"Expected content '{expected_content}' not found in output")
+                    issues.append(
+                        f"Expected content '{expected_content}' not found in output"
+                    )
                     score -= 0.5 / len(expected.final_answer_contains)
 
         # Check forbidden content is absent
         if expected.final_answer_not_contains:
             for forbidden_content in expected.final_answer_not_contains:
                 if forbidden_content.lower() in final_answer:
-                    issues.append(f"Forbidden content '{forbidden_content}' found in output")
+                    issues.append(
+                        f"Forbidden content '{forbidden_content}' found in output"
+                    )
                     score -= 0.5 / len(expected.final_answer_not_contains)
 
         score = max(0.0, min(1.0, score))
@@ -261,27 +265,27 @@ REASONING: <your explanation>
     def _parse_score(self, judgment: str) -> float:
         """Parse score from judge response."""
         try:
-            for line in judgment.split('\n'):
-                if line.startswith('SCORE:'):
-                    score_str = line.replace('SCORE:', '').strip()
+            for line in judgment.split("\n"):
+                if line.startswith("SCORE:"):
+                    score_str = line.replace("SCORE:", "").strip()
                     return float(score_str)
-        except:
+        except Exception:
             pass
         return 0.5  # Default if parsing fails
 
     def _parse_passed(self, judgment: str) -> bool:
         """Parse pass/fail from judge response."""
-        for line in judgment.split('\n'):
-            if line.startswith('PASSED:'):
-                passed_str = line.replace('PASSED:', '').strip().lower()
-                return passed_str in ['yes', 'true', 'pass']
+        for line in judgment.split("\n"):
+            if line.startswith("PASSED:"):
+                passed_str = line.replace("PASSED:", "").strip().lower()
+                return passed_str in ["yes", "true", "pass"]
         return False
 
     def _parse_reasoning(self, judgment: str) -> str:
         """Parse reasoning from judge response."""
-        for line in judgment.split('\n'):
-            if line.startswith('REASONING:'):
-                return line.replace('REASONING:', '').strip()
+        for line in judgment.split("\n"):
+            if line.startswith("REASONING:"):
+                return line.replace("REASONING:", "").strip()
         return judgment  # Return full judgment if no reasoning line found
 
 

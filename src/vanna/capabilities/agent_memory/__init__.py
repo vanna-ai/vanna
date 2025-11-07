@@ -17,5 +17,5 @@ __all__ = [
     "TextMemorySearchResult",
     "ToolMemory",
     "ToolMemorySearchResult",
-    "MemoryStats"
+    "MemoryStats",
 ]

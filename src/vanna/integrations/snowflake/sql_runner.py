@@ -1,4 +1,5 @@
 """Snowflake implementation of SqlRunner interface."""
+
 from typing import Optional, Union
 import os
 import pandas as pd
@@ -21,7 +22,7 @@ class SnowflakeRunner(SqlRunner):
         private_key_path: Optional[str] = None,
         private_key_passphrase: Optional[str] = None,
         private_key_content: Optional[bytes] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with Snowflake connection parameters.
 
@@ -44,6 +45,7 @@ class SnowflakeRunner(SqlRunner):
         """
         try:
             import snowflake.connector
+
             self.snowflake = snowflake.connector
         except ImportError as e:
             raise ImportError(
@@ -59,9 +61,7 @@ class SnowflakeRunner(SqlRunner):
 
         # Validate private key path exists if provided
         if private_key_path and not os.path.isfile(private_key_path):
-            raise FileNotFoundError(
-                f"Private key file not found: {private_key_path}"
-            )
+            raise FileNotFoundError(f"Private key file not found: {private_key_path}")
 
         self.account = account
         self.username = username

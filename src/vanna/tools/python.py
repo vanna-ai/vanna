@@ -25,7 +25,9 @@ MAX_OUTPUT_LENGTH = 4000
 class RunPythonFileArgs(BaseModel):
     """Arguments required to execute a Python file."""
 
-    filename: str = Field(description="Python file to execute (relative to the workspace root)")
+    filename: str = Field(
+        description="Python file to execute (relative to the workspace root)"
+    )
     arguments: Sequence[str] = Field(
         default_factory=list,
         description="Optional arguments to pass to the Python script",
@@ -54,7 +56,9 @@ class RunPythonFileTool(Tool[RunPythonFileArgs]):
     def get_args_schema(self) -> Type[RunPythonFileArgs]:
         return RunPythonFileArgs
 
-    async def execute(self, context: ToolContext, args: RunPythonFileArgs) -> ToolResult:
+    async def execute(
+        self, context: ToolContext, args: RunPythonFileArgs
+    ) -> ToolResult:
         exists = await self.file_system.exists(args.filename, context)
         if not exists:
             message = f"Cannot execute '{args.filename}' because it does not exist."
@@ -74,9 +78,7 @@ class RunPythonFileTool(Tool[RunPythonFileArgs]):
             message = str(exc)
             return _error_result(message)
 
-        summary = (
-            f"Executed python {args.filename} (exit code {result.returncode})."
-        )
+        summary = f"Executed python {args.filename} (exit code {result.returncode})."
         success = result.returncode == 0
         return _result_from_command(summary, command, result, success=success)
 
@@ -85,8 +87,7 @@ class PipInstallArgs(BaseModel):
     """Arguments required to run pip install."""
 
     packages: List[str] = Field(
-        description="Packages (with optional specifiers) to install",
-        min_length=1
+        description="Packages (with optional specifiers) to install", min_length=1
     )
     upgrade: bool = Field(
         default=False,

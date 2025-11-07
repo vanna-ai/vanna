@@ -54,5 +54,5 @@ class TaskListComponent(RichComponent):
             task_id,
             status="completed",
             completed_at=datetime.utcnow().isoformat(),
-            progress=1.0
+            progress=1.0,
         )

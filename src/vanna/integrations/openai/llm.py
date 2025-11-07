@@ -202,14 +202,16 @@ class OpenAILlmService(LlmService):
                 # Convert tool calls to OpenAI format
                 tool_calls_payload = []
                 for tc in m.tool_calls:
-                    tool_calls_payload.append({
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments)
+                    tool_calls_payload.append(
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.name,
+                                "arguments": json.dumps(tc.arguments),
+                            },
                         }
-                    })
+                    )
                 msg["tool_calls"] = tool_calls_payload
             messages.append(msg)
 

@@ -12,6 +12,7 @@ from vanna.core.errors import AgentError
 
 class QuotaExceededError(AgentError):
     """Raised when a user exceeds their message quota."""
+
     pass
 
 
@@ -108,25 +109,19 @@ async def run_example() -> None:
         tool_registry=ToolRegistry(),
         conversation_store=MemoryConversationStore(),
         lifecycle_hooks=[
-            logging_hook,    # Logs will happen first
-            quota_hook,      # Then quota check
-        ]
+            logging_hook,  # Logs will happen first
+            quota_hook,  # Then quota check
+        ],
     )
 
     # Create a test user
     user = User(
-        id="user123",
-        username="test_user",
-        email="test@example.com",
-        permissions=[]
+        id="user123", username="test_user", email="test@example.com", permissions=[]
     )
 
     # Send messages - will track quota
     try:
-        async for component in agent.send_message(
-            user=user,
-            message="Hello, agent!"
-        ):
+        async for component in agent.send_message(user=user, message="Hello, agent!"):
             # Process UI components
             pass
 
@@ -140,4 +135,5 @@ async def run_example() -> None:
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(run_example())

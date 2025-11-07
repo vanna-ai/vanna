@@ -9,13 +9,15 @@ import os
 from pathlib import Path
 from typing import Dict
 
+
 def get_component_files() -> Dict[str, Path]:
     """Get paths to all web component files."""
     component_dir = Path(__file__).parent
     return {
-        'js': component_dir / 'index.js',
-        'css': component_dir / 'style.css',
+        "js": component_dir / "index.js",
+        "css": component_dir / "style.css",
     }
+
 
 def get_component_html() -> str:
     """Get HTML template for including components."""
@@ -34,8 +36,9 @@ def get_component_html() -> str:
     <script type="module" src="{js_file}"></script>
 </body>
 </html>
-""".format(js_file=files['js'].name)
+""".format(js_file=files["js"].name)
 
     return html
 
-__all__ = ['get_component_files', 'get_component_html']
+
+__all__ = ["get_component_files", "get_component_html"]

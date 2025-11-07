@@ -19,7 +19,9 @@ class SqlRunner(ABC):
     """Interface for SQL execution with different implementations."""
 
     @abstractmethod
-    async def run_sql(self, args: RunSqlToolArgs, context: "ToolContext") -> pd.DataFrame:
+    async def run_sql(
+        self, args: RunSqlToolArgs, context: "ToolContext"
+    ) -> pd.DataFrame:
         """Execute SQL query and return results as a DataFrame.
 
         Args:

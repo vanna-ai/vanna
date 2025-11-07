@@ -1,4 +1,5 @@
 """SQLite implementation of SqlRunner interface."""
+
 import sqlite3
 import pandas as pd
 
@@ -57,7 +58,7 @@ class SqliteRunner(SqlRunner):
                 conn.commit()
                 rows_affected = cursor.rowcount
                 # Return a DataFrame indicating rows affected
-                return pd.DataFrame({'rows_affected': [rows_affected]})
+                return pd.DataFrame({"rows_affected": [rows_affected]})
 
         finally:
             cursor.close()

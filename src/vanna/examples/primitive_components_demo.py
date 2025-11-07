@@ -46,10 +46,12 @@ class PrimitiveComponentsAgent(Agent):
         session_id = str(uuid.uuid4())[:8]
 
         # Demo 1: Tool execution using primitive components
-        yield UiComponent(rich_component=RichTextComponent(
-            content="## Primitive Components Demo\n\nShowing how tools now compose UI from primitive components:",
-            markdown=True
-        ))
+        yield UiComponent(
+            rich_component=RichTextComponent(
+                content="## Primitive Components Demo\n\nShowing how tools now compose UI from primitive components:",
+                markdown=True,
+            )
+        )
 
         # Status card for overall operation
         operation_status = StatusCardComponent(
@@ -57,7 +59,7 @@ class PrimitiveComponentsAgent(Agent):
             title="Data Analysis Pipeline",
             status="running",
             description="Processing user data through multiple analysis stages",
-            icon="⚙️"
+            icon="⚙️",
         )
         yield UiComponent(rich_component=operation_status)
 
@@ -67,7 +69,7 @@ class PrimitiveComponentsAgent(Agent):
             label="Overall Progress",
             value=0.0,
             description="Starting analysis...",
-            animated=True
+            animated=True,
         )
         yield UiComponent(rich_component=overall_progress)
 
@@ -77,7 +79,7 @@ class PrimitiveComponentsAgent(Agent):
             title="Analysis Log",
             entries=[],
             show_timestamps=True,
-            auto_scroll=True
+            auto_scroll=True,
         )
         yield UiComponent(rich_component=log_viewer)
 
@@ -87,7 +89,7 @@ class PrimitiveComponentsAgent(Agent):
             ("Data Validation", "✅", 0.4),
             ("Statistical Analysis", "🧮", 0.6),
             ("Report Generation", "📄", 0.8),
-            ("Finalization", "🎯", 1.0)
+            ("Finalization", "🎯", 1.0),
         ]
 
         for i, (stage_name, stage_icon, progress_value) in enumerate(stages):
@@ -95,21 +97,31 @@ class PrimitiveComponentsAgent(Agent):
 
             # Update overall status
             status = "success" if progress_value == 1.0 else "running"
-            yield UiComponent(rich_component=operation_status.set_status(status, f"Executing: {stage_name}"))
+            yield UiComponent(
+                rich_component=operation_status.set_status(
+                    status, f"Executing: {stage_name}"
+                )
+            )
 
             # Update progress
-            yield UiComponent(rich_component=overall_progress.update_progress(progress_value, f"Executing {stage_name}..."))
+            yield UiComponent(
+                rich_component=overall_progress.update_progress(
+                    progress_value, f"Executing {stage_name}..."
+                )
+            )
 
             # Add log entry
-            yield UiComponent(rich_component=log_viewer.add_entry(f"Starting {stage_name}", "info"))
+            yield UiComponent(
+                rich_component=log_viewer.add_entry(f"Starting {stage_name}", "info")
+            )
 
             # Create a status card for this specific stage
             stage_status = StatusCardComponent(
                 id=f"stage-{i}-{session_id}",
                 title=stage_name,
                 status="running" if progress_value < 1.0 else "success",
-                description=f"Processing stage {i+1} of {len(stages)}",
-                icon=stage_icon
+                description=f"Processing stage {i + 1} of {len(stages)}",
+                icon=stage_icon,
             )
             yield UiComponent(rich_component=stage_status)
 
@@ -117,14 +129,22 @@ class PrimitiveComponentsAgent(Agent):
 
             # Complete the stage
             final_stage_status = "success" if progress_value < 1.0 else "completed"
-            yield UiComponent(rich_component=stage_status.set_status(final_stage_status, f"{stage_name} completed successfully"))
-            yield UiComponent(rich_component=log_viewer.add_entry(f"Completed {stage_name}", "info"))
+            yield UiComponent(
+                rich_component=stage_status.set_status(
+                    final_stage_status, f"{stage_name} completed successfully"
+                )
+            )
+            yield UiComponent(
+                rich_component=log_viewer.add_entry(f"Completed {stage_name}", "info")
+            )
 
         # Demo 2: Badge and IconText primitives
-        yield UiComponent(rich_component=RichTextComponent(
-            content="\n### Primitive Component Examples\n\nShowing individual primitive components:",
-            markdown=True
-        ))
+        yield UiComponent(
+            rich_component=RichTextComponent(
+                content="\n### Primitive Component Examples\n\nShowing individual primitive components:",
+                markdown=True,
+            )
+        )
 
         # Various badge examples
         badges = [
@@ -139,17 +159,30 @@ class PrimitiveComponentsAgent(Agent):
 
         # IconText examples
         icon_texts = [
-            IconTextComponent(icon="📊", text="Data Analysis Complete", variant="primary", size="large"),
-            IconTextComponent(icon="✅", text="All tests passed", variant="default", size="medium"),
-            IconTextComponent(icon="⏱️", text="Processing time: 2.3s", variant="secondary", size="small"),
+            IconTextComponent(
+                icon="📊",
+                text="Data Analysis Complete",
+                variant="primary",
+                size="large",
+            ),
+            IconTextComponent(
+                icon="✅", text="All tests passed", variant="default", size="medium"
+            ),
+            IconTextComponent(
+                icon="⏱️",
+                text="Processing time: 2.3s",
+                variant="secondary",
+                size="small",
+            ),
         ]
 
         for icon_text in icon_texts:
             yield UiComponent(rich_component=icon_text)
 
         # Demo 3: Comparison with old approach
-        yield UiComponent(rich_component=RichTextComponent(
-            content=f"""
+        yield UiComponent(
+            rich_component=RichTextComponent(
+                content=f"""
 ## Key Benefits of Primitive Components
 
 **Before (Semantic Components)):**
@@ -189,8 +222,9 @@ logs = LogViewerComponent(
 
 Your message was: "{message}"
 """,
-            markdown=True
-        ))
+                markdown=True,
+            )
+        )
 
 
 def create_primitive_demo_agent() -> PrimitiveComponentsAgent:
@@ -199,9 +233,7 @@ def create_primitive_demo_agent() -> PrimitiveComponentsAgent:
     Returns:
         Configured PrimitiveComponentsAgent instance
     """
-    llm_service = MockLlmService(
-        response_content="Primitive components demo response"
-    )
+    llm_service = MockLlmService(response_content="Primitive components demo response")
 
     return PrimitiveComponentsAgent(
         llm_service=llm_service,
@@ -220,10 +252,7 @@ async def main() -> None:
 
     # Create a test user
     user = User(
-        id="user123",
-        username="demo_user",
-        email="demo@example.com",
-        permissions=[]
+        id="user123", username="demo_user", email="demo@example.com", permissions=[]
     )
 
     # Start a conversation
@@ -237,28 +266,35 @@ async def main() -> None:
     # Send message and display components
     component_count = 0
     async for component in agent.send_message(
-        user=user,
-        message=user_message
-    ,
-        conversation_id=conversation_id
+        user=user, message=user_message, conversation_id=conversation_id
     ):
         component_count += 1
-        component_type = getattr(component, 'type', component.__class__.__name__)
-        component_id = getattr(component, 'id', 'N/A')
+        component_type = getattr(component, "type", component.__class__.__name__)
+        component_id = getattr(component, "id", "N/A")
 
-        print(f"[{component_count:2d}] {component_type.value if hasattr(component_type, 'value') else component_type} (id: {component_id[:12] if len(str(component_id)) > 12 else component_id})")
+        print(
+            f"[{component_count:2d}] {component_type.value if hasattr(component_type, 'value') else component_type} (id: {component_id[:12] if len(str(component_id)) > 12 else component_id})"
+        )
 
         rich_comp = component.rich_component
-        
+
         # Show component details
-        if hasattr(rich_comp, 'title'):
+        if hasattr(rich_comp, "title"):
             print(f"     Title: {rich_comp.title}")
-        if hasattr(rich_comp, 'status'):
+        if hasattr(rich_comp, "status"):
             print(f"     Status: {rich_comp.status}")
-        if hasattr(rich_comp, 'description') and rich_comp.description:
-            desc = rich_comp.description[:60] + "..." if len(rich_comp.description) > 60 else rich_comp.description
+        if hasattr(rich_comp, "description") and rich_comp.description:
+            desc = (
+                rich_comp.description[:60] + "..."
+                if len(rich_comp.description) > 60
+                else rich_comp.description
+            )
             print(f"     Description: {desc}")
-        if hasattr(rich_comp, 'value') and hasattr(rich_comp.type, 'value') and rich_comp.type.value == 'progress_display':
+        if (
+            hasattr(rich_comp, "value")
+            and hasattr(rich_comp.type, "value")
+            and rich_comp.type.value == "progress_display"
+        ):
             print(f"     Progress: {rich_comp.value:.1%}")
 
         print()

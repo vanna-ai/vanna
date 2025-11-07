@@ -49,7 +49,9 @@ class VisualizationDemoLlmService(LlmService):
         await asyncio.sleep(0.1)
         return self._build_response(request)
 
-    async def stream_request(self, request: LlmRequest) -> AsyncGenerator[LlmStreamChunk, None]:
+    async def stream_request(
+        self, request: LlmRequest
+    ) -> AsyncGenerator[LlmStreamChunk, None]:
         """Handle streaming requests."""
         await asyncio.sleep(0.1)
         response = self._build_response(request)
@@ -57,7 +59,9 @@ class VisualizationDemoLlmService(LlmService):
         if response.tool_calls:
             yield LlmStreamChunk(tool_calls=response.tool_calls)
         if response.content:
-            yield LlmStreamChunk(content=response.content, finish_reason=response.finish_reason)
+            yield LlmStreamChunk(
+                content=response.content, finish_reason=response.finish_reason
+            )
         else:
             yield LlmStreamChunk(finish_reason=response.finish_reason)
 
@@ -77,31 +81,34 @@ class VisualizationDemoLlmService(LlmService):
             if "Results saved to" in tool_result and ".csv" in tool_result:
                 # Extract filename from result
                 import re
+
                 match = re.search(r"'([^']*\.csv)'", tool_result)
                 if match:
                     self.csv_filename = match.group(1)
                     # Now visualize the data
                     return LlmResponse(
                         content=f"Great! I've saved the query results. Now let me create a visualization of the data.",
-                        tool_calls=[ToolCall(
-                            id=f"call_{uuid.uuid4().hex[:8]}",
-                            name="visualize_data",
-                            arguments={"filename": self.csv_filename}
-                        )],
-                        finish_reason="tool_calls"
+                        tool_calls=[
+                            ToolCall(
+                                id=f"call_{uuid.uuid4().hex[:8]}",
+                                name="visualize_data",
+                                arguments={"filename": self.csv_filename},
+                            )
+                        ],
+                        finish_reason="tool_calls",
                     )
 
             # If this was a visualization result, acknowledge it
             if "Created visualization" in tool_result:
                 return LlmResponse(
                     content=f"Perfect! I've created a visualization of the data. {tool_result}",
-                    finish_reason="stop"
+                    finish_reason="stop",
                 )
 
             # Default acknowledgment
             return LlmResponse(
                 content=f"I've completed the operation. {tool_result}",
-                finish_reason="stop"
+                finish_reason="stop",
             )
 
         # Initial request - run SQL query
@@ -109,18 +116,22 @@ class VisualizationDemoLlmService(LlmService):
             self.step += 1
             return LlmResponse(
                 content="I'll query the database for you and then create a visualization.",
-                tool_calls=[ToolCall(
-                    id=f"call_{uuid.uuid4().hex[:8]}",
-                    name="run_sql",
-                    arguments={"sql": "SELECT Name, Milliseconds, Bytes FROM Track LIMIT 20"}
-                )],
-                finish_reason="tool_calls"
+                tool_calls=[
+                    ToolCall(
+                        id=f"call_{uuid.uuid4().hex[:8]}",
+                        name="run_sql",
+                        arguments={
+                            "sql": "SELECT Name, Milliseconds, Bytes FROM Track LIMIT 20"
+                        },
+                    )
+                ],
+                finish_reason="tool_calls",
             )
 
         # Default response
         return LlmResponse(
             content="I can help you query databases and visualize the results.",
-            finish_reason="stop"
+            finish_reason="stop",
         )
 
 
@@ -134,7 +145,9 @@ def create_demo_agent() -> Agent:
         Configured Agent with SQL and visualization tools
     """
     # Check for Chinook database
-    database_path = os.path.join(os.path.dirname(__file__), "..", "..", "Chinook.sqlite")
+    database_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "Chinook.sqlite"
+    )
     database_path = os.path.abspath(database_path)
 
     if not os.path.exists(database_path):
@@ -201,18 +214,24 @@ async def main() -> None:
     print()
 
     async for component in agent.send_message(
-            user=user,
-            message="Show me some track data and visualize it",
-            conversation_id=conversation_id
+        user=user,
+        message="Show me some track data and visualize it",
+        conversation_id=conversation_id,
+    ):
+        if (
+            component.simple_component
+            and hasattr(component.simple_component, "text")
+            and component.simple_component.text
         ):
-        if component.simple_component and hasattr(component.simple_component, 'text') and component.simple_component.text:
             print(f"Agent: {component.simple_component.text}")
-        elif component.simple_component and hasattr(component.simple_component, 'text'):
+        elif component.simple_component and hasattr(component.simple_component, "text"):
             print(f"Agent: {component.simple_component.text}")
-        elif hasattr(component.rich_component, 'content'):
+        elif hasattr(component.rich_component, "content"):
             if isinstance(component.rich_component.content, dict):
                 # This is the chart
-                print(f"Agent: [Chart Generated - Plotly figure with {len(str(component.rich_component.content))} chars]")
+                print(
+                    f"Agent: [Chart Generated - Plotly figure with {len(str(component.rich_component.content))} chars]"
+                )
             else:
                 print(f"Agent: {component.rich_component.content}")
 

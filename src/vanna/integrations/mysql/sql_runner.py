@@ -1,4 +1,5 @@
 """MySQL implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -16,7 +17,7 @@ class MySQLRunner(SqlRunner):
         user: str,
         password: str,
         port: int = 3306,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with MySQL connection parameters.
 
@@ -30,6 +31,7 @@ class MySQLRunner(SqlRunner):
         """
         try:
             import pymysql.cursors
+
             self.pymysql = pymysql
         except ImportError as e:
             raise ImportError(
@@ -64,7 +66,7 @@ class MySQLRunner(SqlRunner):
             database=self.database,
             port=self.port,
             cursorclass=self.pymysql.cursors.DictCursor,
-            **self.kwargs
+            **self.kwargs,
         )
 
         try:
@@ -76,7 +78,12 @@ class MySQLRunner(SqlRunner):
             results = cursor.fetchall()
 
             # Create a pandas dataframe from the results
-            df = pd.DataFrame(results, columns=[desc[0] for desc in cursor.description] if cursor.description else [])
+            df = pd.DataFrame(
+                results,
+                columns=[desc[0] for desc in cursor.description]
+                if cursor.description
+                else [],
+            )
 
             cursor.close()
             return df

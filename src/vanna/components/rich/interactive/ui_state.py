@@ -16,7 +16,7 @@ class StatusBarUpdateComponent(RichComponent):
 
     def __init__(self, **kwargs: Any) -> None:
         # Set a fixed ID for status bar updates
-        kwargs.setdefault('id', 'vanna-status-bar')
+        kwargs.setdefault("id", "vanna-status-bar")
         super().__init__(**kwargs)
 
 
@@ -42,7 +42,7 @@ class TaskTrackerUpdateComponent(RichComponent):
 
     def __init__(self, **kwargs: Any) -> None:
         # Set a fixed ID for task tracker updates
-        kwargs.setdefault('id', 'vanna-task-tracker')
+        kwargs.setdefault("id", "vanna-task-tracker")
         super().__init__(**kwargs)
 
     @classmethod
@@ -51,15 +51,20 @@ class TaskTrackerUpdateComponent(RichComponent):
         return cls(operation=TaskOperation.ADD_TASK, task=task)
 
     @classmethod
-    def update_task(cls, task_id: str, status: Optional[str] = None,
-                   progress: Optional[float] = None, detail: Optional[str] = None) -> "TaskTrackerUpdateComponent":
+    def update_task(
+        cls,
+        task_id: str,
+        status: Optional[str] = None,
+        progress: Optional[float] = None,
+        detail: Optional[str] = None,
+    ) -> "TaskTrackerUpdateComponent":
         """Create a component to update an existing task."""
         return cls(
             operation=TaskOperation.UPDATE_TASK,
             task_id=task_id,
             status=status,
             progress=progress,
-            detail=detail
+            detail=detail,
         )
 
     @classmethod
@@ -84,5 +89,5 @@ class ChatInputUpdateComponent(RichComponent):
 
     def __init__(self, **kwargs: Any) -> None:
         # Set a fixed ID for chat input updates
-        kwargs.setdefault('id', 'vanna-chat-input')
+        kwargs.setdefault("id", "vanna-chat-input")
         super().__init__(**kwargs)

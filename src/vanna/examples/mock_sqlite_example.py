@@ -80,7 +80,9 @@ class MockSqliteLlmService(LlmService):
         if response.tool_calls:
             yield LlmStreamChunk(tool_calls=response.tool_calls)
         if response.content is not None:
-            yield LlmStreamChunk(content=response.content, finish_reason=response.finish_reason)
+            yield LlmStreamChunk(
+                content=response.content, finish_reason=response.finish_reason
+            )
         else:
             yield LlmStreamChunk(finish_reason=response.finish_reason)
 
@@ -98,7 +100,11 @@ class MockSqliteLlmService(LlmService):
             return LlmResponse(
                 content=f"Here's what I found in the database:\n\n{result}",
                 finish_reason="stop",
-                usage={"prompt_tokens": 40, "completion_tokens": 20, "total_tokens": 60},
+                usage={
+                    "prompt_tokens": 40,
+                    "completion_tokens": 20,
+                    "total_tokens": 60,
+                },
             )
 
         # Generate a random SQL query
@@ -124,11 +130,15 @@ def create_demo_agent() -> Agent:
         Configured Agent with SQLite tool and mock LLM
     """
     # Get the path to the Chinook database
-    database_path = os.path.join(os.path.dirname(__file__), "..", "..", "Chinook.sqlite")
+    database_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "Chinook.sqlite"
+    )
     database_path = os.path.abspath(database_path)
 
     if not os.path.exists(database_path):
-        raise FileNotFoundError(f"Chinook database not found at {database_path}. Please download it from https://vanna.ai/Chinook.sqlite")
+        raise FileNotFoundError(
+            f"Chinook database not found at {database_path}. Please download it from https://vanna.ai/Chinook.sqlite"
+        )
 
     tool_registry = ToolRegistry()
     sqlite_runner = SqliteRunner(database_path=database_path)
@@ -162,38 +172,43 @@ async def main() -> None:
     tool_call = ToolCall(
         id="test123",
         name="run_sql",
-        arguments={"sql": "SELECT name FROM sqlite_master WHERE type='table'"}
+        arguments={"sql": "SELECT name FROM sqlite_master WHERE type='table'"},
     )
 
     context = ToolContext(user=user, conversation_id="test", request_id="test")
 
     result = await tool_registry.execute(tool_call, context)
-    print(f"Tables in database:\n{result.result_for_llm if result.success else result.error}")
+    print(
+        f"Tables in database:\n{result.result_for_llm if result.success else result.error}"
+    )
 
     # Show available tools
     schemas = await tool_registry.get_schemas(user)
-    print(
-        f"\nAvailable tools for user: {[schema.name for schema in schemas]}"
-    )
+    print(f"\nAvailable tools for user: {[schema.name for schema in schemas]}")
 
     # Demonstrate the mock LLM triggering SQL queries
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Agent conversation demo:")
-    print("="*50)
+    print("=" * 50)
 
     conversation_id = "sqlite-demo"
 
     # Run multiple queries to show different results
     for i in range(3):
-        print(f"\n--- Query {i+1} ---")
+        print(f"\n--- Query {i + 1} ---")
         async for component in agent.send_message(
             user=user,
-            message=f"Show me some data from the database (query {i+1})",
-            conversation_id=conversation_id
+            message=f"Show me some data from the database (query {i + 1})",
+            conversation_id=conversation_id,
         ):
-            if hasattr(component.rich_component, "content") and component.rich_component.content:
+            if (
+                hasattr(component.rich_component, "content")
+                and component.rich_component.content
+            ):
                 print(f"Assistant: {component.rich_component.content}")
-            elif component.simple_component and hasattr(component.simple_component, "text"):
+            elif component.simple_component and hasattr(
+                component.simple_component, "text"
+            ):
                 print(f"Assistant: {component.simple_component.text}")
 
 

@@ -32,7 +32,6 @@ from vanna.tools.file_system import create_file_system_tools
 from vanna.tools.python import create_python_tools
 
 
-
 class CodingLlmService(LlmService):
     """
     LLM service that simulates a coding assistant.
@@ -47,7 +46,9 @@ class CodingLlmService(LlmService):
         await asyncio.sleep(0.1)  # Simulate thinking time
         return self._build_response(request)
 
-    async def stream_request(self, request: LlmRequest) -> AsyncGenerator[LlmStreamChunk, None]:
+    async def stream_request(
+        self, request: LlmRequest
+    ) -> AsyncGenerator[LlmStreamChunk, None]:
         """Handle streaming requests."""
         await asyncio.sleep(0.1)
         response = self._build_response(request)
@@ -77,7 +78,7 @@ class CodingLlmService(LlmService):
             tool_result = last_message.content or "Tool executed"
             return LlmResponse(
                 content=f"I've completed the operation. {tool_result}",
-                finish_reason="stop"
+                finish_reason="stop",
             )
 
         # If user is asking for file operations, use tools
@@ -87,81 +88,101 @@ class CodingLlmService(LlmService):
             if "list files" in user_message or "show files" in user_message:
                 return LlmResponse(
                     content="I'll list the files for you.",
-                    tool_calls=[ToolCall(
-                        id=f"call_{uuid.uuid4().hex[:8]}",
-                        name="list_files",
-                        arguments={}
-                    )],
-                    finish_reason="tool_calls"
+                    tool_calls=[
+                        ToolCall(
+                            id=f"call_{uuid.uuid4().hex[:8]}",
+                            name="list_files",
+                            arguments={},
+                        )
+                    ],
+                    finish_reason="tool_calls",
                 )
 
-            elif "read" in user_message and ("file" in user_message or ".py" in user_message or ".txt" in user_message):
+            elif "read" in user_message and (
+                "file" in user_message
+                or ".py" in user_message
+                or ".txt" in user_message
+            ):
                 filename = _extract_filename(user_message)
 
                 if filename:
                     return LlmResponse(
                         content=f"I'll read the file '{filename}' for you.",
-                        tool_calls=[ToolCall(
-                            id=f"call_{uuid.uuid4().hex[:8]}",
-                            name="read_file",
-                            arguments={"filename": filename}
-                        )],
-                        finish_reason="tool_calls"
+                        tool_calls=[
+                            ToolCall(
+                                id=f"call_{uuid.uuid4().hex[:8]}",
+                                name="read_file",
+                                arguments={"filename": filename},
+                            )
+                        ],
+                        finish_reason="tool_calls",
                     )
 
             elif "create" in user_message or "write" in user_message:
                 # Suggest creating a simple example file
                 return LlmResponse(
                     content="I'll create an example Python file for you.",
-                    tool_calls=[ToolCall(
-                        id=f"call_{uuid.uuid4().hex[:8]}",
-                        name="write_file",
-                        arguments={
-                            "filename": "example.py",
-                            "content": "# Example Python file\nprint('Hello from the coding agent!')\n\ndef greet(name):\n    return f'Hello, {name}!'\n\nif __name__ == '__main__':\n    print(greet('World'))\n",
-                            "overwrite": True
-                        }
-                    )],
+                    tool_calls=[
+                        ToolCall(
+                            id=f"call_{uuid.uuid4().hex[:8]}",
+                            name="write_file",
+                            arguments={
+                                "filename": "example.py",
+                                "content": "# Example Python file\nprint('Hello from the coding agent!')\n\ndef greet(name):\n    return f'Hello, {name}!'\n\nif __name__ == '__main__':\n    print(greet('World'))\n",
+                                "overwrite": True,
+                            },
+                        )
+                    ],
                     finish_reason="tool_calls",
                 )
 
-            elif ("run" in user_message or "execute" in user_message) and ".py" in user_message:
+            elif (
+                "run" in user_message or "execute" in user_message
+            ) and ".py" in user_message:
                 filename = _extract_filename(user_message)
                 if filename:
                     return LlmResponse(
                         content=f"I'll run the Python file '{filename}'.",
-                        tool_calls=[ToolCall(
-                            id=f"call_{uuid.uuid4().hex[:8]}",
-                            name="run_python_file",
-                            arguments={
-                                "filename": filename,
-                                "arguments": [],
-                            }
-                        )],
+                        tool_calls=[
+                            ToolCall(
+                                id=f"call_{uuid.uuid4().hex[:8]}",
+                                name="run_python_file",
+                                arguments={
+                                    "filename": filename,
+                                    "arguments": [],
+                                },
+                            )
+                        ],
                         finish_reason="tool_calls",
                     )
 
-            elif "edit" in user_message or "update" in user_message or "modify" in user_message:
+            elif (
+                "edit" in user_message
+                or "update" in user_message
+                or "modify" in user_message
+            ):
                 return LlmResponse(
                     content="I'll update the greet function to make it more descriptive.",
-                    tool_calls=[ToolCall(
-                        id=f"call_{uuid.uuid4().hex[:8]}",
-                        name="edit_file",
-                        arguments={
-                            "filename": "example.py",
-                            "edits": [
-                                {
-                                    "start_line": 4,
-                                    "end_line": 5,
-                                    "new_content": (
-                                        "def greet(name):\n"
-                                        "    \"\"\"Return a friendly greeting.\"\"\"\n"
-                                        "    return f\"Hello, {name}! Welcome to the coding agent.\"\n"
-                                    ),
-                                }
-                            ],
-                        },
-                    )],
+                    tool_calls=[
+                        ToolCall(
+                            id=f"call_{uuid.uuid4().hex[:8]}",
+                            name="edit_file",
+                            arguments={
+                                "filename": "example.py",
+                                "edits": [
+                                    {
+                                        "start_line": 4,
+                                        "end_line": 5,
+                                        "new_content": (
+                                            "def greet(name):\n"
+                                            '    """Return a friendly greeting."""\n'
+                                            '    return f"Hello, {name}! Welcome to the coding agent."\n'
+                                        ),
+                                    }
+                                ],
+                            },
+                        )
+                    ],
                     finish_reason="tool_calls",
                 )
 
@@ -171,7 +192,7 @@ class CodingLlmService(LlmService):
                 "I'm a coding assistant. I can help you list, read, write, edit, and run Python files. "
                 "Try asking me to 'list files', 'read example.py', 'create a Python file', 'run example.py', or 'update example.py'."
             ),
-            finish_reason="stop"
+            finish_reason="stop",
         )
 
 
@@ -247,15 +268,18 @@ async def main() -> None:
         print("Agent response:")
 
         async for component in agent.send_message(
-            user=user,
-            message=message,
-            conversation_id=conversation_id
+            user=user, message=message, conversation_id=conversation_id
         ):
-            if hasattr(component.rich_component, 'content') and component.rich_component.content:
+            if (
+                hasattr(component.rich_component, "content")
+                and component.rich_component.content
+            ):
                 print(f"  📝 {component.rich_component.content}")
-            elif hasattr(component.rich_component, 'message'):
+            elif hasattr(component.rich_component, "message"):
                 print(f"  💬 {component.rich_component.message}")
-            elif component.simple_component and hasattr(component.simple_component, 'text'):
+            elif component.simple_component and hasattr(
+                component.simple_component, "text"
+            ):
                 print(f"  📄 {component.simple_component.text}")
 
         print("-" * 30)

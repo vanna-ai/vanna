@@ -18,7 +18,9 @@ class StatusCardComponent(RichComponent):
     collapsible: bool = False
     collapsed: bool = False
 
-    def set_status(self, status: str, description: Optional[str] = None) -> "StatusCardComponent":
+    def set_status(
+        self, status: str, description: Optional[str] = None
+    ) -> "StatusCardComponent":
         """Update the status and optionally the description."""
         updates = {"status": status}
         if description is not None:

@@ -116,23 +116,17 @@ async def demo() -> None:
     print("=" * 60)
 
     custom_builder = CustomSystemPromptBuilder()
-    admin_user = User(
-        id="user-1",
-        username="Alice",
-        permissions=["admin"]
-    )
+    admin_user = User(id="user-1", username="Alice", permissions=["admin"])
 
     # Simulate some tools
     mock_tools = [
         ToolSchema(
-            name="query_database",
-            description="Query the SQL database",
-            parameters={}
+            name="query_database", description="Query the SQL database", parameters={}
         ),
         ToolSchema(
             name="visualize_data",
             description="Create data visualizations",
-            parameters={}
+            parameters={},
         ),
     ]
 
@@ -148,11 +142,7 @@ async def demo() -> None:
     print("=" * 60)
 
     sql_builder = SQLAssistantSystemPromptBuilder(database_name="Chinook")
-    analyst_user = User(
-        id="user-2",
-        username="Bob",
-        permissions=["analyst"]
-    )
+    analyst_user = User(id="user-2", username="Bob", permissions=["analyst"])
 
     prompt = await sql_builder.build_system_prompt(analyst_user, mock_tools)
     print("\nGenerated system prompt for SQL assistant:")
@@ -171,7 +161,7 @@ async def demo() -> None:
     agent = Agent(
         llm_service=mock_llm,
         tool_registry=tool_registry,
-        system_prompt_builder=sql_builder  # Inject custom builder here
+        system_prompt_builder=sql_builder,  # Inject custom builder here
     )
 
     print("\nAgent created with custom SQL system prompt builder!")
@@ -180,4 +170,5 @@ async def demo() -> None:
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(demo())

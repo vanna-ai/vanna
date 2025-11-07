@@ -26,29 +26,18 @@ class RequestContext(BaseModel):
         user = await resolver.resolve_user(context)
     """
 
-    cookies: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Request cookies"
-    )
+    cookies: Dict[str, str] = Field(default_factory=dict, description="Request cookies")
 
-    headers: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Request headers"
-    )
+    headers: Dict[str, str] = Field(default_factory=dict, description="Request headers")
 
-    remote_addr: Optional[str] = Field(
-        default=None,
-        description="Remote IP address"
-    )
+    remote_addr: Optional[str] = Field(default=None, description="Remote IP address")
 
     query_params: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Query parameters"
+        default_factory=dict, description="Query parameters"
     )
 
     metadata: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional framework-specific metadata"
+        default_factory=dict, description="Additional framework-specific metadata"
     )
 
     def get_cookie(self, name: str, default: Optional[str] = None) -> Optional[str]:

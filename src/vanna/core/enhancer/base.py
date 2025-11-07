@@ -52,10 +52,7 @@ class LlmContextEnhancer(ABC):
     """
 
     async def enhance_system_prompt(
-        self,
-        system_prompt: str,
-        user_message: str,
-        user: "User"
+        self, system_prompt: str, user_message: str, user: "User"
     ) -> str:
         """Enhance the system prompt with additional context.
 
@@ -76,9 +73,7 @@ class LlmContextEnhancer(ABC):
         return system_prompt
 
     async def enhance_user_messages(
-        self,
-        messages: list["LlmMessage"],
-        user: "User"
+        self, messages: list["LlmMessage"], user: "User"
     ) -> list["LlmMessage"]:
         """Enhance user messages with additional context.
 

@@ -1,4 +1,5 @@
 """DuckDB implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -10,10 +11,7 @@ class DuckDBRunner(SqlRunner):
     """DuckDB implementation of the SqlRunner interface."""
 
     def __init__(
-        self,
-        database_path: str = ":memory:",
-        init_sql: Optional[str] = None,
-        **kwargs
+        self, database_path: str = ":memory:", init_sql: Optional[str] = None, **kwargs
     ):
         """Initialize with DuckDB connection parameters.
 
@@ -26,6 +24,7 @@ class DuckDBRunner(SqlRunner):
         """
         try:
             import duckdb
+
             self.duckdb = duckdb
         except ImportError as e:
             raise ImportError(

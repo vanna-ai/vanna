@@ -19,26 +19,26 @@ T = TypeVar("T")
 
 class _LocalToolWrapper(Tool[T]):
     """Wrapper for tools with configurable access groups."""
-    
+
     def __init__(self, wrapped_tool: Tool[T], access_groups: List[str]):
         self._wrapped_tool = wrapped_tool
         self._access_groups = access_groups
-    
+
     @property
     def name(self) -> str:
         return self._wrapped_tool.name
-    
+
     @property
     def description(self) -> str:
         return self._wrapped_tool.description
-    
+
     @property
     def access_groups(self) -> List[str]:
         return self._access_groups
-    
+
     def get_args_schema(self) -> Type[T]:
         return self._wrapped_tool.get_args_schema()
-    
+
     async def execute(self, context: ToolContext, args: T) -> ToolResult:
         return await self._wrapped_tool.execute(context, args)
 
@@ -57,19 +57,20 @@ class ToolRegistry:
             self.audit_config = audit_config
         else:
             from .agent.config import AuditConfig
+
             self.audit_config = AuditConfig()
-    
+
     def register_local_tool(self, tool: Tool[Any], access_groups: List[str]) -> None:
         """Register a local tool with optional access group restrictions.
-        
+
         Args:
             tool: The tool to register
-            access_groups: List of groups that can access this tool. 
+            access_groups: List of groups that can access this tool.
                           If None or empty, tool is accessible to all users.
         """
         if tool.name in self._tools:
             raise ValueError(f"Tool '{tool.name}' already registered")
-        
+
         if access_groups:
             # Wrap the tool with access groups
             wrapped_tool = _LocalToolWrapper(tool, access_groups)
@@ -130,7 +131,11 @@ class ToolRegistry:
             msg = f"Insufficient group access for tool '{tool_call.name}'"
 
             # Audit access denial
-            if self.audit_logger and self.audit_config and self.audit_config.log_tool_access_checks:
+            if (
+                self.audit_logger
+                and self.audit_config
+                and self.audit_config.log_tool_access_checks
+            ):
                 await self.audit_logger.log_tool_access_check(
                     user=context.user,
                     tool_name=tool_call.name,
@@ -161,7 +166,11 @@ class ToolRegistry:
             )
 
         # Audit successful access check
-        if self.audit_logger and self.audit_config and self.audit_config.log_tool_access_checks:
+        if (
+            self.audit_logger
+            and self.audit_config
+            and self.audit_config.log_tool_access_checks
+        ):
             await self.audit_logger.log_tool_access_check(
                 user=context.user,
                 tool_name=tool_call.name,
@@ -171,7 +180,11 @@ class ToolRegistry:
             )
 
         # Audit tool invocation
-        if self.audit_logger and self.audit_config and self.audit_config.log_tool_invocations:
+        if (
+            self.audit_logger
+            and self.audit_config
+            and self.audit_config.log_tool_invocations
+        ):
             # Get UI features if available from context
             ui_features = context.metadata.get("ui_features_available", [])
             await self.audit_logger.log_tool_invocation(
@@ -192,7 +205,11 @@ class ToolRegistry:
             result.metadata["execution_time_ms"] = execution_time_ms
 
             # Audit tool result
-            if self.audit_logger and self.audit_config and self.audit_config.log_tool_results:
+            if (
+                self.audit_logger
+                and self.audit_config
+                and self.audit_config.log_tool_results
+            ):
                 await self.audit_logger.log_tool_result(
                     user=context.user,
                     tool_call=tool_call,

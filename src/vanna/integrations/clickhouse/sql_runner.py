@@ -1,4 +1,5 @@
 """ClickHouse implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -16,7 +17,7 @@ class ClickHouseRunner(SqlRunner):
         user: str,
         password: str,
         port: int = 8123,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with ClickHouse connection parameters.
 
@@ -30,6 +31,7 @@ class ClickHouseRunner(SqlRunner):
         """
         try:
             import clickhouse_connect
+
             self.clickhouse_connect = clickhouse_connect
         except ImportError as e:
             raise ImportError(
@@ -64,7 +66,7 @@ class ClickHouseRunner(SqlRunner):
             username=self.user,
             password=self.password,
             database=self.database,
-            **self.kwargs
+            **self.kwargs,
         )
 
         try:

@@ -31,10 +31,7 @@ def create_sample_dataset() -> EvaluationDataset:
     """Create a sample dataset for demonstration."""
 
     eval_user = User(
-        id="eval_user",
-        username="evaluator",
-        email="eval@example.com",
-        permissions=[]
+        id="eval_user", username="evaluator", email="eval@example.com", permissions=[]
     )
 
     test_cases = [
@@ -46,7 +43,7 @@ def create_sample_dataset() -> EvaluationDataset:
                 final_answer_contains=["hello", "hi"],
                 max_execution_time_ms=3000,
             ),
-            metadata={"category": "greeting", "difficulty": "easy"}
+            metadata={"category": "greeting", "difficulty": "easy"},
         ),
         TestCase(
             id="test_002",
@@ -56,7 +53,7 @@ def create_sample_dataset() -> EvaluationDataset:
                 final_answer_contains=["help", "assist"],
                 max_execution_time_ms=3000,
             ),
-            metadata={"category": "capabilities", "difficulty": "easy"}
+            metadata={"category": "capabilities", "difficulty": "easy"},
         ),
         TestCase(
             id="test_003",
@@ -67,14 +64,14 @@ def create_sample_dataset() -> EvaluationDataset:
                 min_components=1,
                 max_execution_time_ms=5000,
             ),
-            metadata={"category": "explanation", "difficulty": "medium"}
+            metadata={"category": "explanation", "difficulty": "medium"},
         ),
     ]
 
     return EvaluationDataset(
         name="Demo Test Cases",
         test_cases=test_cases,
-        description="Sample test cases for evaluation demo"
+        description="Sample test cases for evaluation demo",
     )
 
 
@@ -89,9 +86,9 @@ def create_test_agent(name: str, response_content: str) -> Agent:
 
 async def demo_single_agent_evaluation():
     """Demonstrate evaluating a single agent."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 1: Single Agent Evaluation")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     # Create dataset
     dataset = create_sample_dataset()
@@ -101,7 +98,7 @@ async def demo_single_agent_evaluation():
     # Create agent
     agent = create_test_agent(
         "test-agent",
-        "Hello! I'm here to help you with various tasks including answering questions about topics like quantum computing."
+        "Hello! I'm here to help you with various tasks including answering questions about topics like quantum computing.",
     )
 
     # Create evaluators
@@ -129,9 +126,9 @@ async def demo_single_agent_evaluation():
 
 async def demo_agent_comparison():
     """Demonstrate comparing multiple agent variants."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 2: Agent Comparison (LLM Comparison Use Case)")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     # Create dataset
     dataset = create_sample_dataset()
@@ -144,25 +141,25 @@ async def demo_agent_comparison():
             name="agent-v1",
             agent=create_test_agent(
                 "v1",
-                "Hi there! I can help you with many things including explaining complex topics like quantum computing."
+                "Hi there! I can help you with many things including explaining complex topics like quantum computing.",
             ),
-            metadata={"version": "1.0", "model": "mock-v1"}
+            metadata={"version": "1.0", "model": "mock-v1"},
         ),
         AgentVariant(
             name="agent-v2",
             agent=create_test_agent(
                 "v2",
-                "Hello! I'm your helpful assistant. I can assist with various tasks and explain topics like quantum computing in detail."
+                "Hello! I'm your helpful assistant. I can assist with various tasks and explain topics like quantum computing in detail.",
             ),
-            metadata={"version": "2.0", "model": "mock-v2"}
+            metadata={"version": "2.0", "model": "mock-v2"},
         ),
         AgentVariant(
             name="agent-v3",
             agent=create_test_agent(
                 "v3",
-                "Greetings! I'm designed to help you with a wide range of tasks, from simple questions to complex explanations about quantum computing and more."
+                "Greetings! I'm designed to help you with a wide range of tasks, from simple questions to complex explanations about quantum computing and more.",
             ),
-            metadata={"version": "3.0", "model": "mock-v3"}
+            metadata={"version": "3.0", "model": "mock-v3"},
         ),
     ]
 
@@ -179,7 +176,9 @@ async def demo_agent_comparison():
 
     # Run comparison
     runner = EvaluationRunner(evaluators=evaluators, max_concurrency=10)
-    print(f"Running comparison ({len(variants)} variants × {len(dataset.test_cases)} test cases)...")
+    print(
+        f"Running comparison ({len(variants)} variants × {len(dataset.test_cases)} test cases)..."
+    )
     print("All variants running in parallel for maximum efficiency...\n")
 
     comparison = await runner.compare_agents(variants, dataset.test_cases)
@@ -196,9 +195,9 @@ async def demo_agent_comparison():
 
 async def demo_dataset_operations():
     """Demonstrate dataset creation and manipulation."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 3: Dataset Operations")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     # Create dataset
     dataset = create_sample_dataset()
@@ -242,7 +241,7 @@ async def demo_dataset_operations():
 async def main():
     """Run all evaluation demos."""
     print("\n🚀 Vanna Agents Evaluation System Demo")
-    print("="*80)
+    print("=" * 80)
 
     # Demo 1: Single agent evaluation
     await demo_single_agent_evaluation()
@@ -253,9 +252,9 @@ async def main():
     # Demo 3: Dataset operations
     await demo_dataset_operations()
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("✅ All demos completed!")
-    print("="*80)
+    print("=" * 80)
     print("\nKey Takeaways:")
     print("  1. Evaluations are integral to the Vanna package")
     print("  2. Parallel execution handles I/O-bound LLM calls efficiently")

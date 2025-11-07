@@ -80,17 +80,19 @@ class ExponentialBackoffStrategy(ErrorRecoveryStrategy):
         """Retry tool errors with exponential backoff."""
         if attempt < self.max_retries:
             delay_ms = (2 ** (attempt - 1)) * 1000
-            print(f"[RETRY] Tool failed, retrying in {delay_ms}ms (attempt {attempt}/{self.max_retries})")
+            print(
+                f"[RETRY] Tool failed, retrying in {delay_ms}ms (attempt {attempt}/{self.max_retries})"
+            )
             return RecoveryAction(
                 action=RecoveryActionType.RETRY,
                 retry_delay_ms=delay_ms,
-                message=f"Retrying after {delay_ms}ms"
+                message=f"Retrying after {delay_ms}ms",
             )
 
         print(f"[FAIL] Max retries exceeded for tool error: {error}")
         return RecoveryAction(
             action=RecoveryActionType.FAIL,
-            message=f"Tool error after {self.max_retries} attempts: {str(error)}"
+            message=f"Tool error after {self.max_retries} attempts: {str(error)}",
         )
 
     async def handle_llm_error(
@@ -99,17 +101,19 @@ class ExponentialBackoffStrategy(ErrorRecoveryStrategy):
         """Retry LLM errors with backoff."""
         if attempt < self.max_retries:
             delay_ms = (2 ** (attempt - 1)) * 1000
-            print(f"[RETRY] LLM failed, retrying in {delay_ms}ms (attempt {attempt}/{self.max_retries})")
+            print(
+                f"[RETRY] LLM failed, retrying in {delay_ms}ms (attempt {attempt}/{self.max_retries})"
+            )
             return RecoveryAction(
                 action=RecoveryActionType.RETRY,
                 retry_delay_ms=delay_ms,
-                message=f"Retrying LLM after {delay_ms}ms"
+                message=f"Retrying LLM after {delay_ms}ms",
             )
 
         print(f"[FAIL] Max retries exceeded for LLM error: {error}")
         return RecoveryAction(
             action=RecoveryActionType.FAIL,
-            message=f"LLM error after {self.max_retries} attempts: {str(error)}"
+            message=f"LLM error after {self.max_retries} attempts: {str(error)}",
         )
 
 
@@ -123,7 +127,7 @@ class UserPreferencesEnricher(ToolContextEnricher):
             "user123": {
                 "timezone": "America/New_York",
                 "language": "en",
-                "theme": "dark"
+                "theme": "dark",
             }
         }
 
@@ -153,7 +157,7 @@ class ContextWindowFilter(ConversationFilter):
         other_messages = [m for m in messages if m.role != "system"]
 
         # Take the most recent messages
-        recent_messages = other_messages[-self.max_messages:]
+        recent_messages = other_messages[-self.max_messages :]
         filtered = system_messages + recent_messages
 
         print(f"[FILTER] Reduced {len(messages)} messages to {len(filtered)}")
@@ -169,7 +173,11 @@ class LoggingObservabilityProvider(ObservabilityProvider):
         self.spans: List[Span] = []
 
     async def record_metric(
-        self, name: str, value: float, unit: str = "", tags: Optional[Dict[str, str]] = None
+        self,
+        name: str,
+        value: float,
+        unit: str = "",
+        tags: Optional[Dict[str, str]] = None,
     ) -> None:
         """Record and log a metric."""
         metric = Metric(name=name, value=value, unit=unit, tags=tags or {})
@@ -208,13 +216,15 @@ async def run_example() -> None:
 
     # Mock conversation store
     class MockStore:
-        async def get_conversation(
-            self, cid: str, uid: str
-        ) -> Optional[Conversation]:
+        async def get_conversation(self, cid: str, uid: str) -> Optional[Conversation]:
             return None
 
-        async def create_conversation(self, cid: str, uid: str, title: str) -> Conversation:
-            return Conversation(id=cid, user_id=uid, messages=[Message(role="user", content=title)])
+        async def create_conversation(
+            self, cid: str, uid: str, title: str
+        ) -> Conversation:
+            return Conversation(
+                id=cid, user_id=uid, messages=[Message(role="user", content=title)]
+            )
 
         async def update_conversation(self, conv: Conversation) -> None:
             pass
@@ -222,7 +232,9 @@ async def run_example() -> None:
         async def delete_conversation(self, cid: str, uid: str) -> bool:
             return False
 
-        async def list_conversations(self, uid: str, limit: int = 50, offset: int = 0) -> List[Conversation]:
+        async def list_conversations(
+            self, uid: str, limit: int = 50, offset: int = 0
+        ) -> List[Conversation]:
             return []
 
     # Create agent with all extensibility components

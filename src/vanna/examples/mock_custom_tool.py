@@ -176,7 +176,9 @@ class MockCalculatorLlmService(LlmService):
         if response.tool_calls:
             yield LlmStreamChunk(tool_calls=response.tool_calls)
         if response.content is not None:
-            yield LlmStreamChunk(content=response.content, finish_reason=response.finish_reason)
+            yield LlmStreamChunk(
+                content=response.content, finish_reason=response.finish_reason
+            )
         else:
             yield LlmStreamChunk(finish_reason=response.finish_reason)
 
@@ -193,7 +195,11 @@ class MockCalculatorLlmService(LlmService):
             return LlmResponse(
                 content=answer,
                 finish_reason="stop",
-                usage={"prompt_tokens": 30, "completion_tokens": 10, "total_tokens": 40},
+                usage={
+                    "prompt_tokens": 30,
+                    "completion_tokens": 10,
+                    "total_tokens": 40,
+                },
             )
 
         operation, a, b = self._random_operands()
@@ -273,9 +279,7 @@ async def main() -> None:
 
     # Show available tools
     schemas = await tool_registry.get_schemas(user)
-    print(
-        f"\nAvailable tools for user: {[schema.name for schema in schemas]}"
-    )
+    print(f"\nAvailable tools for user: {[schema.name for schema in schemas]}")
 
     # Demonstrate the mock LLM triggering a tool call
     print("\nAgent conversation demo:")
@@ -283,10 +287,13 @@ async def main() -> None:
     async for component in agent.send_message(
         user=user,
         message="Can you compute something for me?",
-        conversation_id=conversation_id
+        conversation_id=conversation_id,
     ):
         print(f"- Component type: {component.rich_component.type}")
-        if hasattr(component.rich_component, "content") and component.rich_component.content:
+        if (
+            hasattr(component.rich_component, "content")
+            and component.rich_component.content
+        ):
             print(f"Assistant: {component.rich_component.content}")
         elif component.simple_component and hasattr(component.simple_component, "text"):
             print(f"Assistant: {component.simple_component.text}")

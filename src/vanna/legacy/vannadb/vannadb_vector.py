@@ -8,15 +8,15 @@ import requests
 from ..advanced import VannaAdvanced
 from ..base import VannaBase
 from ..types import (
-  DataFrameJSON,
-  NewOrganization,
-  OrganizationList,
-  Question,
-  QuestionSQLPair,
-  Status,
-  StatusWithId,
-  StringData,
-  TrainingData,
+    DataFrameJSON,
+    NewOrganization,
+    OrganizationList,
+    Question,
+    QuestionSQLPair,
+    Status,
+    StatusWithId,
+    StringData,
+    TrainingData,
 )
 from ..utils import sanitize_model_name
 
@@ -85,18 +85,25 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
             }
         """
 
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query})
+        response = requests.post(
+            self._graphql_endpoint, headers=self._graphql_headers, json={"query": query}
+        )
         response_json = response.json()
-        if response.status_code == 200 and 'data' in response_json and 'get_all_sql_functions' in response_json['data']:
-            self.log(response_json['data']['get_all_sql_functions'])
-            resp = response_json['data']['get_all_sql_functions']
+        if (
+            response.status_code == 200
+            and "data" in response_json
+            and "get_all_sql_functions" in response_json["data"]
+        ):
+            self.log(response_json["data"]["get_all_sql_functions"])
+            resp = response_json["data"]["get_all_sql_functions"]
 
             print(resp)
 
             return resp
         else:
-            raise Exception(f"Query failed to run by returning code of {response.status_code}. {response.text}")
-
+            raise Exception(
+                f"Query failed to run by returning code of {response.status_code}. {response.text}"
+            )
 
     def get_function(self, question: str, additional_data: dict = {}) -> dict:
         query = """
@@ -121,21 +128,38 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
             }
         }
         """
-        static_function_arguments = [{"name": key, "value": str(value)} for key, value in additional_data.items()]
-        variables = {"question": question, "staticFunctionArguments": static_function_arguments}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables})
+        static_function_arguments = [
+            {"name": key, "value": str(value)} for key, value in additional_data.items()
+        ]
+        variables = {
+            "question": question,
+            "staticFunctionArguments": static_function_arguments,
+        }
+        response = requests.post(
+            self._graphql_endpoint,
+            headers=self._graphql_headers,
+            json={"query": query, "variables": variables},
+        )
         response_json = response.json()
-        if response.status_code == 200 and 'data' in response_json and 'get_and_instantiate_function' in response_json['data']:
-            self.log(response_json['data']['get_and_instantiate_function'])
-            resp = response_json['data']['get_and_instantiate_function']
+        if (
+            response.status_code == 200
+            and "data" in response_json
+            and "get_and_instantiate_function" in response_json["data"]
+        ):
+            self.log(response_json["data"]["get_and_instantiate_function"])
+            resp = response_json["data"]["get_and_instantiate_function"]
 
             print(resp)
 
             return resp
         else:
-            raise Exception(f"Query failed to run by returning code of {response.status_code}. {response.text}")
+            raise Exception(
+                f"Query failed to run by returning code of {response.status_code}. {response.text}"
+            )
 
-    def create_function(self, question: str, sql: str, plotly_code: str, **kwargs) -> dict:
+    def create_function(
+        self, question: str, sql: str, plotly_code: str, **kwargs
+    ) -> dict:
         query = """
         mutation CreateFunction($question: String!, $sql: String!, $plotly_code: String!) {
             generate_and_create_sql_function(question: $question, sql: $sql, post_processing_code: $plotly_code) {
@@ -153,16 +177,27 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         }
         """
         variables = {"question": question, "sql": sql, "plotly_code": plotly_code}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': query, 'variables': variables})
+        response = requests.post(
+            self._graphql_endpoint,
+            headers=self._graphql_headers,
+            json={"query": query, "variables": variables},
+        )
         response_json = response.json()
-        if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'generate_and_create_sql_function' in response_json['data']:
-            resp = response_json['data']['generate_and_create_sql_function']
+        if (
+            response.status_code == 200
+            and "data" in response_json
+            and response_json["data"] is not None
+            and "generate_and_create_sql_function" in response_json["data"]
+        ):
+            resp = response_json["data"]["generate_and_create_sql_function"]
 
             print(resp)
 
             return resp
         else:
-            raise Exception(f"Query failed to run by returning code of {response.status_code}. {response.text}")
+            raise Exception(
+                f"Query failed to run by returning code of {response.status_code}. {response.text}"
+            )
 
     def update_function(self, old_function_name: str, updated_function: dict) -> bool:
         """
@@ -187,41 +222,64 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         """
 
         SQLFunctionUpdate = {
-            'function_name', 'description', 'arguments', 'sql_template', 'post_processing_code_template'
+            "function_name",
+            "description",
+            "arguments",
+            "sql_template",
+            "post_processing_code_template",
         }
 
         # Define the expected keys for each argument in the arguments list
-        ArgumentKeys = {'name', 'general_type', 'description', 'is_user_editable', 'available_values'}
+        ArgumentKeys = {
+            "name",
+            "general_type",
+            "description",
+            "is_user_editable",
+            "available_values",
+        }
 
         # Function to validate and transform arguments
         def validate_arguments(args):
             return [
-                {key: arg[key] for key in arg if key in ArgumentKeys}
-                for arg in args
+                {key: arg[key] for key in arg if key in ArgumentKeys} for arg in args
             ]
 
         # Keep only the keys that conform to the SQLFunctionUpdate GraphQL input type
-        updated_function = {key: value for key, value in updated_function.items() if key in SQLFunctionUpdate}
+        updated_function = {
+            key: value
+            for key, value in updated_function.items()
+            if key in SQLFunctionUpdate
+        }
 
         # Special handling for 'arguments' to ensure they conform to the spec
-        if 'arguments' in updated_function:
-            updated_function['arguments'] = validate_arguments(updated_function['arguments'])
+        if "arguments" in updated_function:
+            updated_function["arguments"] = validate_arguments(
+                updated_function["arguments"]
+            )
 
         variables = {
-            "input": {
-                "old_function_name": old_function_name,
-                **updated_function
-            }
+            "input": {"old_function_name": old_function_name, **updated_function}
         }
 
         print("variables", variables)
 
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables})
+        response = requests.post(
+            self._graphql_endpoint,
+            headers=self._graphql_headers,
+            json={"query": mutation, "variables": variables},
+        )
         response_json = response.json()
-        if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'update_sql_function' in response_json['data']:
-            return response_json['data']['update_sql_function']
+        if (
+            response.status_code == 200
+            and "data" in response_json
+            and response_json["data"] is not None
+            and "update_sql_function" in response_json["data"]
+        ):
+            return response_json["data"]["update_sql_function"]
         else:
-            raise Exception(f"Mutation failed to run by returning code of {response.status_code}. {response.text}")
+            raise Exception(
+                f"Mutation failed to run by returning code of {response.status_code}. {response.text}"
+            )
 
     def delete_function(self, function_name: str) -> bool:
         mutation = """
@@ -230,12 +288,23 @@ class VannaDB_VectorStore(VannaBase, VannaAdvanced):
         }
         """
         variables = {"function_name": function_name}
-        response = requests.post(self._graphql_endpoint, headers=self._graphql_headers, json={'query': mutation, 'variables': variables})
+        response = requests.post(
+            self._graphql_endpoint,
+            headers=self._graphql_headers,
+            json={"query": mutation, "variables": variables},
+        )
         response_json = response.json()
-        if response.status_code == 200 and 'data' in response_json and response_json['data'] is not None and 'delete_sql_function' in response_json['data']:
-            return response_json['data']['delete_sql_function']
+        if (
+            response.status_code == 200
+            and "data" in response_json
+            and response_json["data"] is not None
+            and "delete_sql_function" in response_json["data"]
+        ):
+            return response_json["data"]["delete_sql_function"]
         else:
-            raise Exception(f"Mutation failed to run by returning code of {response.status_code}. {response.text}")
+            raise Exception(
+                f"Mutation failed to run by returning code of {response.status_code}. {response.text}"
+            )
 
     def create_model(self, model: str, **kwargs) -> bool:
         """

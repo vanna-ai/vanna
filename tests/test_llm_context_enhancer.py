@@ -14,7 +14,11 @@ from vanna.core.user.resolver import UserResolver
 from vanna.core.user.request_context import RequestContext
 from vanna.core.llm.models import LlmMessage
 from vanna.core.llm.base import LlmService
-from vanna.capabilities.agent_memory import AgentMemory, TextMemory, TextMemorySearchResult
+from vanna.capabilities.agent_memory import (
+    AgentMemory,
+    TextMemory,
+    TextMemorySearchResult,
+)
 from vanna.core.tool import ToolContext
 
 
@@ -24,26 +28,38 @@ class MockAgentMemory(AgentMemory):
     def __init__(self):
         self.text_memories: List[TextMemory] = []
 
-    async def save_tool_usage(self, question, tool_name, args, context, success=True, metadata=None):
+    async def save_tool_usage(
+        self, question, tool_name, args, context, success=True, metadata=None
+    ):
         pass
 
     async def save_text_memory(self, content, context):
-        memory = TextMemory(memory_id=f"mem-{len(self.text_memories)}", content=content, timestamp=None)
+        memory = TextMemory(
+            memory_id=f"mem-{len(self.text_memories)}", content=content, timestamp=None
+        )
         self.text_memories.append(memory)
         return memory
 
-    async def search_similar_usage(self, question, context, *, limit=10, similarity_threshold=0.7, tool_name_filter=None):
+    async def search_similar_usage(
+        self,
+        question,
+        context,
+        *,
+        limit=10,
+        similarity_threshold=0.7,
+        tool_name_filter=None,
+    ):
         return []
 
-    async def search_text_memories(self, query, context, *, limit=10, similarity_threshold=0.7):
+    async def search_text_memories(
+        self, query, context, *, limit=10, similarity_threshold=0.7
+    ):
         """Return mock search results based on stored memories."""
         results = []
         for idx, memory in enumerate(self.text_memories[:limit]):
             results.append(
                 TextMemorySearchResult(
-                    memory=memory,
-                    similarity_score=0.9 - (idx * 0.1),
-                    rank=idx + 1
+                    memory=memory, similarity_score=0.9 - (idx * 0.1), rank=idx + 1
                 )
             )
         return results
@@ -80,11 +96,8 @@ class MockLlmService(LlmService):
 
         # Return a simple text response
         return LlmResponse(
-            message=LlmResponseMessage(
-                role="assistant",
-                content=self.next_response
-            ),
-            finish_reason="end_turn"
+            message=LlmResponseMessage(role="assistant", content=self.next_response),
+            finish_reason="end_turn",
         )
 
     async def stream_request(self, request):
@@ -94,10 +107,7 @@ class MockLlmService(LlmService):
         # Store the full request object
         self.requests.append(request)
 
-        yield LlmStreamChunk(
-            delta=self.next_response,
-            finish_reason="end_turn"
-        )
+        yield LlmStreamChunk(delta=self.next_response, finish_reason="end_turn")
 
     async def validate_tools(self, tools):
         """Mock validation - no errors."""
@@ -108,7 +118,9 @@ class SimpleUserResolver(UserResolver):
     """Simple user resolver for tests."""
 
     async def resolve_user(self, request_context: RequestContext) -> User:
-        return User(id="test_user", email="test@example.com", group_memberships=['user'])
+        return User(
+            id="test_user", email="test@example.com", group_memberships=["user"]
+        )
 
 
 class TrackingEnhancer(LlmContextEnhancer):
@@ -118,27 +130,32 @@ class TrackingEnhancer(LlmContextEnhancer):
         self.enhance_system_prompt_calls = []
         self.enhance_user_messages_calls = []
 
-    async def enhance_system_prompt(self, system_prompt: str, user_message: str, user: User) -> str:
+    async def enhance_system_prompt(
+        self, system_prompt: str, user_message: str, user: User
+    ) -> str:
         """Track call and add a marker to the system prompt."""
-        self.enhance_system_prompt_calls.append({
-            "system_prompt": system_prompt,
-            "user_message": user_message,
-            "user_id": user.id
-        })
+        self.enhance_system_prompt_calls.append(
+            {
+                "system_prompt": system_prompt,
+                "user_message": user_message,
+                "user_id": user.id,
+            }
+        )
         return system_prompt + "\n\n[ENHANCED_SYSTEM_PROMPT]"
 
-    async def enhance_user_messages(self, messages: List[LlmMessage], user: User) -> List[LlmMessage]:
+    async def enhance_user_messages(
+        self, messages: List[LlmMessage], user: User
+    ) -> List[LlmMessage]:
         """Track call and add a marker to messages."""
-        self.enhance_user_messages_calls.append({
-            "message_count": len(messages),
-            "user_id": user.id
-        })
+        self.enhance_user_messages_calls.append(
+            {"message_count": len(messages), "user_id": user.id}
+        )
         # Add a marker to the last user message
         if messages and messages[-1].role == "user":
             enhanced_messages = messages[:-1] + [
                 LlmMessage(
                     role="user",
-                    content=messages[-1].content + " [ENHANCED_USER_MESSAGE]"
+                    content=messages[-1].content + " [ENHANCED_USER_MESSAGE]",
                 )
             ]
             return enhanced_messages
@@ -164,7 +181,7 @@ async def test_custom_enhancer_system_prompt_is_called():
         user_resolver=SimpleUserResolver(),
         agent_memory=agent_memory,
         llm_context_enhancer=enhancer,
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Send a message
@@ -174,9 +191,13 @@ async def test_custom_enhancer_system_prompt_is_called():
         components.append(component)
 
     # Verify enhance_system_prompt was called
-    assert len(enhancer.enhance_system_prompt_calls) == 1, "enhance_system_prompt should be called exactly once"
+    assert len(enhancer.enhance_system_prompt_calls) == 1, (
+        "enhance_system_prompt should be called exactly once"
+    )
     call = enhancer.enhance_system_prompt_calls[0]
-    assert call["user_message"] == "Hello, world!", "Should pass the user message to enhancer"
+    assert call["user_message"] == "Hello, world!", (
+        "Should pass the user message to enhancer"
+    )
     assert call["user_id"] == "test_user", "Should pass the correct user"
     assert "system_prompt" in call, "Should pass the system prompt"
 
@@ -184,8 +205,9 @@ async def test_custom_enhancer_system_prompt_is_called():
     assert len(llm.requests) >= 1, "LLM should be called at least once"
     first_request = llm.requests[0]
     assert first_request.system_prompt is not None, "Should have a system prompt"
-    assert "[ENHANCED_SYSTEM_PROMPT]" in first_request.system_prompt, \
+    assert "[ENHANCED_SYSTEM_PROMPT]" in first_request.system_prompt, (
         f"System prompt should contain enhancement marker. Got: {first_request.system_prompt}"
+    )
 
 
 @pytest.mark.asyncio
@@ -207,7 +229,7 @@ async def test_custom_enhancer_user_messages_is_called():
         user_resolver=SimpleUserResolver(),
         agent_memory=agent_memory,
         llm_context_enhancer=enhancer,
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Send a message
@@ -227,8 +249,9 @@ async def test_custom_enhancer_user_messages_is_called():
     first_request = llm.requests[0]
     user_messages = [m for m in first_request.messages if m.role == "user"]
     assert len(user_messages) >= 1, "Should have at least one user message"
-    assert "[ENHANCED_USER_MESSAGE]" in user_messages[0].content, \
+    assert "[ENHANCED_USER_MESSAGE]" in user_messages[0].content, (
         f"User message should be enhanced. Got: {user_messages[0].content}"
+    )
 
 
 @pytest.mark.asyncio
@@ -243,16 +266,17 @@ async def test_default_enhancer_with_agent_memory():
     agent_memory = MockAgentMemory()
 
     # Add some test memories
-    user = User(id="test_user", email="test@example.com", group_memberships=['user'])
+    user = User(id="test_user", email="test@example.com", group_memberships=["user"])
     context = ToolContext(
-        user=user,
-        conversation_id="test",
-        request_id="test",
-        agent_memory=agent_memory
+        user=user, conversation_id="test", request_id="test", agent_memory=agent_memory
     )
 
-    await agent_memory.save_text_memory("The database has a users table with columns: id, name, email", context)
-    await agent_memory.save_text_memory("The products table contains: product_id, name, price, category", context)
+    await agent_memory.save_text_memory(
+        "The database has a users table with columns: id, name, email", context
+    )
+    await agent_memory.save_text_memory(
+        "The products table contains: product_id, name, price, category", context
+    )
 
     # Create default enhancer with agent memory
     enhancer = DefaultLlmContextEnhancer(agent_memory=agent_memory)
@@ -264,13 +288,15 @@ async def test_default_enhancer_with_agent_memory():
         user_resolver=SimpleUserResolver(),
         agent_memory=agent_memory,
         llm_context_enhancer=enhancer,
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Send a message that should trigger memory retrieval
     request_context = RequestContext(cookies={}, headers={})
     components = []
-    async for component in agent.send_message(request_context, "Show me the database schema"):
+    async for component in agent.send_message(
+        request_context, "Show me the database schema"
+    ):
         components.append(component)
 
     # Verify that the DefaultLlmContextEnhancer added memory context to the system prompt
@@ -279,12 +305,17 @@ async def test_default_enhancer_with_agent_memory():
 
     # The DefaultLlmContextEnhancer should add "Relevant Context from Memory" to system prompt
     assert first_request.system_prompt is not None, "Should have a system prompt"
-    assert "Relevant Context from Memory" in first_request.system_prompt, \
+    assert "Relevant Context from Memory" in first_request.system_prompt, (
         f"System prompt should include memory context. Got: {first_request.system_prompt}"
+    )
 
     # Should contain one or both of the memories we added
-    assert ("users table" in first_request.system_prompt or "products table" in first_request.system_prompt), \
+    assert (
+        "users table" in first_request.system_prompt
+        or "products table" in first_request.system_prompt
+    ), (
         f"System prompt should contain our test memories. Got: {first_request.system_prompt}"
+    )
 
 
 @pytest.mark.asyncio
@@ -308,7 +339,7 @@ async def test_default_enhancer_without_agent_memory():
         user_resolver=SimpleUserResolver(),
         agent_memory=agent_memory,
         llm_context_enhancer=enhancer,
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Send a message
@@ -323,8 +354,9 @@ async def test_default_enhancer_without_agent_memory():
 
     # The system prompt should exist but NOT contain memory context
     if first_request.system_prompt:
-        assert "Relevant Context from Memory" not in first_request.system_prompt, \
+        assert "Relevant Context from Memory" not in first_request.system_prompt, (
             "Should not add memory context when enhancer has no agent_memory"
+        )
 
 
 @pytest.mark.asyncio
@@ -344,7 +376,7 @@ async def test_no_enhancer_means_no_enhancement():
         tool_registry=tools,
         user_resolver=SimpleUserResolver(),
         agent_memory=agent_memory,
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Send a message
@@ -359,5 +391,6 @@ async def test_no_enhancer_means_no_enhancement():
 
     # Should be the basic system prompt with no enhancements
     if first_request.system_prompt:
-        assert "Relevant Context from Memory" not in first_request.system_prompt, \
+        assert "Relevant Context from Memory" not in first_request.system_prompt, (
             "Should not add memory context when no enhancer is provided"
+        )

@@ -65,9 +65,7 @@ class OpenAI_Chat(VannaBase):
 
         if kwargs.get("model", None) is not None:
             model = kwargs.get("model", None)
-            print(
-                f"Using model {model} for {num_tokens} tokens (approx)"
-            )
+            print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
                 model=model,
                 messages=prompt,
@@ -76,9 +74,7 @@ class OpenAI_Chat(VannaBase):
             )
         elif kwargs.get("engine", None) is not None:
             engine = kwargs.get("engine", None)
-            print(
-                f"Using model {engine} for {num_tokens} tokens (approx)"
-            )
+            print(f"Using model {engine} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
                 engine=engine,
                 messages=prompt,

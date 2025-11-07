@@ -27,7 +27,9 @@ class ProgressDisplayComponent(RichComponent):
     animated: bool = False
     indeterminate: bool = False
 
-    def update_progress(self, value: float, description: Optional[str] = None) -> "ProgressDisplayComponent":
+    def update_progress(
+        self, value: float, description: Optional[str] = None
+    ) -> "ProgressDisplayComponent":
         """Update progress value and optionally description."""
         updates: Dict[str, Any] = {"value": max(0.0, min(1.0, value))}
         if description is not None:

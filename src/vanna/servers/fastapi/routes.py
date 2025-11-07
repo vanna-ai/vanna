@@ -14,7 +14,9 @@ from ..base.templates import get_index_html
 from ...core.user.request_context import RequestContext
 
 
-def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Optional[Dict[str, Any]] = None) -> None:
+def register_chat_routes(
+    app: FastAPI, chat_handler: ChatHandler, config: Optional[Dict[str, Any]] = None
+) -> None:
     """Register chat routes on FastAPI app.
 
     Args:
@@ -32,13 +34,13 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
         api_base_url = config.get("api_base_url", "")
 
         return get_index_html(
-            dev_mode=dev_mode,
-            cdn_url=cdn_url,
-            api_base_url=api_base_url
+            dev_mode=dev_mode, cdn_url=cdn_url, api_base_url=api_base_url
         )
 
     @app.post("/api/vanna/v2/chat_sse")
-    async def chat_sse(chat_request: ChatRequest, http_request: Request) -> StreamingResponse:
+    async def chat_sse(
+        chat_request: ChatRequest, http_request: Request
+    ) -> StreamingResponse:
         """Server-Sent Events endpoint for streaming chat."""
         # Extract request context for user resolution
         chat_request.request_context = RequestContext(
@@ -89,8 +91,8 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                     data = await websocket.receive_json()
 
                     # Extract request context for user resolution
-                    metadata = data.get('metadata', {})
-                    data['request_context'] = RequestContext(
+                    metadata = data.get("metadata", {})
+                    data["request_context"] = RequestContext(
                         cookies=dict(websocket.cookies),
                         headers=dict(websocket.headers),
                         remote_addr=websocket.client.host if websocket.client else None,
@@ -102,10 +104,12 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                 except Exception as e:
                     traceback.print_stack()
                     traceback.print_exc()
-                    await websocket.send_json({
-                        "type": "error",
-                        "data": {"message": f"Invalid request: {str(e)}"},
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "data": {"message": f"Invalid request: {str(e)}"},
+                        }
+                    )
                     continue
 
                 # Stream response
@@ -114,22 +118,30 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
                         await websocket.send_json(chunk.model_dump())
 
                     # Send completion signal
-                    await websocket.send_json({
-                        "type": "completion",
-                        "data": {"status": "done"},
-                        "conversation_id": chunk.conversation_id if 'chunk' in locals() else "",
-                        "request_id": chunk.request_id if 'chunk' in locals() else "",
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "completion",
+                            "data": {"status": "done"},
+                            "conversation_id": chunk.conversation_id
+                            if "chunk" in locals()
+                            else "",
+                            "request_id": chunk.request_id
+                            if "chunk" in locals()
+                            else "",
+                        }
+                    )
 
                 except Exception as e:
                     traceback.print_stack()
                     traceback.print_exc()
-                    await websocket.send_json({
-                        "type": "error",
-                        "data": {"message": str(e)},
-                        "conversation_id": chat_request.conversation_id or "",
-                        "request_id": chat_request.request_id or "",
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "data": {"message": str(e)},
+                            "conversation_id": chat_request.conversation_id or "",
+                            "request_id": chat_request.request_id or "",
+                        }
+                    )
 
         except WebSocketDisconnect:
             pass
@@ -137,17 +149,21 @@ def register_chat_routes(app: FastAPI, chat_handler: ChatHandler, config: Option
             traceback.print_stack()
             traceback.print_exc()
             try:
-                await websocket.send_json({
-                    "type": "error",
-                    "data": {"message": f"WebSocket error: {str(e)}"},
-                })
-            except:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "data": {"message": f"WebSocket error: {str(e)}"},
+                    }
+                )
+            except Exception:
                 pass
             finally:
                 await websocket.close()
 
     @app.post("/api/vanna/v2/chat_poll")
-    async def chat_poll(chat_request: ChatRequest, http_request: Request) -> ChatResponse:
+    async def chat_poll(
+        chat_request: ChatRequest, http_request: Request
+    ) -> ChatResponse:
         """Polling endpoint for chat."""
         # Extract request context for user resolution
         chat_request.request_context = RequestContext(

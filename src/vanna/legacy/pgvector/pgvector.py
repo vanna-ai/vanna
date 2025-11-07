@@ -17,7 +17,8 @@ class PG_VectorStore(VannaBase):
     def __init__(self, config=None):
         if not config or "connection_string" not in config:
             raise ValueError(
-                "A valid 'config' dictionary with a 'connection_string' is required.")
+                "A valid 'config' dictionary with a 'connection_string' is required."
+            )
 
         VannaBase.__init__(self, config=config)
 
@@ -29,7 +30,10 @@ class PG_VectorStore(VannaBase):
             self.embedding_function = config.get("embedding_function")
         else:
             from langchain_huggingface import HuggingFaceEmbeddings
-            self.embedding_function = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+            self.embedding_function = HuggingFaceEmbeddings(
+                model_name="all-MiniLM-L6-v2"
+            )
 
         self.sql_collection = PGVector(
             embeddings=self.embedding_function,
@@ -95,15 +99,21 @@ class PG_VectorStore(VannaBase):
                 raise ValueError("Specified collection does not exist.")
 
     def get_similar_question_sql(self, question: str) -> list:
-        documents = self.sql_collection.similarity_search(query=question, k=self.n_results)
+        documents = self.sql_collection.similarity_search(
+            query=question, k=self.n_results
+        )
         return [ast.literal_eval(document.page_content) for document in documents]
 
     def get_related_ddl(self, question: str, **kwargs) -> list:
-        documents = self.ddl_collection.similarity_search(query=question, k=self.n_results)
+        documents = self.ddl_collection.similarity_search(
+            query=question, k=self.n_results
+        )
         return [document.page_content for document in documents]
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
-        documents = self.documentation_collection.similarity_search(query=question, k=self.n_results)
+        documents = self.documentation_collection.similarity_search(
+            query=question, k=self.n_results
+        )
         return [document.page_content for document in documents]
 
     def train(
@@ -123,7 +133,9 @@ class PG_VectorStore(VannaBase):
             return self.add_documentation(documentation)
 
         if sql and question:
-            return self.add_question_sql(question=question, sql=sql, createdat=createdat)
+            return self.add_question_sql(
+                question=question, sql=sql, createdat=createdat
+            )
 
         if ddl:
             logging.info(f"Adding ddl: {ddl}")
@@ -135,7 +147,9 @@ class PG_VectorStore(VannaBase):
                     self.add_ddl(item.item_value)
                 elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
                     self.add_documentation(item.item_value)
-                elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL and item.item_name:
+                elif (
+                    item.item_type == TrainingPlanItem.ITEM_TYPE_SQL and item.item_name
+                ):
                     self.add_question_sql(question=item.item_name, sql=item.item_value)
 
     def get_training_data(self, **kwargs) -> pd.DataFrame:
@@ -153,7 +167,9 @@ class PG_VectorStore(VannaBase):
         for _, row in df_embedding.iterrows():
             custom_id = row["cmetadata"]["id"]
             document = row["document"]
-            training_data_type = "documentation" if custom_id[-3:] == "doc" else custom_id[-3:]
+            training_data_type = (
+                "documentation" if custom_id[-3:] == "doc" else custom_id[-3:]
+            )
 
             if training_data_type == "sql":
                 # Convert the document string to a dictionary
@@ -162,19 +178,28 @@ class PG_VectorStore(VannaBase):
                     question = doc_dict.get("question")
                     content = doc_dict.get("sql")
                 except (ValueError, SyntaxError):
-                    logging.info(f"Skipping row with custom_id {custom_id} due to parsing error.")
+                    logging.info(
+                        f"Skipping row with custom_id {custom_id} due to parsing error."
+                    )
                     continue
             elif training_data_type in ["documentation", "ddl"]:
                 question = None  # Default value for question
                 content = document
             else:
                 # If the suffix is not recognized, skip this row
-                logging.info(f"Skipping row with custom_id {custom_id} due to unrecognized training data type.")
+                logging.info(
+                    f"Skipping row with custom_id {custom_id} due to unrecognized training data type."
+                )
                 continue
 
             # Append the processed data to the list
             processed_rows.append(
-                {"id": custom_id, "question": question, "content": content, "training_data_type": training_data_type}
+                {
+                    "id": custom_id,
+                    "question": question,
+                    "content": content,
+                    "training_data_type": training_data_type,
+                }
             )
 
         # Create a DataFrame from the list of processed rows
@@ -218,7 +243,9 @@ class PG_VectorStore(VannaBase):
         suffix = suffix_map.get(collection_name)
 
         if not suffix:
-            logging.info("Invalid collection name. Choose from 'ddl', 'sql', or 'documentation'.")
+            logging.info(
+                "Invalid collection name. Choose from 'ddl', 'sql', or 'documentation'."
+            )
             return False
 
         # SQL query to delete rows based on the condition
@@ -242,7 +269,9 @@ class PG_VectorStore(VannaBase):
                         )
                         return True
                     else:
-                        logging.info(f"No rows deleted for collection {collection_name}.")
+                        logging.info(
+                            f"No rows deleted for collection {collection_name}."
+                        )
                         return False
                 except Exception as e:
                     logging.error(f"An error occurred: {e}")

@@ -6,6 +6,7 @@ try:
 except ImportError:
     raise ImportError("Please install boto3 and botocore to use Amazon Bedrock models")
 
+
 class Bedrock_Converse(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
@@ -13,29 +14,27 @@ class Bedrock_Converse(VannaBase):
         # default parameters
         self.temperature = 0.0
         self.max_tokens = 500
-        
+
         if client is None:
             raise ValueError(
                 "A valid Bedrock runtime client must be provided to invoke Bedrock models"
             )
         else:
             self.client = client
-        
+
         if config is None:
             raise ValueError(
                 "Config is required with model_id and inference parameters"
             )
-        
+
         if "modelId" not in config:
-            raise ValueError(
-                "config must contain a modelId to invoke"
-            )
+            raise ValueError("config must contain a modelId to invoke")
         else:
             self.model = config["modelId"]
-        
+
         if "temperature" in config:
             self.temperature = config["temperature"]
-        
+
         if "max_tokens" in config:
             self.max_tokens = config["max_tokens"]
 
@@ -51,7 +50,7 @@ class Bedrock_Converse(VannaBase):
     def submit_prompt(self, prompt, **kwargs) -> str:
         inference_config = {
             "temperature": self.temperature,
-            "maxTokens": self.max_tokens
+            "maxTokens": self.max_tokens,
         }
         additional_model_fields = {
             "top_p": 1,  # setting top_p value for nucleus sampling
@@ -64,13 +63,15 @@ class Bedrock_Converse(VannaBase):
             if role == "system":
                 system_message = prompt_message["content"]
             else:
-                no_system_prompt.append({"role": role, "content":[{"text": prompt_message["content"]}]})
+                no_system_prompt.append(
+                    {"role": role, "content": [{"text": prompt_message["content"]}]}
+                )
 
         converse_api_params = {
             "modelId": self.model,
             "messages": no_system_prompt,
             "inferenceConfig": inference_config,
-            "additionalModelRequestFields": additional_model_fields
+            "additionalModelRequestFields": additional_model_fields,
         }
 
         if system_message:

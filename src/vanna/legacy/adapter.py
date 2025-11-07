@@ -21,7 +21,10 @@ from ..capabilities.sql_runner import SqlRunner, RunSqlToolArgs
 from ..core.registry import ToolRegistry
 from ..core.tool import Tool, ToolContext, ToolResult
 from ..core.user import User
-from ..tools.agent_memory import SaveQuestionToolArgsTool, SearchSavedCorrectToolUsesTool
+from ..tools.agent_memory import (
+    SaveQuestionToolArgsTool,
+    SearchSavedCorrectToolUsesTool,
+)
 from ..tools.run_sql import RunSqlTool
 from .base.base import VannaBase
 
@@ -104,7 +107,9 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
             audit_logger: Optional audit logger for tool execution tracking
             audit_config: Optional audit configuration
         """
-        ToolRegistry.__init__(self, audit_logger=audit_logger, audit_config=audit_config)
+        ToolRegistry.__init__(
+            self, audit_logger=audit_logger, audit_config=audit_config
+        )
         self.vn = vn
         self._register_tools()
 
@@ -121,25 +126,16 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
 
         # Register the RunSqlTool with user and admin access
         run_sql_tool = RunSqlTool(sql_runner)
-        self.register_local_tool(
-            run_sql_tool,
-            access_groups=['user', 'admin']
-        )
+        self.register_local_tool(run_sql_tool, access_groups=["user", "admin"])
 
         # Register memory tools using the internal _agent_memory instance
         # SaveQuestionToolArgsTool - for saving question-tool-args patterns (admin only)
         save_memory_tool = SaveQuestionToolArgsTool()
-        self.register_local_tool(
-            save_memory_tool,
-            access_groups=['admin']
-        )
+        self.register_local_tool(save_memory_tool, access_groups=["admin"])
 
         # SearchSavedCorrectToolUsesTool - for searching similar patterns (user and admin)
         search_memory_tool = SearchSavedCorrectToolUsesTool()
-        self.register_local_tool(
-            search_memory_tool,
-            access_groups=['user', 'admin']
-        )
+        self.register_local_tool(search_memory_tool, access_groups=["user", "admin"])
 
     # AgentMemory interface implementation
 
@@ -150,7 +146,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         args: Dict[str, Any],
         context: ToolContext,
         success: bool = True,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Save a tool usage pattern by storing it as a question-sql pair.
 
@@ -177,7 +173,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         *,
         limit: int = 10,
         similarity_threshold: float = 0.7,
-        tool_name_filter: Optional[str] = None
+        tool_name_filter: Optional[str] = None,
     ) -> List[ToolMemorySearchResult]:
         """Search for similar tool usage patterns using legacy question-sql lookup.
 
@@ -204,7 +200,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
                     question=result["question"],
                     tool_name="run_sql",
                     args={"sql": result["sql"]},
-                    success=True
+                    success=True,
                 )
 
                 # Assign a simple rank-based similarity score
@@ -216,17 +212,13 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
                     ToolMemorySearchResult(
                         memory=tool_memory,
                         similarity_score=similarity_score,
-                        rank=idx + 1
+                        rank=idx + 1,
                     )
                 )
 
         return memory_results[:limit]
 
-    async def save_text_memory(
-        self,
-        content: str,
-        context: ToolContext
-    ) -> TextMemory:
+    async def save_text_memory(self, content: str, context: ToolContext) -> TextMemory:
         """Save text memory using legacy add_documentation method.
 
         Args:
@@ -243,7 +235,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         return TextMemory(
             memory_id=doc_id,
             content=content,
-            timestamp=None  # Legacy doesn't provide timestamps
+            timestamp=None,  # Legacy doesn't provide timestamps
         )
 
     async def search_text_memories(
@@ -252,7 +244,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         context: ToolContext,
         *,
         limit: int = 10,
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.7,
     ) -> List[TextMemorySearchResult]:
         """Search text memories using legacy get_related_documentation method.
 
@@ -286,7 +278,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
             text_memory = TextMemory(
                 memory_id=doc_id,
                 content=content,
-                timestamp=None  # Legacy doesn't provide timestamps
+                timestamp=None,  # Legacy doesn't provide timestamps
             )
 
             # Assign a simple rank-based similarity score
@@ -299,16 +291,14 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
                     TextMemorySearchResult(
                         memory=text_memory,
                         similarity_score=similarity_score,
-                        rank=idx + 1
+                        rank=idx + 1,
                     )
                 )
 
         return memory_results[:limit]
 
     async def get_recent_memories(
-        self,
-        context: ToolContext,
-        limit: int = 10
+        self, context: ToolContext, limit: int = 10
     ) -> List[ToolMemory]:
         """Get recently added memories.
 
@@ -336,16 +326,14 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
                     question=result["question"],
                     tool_name="run_sql",
                     args={"sql": result["sql"]},
-                    success=True
+                    success=True,
                 )
                 memories.append(tool_memory)
 
         return memories
 
     async def get_recent_text_memories(
-        self,
-        context: ToolContext,
-        limit: int = 10
+        self, context: ToolContext, limit: int = 10
     ) -> List[TextMemory]:
         """Fetch recently stored text memories.
 
@@ -381,17 +369,13 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
             text_memory = TextMemory(
                 memory_id=doc_id,
                 content=content,
-                timestamp=None  # Legacy doesn't provide timestamps
+                timestamp=None,  # Legacy doesn't provide timestamps
             )
             memories.append(text_memory)
 
         return memories
 
-    async def delete_by_id(
-        self,
-        context: ToolContext,
-        memory_id: str
-    ) -> bool:
+    async def delete_by_id(self, context: ToolContext, memory_id: str) -> bool:
         """Delete a memory by its ID using legacy remove_training_data method.
 
         Args:
@@ -405,11 +389,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         # The legacy method is synchronous, so we call it directly
         return self.vn.remove_training_data(id=memory_id)
 
-    async def delete_text_memory(
-        self,
-        context: ToolContext,
-        memory_id: str
-    ) -> bool:
+    async def delete_text_memory(self, context: ToolContext, memory_id: str) -> bool:
         """Delete a text memory by its ID using legacy remove_training_data method.
 
         Args:
@@ -427,7 +407,7 @@ class LegacyVannaAdapter(ToolRegistry, AgentMemory):
         self,
         context: ToolContext,
         tool_name: Optional[str] = None,
-        before_date: Optional[str] = None
+        before_date: Optional[str] = None,
     ) -> int:
         """Clear stored memories.
 

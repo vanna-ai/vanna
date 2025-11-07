@@ -1,4 +1,5 @@
 """Presto implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -12,15 +13,15 @@ class PrestoRunner(SqlRunner):
     def __init__(
         self,
         host: str,
-        catalog: str = 'hive',
-        schema: str = 'default',
+        catalog: str = "hive",
+        schema: str = "default",
         user: Optional[str] = None,
         password: Optional[str] = None,
         port: int = 443,
         combined_pem_path: Optional[str] = None,
-        protocol: str = 'https',
+        protocol: str = "https",
         requests_kwargs: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with Presto connection parameters.
 
@@ -38,6 +39,7 @@ class PrestoRunner(SqlRunner):
         """
         try:
             from pyhive import presto
+
             self.presto = presto
         except ImportError as e:
             raise ImportError(
@@ -55,7 +57,7 @@ class PrestoRunner(SqlRunner):
 
         # Set up requests_kwargs for SSL if combined_pem_path is provided
         if requests_kwargs is None and combined_pem_path is not None:
-            self.requests_kwargs = {'verify': combined_pem_path}
+            self.requests_kwargs = {"verify": combined_pem_path}
         else:
             self.requests_kwargs = requests_kwargs
 
@@ -82,13 +84,13 @@ class PrestoRunner(SqlRunner):
             port=self.port,
             protocol=self.protocol,
             requests_kwargs=self.requests_kwargs,
-            **self.kwargs
+            **self.kwargs,
         )
 
         try:
             # Strip and remove trailing semicolons (Presto doesn't like them)
             sql = args.sql.rstrip()
-            if sql.endswith(';'):
+            if sql.endswith(";"):
                 sql = sql[:-1]
 
             cursor = conn.cursor()

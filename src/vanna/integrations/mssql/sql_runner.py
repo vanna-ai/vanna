@@ -1,4 +1,5 @@
 """Microsoft SQL Server implementation of SqlRunner interface."""
+
 from typing import Optional
 import pandas as pd
 
@@ -9,11 +10,7 @@ from vanna.core.tool import ToolContext
 class MSSQLRunner(SqlRunner):
     """Microsoft SQL Server implementation of the SqlRunner interface."""
 
-    def __init__(
-        self,
-        odbc_conn_str: str,
-        **kwargs
-    ):
+    def __init__(self, odbc_conn_str: str, **kwargs):
         """Initialize with MSSQL connection parameters.
 
         Args:
@@ -22,6 +19,7 @@ class MSSQLRunner(SqlRunner):
         """
         try:
             import pyodbc
+
             self.pyodbc = pyodbc
         except ImportError as e:
             raise ImportError(
@@ -32,6 +30,7 @@ class MSSQLRunner(SqlRunner):
             import sqlalchemy as sa
             from sqlalchemy.engine import URL
             from sqlalchemy import create_engine
+
             self.sa = sa
             self.URL = URL
             self.create_engine = create_engine

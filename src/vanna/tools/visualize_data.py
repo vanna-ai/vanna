@@ -1,11 +1,18 @@
 """Tool for visualizing DataFrame data from CSV files."""
+
 from typing import Optional, Type
 import logging
 import pandas as pd
 from pydantic import BaseModel, Field
 
 from vanna.core.tool import Tool, ToolContext, ToolResult
-from vanna.components import UiComponent, ChartComponent, NotificationComponent, ComponentType, SimpleTextComponent
+from vanna.components import (
+    UiComponent,
+    ChartComponent,
+    NotificationComponent,
+    ComponentType,
+    SimpleTextComponent,
+)
 
 from .file_system import FileSystem, LocalFileSystem
 from vanna.integrations.plotly import PlotlyChartGenerator
@@ -17,7 +24,9 @@ class VisualizeDataArgs(BaseModel):
     """Arguments for visualize_data tool."""
 
     filename: str = Field(description="Name of the CSV file to visualize")
-    title: Optional[str] = Field(default=None, description="Optional title for the chart")
+    title: Optional[str] = Field(
+        default=None, description="Optional title for the chart"
+    )
 
 
 class VisualizeDataTool(Tool[VisualizeDataArgs]):
@@ -26,7 +35,7 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
     def __init__(
         self,
         file_system: Optional[FileSystem] = None,
-        plotly_generator: Optional[PlotlyChartGenerator] = None
+        plotly_generator: Optional[PlotlyChartGenerator] = None,
     ):
         """Initialize the tool with FileSystem and PlotlyChartGenerator.
 
@@ -48,7 +57,9 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
     def get_args_schema(self) -> Type[VisualizeDataArgs]:
         return VisualizeDataArgs
 
-    async def execute(self, context: ToolContext, args: VisualizeDataArgs) -> ToolResult:
+    async def execute(
+        self, context: ToolContext, args: VisualizeDataArgs
+    ) -> ToolResult:
         """Read CSV file and generate visualization."""
         try:
             logger.info(f"Starting visualization for file: {args.filename}")
@@ -59,8 +70,11 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
 
             # Parse CSV into DataFrame
             import io
+
             df = pd.read_csv(io.StringIO(csv_content))
-            logger.info(f"Parsed DataFrame with shape {df.shape}, columns: {df.columns.tolist()}, dtypes: {df.dtypes.to_dict()}")
+            logger.info(
+                f"Parsed DataFrame with shape {df.shape}, columns: {df.columns.tolist()}, dtypes: {df.dtypes.to_dict()}"
+            )
 
             # Generate title
             title = args.title or f"Visualization of {args.filename}"
@@ -68,7 +82,9 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
             # Generate chart using PlotlyChartGenerator
             logger.info("Generating chart...")
             chart_dict = self.plotly_generator.generate_chart(df, title)
-            logger.info(f"Chart generated, type: {type(chart_dict)}, keys: {list(chart_dict.keys()) if isinstance(chart_dict, dict) else 'N/A'}")
+            logger.info(
+                f"Chart generated, type: {type(chart_dict)}, keys: {list(chart_dict.keys()) if isinstance(chart_dict, dict) else 'N/A'}"
+            )
 
             # Create result message
             row_count = len(df)
@@ -83,8 +99,8 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                 title=title,
                 config={
                     "data_shape": {"rows": row_count, "columns": col_count},
-                    "source_file": args.filename
-                }
+                    "source_file": args.filename,
+                },
             )
             logger.info("ChartComponent created successfully")
 
@@ -94,14 +110,14 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                 result_for_llm=result,
                 ui_component=UiComponent(
                     rich_component=chart_component,
-                    simple_component=SimpleTextComponent(text=result)
+                    simple_component=SimpleTextComponent(text=result),
                 ),
                 metadata={
                     "filename": args.filename,
                     "rows": row_count,
                     "columns": col_count,
-                    "chart": chart_dict
-                }
+                    "chart": chart_dict,
+                },
             )
             logger.info("ToolResult created successfully")
             return tool_result
@@ -116,12 +132,12 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                     rich_component=NotificationComponent(
                         type=ComponentType.NOTIFICATION,
                         level="error",
-                        message=error_message
+                        message=error_message,
                     ),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    simple_component=SimpleTextComponent(text=error_message),
                 ),
                 error=str(e),
-                metadata={"error_type": "file_not_found"}
+                metadata={"error_type": "file_not_found"},
             )
         except pd.errors.ParserError as e:
             logger.error(f"CSV parse error for {args.filename}", exc_info=True)
@@ -133,12 +149,12 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                     rich_component=NotificationComponent(
                         type=ComponentType.NOTIFICATION,
                         level="error",
-                        message=error_message
+                        message=error_message,
                     ),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    simple_component=SimpleTextComponent(text=error_message),
                 ),
                 error=str(e),
-                metadata={"error_type": "csv_parse_error"}
+                metadata={"error_type": "csv_parse_error"},
             )
         except ValueError as e:
             logger.error(f"Visualization error for {args.filename}", exc_info=True)
@@ -150,15 +166,18 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                     rich_component=NotificationComponent(
                         type=ComponentType.NOTIFICATION,
                         level="error",
-                        message=error_message
+                        message=error_message,
                     ),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    simple_component=SimpleTextComponent(text=error_message),
                 ),
                 error=str(e),
-                metadata={"error_type": "visualization_error"}
+                metadata={"error_type": "visualization_error"},
             )
         except Exception as e:
-            logger.error(f"Unexpected error creating visualization for {args.filename}", exc_info=True)
+            logger.error(
+                f"Unexpected error creating visualization for {args.filename}",
+                exc_info=True,
+            )
             error_message = f"Error creating visualization: {str(e)}"
             return ToolResult(
                 success=False,
@@ -167,10 +186,10 @@ class VisualizeDataTool(Tool[VisualizeDataArgs]):
                     rich_component=NotificationComponent(
                         type=ComponentType.NOTIFICATION,
                         level="error",
-                        message=error_message
+                        message=error_message,
                     ),
-                    simple_component=SimpleTextComponent(text=error_message)
+                    simple_component=SimpleTextComponent(text=error_message),
                 ),
                 error=str(e),
-                metadata={"error_type": "general_error"}
+                metadata={"error_type": "general_error"},
             )

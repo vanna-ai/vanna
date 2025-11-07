@@ -31,10 +31,13 @@ class ToolContext(BaseModel):
     user: "User"  # Forward reference to avoid circular import
     conversation_id: str
     request_id: str = Field(description="Unique request identifier for tracing")
-    agent_memory: AgentMemory = Field(description="Agent memory for tool usage learning")
+    agent_memory: AgentMemory = Field(
+        description="Agent memory for tool usage learning"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
     observability_provider: Optional["ObservabilityProvider"] = Field(
-        default=None, description="Optional observability provider for metrics and spans"
+        default=None,
+        description="Optional observability provider for metrics and spans",
     )
 
     class Config:

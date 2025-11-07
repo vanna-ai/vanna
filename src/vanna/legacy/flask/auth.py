@@ -32,6 +32,7 @@ class AuthInterface(ABC):
     def logout_handler(self, flask_request) -> str:
         pass
 
+
 class NoAuth(AuthInterface):
     def get_user(self, flask_request) -> any:
         return {}
@@ -43,13 +44,13 @@ class NoAuth(AuthInterface):
         return config
 
     def login_form(self) -> str:
-        return ''
+        return ""
 
     def login_handler(self, flask_request) -> str:
-        return 'No login required'
+        return "No login required"
 
     def callback_handler(self, flask_request) -> str:
-        return 'No login required'
+        return "No login required"
 
     def logout_handler(self, flask_request) -> str:
-        return 'No login required'
+        return "No login required"

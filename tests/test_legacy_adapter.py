@@ -16,12 +16,12 @@ class SimpleUserResolver(UserResolver):
     """Simple user resolver for tests - returns test user or admin."""
 
     async def resolve_user(self, request_context: RequestContext) -> User:
-        user_email = request_context.cookies.get('vanna_email', 'test@example.com')
+        user_email = request_context.cookies.get("vanna_email", "test@example.com")
 
         if user_email == "admin@example.com":
-            return User(id="admin_user", email=user_email, group_memberships=['admin'])
+            return User(id="admin_user", email=user_email, group_memberships=["admin"])
 
-        return User(id=user_email, email=user_email, group_memberships=['user'])
+        return User(id=user_email, email=user_email, group_memberships=["user"])
 
 
 @pytest.mark.legacy
@@ -43,12 +43,12 @@ async def test_legacy_adapter_with_anthropic():
     vn = MyVanna()
 
     # Connect to the Chinook database using legacy method
-    vn.connect_to_sqlite('https://vanna.ai/Chinook.sqlite')
+    vn.connect_to_sqlite("https://vanna.ai/Chinook.sqlite")
 
     # Add some training data
     vn.add_question_sql(
         question="Who is the top artist by sales?",
-        sql="SELECT a.Name, SUM(il.UnitPrice * il.Quantity) as total FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId JOIN Track t ON al.AlbumId = t.AlbumId JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY a.ArtistId ORDER BY total DESC LIMIT 1"
+        sql="SELECT a.Name, SUM(il.UnitPrice * il.Quantity) as total FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId JOIN Track t ON al.AlbumId = t.AlbumId JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY a.ArtistId ORDER BY total DESC LIMIT 1",
     )
 
     # Wrap legacy VannaBase with LegacyVannaAdapter
@@ -61,16 +61,18 @@ async def test_legacy_adapter_with_anthropic():
     agent = Agent(
         llm_service=llm,
         tool_registry=legacy_adapter,  # LegacyVannaAdapter is a ToolRegistry
-        agent_memory=legacy_adapter,   # LegacyVannaAdapter implements AgentMemory
+        agent_memory=legacy_adapter,  # LegacyVannaAdapter implements AgentMemory
         user_resolver=SimpleUserResolver(),
-        config=AgentConfig()
+        config=AgentConfig(),
     )
 
     # Test that the agent can answer a question
     request_context = RequestContext(cookies={}, headers={})
 
     components = []
-    async for component in agent.send_message(request_context, "Who is the top artist by sales?"):
+    async for component in agent.send_message(
+        request_context, "Who is the top artist by sales?"
+    ):
         components.append(component)
 
     # Validate we got components
@@ -79,11 +81,14 @@ async def test_legacy_adapter_with_anthropic():
     # Look for a successful response (either table or text mentioning an artist)
     has_response = False
     for component in components:
-        if hasattr(component, 'rich_component') and component.rich_component:
+        if hasattr(component, "rich_component") and component.rich_component:
             has_response = True
             break
-        if hasattr(component, 'simple_component') and component.simple_component:
-            if hasattr(component.simple_component, 'text') and component.simple_component.text:
+        if hasattr(component, "simple_component") and component.simple_component:
+            if (
+                hasattr(component.simple_component, "text")
+                and component.simple_component.text
+            ):
                 has_response = True
                 break
 
@@ -110,12 +115,12 @@ async def test_legacy_adapter_memory_operations():
     adapter = LegacyVannaAdapter(vn)
 
     # Create a properly constructed tool context
-    user = User(id="test_user", email="test@example.com", group_memberships=['user'])
+    user = User(id="test_user", email="test@example.com", group_memberships=["user"])
     context = ToolContext(
         user=user,
         conversation_id="test-conversation",
         request_id="test-request",
-        agent_memory=adapter  # Use the adapter itself as the agent_memory
+        agent_memory=adapter,  # Use the adapter itself as the agent_memory
     )
 
     # Test save_tool_usage
@@ -124,14 +129,12 @@ async def test_legacy_adapter_memory_operations():
         tool_name="run_sql",
         args={"sql": "SELECT SUM(Total) FROM Invoice"},
         context=context,
-        success=True
+        success=True,
     )
 
     # Test search_similar_usage
     results = await adapter.search_similar_usage(
-        question="What are sales?",
-        context=context,
-        limit=5
+        question="What are sales?", context=context, limit=5
     )
 
     # Should find the saved usage
@@ -141,16 +144,13 @@ async def test_legacy_adapter_memory_operations():
 
     # Test save_text_memory
     text_memory = await adapter.save_text_memory(
-        content="The Invoice table contains all sales transactions.",
-        context=context
+        content="The Invoice table contains all sales transactions.", context=context
     )
     assert text_memory.content == "The Invoice table contains all sales transactions."
 
     # Test search_text_memories
     text_results = await adapter.search_text_memories(
-        query="sales",
-        context=context,
-        limit=5
+        query="sales", context=context, limit=5
     )
     assert len(text_results) > 0, "Should find similar text memories"
 

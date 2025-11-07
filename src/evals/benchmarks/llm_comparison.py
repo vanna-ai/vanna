@@ -43,7 +43,9 @@ async def compare_llms():
     print()
 
     # Load test dataset
-    dataset_path = Path(__file__).parent.parent / "datasets" / "sql_generation" / "basic.yaml"
+    dataset_path = (
+        Path(__file__).parent.parent / "datasets" / "sql_generation" / "basic.yaml"
+    )
     print(f"Loading dataset from: {dataset_path}")
     dataset = EvaluationDataset.from_yaml(str(dataset_path))
     print(f"Loaded dataset: {dataset.name}")
@@ -66,8 +68,7 @@ async def compare_llms():
             name="claude-sonnet-4",
             agent=Agent(
                 llm_service=AnthropicLlmService(
-                    api_key=anthropic_key,
-                    model="claude-sonnet-4-20250514"
+                    api_key=anthropic_key, model="claude-sonnet-4-20250514"
                 ),
                 tool_registry=tool_registry,
                 conversation_store=MemoryConversationStore(),
@@ -75,15 +76,14 @@ async def compare_llms():
             metadata={
                 "provider": "anthropic",
                 "model": "claude-sonnet-4-20250514",
-                "version": "2025-05-14"
-            }
+                "version": "2025-05-14",
+            },
         ),
         AgentVariant(
             name="claude-opus-4",
             agent=Agent(
                 llm_service=AnthropicLlmService(
-                    api_key=anthropic_key,
-                    model="claude-opus-4-20250514"
+                    api_key=anthropic_key, model="claude-opus-4-20250514"
                 ),
                 tool_registry=tool_registry,
                 conversation_store=MemoryConversationStore(),
@@ -91,8 +91,8 @@ async def compare_llms():
             metadata={
                 "provider": "anthropic",
                 "model": "claude-opus-4-20250514",
-                "version": "2025-05-14"
-            }
+                "version": "2025-05-14",
+            },
         ),
     ]
 
@@ -124,7 +124,9 @@ async def compare_llms():
 
     # Run comparison
     print("Running comparison (all variants in parallel)...")
-    print(f"Total executions: {len(variants)} variants × {len(dataset.test_cases)} test cases = {len(variants) * len(dataset.test_cases)}")
+    print(
+        f"Total executions: {len(variants)} variants × {len(dataset.test_cases)} test cases = {len(variants) * len(dataset.test_cases)}"
+    )
     print()
 
     comparison = await runner.compare_agents(variants, dataset.test_cases)
@@ -161,6 +163,7 @@ async def main():
     except Exception as e:
         print(f"❌ Error running benchmark: {e}")
         import traceback
+
         traceback.print_stack()
         traceback.print_exc()
 

@@ -6,7 +6,6 @@ from vanna.base import VannaBase
 
 
 class WeaviateDatabase(VannaBase):
-
     def __init__(self, config=None):
         """
         Initialize the VannaEnhanced class with the provided configuration.
@@ -42,30 +41,35 @@ class WeaviateDatabase(VannaBase):
         self.training_data_cluster = {
             "sql": "SQLTrainingDataEntry",
             "ddl": "DDLEntry",
-            "doc": "DocumentationEntry"
+            "doc": "DocumentationEntry",
         }
 
         self._create_collections_if_not_exist()
 
     def _create_collections_if_not_exist(self):
         properties_dict = {
-            self.training_data_cluster['ddl']: [
-                wvc.config.Property(name="description", data_type=wvc.config.DataType.TEXT),
+            self.training_data_cluster["ddl"]: [
+                wvc.config.Property(
+                    name="description", data_type=wvc.config.DataType.TEXT
+                ),
             ],
-            self.training_data_cluster['doc']: [
-                wvc.config.Property(name="description", data_type=wvc.config.DataType.TEXT),
+            self.training_data_cluster["doc"]: [
+                wvc.config.Property(
+                    name="description", data_type=wvc.config.DataType.TEXT
+                ),
             ],
-            self.training_data_cluster['sql']: [
+            self.training_data_cluster["sql"]: [
                 wvc.config.Property(name="sql", data_type=wvc.config.DataType.TEXT),
-                wvc.config.Property(name="natural_language_question", data_type=wvc.config.DataType.TEXT),
-            ]
+                wvc.config.Property(
+                    name="natural_language_question", data_type=wvc.config.DataType.TEXT
+                ),
+            ],
         }
 
         for cluster, properties in properties_dict.items():
             if not self.weaviate_client.collections.exists(cluster):
                 self.weaviate_client.collections.create(
-                    name=cluster,
-                    properties=properties
+                    name=cluster, properties=properties
                 )
 
     def _initialize_weaviate_client(self):
@@ -74,28 +78,26 @@ class WeaviateDatabase(VannaBase):
                 cluster_url=self.weaviate_url,
                 auth_credentials=weaviate.auth.AuthApiKey(self.weaviate_api_key),
                 additional_config=weaviate.config.AdditionalConfig(timeout=(10, 300)),
-                skip_init_checks=True
+                skip_init_checks=True,
             )
         else:
             return weaviate.connect_to_local(
                 port=self.weaviate_port,
                 grpc_port=self.weaviate_grpc_port,
                 additional_config=weaviate.config.AdditionalConfig(timeout=(10, 300)),
-                skip_init_checks=True
+                skip_init_checks=True,
             )
 
     def generate_embedding(self, data: str, **kwargs):
-            embedding_model = TextEmbedding(model_name=self.fastembed_model)
-            embedding = next(embedding_model.embed(data))
-            return embedding.tolist()
-
+        embedding_model = TextEmbedding(model_name=self.fastembed_model)
+        embedding = next(embedding_model.embed(data))
+        return embedding.tolist()
 
     def _insert_data(self, cluster_key: str, data_object: dict, vector: list) -> str:
         self.weaviate_client.connect()
-        response = self.weaviate_client.collections.get(self.training_data_cluster[cluster_key]).data.insert(
-            properties=data_object,
-            vector=vector
-        )
+        response = self.weaviate_client.collections.get(
+            self.training_data_cluster[cluster_key]
+        ).data.insert(properties=data_object, vector=vector)
         self.weaviate_client.close()
         return response
 
@@ -103,31 +105,37 @@ class WeaviateDatabase(VannaBase):
         data_object = {
             "description": ddl,
         }
-        response = self._insert_data('ddl', data_object, self.generate_embedding(ddl))
-        return f'{response}-ddl'
+        response = self._insert_data("ddl", data_object, self.generate_embedding(ddl))
+        return f"{response}-ddl"
 
     def add_documentation(self, doc: str, **kwargs) -> str:
         data_object = {
             "description": doc,
         }
-        response = self._insert_data('doc', data_object, self.generate_embedding(doc))
-        return f'{response}-doc'
+        response = self._insert_data("doc", data_object, self.generate_embedding(doc))
+        return f"{response}-doc"
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
         data_object = {
             "sql": sql,
             "natural_language_question": question,
         }
-        response = self._insert_data('sql', data_object, self.generate_embedding(question))
-        return f'{response}-sql'
+        response = self._insert_data(
+            "sql", data_object, self.generate_embedding(question)
+        )
+        return f"{response}-sql"
 
-    def _query_collection(self, cluster_key: str, vector_input: list, return_properties: list) -> list:
+    def _query_collection(
+        self, cluster_key: str, vector_input: list, return_properties: list
+    ) -> list:
         self.weaviate_client.connect()
-        collection = self.weaviate_client.collections.get(self.training_data_cluster[cluster_key])
+        collection = self.weaviate_client.collections.get(
+            self.training_data_cluster[cluster_key]
+        )
         response = collection.query.near_vector(
             near_vector=vector_input,
             limit=self.n_results,
-            return_properties=return_properties
+            return_properties=return_properties,
         )
         response_list = [item.properties for item in response.objects]
         self.weaviate_client.close()
@@ -135,18 +143,23 @@ class WeaviateDatabase(VannaBase):
 
     def get_related_ddl(self, question: str, **kwargs) -> list:
         vector_input = self.generate_embedding(question)
-        response_list = self._query_collection('ddl', vector_input, ["description"])
+        response_list = self._query_collection("ddl", vector_input, ["description"])
         return [item["description"] for item in response_list]
 
     def get_related_documentation(self, question: str, **kwargs) -> list:
         vector_input = self.generate_embedding(question)
-        response_list = self._query_collection('doc', vector_input, ["description"])
+        response_list = self._query_collection("doc", vector_input, ["description"])
         return [item["description"] for item in response_list]
 
     def get_similar_question_sql(self, question: str, **kwargs) -> list:
         vector_input = self.generate_embedding(question)
-        response_list = self._query_collection('sql', vector_input, ["sql", "natural_language_question"])
-        return [{"question": item["natural_language_question"], "sql": item["sql"]} for item in response_list]
+        response_list = self._query_collection(
+            "sql", vector_input, ["sql", "natural_language_question"]
+        )
+        return [
+            {"question": item["natural_language_question"], "sql": item["sql"]}
+            for item in response_list
+        ]
 
     def get_training_data(self, **kwargs) -> list:
         self.weaviate_client.connect()
@@ -163,13 +176,19 @@ class WeaviateDatabase(VannaBase):
         self.weaviate_client.connect()
         success = False
         if id.endswith("-sql"):
-            id = id.replace('-sql', '')
-            success = self.weaviate_client.collections.get(self.training_data_cluster['sql']).data.delete_by_id(id)
+            id = id.replace("-sql", "")
+            success = self.weaviate_client.collections.get(
+                self.training_data_cluster["sql"]
+            ).data.delete_by_id(id)
         elif id.endswith("-ddl"):
-            id = id.replace('-ddl', '')
-            success = self.weaviate_client.collections.get(self.training_data_cluster['ddl']).data.delete_by_id(id)
+            id = id.replace("-ddl", "")
+            success = self.weaviate_client.collections.get(
+                self.training_data_cluster["ddl"]
+            ).data.delete_by_id(id)
         elif id.endswith("-doc"):
-            id = id.replace('-doc', '')
-            success = self.weaviate_client.collections.get(self.training_data_cluster['doc']).data.delete_by_id(id)
+            id = id.replace("-doc", "")
+            success = self.weaviate_client.collections.get(
+                self.training_data_cluster["doc"]
+            ).data.delete_by_id(id)
         self.weaviate_client.close()
         return success

@@ -60,16 +60,16 @@ class EvaluationReport:
 
     def print_summary(self) -> None:
         """Print summary to console."""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"EVALUATION REPORT: {self.agent_name}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Timestamp: {self.timestamp.isoformat()}")
         print(f"Test Cases: {len(self.results)}")
         print(f"Pass Rate: {self.pass_rate():.1%}")
         print(f"Average Score: {self.average_score():.2f}")
         print(f"Average Time: {self.average_time():.0f}ms")
         print(f"Total Tokens: {self.total_tokens()}")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
         failures = self.get_failures()
         if failures:
@@ -80,7 +80,9 @@ class EvaluationReport:
                 print(f"  Score: {result.overall_score():.2f}")
                 for eval_result in result.evaluations:
                     if not eval_result.passed:
-                        print(f"    [{eval_result.evaluator_name}] {eval_result.reasoning}")
+                        print(
+                            f"    [{eval_result.evaluator_name}] {eval_result.reasoning}"
+                        )
 
 
 @dataclass
@@ -103,16 +105,18 @@ class ComparisonReport:
 
     def print_summary(self) -> None:
         """Print comparison summary to console."""
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("AGENT COMPARISON SUMMARY")
-        print("="*80)
+        print("=" * 80)
         print(f"Timestamp: {self.timestamp.isoformat()}")
         print(f"Variants: {len(self.variants)}")
         print(f"Test Cases: {len(self.test_cases)}")
 
         # Table of results
-        print(f"\n{'Agent':<25} {'Pass Rate':<12} {'Avg Score':<12} {'Avg Time':<12} {'Tokens':<12}")
-        print("-"*80)
+        print(
+            f"\n{'Agent':<25} {'Pass Rate':<12} {'Avg Score':<12} {'Avg Time':<12} {'Tokens':<12}"
+        )
+        print("-" * 80)
 
         for variant_name, report in self.reports.items():
             print(
@@ -123,7 +127,7 @@ class ComparisonReport:
                 f"{report.total_tokens():<12,}"
             )
 
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
     def get_best_variant(self, metric: str = "score") -> str:
         """Get the best performing variant by metric.
@@ -148,41 +152,44 @@ class ComparisonReport:
 
         Each row represents one test case × one variant combination.
         """
-        with open(path, 'w', newline='') as f:
+        with open(path, "w", newline="") as f:
             writer = csv.writer(f)
 
             # Header
-            writer.writerow([
-                'variant',
-                'test_case_id',
-                'test_message',
-                'passed',
-                'score',
-                'execution_time_ms',
-                'tokens',
-                'error',
-                'evaluator_scores',
-            ])
+            writer.writerow(
+                [
+                    "variant",
+                    "test_case_id",
+                    "test_message",
+                    "passed",
+                    "score",
+                    "execution_time_ms",
+                    "tokens",
+                    "error",
+                    "evaluator_scores",
+                ]
+            )
 
             # Data rows
             for variant_name, report in self.reports.items():
                 for result in report.results:
                     evaluator_scores = {
-                        e.evaluator_name: e.score
-                        for e in result.evaluations
+                        e.evaluator_name: e.score for e in result.evaluations
                     }
 
-                    writer.writerow([
-                        variant_name,
-                        result.test_case.id,
-                        result.test_case.message[:50],  # Truncate
-                        result.overall_passed(),
-                        result.overall_score(),
-                        result.execution_time_ms,
-                        result.agent_result.total_tokens,
-                        result.agent_result.error or '',
-                        str(evaluator_scores),
-                    ])
+                    writer.writerow(
+                        [
+                            variant_name,
+                            result.test_case.id,
+                            result.test_case.message[:50],  # Truncate
+                            result.overall_passed(),
+                            result.overall_score(),
+                            result.execution_time_ms,
+                            result.agent_result.total_tokens,
+                            result.agent_result.error or "",
+                            str(evaluator_scores),
+                        ]
+                    )
 
     def save_html(self, path: str) -> None:
         """Save interactive HTML comparison report.
@@ -193,7 +200,7 @@ class ComparisonReport:
         - Side-by-side test case results
         """
         html = self._generate_html()
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(html)
 
     def _generate_html(self) -> str:
@@ -225,7 +232,9 @@ class ComparisonReport:
         # Summary table
         html_parts.append("<h2>Summary</h2>")
         html_parts.append("<table>")
-        html_parts.append("<tr><th>Agent</th><th>Pass Rate</th><th>Avg Score</th><th>Avg Time (ms)</th><th>Total Tokens</th></tr>")
+        html_parts.append(
+            "<tr><th>Agent</th><th>Pass Rate</th><th>Avg Score</th><th>Avg Time (ms)</th><th>Total Tokens</th></tr>"
+        )
 
         best_by_score = self.get_best_variant("score")
 
@@ -247,14 +256,18 @@ class ComparisonReport:
         html_parts.append("<h2>Test Case Details</h2>")
 
         for i, test_case in enumerate(self.test_cases):
-            html_parts.append(f"<h3>Test Case {i+1}: {test_case.id}</h3>")
+            html_parts.append(f"<h3>Test Case {i + 1}: {test_case.id}</h3>")
             html_parts.append(f"<p><strong>Message:</strong> {test_case.message}</p>")
 
             html_parts.append("<table>")
-            html_parts.append("<tr><th>Variant</th><th>Result</th><th>Score</th><th>Time (ms)</th></tr>")
+            html_parts.append(
+                "<tr><th>Variant</th><th>Result</th><th>Score</th><th>Time (ms)</th></tr>"
+            )
 
             for variant_name, report in self.reports.items():
-                result = next((r for r in report.results if r.test_case.id == test_case.id), None)
+                result = next(
+                    (r for r in report.results if r.test_case.id == test_case.id), None
+                )
                 if result:
                     passed_class = "passed" if result.overall_passed() else "failed"
                     passed_text = "PASS" if result.overall_passed() else "FAIL"

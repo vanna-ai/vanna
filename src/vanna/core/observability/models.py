@@ -14,9 +14,7 @@ class Span(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()), description="Span ID")
     name: str = Field(description="Span name/operation")
-    start_time: float = Field(
-        default_factory=time.time, description="Start timestamp"
-    )
+    start_time: float = Field(default_factory=time.time, description="Start timestamp")
     end_time: Optional[float] = Field(default=None, description="End timestamp")
     attributes: Dict[str, Any] = Field(
         default_factory=dict, description="Span attributes"

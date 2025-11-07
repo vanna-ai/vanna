@@ -21,6 +21,7 @@ class TestAgentMemoryInterface:
     def test_agent_memory_import(self):
         """Test that AgentMemory can be imported."""
         from vanna.capabilities.agent_memory import AgentMemory
+
         assert AgentMemory is not None
 
     def test_agent_memory_is_abstract(self):
@@ -34,36 +35,38 @@ class TestAgentMemoryInterface:
         from vanna.capabilities.agent_memory import AgentMemory
 
         required_methods = [
-            'save_tool_usage',
-            'save_text_memory',
-            'search_similar_usage',
-            'search_text_memories',
-            'get_recent_memories',
-            'get_recent_text_memories',
-            'delete_by_id',
-            'delete_text_memory',
-            'clear_memories'
+            "save_tool_usage",
+            "save_text_memory",
+            "search_similar_usage",
+            "search_text_memories",
+            "get_recent_memories",
+            "get_recent_text_memories",
+            "delete_by_id",
+            "delete_text_memory",
+            "clear_memories",
         ]
 
         for method_name in required_methods:
             assert hasattr(AgentMemory, method_name)
             method = getattr(AgentMemory, method_name)
-            assert getattr(method, '__isabstractmethod__', False), f"{method_name} should be abstract"
+            assert getattr(method, "__isabstractmethod__", False), (
+                f"{method_name} should be abstract"
+            )
 
     def test_all_methods_are_async(self):
         """Test that all AgentMemory methods are async."""
         from vanna.capabilities.agent_memory import AgentMemory
 
         methods = [
-            'save_tool_usage',
-            'save_text_memory',
-            'search_similar_usage',
-            'search_text_memories',
-            'get_recent_memories',
-            'get_recent_text_memories',
-            'delete_by_id',
-            'delete_text_memory',
-            'clear_memories'
+            "save_tool_usage",
+            "save_text_memory",
+            "search_similar_usage",
+            "search_text_memories",
+            "get_recent_memories",
+            "get_recent_text_memories",
+            "delete_by_id",
+            "delete_text_memory",
+            "clear_memories",
         ]
 
         for method_name in methods:
@@ -77,6 +80,7 @@ class TestToolMemoryModel:
     def test_tool_memory_import(self):
         """Test that ToolMemory can be imported."""
         from vanna.capabilities.agent_memory import ToolMemory
+
         assert ToolMemory is not None
 
     def test_tool_memory_is_pydantic_model(self):
@@ -90,8 +94,8 @@ class TestToolMemoryModel:
         """Test that ToolMemory has all required fields."""
         from vanna.capabilities.agent_memory import ToolMemory
 
-        required_fields = ['question', 'tool_name', 'args']
-        optional_fields = ['memory_id', 'timestamp', 'success', 'metadata']
+        required_fields = ["question", "tool_name", "args"]
+        optional_fields = ["memory_id", "timestamp", "success", "metadata"]
 
         model_fields = list(ToolMemory.model_fields.keys())
 
@@ -109,7 +113,7 @@ class TestToolMemoryModel:
             memory_id="test-123",
             question="What is the total sales?",
             tool_name="run_sql",
-            args={"sql": "SELECT SUM(amount) FROM sales"}
+            args={"sql": "SELECT SUM(amount) FROM sales"},
         )
 
         assert memory.memory_id == "test-123"
@@ -125,23 +129,16 @@ class TestToolMemorySearchResultModel:
     def test_memory_search_result_import(self):
         """Test that ToolMemorySearchResult can be imported."""
         from vanna.capabilities.agent_memory import ToolMemorySearchResult
+
         assert ToolMemorySearchResult is not None
 
     def test_memory_search_result_instantiation(self):
         """Test that ToolMemorySearchResult can be instantiated."""
         from vanna.capabilities.agent_memory import ToolMemorySearchResult, ToolMemory
 
-        memory = ToolMemory(
-            question="test",
-            tool_name="test_tool",
-            args={}
-        )
+        memory = ToolMemory(question="test", tool_name="test_tool", args={})
 
-        result = ToolMemorySearchResult(
-            memory=memory,
-            similarity_score=0.95,
-            rank=1
-        )
+        result = ToolMemorySearchResult(memory=memory, similarity_score=0.95, rank=1)
 
         assert result.memory == memory
         assert result.similarity_score == 0.95
@@ -168,8 +165,8 @@ class TestTextMemoryModel:
         """Test that TextMemory has all required fields."""
         from vanna.capabilities.agent_memory import TextMemory
 
-        required_fields = ['content']
-        optional_fields = ['memory_id', 'timestamp']
+        required_fields = ["content"]
+        optional_fields = ["memory_id", "timestamp"]
 
         model_fields = list(TextMemory.model_fields.keys())
 
@@ -184,8 +181,7 @@ class TestTextMemoryModel:
         from vanna.capabilities.agent_memory import TextMemory
 
         memory = TextMemory(
-            memory_id="text-123",
-            content="Remember to handle edge cases"
+            memory_id="text-123", content="Remember to handle edge cases"
         )
 
         assert memory.memory_id == "text-123"
@@ -205,15 +201,9 @@ class TestTextMemorySearchResultModel:
         """Test that TextMemorySearchResult can be instantiated."""
         from vanna.capabilities.agent_memory import TextMemorySearchResult, TextMemory
 
-        memory = TextMemory(
-            content="Example memory"
-        )
+        memory = TextMemory(content="Example memory")
 
-        result = TextMemorySearchResult(
-            memory=memory,
-            similarity_score=0.88,
-            rank=2
-        )
+        result = TextMemorySearchResult(memory=memory, similarity_score=0.88, rank=2)
 
         assert result.memory == memory
         assert result.similarity_score == 0.88
@@ -227,6 +217,7 @@ class TestChromaDBAgentMemory:
         """Test that ChromaAgentMemory can be imported."""
         try:
             from vanna.integrations.chromadb import ChromaAgentMemory
+
             assert ChromaAgentMemory is not None
         except ImportError:
             pytest.skip("ChromaDB not installed")
@@ -247,22 +238,23 @@ class TestChromaDBAgentMemory:
             from vanna.integrations.chromadb import ChromaAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
                 assert hasattr(ChromaAgentMemory, method_name)
                 method = getattr(ChromaAgentMemory, method_name)
-                assert not getattr(method, '__isabstractmethod__', False), \
+                assert not getattr(method, "__isabstractmethod__", False), (
                     f"{method_name} should be implemented (not abstract)"
+                )
         except ImportError:
             pytest.skip("ChromaDB not installed")
 
@@ -274,8 +266,7 @@ class TestChromaDBAgentMemory:
 
             temp_dir = tempfile.mkdtemp()
             memory = ChromaAgentMemory(
-                persist_directory=temp_dir,
-                collection_name="test"
+                persist_directory=temp_dir, collection_name="test"
             )
 
             assert memory is not None
@@ -292,6 +283,7 @@ class TestQdrantAgentMemory:
         """Test that QdrantAgentMemory can be imported."""
         try:
             from vanna.integrations.qdrant import QdrantAgentMemory
+
             assert QdrantAgentMemory is not None
         except ImportError:
             pytest.skip("Qdrant not installed")
@@ -312,15 +304,15 @@ class TestQdrantAgentMemory:
             from vanna.integrations.qdrant import QdrantAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -348,6 +340,7 @@ class TestPineconeAgentMemory:
         """Test that PineconeAgentMemory can be imported."""
         try:
             from vanna.integrations.pinecone import PineconeAgentMemory
+
             assert PineconeAgentMemory is not None
         except ImportError:
             pytest.skip("Pinecone not installed")
@@ -368,15 +361,15 @@ class TestPineconeAgentMemory:
             from vanna.integrations.pinecone import PineconeAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -392,6 +385,7 @@ class TestMilvusAgentMemory:
         """Test that MilvusAgentMemory can be imported."""
         try:
             from vanna.integrations.milvus import MilvusAgentMemory
+
             assert MilvusAgentMemory is not None
         except ImportError:
             pytest.skip("Milvus not installed")
@@ -412,15 +406,15 @@ class TestMilvusAgentMemory:
             from vanna.integrations.milvus import MilvusAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -436,6 +430,7 @@ class TestWeaviateAgentMemory:
         """Test that WeaviateAgentMemory can be imported."""
         try:
             from vanna.integrations.weaviate import WeaviateAgentMemory
+
             assert WeaviateAgentMemory is not None
         except ImportError:
             pytest.skip("Weaviate not installed")
@@ -456,15 +451,15 @@ class TestWeaviateAgentMemory:
             from vanna.integrations.weaviate import WeaviateAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -480,6 +475,7 @@ class TestFAISSAgentMemory:
         """Test that FAISSAgentMemory can be imported."""
         try:
             from vanna.integrations.faiss import FAISSAgentMemory
+
             assert FAISSAgentMemory is not None
         except ImportError:
             pytest.skip("FAISS not installed")
@@ -500,15 +496,15 @@ class TestFAISSAgentMemory:
             from vanna.integrations.faiss import FAISSAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -538,6 +534,7 @@ class TestOpenSearchAgentMemory:
         """Test that OpenSearchAgentMemory can be imported."""
         try:
             from vanna.integrations.opensearch import OpenSearchAgentMemory
+
             assert OpenSearchAgentMemory is not None
         except ImportError:
             pytest.skip("OpenSearch not installed")
@@ -558,15 +555,15 @@ class TestOpenSearchAgentMemory:
             from vanna.integrations.opensearch import OpenSearchAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -582,6 +579,7 @@ class TestAzureAISearchAgentMemory:
         """Test that AzureAISearchAgentMemory can be imported."""
         try:
             from vanna.integrations.azuresearch import AzureAISearchAgentMemory
+
             assert AzureAISearchAgentMemory is not None
         except ImportError:
             pytest.skip("Azure Search not installed")
@@ -602,15 +600,15 @@ class TestAzureAISearchAgentMemory:
             from vanna.integrations.azuresearch import AzureAISearchAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -626,6 +624,7 @@ class TestMarqoAgentMemory:
         """Test that MarqoAgentMemory can be imported."""
         try:
             from vanna.integrations.marqo import MarqoAgentMemory
+
             assert MarqoAgentMemory is not None
         except ImportError:
             pytest.skip("Marqo not installed")
@@ -646,15 +645,15 @@ class TestMarqoAgentMemory:
             from vanna.integrations.marqo import MarqoAgentMemory
 
             required_methods = [
-                'save_tool_usage',
-                'save_text_memory',
-                'search_similar_usage',
-                'search_text_memories',
-                'get_recent_memories',
-                'get_recent_text_memories',
-                'delete_by_id',
-                'delete_text_memory',
-                'clear_memories'
+                "save_tool_usage",
+                "save_text_memory",
+                "search_similar_usage",
+                "search_text_memories",
+                "get_recent_memories",
+                "get_recent_text_memories",
+                "delete_by_id",
+                "delete_text_memory",
+                "clear_memories",
             ]
 
             for method_name in required_methods:
@@ -669,6 +668,7 @@ class TestDemoAgentMemory:
     def test_demo_import(self):
         """Test that DemoAgentMemory can be imported."""
         from vanna.integrations.local.agent_memory import DemoAgentMemory
+
         assert DemoAgentMemory is not None
 
     def test_demo_implements_agent_memory(self):
@@ -683,15 +683,15 @@ class TestDemoAgentMemory:
         from vanna.integrations.local.agent_memory import DemoAgentMemory
 
         required_methods = [
-            'save_tool_usage',
-            'save_text_memory',
-            'search_similar_usage',
-            'search_text_memories',
-            'get_recent_memories',
-            'get_recent_text_memories',
-            'delete_by_id',
-            'delete_text_memory',
-            'clear_memories'
+            "save_tool_usage",
+            "save_text_memory",
+            "search_similar_usage",
+            "search_text_memories",
+            "get_recent_memories",
+            "get_recent_text_memories",
+            "delete_by_id",
+            "delete_text_memory",
+            "clear_memories",
         ]
 
         for method_name in required_methods:

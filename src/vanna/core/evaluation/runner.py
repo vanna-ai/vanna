@@ -7,7 +7,7 @@ especially when comparing multiple LLMs or model versions.
 """
 
 import asyncio
-from typing import Any, List, Dict, Optional, AsyncGenerator
+from typing import Any, List, Dict, Optional, AsyncGenerator, TYPE_CHECKING
 from datetime import datetime
 
 from .base import (
@@ -18,7 +18,12 @@ from .base import (
     Evaluator,
 )
 from vanna.core import UiComponent
+from vanna.core.user.request_context import RequestContext
 from vanna.core.observability import ObservabilityProvider
+
+if TYPE_CHECKING:
+    from vanna import Agent
+    from .report import EvaluationReport, ComparisonReport
 
 
 class EvaluationRunner:
@@ -59,9 +64,9 @@ class EvaluationRunner:
 
     async def run_evaluation(
         self,
-        agent: "Agent",  # type: ignore
+        agent: "Agent",
         test_cases: List[TestCase],
-    ) -> "EvaluationReport":  # type: ignore
+    ) -> "EvaluationReport":
         """Run evaluation on a single agent.
 
         Args:
@@ -85,7 +90,7 @@ class EvaluationRunner:
         self,
         agent_variants: List[AgentVariant],
         test_cases: List[TestCase],
-    ) -> "ComparisonReport":  # type: ignore
+    ) -> "ComparisonReport":
         """Compare multiple agent variants on same test cases.
 
         This is the PRIMARY use case for LLM comparison. Runs all variants
@@ -107,13 +112,12 @@ class EvaluationRunner:
                 attributes={
                     "num_variants": len(agent_variants),
                     "num_test_cases": len(test_cases),
-                }
+                },
             )
 
         # Run all variants in parallel
         tasks = [
-            self._run_agent_variant(variant, test_cases)
-            for variant in agent_variants
+            self._run_agent_variant(variant, test_cases) for variant in agent_variants
         ]
 
         variant_reports = await asyncio.gather(*tasks)
@@ -172,7 +176,7 @@ class EvaluationRunner:
         self,
         variant: AgentVariant,
         test_cases: List[TestCase],
-    ) -> "EvaluationReport":  # type: ignore
+    ) -> "EvaluationReport":
         """Run a single agent variant on all test cases.
 
         Args:
@@ -191,7 +195,7 @@ class EvaluationRunner:
                     "variant": variant.name,
                     "num_test_cases": len(test_cases),
                     **variant.metadata,
-                }
+                },
             )
 
         results = await self._run_test_cases_parallel(variant.agent, test_cases)
@@ -209,7 +213,7 @@ class EvaluationRunner:
 
     async def _run_test_cases_parallel(
         self,
-        agent: "Agent",  # type: ignore
+        agent: "Agent",
         test_cases: List[TestCase],
     ) -> List[TestCaseResult]:
         """Run test cases in parallel with concurrency limit.
@@ -222,15 +226,14 @@ class EvaluationRunner:
             List of TestCaseResult, one per test case
         """
         tasks = [
-            self._run_single_test_case(agent, test_case)
-            for test_case in test_cases
+            self._run_single_test_case(agent, test_case) for test_case in test_cases
         ]
 
         return await asyncio.gather(*tasks)
 
     async def _run_single_test_case(
         self,
-        agent: "Agent",  # type: ignore
+        agent: "Agent",
         test_case: TestCase,
     ) -> TestCaseResult:
         """Run a single test case with semaphore to limit concurrency.
@@ -263,7 +266,7 @@ class EvaluationRunner:
 
     async def _execute_agent(
         self,
-        agent: "Agent",  # type: ignore
+        agent: "Agent",
         test_case: TestCase,
     ) -> AgentResult:
         """Execute agent and capture full trajectory.
@@ -280,8 +283,16 @@ class EvaluationRunner:
         error: Optional[str] = None
 
         try:
+            # Create request context with user info from test case
+            # This allows the agent's UserResolver to resolve the correct user
+            request_context = RequestContext(
+                cookies={"user_id": test_case.user.id},
+                headers={},
+                metadata={"test_case_user": test_case.user},
+            )
+
             async for component in agent.send_message(
-                user=test_case.user,
+                request_context=request_context,
                 message=test_case.message,
                 conversation_id=test_case.conversation_id,
             ):

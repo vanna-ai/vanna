@@ -13,7 +13,7 @@ from typing import Any, Dict, List, TypeVar
 from pydantic import BaseModel, Field
 
 # Type variable for self-returning methods
-T = TypeVar('T', bound='RichComponent')
+T = TypeVar("T", bound="RichComponent")
 
 
 class ComponentType(str, Enum):
@@ -136,7 +136,11 @@ class RichComponent(BaseModel):
             elif key == "data":
                 # For most components, skip the base data field
                 continue
-            elif key == "rows" and hasattr(self, 'type') and self.type.value == 'dataframe':
+            elif (
+                key == "rows"
+                and hasattr(self, "type")
+                and self.type.value == "dataframe"
+            ):
                 # For DataFrame components, the 'rows' field contains the actual row data
                 # which should be included in the component_data as 'data' for the frontend
                 component_data["data"] = value

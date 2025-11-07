@@ -52,15 +52,13 @@ def create_demo_agent() -> Agent:
         Configured Agent instance with cookie-based authentication
     """
     # Create a mock LLM
-    llm_service = MockLlmService(
-        response_content="Mock response"
-    )
+    llm_service = MockLlmService(response_content="Mock response")
 
     # Empty tool registry
     tool_registry = ToolRegistry()
 
     # Cookie-based user resolver
-    user_resolver = CookieEmailUserResolver(cookie_name='vanna_email')
+    user_resolver = CookieEmailUserResolver(cookie_name="vanna_email")
 
     # User echo middleware
     middleware = UserEchoMiddleware()
@@ -90,31 +88,34 @@ async def demo_authentication():
     # Test 1: Request with email cookie
     print("🔹 Test 1: Authenticated user (alice@example.com)")
     request_context = RequestContext(
-        cookies={'vanna_email': 'alice@example.com'},
+        cookies={"vanna_email": "alice@example.com"},
         headers={},
-        remote_addr='127.0.0.1'
+        remote_addr="127.0.0.1",
     )
 
-    print("Request context:", {
-        'cookies': request_context.cookies,
-        'headers': request_context.headers,
-        'remote_addr': request_context.remote_addr
-    })
+    print(
+        "Request context:",
+        {
+            "cookies": request_context.cookies,
+            "headers": request_context.headers,
+            "remote_addr": request_context.remote_addr,
+        },
+    )
 
     # Send message - Agent will resolve user internally
     agent_response = ""
     async for component in agent.send_message(
         request_context=request_context,
         message="Who am I?",
-        conversation_id="test_conv_1"
+        conversation_id="test_conv_1",
     ):
         # Extract and display user info from the resolved user
-        if hasattr(component, 'rich_component'):
+        if hasattr(component, "rich_component"):
             rich = component.rich_component
             # Check if it's a text component
             if rich.type.value == "text":
                 # Access content directly from the component (before serialization)
-                if hasattr(rich, 'content'):
+                if hasattr(rich, "content"):
                     agent_response = rich.content
 
     print(f"Agent response: {agent_response}")
@@ -122,79 +123,85 @@ async def demo_authentication():
     # Verify user was resolved by checking the conversation store
     user_resolver = agent.user_resolver
     resolved_user = await user_resolver.resolve_user(request_context)
-    print(f"✅ Resolved user: {resolved_user.email} (username: {resolved_user.username}, id: {resolved_user.id})")
+    print(
+        f"✅ Resolved user: {resolved_user.email} (username: {resolved_user.username}, id: {resolved_user.id})"
+    )
     print(f"   Permissions: {resolved_user.permissions}")
     print(f"   Metadata: {resolved_user.metadata}")
 
-    print("\n" + "="*60 + "\n")
+    print("\n" + "=" * 60 + "\n")
 
     # Test 2: Request without email cookie (anonymous)
     print("🔹 Test 2: Anonymous user (no cookie)")
-    anonymous_context = RequestContext(
-        cookies={},
-        headers={},
-        remote_addr='127.0.0.1'
-    )
+    anonymous_context = RequestContext(cookies={}, headers={}, remote_addr="127.0.0.1")
 
-    print("Request context:", {
-        'cookies': anonymous_context.cookies,
-        'headers': anonymous_context.headers,
-        'remote_addr': anonymous_context.remote_addr
-    })
+    print(
+        "Request context:",
+        {
+            "cookies": anonymous_context.cookies,
+            "headers": anonymous_context.headers,
+            "remote_addr": anonymous_context.remote_addr,
+        },
+    )
 
     agent_response = ""
     async for component in agent.send_message(
         request_context=anonymous_context,
         message="Who am I?",
-        conversation_id="test_conv_2"
+        conversation_id="test_conv_2",
     ):
-        if hasattr(component, 'rich_component'):
+        if hasattr(component, "rich_component"):
             rich = component.rich_component
-            if rich.type.value == "text" and hasattr(rich, 'content'):
+            if rich.type.value == "text" and hasattr(rich, "content"):
                 agent_response = rich.content
 
     print(f"Agent response: {agent_response}")
 
     resolved_user = await user_resolver.resolve_user(anonymous_context)
-    print(f"✅ Resolved user: {resolved_user.email or 'None'} (username: {resolved_user.username}, id: {resolved_user.id})")
+    print(
+        f"✅ Resolved user: {resolved_user.email or 'None'} (username: {resolved_user.username}, id: {resolved_user.id})"
+    )
     print(f"   Permissions: {resolved_user.permissions}")
     print(f"   Metadata: {resolved_user.metadata}")
 
-    print("\n" + "="*60 + "\n")
+    print("\n" + "=" * 60 + "\n")
 
     # Test 3: Different user
     print("🔹 Test 3: Different authenticated user (bob@company.com)")
     bob_context = RequestContext(
-        cookies={'vanna_email': 'bob@company.com'},
-        headers={'User-Agent': 'Mozilla/5.0'},
-        remote_addr='192.168.1.100'
+        cookies={"vanna_email": "bob@company.com"},
+        headers={"User-Agent": "Mozilla/5.0"},
+        remote_addr="192.168.1.100",
     )
 
-    print("Request context:", {
-        'cookies': bob_context.cookies,
-        'headers': bob_context.headers,
-        'remote_addr': bob_context.remote_addr
-    })
+    print(
+        "Request context:",
+        {
+            "cookies": bob_context.cookies,
+            "headers": bob_context.headers,
+            "remote_addr": bob_context.remote_addr,
+        },
+    )
 
     agent_response = ""
     async for component in agent.send_message(
-        request_context=bob_context,
-        message="Who am I?",
-        conversation_id="test_conv_3"
+        request_context=bob_context, message="Who am I?", conversation_id="test_conv_3"
     ):
-        if hasattr(component, 'rich_component'):
+        if hasattr(component, "rich_component"):
             rich = component.rich_component
-            if rich.type.value == "text" and hasattr(rich, 'content'):
+            if rich.type.value == "text" and hasattr(rich, "content"):
                 agent_response = rich.content
 
     print(f"Agent response: {agent_response}")
 
     resolved_user = await user_resolver.resolve_user(bob_context)
-    print(f"✅ Resolved user: {resolved_user.email} (username: {resolved_user.username}, id: {resolved_user.id})")
+    print(
+        f"✅ Resolved user: {resolved_user.email} (username: {resolved_user.username}, id: {resolved_user.id})"
+    )
     print(f"   Permissions: {resolved_user.permissions}")
     print(f"   Metadata: {resolved_user.metadata}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("\n✅ Authentication demo complete!")
     print("\nKey Features Verified:")
     print("• UserResolver is part of Agent")

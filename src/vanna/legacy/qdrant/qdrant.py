@@ -71,12 +71,8 @@ class Qdrant_VectorStore(VannaBase):
         self.documentation_collection_name = config.get(
             "documentation_collection_name", "documentation"
         )
-        self.ddl_collection_name = config.get(
-            "ddl_collection_name", "ddl"
-        )
-        self.sql_collection_name = config.get(
-            "sql_collection_name", "sql"
-        )
+        self.ddl_collection_name = config.get("ddl_collection_name", "ddl")
+        self.sql_collection_name = config.get("sql_collection_name", "sql")
 
         self.id_suffixes = {
             self.ddl_collection_name: "ddl",

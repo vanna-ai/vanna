@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from vanna.core.llm import LlmService, LlmRequest, LlmResponse, LlmStreamChunk
 from vanna.core.tool import ToolCall, ToolSchema
 
+if TYPE_CHECKING:
+    from openai.types.responses import Response
+
 
 class OpenAIResponsesService(LlmService):
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, model: Optional[str] = None
+    ) -> None:
         try:
             from openai import AsyncOpenAI
             from openai.types.responses import Response
@@ -34,7 +39,9 @@ class OpenAIResponsesService(LlmService):
             metadata={"request_id": getattr(resp, "id", None)},
         )
 
-    async def stream_request(self, request: LlmRequest) -> AsyncGenerator[LlmStreamChunk, None]:
+    async def stream_request(
+        self, request: LlmRequest
+    ) -> AsyncGenerator[LlmStreamChunk, None]:
         payload = self._payload(request)
         async with self.client.responses.stream(**payload) as stream:
             async for event in stream:
@@ -78,7 +85,9 @@ class OpenAIResponsesService(LlmService):
 
     def _extract(
         self, resp: Response
-    ) -> Tuple[Optional[str], Optional[List[ToolCall]], Optional[str], Optional[Dict[str, int]]]:
+    ) -> Tuple[
+        Optional[str], Optional[List[ToolCall]], Optional[str], Optional[Dict[str, int]]
+    ]:
         text = getattr(resp, "output_text", None)
 
         tool_calls: List[ToolCall] = []
@@ -104,7 +113,10 @@ class OpenAIResponsesService(LlmService):
                 "input_tokens": getattr(resp.usage, "input_tokens", 0) or 0,
                 "output_tokens": getattr(resp.usage, "output_tokens", 0) or 0,
                 "total_tokens": getattr(resp.usage, "total_tokens", None)
-                or ((getattr(resp.usage, "input_tokens", 0) or 0) + (getattr(resp.usage, "output_tokens", 0) or 0)),
+                or (
+                    (getattr(resp.usage, "input_tokens", 0) or 0)
+                    + (getattr(resp.usage, "output_tokens", 0) or 0)
+                ),
             }
 
         status = getattr(resp, "status", None)  # e.g. "completed"

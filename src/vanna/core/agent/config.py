@@ -20,6 +20,7 @@ class UiFeature(StrEnum):
     UI_FEATURE_SHOW_TOOL_ERROR = "tool_error"
     UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT = "tool_invocation_message_in_chat"
 
+
 # Optional: you can also define defaults if you want a shared baseline
 DEFAULT_UI_FEATURES: Dict[str, List[str]] = {
     UiFeature.UI_FEATURE_SHOW_TOOL_NAMES: ["admin", "user"],
@@ -28,27 +29,28 @@ DEFAULT_UI_FEATURES: Dict[str, List[str]] = {
     UiFeature.UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT: ["admin"],
 }
 
+
 class UiFeatures(BaseModel):
     """UI features with group-based access control using the same pattern as tools.
-    
+
     Each field specifies which groups can access that UI feature.
     Empty list means the feature is accessible to all users.
     Uses the same intersection logic as tool access control.
     """
-    
+
     # Custom features for extensibility
     feature_group_access: Dict[str, List[str]] = Field(
         default_factory=lambda: DEFAULT_UI_FEATURES.copy(),
         description="Which groups can access UI features",
     )
-    
+
     def can_user_access_feature(self, feature_name: str, user: "User") -> bool:
         """Check if user can access a UI feature using same logic as tools.
-        
+
         Args:
             feature_name: Name of the UI feature to check
             user: User object with group_memberships
-            
+
         Returns:
             True if user has access, False otherwise
         """
@@ -58,16 +60,16 @@ class UiFeatures(BaseModel):
         else:
             # Feature doesn't exist, deny access
             return False
-        
+
         # Empty list means all users can access (same as tools)
         if not allowed_groups:
             return True
-        
+
         # Same intersection logic as tool access control
         user_groups = set(user.group_memberships)
         feature_groups = set(allowed_groups)
         return bool(user_groups & feature_groups)
-    
+
     def register_feature(self, name: str, access_groups: List[str]) -> None:
         """Register a custom UI feature with group access control.
 

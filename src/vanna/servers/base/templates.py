@@ -8,7 +8,7 @@ from typing import Optional
 def get_vanna_component_script(
     dev_mode: bool = False,
     static_path: str = "/static",
-    cdn_url: str = "https://img.vanna.ai/vanna-components.js"
+    cdn_url: str = "https://img.vanna.ai/vanna-components.js",
 ) -> str:
     """Get the script tag for loading Vanna web components.
 
@@ -21,7 +21,9 @@ def get_vanna_component_script(
         HTML script tag for loading components
     """
     if dev_mode:
-        return f'<script type="module" src="{static_path}/vanna-components.js"></script>'
+        return (
+            f'<script type="module" src="{static_path}/vanna-components.js"></script>'
+        )
     else:
         return f'<script type="module" src="{cdn_url}"></script>'
 
@@ -30,7 +32,7 @@ def get_index_html(
     dev_mode: bool = False,
     static_path: str = "/static",
     cdn_url: str = "https://img.vanna.ai/vanna-components.js",
-    api_base_url: str = ""
+    api_base_url: str = "",
 ) -> str:
     """Generate index HTML with configurable component loading.
 
@@ -142,7 +144,7 @@ def get_index_html(
             </a>
         </div>
 
-        {('    <div class="bg-vanna-orange/10 border border-vanna-orange/30 rounded-lg p-3 mb-5 text-vanna-orange text-sm font-medium">📦 Development Mode: Loading components from local assets</div>' if dev_mode else '')}
+        {('    <div class="bg-vanna-orange/10 border border-vanna-orange/30 rounded-lg p-3 mb-5 text-vanna-orange text-sm font-medium">📦 Development Mode: Loading components from local assets</div>' if dev_mode else "")}
 
         <!-- Login Form -->
         <div id="loginContainer" class="max-w-md mx-auto mb-10 bg-white p-8 rounded-xl shadow-lg border border-vanna-teal/30">
@@ -313,7 +315,7 @@ def get_index_html(
                             <h3 class="text-xl font-semibold mb-2">Vanna Chat Component</h3>
                             <p class="mb-2">Web component failed to load. Please check your connection.</p>
                             <p class="text-sm text-gray-400">
-                                {('Loading from: local static assets' if dev_mode else f'Loading from: {cdn_url}')}
+                                {("Loading from: local static assets" if dev_mode else f"Loading from: {cdn_url}")}
                             </p>
                         </div>
                     `;

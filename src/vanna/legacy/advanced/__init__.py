@@ -10,7 +10,9 @@ class VannaAdvanced(ABC):
         pass
 
     @abstractmethod
-    def create_function(self, question: str, sql: str, plotly_code: str, **kwargs) -> dict:
+    def create_function(
+        self, question: str, sql: str, plotly_code: str, **kwargs
+    ) -> dict:
         pass
 
     @abstractmethod

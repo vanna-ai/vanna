@@ -33,6 +33,7 @@ class Milvus_VectorStore(VannaBase):
                 For more models, please refer to:
                 https://milvus.io/docs/embeddings.md
     """
+
     def __init__(self, config=None):
         VannaBase.__init__(self, config=config)
 
@@ -45,7 +46,9 @@ class Milvus_VectorStore(VannaBase):
             self.embedding_function = config.get("embedding_function")
         else:
             self.embedding_function = model.DefaultEmbeddingFunction()
-        self._embedding_dim = self.embedding_function.encode_documents(["foo"])[0].shape[0]
+        self._embedding_dim = self.embedding_function.encode_documents(["foo"])[
+            0
+        ].shape[0]
         self._create_collections()
         self.n_results = config.get("n_results", 10)
 
@@ -54,10 +57,8 @@ class Milvus_VectorStore(VannaBase):
         self._create_ddl_collection("vannaddl")
         self._create_doc_collection("vannadoc")
 
-
     def generate_embedding(self, data: str, **kwargs) -> List[float]:
         return self.embedding_function.encode_documents(data).tolist()
-
 
     def _create_sql_collection(self, name: str):
         if not self.milvus_client.has_collection(collection_name=name):
@@ -65,10 +66,23 @@ class Milvus_VectorStore(VannaBase):
                 auto_id=False,
                 enable_dynamic_field=False,
             )
-            vannasql_schema.add_field(field_name="id", datatype=DataType.VARCHAR, max_length=65535, is_primary=True)
-            vannasql_schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
-            vannasql_schema.add_field(field_name="sql", datatype=DataType.VARCHAR, max_length=65535)
-            vannasql_schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=self._embedding_dim)
+            vannasql_schema.add_field(
+                field_name="id",
+                datatype=DataType.VARCHAR,
+                max_length=65535,
+                is_primary=True,
+            )
+            vannasql_schema.add_field(
+                field_name="text", datatype=DataType.VARCHAR, max_length=65535
+            )
+            vannasql_schema.add_field(
+                field_name="sql", datatype=DataType.VARCHAR, max_length=65535
+            )
+            vannasql_schema.add_field(
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=self._embedding_dim,
+            )
 
             vannasql_index_params = self.milvus_client.prepare_index_params()
             vannasql_index_params.add_index(
@@ -81,7 +95,7 @@ class Milvus_VectorStore(VannaBase):
                 collection_name=name,
                 schema=vannasql_schema,
                 index_params=vannasql_index_params,
-                consistency_level="Strong"
+                consistency_level="Strong",
             )
 
     def _create_ddl_collection(self, name: str):
@@ -90,9 +104,20 @@ class Milvus_VectorStore(VannaBase):
                 auto_id=False,
                 enable_dynamic_field=False,
             )
-            vannaddl_schema.add_field(field_name="id", datatype=DataType.VARCHAR, max_length=65535, is_primary=True)
-            vannaddl_schema.add_field(field_name="ddl", datatype=DataType.VARCHAR, max_length=65535)
-            vannaddl_schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=self._embedding_dim)
+            vannaddl_schema.add_field(
+                field_name="id",
+                datatype=DataType.VARCHAR,
+                max_length=65535,
+                is_primary=True,
+            )
+            vannaddl_schema.add_field(
+                field_name="ddl", datatype=DataType.VARCHAR, max_length=65535
+            )
+            vannaddl_schema.add_field(
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=self._embedding_dim,
+            )
 
             vannaddl_index_params = self.milvus_client.prepare_index_params()
             vannaddl_index_params.add_index(
@@ -105,7 +130,7 @@ class Milvus_VectorStore(VannaBase):
                 collection_name=name,
                 schema=vannaddl_schema,
                 index_params=vannaddl_index_params,
-                consistency_level="Strong"
+                consistency_level="Strong",
             )
 
     def _create_doc_collection(self, name: str):
@@ -114,9 +139,20 @@ class Milvus_VectorStore(VannaBase):
                 auto_id=False,
                 enable_dynamic_field=False,
             )
-            vannadoc_schema.add_field(field_name="id", datatype=DataType.VARCHAR, max_length=65535, is_primary=True)
-            vannadoc_schema.add_field(field_name="doc", datatype=DataType.VARCHAR, max_length=65535)
-            vannadoc_schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=self._embedding_dim)
+            vannadoc_schema.add_field(
+                field_name="id",
+                datatype=DataType.VARCHAR,
+                max_length=65535,
+                is_primary=True,
+            )
+            vannadoc_schema.add_field(
+                field_name="doc", datatype=DataType.VARCHAR, max_length=65535
+            )
+            vannadoc_schema.add_field(
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=self._embedding_dim,
+            )
 
             vannadoc_index_params = self.milvus_client.prepare_index_params()
             vannadoc_index_params.add_index(
@@ -129,7 +165,7 @@ class Milvus_VectorStore(VannaBase):
                 collection_name=name,
                 schema=vannadoc_schema,
                 index_params=vannadoc_index_params,
-                consistency_level="Strong"
+                consistency_level="Strong",
             )
 
     def add_question_sql(self, question: str, sql: str, **kwargs) -> str:
@@ -139,12 +175,7 @@ class Milvus_VectorStore(VannaBase):
         embedding = self.embedding_function.encode_documents([question])[0]
         self.milvus_client.insert(
             collection_name="vannasql",
-            data={
-                "id": _id,
-                "text": question,
-                "sql": sql,
-                "vector": embedding
-            }
+            data={"id": _id, "text": question, "sql": sql, "vector": embedding},
         )
         return _id
 
@@ -155,11 +186,7 @@ class Milvus_VectorStore(VannaBase):
         embedding = self.embedding_function.encode_documents([ddl])[0]
         self.milvus_client.insert(
             collection_name="vannaddl",
-            data={
-                "id": _id,
-                "ddl": ddl,
-                "vector": embedding
-            }
+            data={"id": _id, "ddl": ddl, "vector": embedding},
         )
         return _id
 
@@ -170,11 +197,7 @@ class Milvus_VectorStore(VannaBase):
         embedding = self.embedding_function.encode_documents([documentation])[0]
         self.milvus_client.insert(
             collection_name="vannadoc",
-            data={
-                "id": _id,
-                "doc": documentation,
-                "vector": embedding
-            }
+            data={"id": _id, "doc": documentation, "vector": embedding},
         )
         return _id
 
@@ -237,7 +260,7 @@ class Milvus_VectorStore(VannaBase):
             data=embeddings,
             limit=self.n_results,
             output_fields=["text", "sql"],
-            search_params=search_params
+            search_params=search_params,
         )
         res = res[0]
 
@@ -261,7 +284,7 @@ class Milvus_VectorStore(VannaBase):
             data=embeddings,
             limit=self.n_results,
             output_fields=["ddl"],
-            search_params=search_params
+            search_params=search_params,
         )
         res = res[0]
 
@@ -282,7 +305,7 @@ class Milvus_VectorStore(VannaBase):
             data=embeddings,
             limit=self.n_results,
             output_fields=["doc"],
-            search_params=search_params
+            search_params=search_params,
         )
         res = res[0]
 

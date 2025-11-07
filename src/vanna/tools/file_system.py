@@ -80,7 +80,9 @@ class FileSystem(ABC):
         pass
 
     @abstractmethod
-    async def write_file(self, filename: str, content: str, context: ToolContext, overwrite: bool = False) -> None:
+    async def write_file(
+        self, filename: str, content: str, context: ToolContext, overwrite: bool = False
+    ) -> None:
         """Write content to a file."""
         pass
 
@@ -164,7 +166,9 @@ class LocalFileSystem(FileSystem):
         try:
             resolved.resolve().relative_to(user_dir.resolve())
         except ValueError:
-            raise PermissionError(f"Access denied: path '{path}' is outside user directory")
+            raise PermissionError(
+                f"Access denied: path '{path}' is outside user directory"
+            )
 
         return resolved
 
@@ -195,9 +199,11 @@ class LocalFileSystem(FileSystem):
         if not file_path.is_file():
             raise IsADirectoryError(f"'{filename}' is a directory, not a file")
 
-        return file_path.read_text(encoding='utf-8')
+        return file_path.read_text(encoding="utf-8")
 
-    async def write_file(self, filename: str, content: str, context: ToolContext, overwrite: bool = False) -> None:
+    async def write_file(
+        self, filename: str, content: str, context: ToolContext, overwrite: bool = False
+    ) -> None:
         """Write content to a file within the user's isolated space."""
         file_path = self._resolve_path(filename, context)
 
@@ -205,9 +211,11 @@ class LocalFileSystem(FileSystem):
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         if file_path.exists() and not overwrite:
-            raise FileExistsError(f"File '{filename}' already exists. Use overwrite=True to replace it.")
+            raise FileExistsError(
+                f"File '{filename}' already exists. Use overwrite=True to replace it."
+            )
 
-        file_path.write_text(content, encoding='utf-8')
+        file_path.write_text(content, encoding="utf-8")
 
     async def exists(self, path: str, context: ToolContext) -> bool:
         """Check if a file or directory exists within the user's isolated space."""
@@ -264,7 +272,9 @@ class LocalFileSystem(FileSystem):
                     size = path.stat().st_size
                 except OSError:
                     if include_entry:
-                        matches.append(FileSearchMatch(path=relative_path, snippet=snippet))
+                        matches.append(
+                            FileSearchMatch(path=relative_path, snippet=snippet)
+                        )
                     continue
 
                 if size <= MAX_SEARCH_FILE_BYTES:
@@ -321,7 +331,9 @@ class LocalFileSystem(FileSystem):
         stdout = stdout_bytes.decode("utf-8", errors="replace")
         stderr = stderr_bytes.decode("utf-8", errors="replace")
 
-        return CommandResult(stdout=stdout, stderr=stderr, returncode=process.returncode or 0)
+        return CommandResult(
+            stdout=stdout, stderr=stderr, returncode=process.returncode or 0
+        )
 
 
 class SearchFilesArgs(BaseModel):
@@ -414,9 +426,7 @@ class SearchFilesTool(Tool[SearchFilesArgs]):
             else:
                 lines.append(f"- {match.path}")
 
-        summary = (
-            f"Found {len(matches)} match(es) for '{args.query}' (max {args.max_results})."
-        )
+        summary = f"Found {len(matches)} match(es) for '{args.query}' (max {args.max_results})."
         content = "\n".join(lines)
 
         return ToolResult(
@@ -435,7 +445,10 @@ class SearchFilesTool(Tool[SearchFilesArgs]):
 
 class ListFilesArgs(BaseModel):
     """Arguments for listing files."""
-    directory: str = Field(default=".", description="Directory to list (defaults to current)")
+
+    directory: str = Field(
+        default=".", description="Directory to list (defaults to current)"
+    )
 
 
 class ListFilesTool(Tool[ListFilesArgs]):
@@ -477,7 +490,7 @@ class ListFilesTool(Tool[ListFilesArgs]):
                         content=files_list,
                     ),
                     simple_component=SimpleTextComponent(text=result),
-                )
+                ),
             )
         except Exception as e:
             error_msg = f"Error listing files: {str(e)}"
@@ -492,12 +505,13 @@ class ListFilesTool(Tool[ListFilesArgs]):
                     ),
                     simple_component=SimpleTextComponent(text=error_msg),
                 ),
-                error=str(e)
+                error=str(e),
             )
 
 
 class ReadFileArgs(BaseModel):
     """Arguments for reading a file."""
+
     filename: str = Field(description="Name of the file to read")
 
 
@@ -533,8 +547,10 @@ class ReadFileTool(Tool[ReadFileArgs]):
                         title=f"Contents of {args.filename}",
                         content=content,
                     ),
-                    simple_component=SimpleTextComponent(text=f"File content:\n{content}"),
-                )
+                    simple_component=SimpleTextComponent(
+                        text=f"File content:\n{content}"
+                    ),
+                ),
             )
         except Exception as e:
             error_msg = f"Error reading file: {str(e)}"
@@ -549,15 +565,18 @@ class ReadFileTool(Tool[ReadFileArgs]):
                     ),
                     simple_component=SimpleTextComponent(text=error_msg),
                 ),
-                error=str(e)
+                error=str(e),
             )
 
 
 class WriteFileArgs(BaseModel):
     """Arguments for writing a file."""
+
     filename: str = Field(description="Name of the file to write")
     content: str = Field(description="Content to write to the file")
-    overwrite: bool = Field(default=False, description="Whether to overwrite existing files")
+    overwrite: bool = Field(
+        default=False, description="Whether to overwrite existing files"
+    )
 
 
 class WriteFileTool(Tool[WriteFileArgs]):
@@ -580,7 +599,9 @@ class WriteFileTool(Tool[WriteFileArgs]):
 
     async def execute(self, context: ToolContext, args: WriteFileArgs) -> ToolResult:
         try:
-            await self.file_system.write_file(args.filename, args.content, context, args.overwrite)
+            await self.file_system.write_file(
+                args.filename, args.content, context, args.overwrite
+            )
 
             success_msg = f"Successfully wrote {len(args.content)} characters to '{args.filename}'"
 
@@ -593,8 +614,10 @@ class WriteFileTool(Tool[WriteFileArgs]):
                         level="success",
                         message=f"File '{args.filename}' written successfully",
                     ),
-                    simple_component=SimpleTextComponent(text=f"Wrote to {args.filename}"),
-                )
+                    simple_component=SimpleTextComponent(
+                        text=f"Wrote to {args.filename}"
+                    ),
+                ),
             )
         except Exception as e:
             error_msg = f"Error writing file: {str(e)}"
@@ -609,14 +632,16 @@ class WriteFileTool(Tool[WriteFileArgs]):
                     ),
                     simple_component=SimpleTextComponent(text=error_msg),
                 ),
-                error=str(e)
+                error=str(e),
             )
 
 
 class LineEdit(BaseModel):
     """Definition of a single line-based edit operation."""
 
-    start_line: int = Field(ge=1, description="First line (1-based) affected by this edit")
+    start_line: int = Field(
+        ge=1, description="First line (1-based) affected by this edit"
+    )
     end_line: Optional[int] = Field(
         default=None,
         description=(
@@ -624,7 +649,9 @@ class LineEdit(BaseModel):
             "Defaults to start_line, replacing a single line."
         ),
     )
-    new_content: str = Field(default="", description="Replacement text (preserves provided newlines)")
+    new_content: str = Field(
+        default="", description="Replacement text (preserves provided newlines)"
+    )
 
     @model_validator(mode="after")
     def validate_line_range(self) -> "LineEdit":
@@ -642,7 +669,7 @@ class EditFileArgs(BaseModel):
     filename: str = Field(description="Path to the file to edit")
     edits: List[LineEdit] = Field(
         description="List of edits to apply. Later entries should reference higher line numbers.",
-        min_length=1
+        min_length=1,
     )
 
 
@@ -691,7 +718,9 @@ class EditFileTool(Tool[EditFileArgs]):
             end_line = edit.end_line if edit.end_line is not None else edit.start_line
 
             if start_line < 1:
-                return self._range_error(args.filename, start_line, end_line, "start_line must be >= 1")
+                return self._range_error(
+                    args.filename, start_line, end_line, "start_line must be >= 1"
+                )
 
             if end_line < start_line - 1:
                 return self._range_error(
@@ -749,7 +778,9 @@ class EditFileTool(Tool[EditFileArgs]):
         new_content = "".join(lines)
 
         if new_content == original_content:
-            message = f"No changes applied to '{args.filename}' (content already up to date)."
+            message = (
+                f"No changes applied to '{args.filename}' (content already up to date)."
+            )
             return ToolResult(
                 success=True,
                 result_for_llm=message,
@@ -764,7 +795,9 @@ class EditFileTool(Tool[EditFileArgs]):
             )
 
         try:
-            await self.file_system.write_file(args.filename, new_content, context, overwrite=True)
+            await self.file_system.write_file(
+                args.filename, new_content, context, overwrite=True
+            )
         except Exception as exc:
             error_msg = f"Error writing updated contents to '{args.filename}': {exc}"
             return ToolResult(
@@ -791,9 +824,12 @@ class EditFileTool(Tool[EditFileArgs]):
             )
         )
 
-        diff_text = "\n".join(diff_lines) if diff_lines else "(No textual diff available)"
+        diff_text = (
+            "\n".join(diff_lines) if diff_lines else "(No textual diff available)"
+        )
         summary = (
-            f"Updated '{args.filename}' with {len(args.edits)} edit(s).\n" + "\n".join(reversed(applied_edits))
+            f"Updated '{args.filename}' with {len(args.edits)} edit(s).\n"
+            + "\n".join(reversed(applied_edits))
         )
 
         return ToolResult(
@@ -809,10 +845,10 @@ class EditFileTool(Tool[EditFileArgs]):
             ),
         )
 
-    def _range_error(self, filename: str, start_line: int, end_line: int, message: str) -> ToolResult:
-        error_msg = (
-            f"Invalid edit range for '{filename}': start_line={start_line}, end_line={end_line}. {message}"
-        )
+    def _range_error(
+        self, filename: str, start_line: int, end_line: int, message: str
+    ) -> ToolResult:
+        error_msg = f"Invalid edit range for '{filename}': start_line={start_line}, end_line={end_line}. {message}"
         return ToolResult(
             success=False,
             result_for_llm=error_msg,
@@ -829,7 +865,9 @@ class EditFileTool(Tool[EditFileArgs]):
 
 
 # Convenience function for creating tools with default local file system
-def create_file_system_tools(file_system: Optional[FileSystem] = None) -> List[Tool[Any]]:
+def create_file_system_tools(
+    file_system: Optional[FileSystem] = None,
+) -> List[Tool[Any]]:
     """Create a set of file system tools with optional dependency injection."""
     fs = file_system or LocalFileSystem()
     return [

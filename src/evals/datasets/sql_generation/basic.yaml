@@ -7,6 +7,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Show me total sales by region"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -20,6 +21,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "What were our top 5 customers by revenue last month?"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -33,6 +35,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Calculate the average order value for each product category"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -46,6 +49,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Show me the trend of monthly sales over the past year"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query", "visualize_data"]
@@ -59,6 +63,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Find customers who haven't made a purchase in the last 90 days"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -73,6 +78,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Compare this quarter's revenue to the same quarter last year"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -86,6 +92,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "List all products that are currently out of stock"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]
@@ -100,6 +107,7 @@ dataset:
       user_id: "eval_user"
       username: "evaluator"
       email: "eval@example.com"
+      user_groups: ["user", "analyst"]
       message: "Calculate the customer lifetime value for each customer segment"
       expected_outcome:
         tools_called: ["generate_sql", "execute_query"]

@@ -39,10 +39,7 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
         self.agent_memory = agent_memory
 
     async def enhance_system_prompt(
-        self,
-        system_prompt: str,
-        user_message: str,
-        user: "User"
+        self, system_prompt: str, user_message: str, user: "User"
     ) -> str:
         """Enhance system prompt with relevant memories.
 
@@ -70,14 +67,14 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
                 user=user,
                 conversation_id="temp",
                 request_id=str(uuid.uuid4()),
-                agent_memory=self.agent_memory
+                agent_memory=self.agent_memory,
             )
 
             # Search for relevant text memories based on user message
-            memories: List["TextMemorySearchResult"] = await self.agent_memory.search_text_memories(
-                query=user_message,
-                context=context,
-                limit=5
+            memories: List[
+                "TextMemorySearchResult"
+            ] = await self.agent_memory.search_text_memories(
+                query=user_message, context=context, limit=5
             )
 
             if not memories:
@@ -98,14 +95,13 @@ class DefaultLlmContextEnhancer(LlmContextEnhancer):
             # If memory search fails, return original prompt
             # Don't fail the entire request due to memory issues
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to enhance system prompt with memories: {e}")
             return system_prompt
 
     async def enhance_user_messages(
-        self,
-        messages: list["LlmMessage"],
-        user: "User"
+        self, messages: list["LlmMessage"], user: "User"
     ) -> list["LlmMessage"]:
         """Enhance user messages.
 

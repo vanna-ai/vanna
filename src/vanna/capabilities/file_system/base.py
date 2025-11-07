@@ -28,7 +28,11 @@ class FileSystem(ABC):
 
     @abstractmethod
     async def write_file(
-        self, filename: str, content: str, context: "ToolContext", overwrite: bool = False
+        self,
+        filename: str,
+        content: str,
+        context: "ToolContext",
+        overwrite: bool = False,
     ) -> None:
         """Write content to a file."""
         pass

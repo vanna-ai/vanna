@@ -45,13 +45,15 @@ class RichComponentsAgent(Agent):
         """Send message and yield UiComponent(rich_component=rich) components."""
 
         # Welcome message using IconText
-        yield UiComponent(rich_component=IconTextComponent(
-            id="welcome-message",
-            icon="👋",
-            text=f"Hello {user.username}! I'll demonstrate primitive components.",
-            variant="primary",
-            size="large"
-        ))
+        yield UiComponent(
+            rich_component=IconTextComponent(
+                id="welcome-message",
+                icon="👋",
+                text=f"Hello {user.username}! I'll demonstrate primitive components.",
+                variant="primary",
+                size="large",
+            )
+        )
 
         # Status card showing we're processing
         status_card = StatusCardComponent(
@@ -59,7 +61,7 @@ class RichComponentsAgent(Agent):
             title="Processing Request",
             status="running",
             description="Processing your request...",
-            icon="⚙️"
+            icon="⚙️",
         )
         yield UiComponent(rich_component=status_card)
 
@@ -67,7 +69,11 @@ class RichComponentsAgent(Agent):
         await asyncio.sleep(1)
 
         # Update status to success
-        yield UiComponent(rich_component=status_card.set_status("success", "Request processed successfully!"))
+        yield UiComponent(
+            rich_component=status_card.set_status(
+                "success", "Request processed successfully!"
+            )
+        )
 
         # Create a status card for overall demo progress
         demo_card = StatusCardComponent(
@@ -75,7 +81,7 @@ class RichComponentsAgent(Agent):
             title="Demo Progress",
             status="running",
             description="Starting primitive components demonstration...",
-            icon="🎯"
+            icon="🎯",
         )
         yield UiComponent(rich_component=demo_card)
 
@@ -89,13 +95,15 @@ class RichComponentsAgent(Agent):
         ]
 
         for stage_name, stage_status, stage_icon in stages:
-            yield UiComponent(rich_component=BadgeComponent(
-                id=f"stage-{stage_name.lower()}",
-                text=stage_name,
-                variant=stage_status if stage_status != "pending" else "default",
-                icon=stage_icon,
-                size="md"
-            ))
+            yield UiComponent(
+                rich_component=BadgeComponent(
+                    id=f"stage-{stage_name.lower()}",
+                    text=stage_name,
+                    variant=stage_status if stage_status != "pending" else "default",
+                    icon=stage_icon,
+                    size="md",
+                )
+            )
 
         # Progress display
         progress_display = ProgressDisplayComponent(
@@ -104,15 +112,12 @@ class RichComponentsAgent(Agent):
             value=0.2,
             description="Initializing demonstration...",
             status="info",
-            animated=True
+            animated=True,
         )
         yield UiComponent(rich_component=progress_display)
 
         # Create log viewer for detailed progress
-        log_viewer = LogViewerComponent(
-            id="demo-logs",
-            title="Demo Activity Log"
-        )
+        log_viewer = LogViewerComponent(id="demo-logs", title="Demo Activity Log")
         yield UiComponent(rich_component=log_viewer)
 
         # Simulate work with updates
@@ -121,46 +126,61 @@ class RichComponentsAgent(Agent):
 
             # Update progress
             progress_value = 0.2 + (i + 1) * 0.2
-            step_name = ["Creating components", "Updating progress", "Finalizing demo"][i]
+            step_name = ["Creating components", "Updating progress", "Finalizing demo"][
+                i
+            ]
 
-            yield UiComponent(rich_component=progress_display.update_progress(
-                progress_value,
-                f"Step {i + 2} of 5: {step_name}..."
-            ))
+            yield UiComponent(
+                rich_component=progress_display.update_progress(
+                    progress_value, f"Step {i + 2} of 5: {step_name}..."
+                )
+            )
 
             # Update demo card
-            yield UiComponent(rich_component=demo_card.set_status(
-                "running",
-                f"Step {i + 2} of 5 completed. Progress: {int(progress_value * 100)}%"
-            ))
+            yield UiComponent(
+                rich_component=demo_card.set_status(
+                    "running",
+                    f"Step {i + 2} of 5 completed. Progress: {int(progress_value * 100)}%",
+                )
+            )
 
             # Add log entry
-            yield UiComponent(rich_component=log_viewer.add_entry(f"Completed step: {step_name}", "info"))
+            yield UiComponent(
+                rich_component=log_viewer.add_entry(
+                    f"Completed step: {step_name}", "info"
+                )
+            )
 
             # Update stage badges
             if i == 0:
-                yield UiComponent(rich_component=BadgeComponent(
-                    id="stage-components",
-                    text="Components",
-                    variant="success",
-                    icon="✅",
-                    size="md"
-                ))
+                yield UiComponent(
+                    rich_component=BadgeComponent(
+                        id="stage-components",
+                        text="Components",
+                        variant="success",
+                        icon="✅",
+                        size="md",
+                    )
+                )
             elif i == 1:
-                yield UiComponent(rich_component=BadgeComponent(
-                    id="stage-progress",
-                    text="Progress",
-                    variant="success",
-                    icon="✅",
-                    size="md"
-                ))
-                yield UiComponent(rich_component=BadgeComponent(
-                    id="stage-logs",
-                    text="Logs",
-                    variant="running",
-                    icon="📋",
-                    size="md"
-                ))
+                yield UiComponent(
+                    rich_component=BadgeComponent(
+                        id="stage-progress",
+                        text="Progress",
+                        variant="success",
+                        icon="✅",
+                        size="md",
+                    )
+                )
+                yield UiComponent(
+                    rich_component=BadgeComponent(
+                        id="stage-logs",
+                        text="Logs",
+                        variant="running",
+                        icon="📋",
+                        size="md",
+                    )
+                )
 
         # Tool execution using primitive components
         tool_status = StatusCardComponent(
@@ -168,7 +188,7 @@ class RichComponentsAgent(Agent):
             title="Analyze Data Tool",
             status="running",
             description="Running regression analysis on user_data.csv",
-            icon="🔬"
+            icon="🔬",
         )
         yield UiComponent(rich_component=tool_status)
 
@@ -178,15 +198,12 @@ class RichComponentsAgent(Agent):
             label="Tool Execution",
             value=0.0,
             description="Initializing tool...",
-            animated=True
+            animated=True,
         )
         yield UiComponent(rich_component=tool_progress)
 
         # Tool logs
-        tool_logs = LogViewerComponent(
-            id="tool-logs",
-            title="Tool Execution Log"
-        )
+        tool_logs = LogViewerComponent(id="tool-logs", title="Tool Execution Log")
         yield UiComponent(rich_component=tool_logs)
 
         # Simulate tool execution steps
@@ -195,63 +212,78 @@ class RichComponentsAgent(Agent):
             (0.4, "Dataset loaded: 1000 rows, 5 columns", "info"),
             (0.6, "Preprocessing data...", "info"),
             (0.8, "Running regression analysis...", "info"),
-            (1.0, "Analysis complete!", "info")
+            (1.0, "Analysis complete!", "info"),
         ]
 
         for progress_val, log_message, log_level in tool_steps:
             await asyncio.sleep(0.5)
 
-            yield UiComponent(rich_component=tool_progress.update_progress(
-                progress_val,
-                f"Progress: {int(progress_val * 100)}%"
-            ))
-            yield UiComponent(rich_component=tool_logs.add_entry(log_message, log_level))
+            yield UiComponent(
+                rich_component=tool_progress.update_progress(
+                    progress_val, f"Progress: {int(progress_val * 100)}%"
+                )
+            )
+            yield UiComponent(
+                rich_component=tool_logs.add_entry(log_message, log_level)
+            )
 
         # Complete tool execution
-        yield UiComponent(rich_component=tool_status.set_status(
-            "success",
-            "Tool completed successfully. R² = 0.85, strong correlation found."
-        ))
+        yield UiComponent(
+            rich_component=tool_status.set_status(
+                "success",
+                "Tool completed successfully. R² = 0.85, strong correlation found.",
+            )
+        )
 
         # Show results using IconText
-        yield UiComponent(rich_component=IconTextComponent(
-            id="tool-results",
-            icon="📊",
-            text="Analysis Results: R² = 0.85 (Strong correlation)",
-            variant="success",
-            size="medium"
-        ))
+        yield UiComponent(
+            rich_component=IconTextComponent(
+                id="tool-results",
+                icon="📊",
+                text="Analysis Results: R² = 0.85 (Strong correlation)",
+                variant="success",
+                size="medium",
+            )
+        )
 
         # Update final stage badge
-        yield UiComponent(rich_component=BadgeComponent(
-            id="stage-logs",
-            text="Logs",
-            variant="success",
-            icon="✅",
-            size="md"
-        ))
-        yield UiComponent(rich_component=BadgeComponent(
-            id="stage-complete",
-            text="Complete",
-            variant="success",
-            icon="🎉",
-            size="md"
-        ))
+        yield UiComponent(
+            rich_component=BadgeComponent(
+                id="stage-logs", text="Logs", variant="success", icon="✅", size="md"
+            )
+        )
+        yield UiComponent(
+            rich_component=BadgeComponent(
+                id="stage-complete",
+                text="Complete",
+                variant="success",
+                icon="🎉",
+                size="md",
+            )
+        )
 
         # Final updates
-        yield UiComponent(rich_component=progress_display.update_progress(1.0, "Demo completed successfully!"))
+        yield UiComponent(
+            rich_component=progress_display.update_progress(
+                1.0, "Demo completed successfully!"
+            )
+        )
 
-        yield UiComponent(rich_component=demo_card.set_status(
-            "success",
-            "Primitive components demonstration finished successfully!"
-        ))
+        yield UiComponent(
+            rich_component=demo_card.set_status(
+                "success", "Primitive components demonstration finished successfully!"
+            )
+        )
 
         # Add final log entry
-        yield UiComponent(rich_component=tool_logs.add_entry("Demo completed successfully!", "info"))
+        yield UiComponent(
+            rich_component=tool_logs.add_entry("Demo completed successfully!", "info")
+        )
 
         # Add final text response
-        yield UiComponent(rich_component=RichTextComponent(
-            content=f"""## Primitive Components Demo Complete!
+        yield UiComponent(
+            rich_component=RichTextComponent(
+                content=f"""## Primitive Components Demo Complete!
 
 I've demonstrated the new primitive component system:
 
@@ -274,8 +306,9 @@ I've demonstrated the new primitive component system:
 
 Your message was: "{message}"
 """,
-            markdown=True
-        ))
+                markdown=True,
+            )
+        )
 
 
 # CLI compatibility alias
@@ -288,9 +321,7 @@ def create_rich_demo_agent() -> RichComponentsAgent:
     Returns:
         Configured RichComponentsAgent instance
     """
-    llm_service = MockLlmService(
-        response_content="Primitive components demo response"
-    )
+    llm_service = MockLlmService(response_content="Primitive components demo response")
 
     return RichComponentsAgent(
         llm_service=llm_service,
@@ -309,10 +340,7 @@ async def main() -> None:
 
     # Create a test user
     user = User(
-        id="user123",
-        username="demo_user",
-        email="demo@example.com",
-        permissions=[]
+        id="user123", username="demo_user", email="demo@example.com", permissions=[]
     )
 
     # Start a conversation
@@ -326,27 +354,30 @@ async def main() -> None:
     # Send message and display components
     component_count = 0
     async for component in agent.send_message(
-        user=user,
-        message=user_message
-    ,
-        conversation_id=conversation_id
+        user=user, message=user_message, conversation_id=conversation_id
     ):
         component_count += 1
         rich_comp = component.rich_component
-        component_type = getattr(rich_comp, 'type', rich_comp.__class__.__name__)
-        component_id = getattr(rich_comp, 'id', 'N/A')
-        lifecycle = getattr(rich_comp, 'lifecycle', 'N/A')
+        component_type = getattr(rich_comp, "type", rich_comp.__class__.__name__)
+        component_id = getattr(rich_comp, "id", "N/A")
+        lifecycle = getattr(rich_comp, "lifecycle", "N/A")
 
-        print(f"[{component_count:2d}] {component_type} (id: {component_id[:8]}, lifecycle: {lifecycle})")
+        print(
+            f"[{component_count:2d}] {component_type} (id: {component_id[:8]}, lifecycle: {lifecycle})"
+        )
 
         # Show some component details
-        if hasattr(rich_comp, 'title'):
+        if hasattr(rich_comp, "title"):
             print(f"     Title: {rich_comp.title}")
-        if hasattr(rich_comp, 'content') and len(str(rich_comp.content)) < 100:
+        if hasattr(rich_comp, "content") and len(str(rich_comp.content)) < 100:
             print(f"     Content: {rich_comp.content}")
-        if hasattr(rich_comp, 'status'):
+        if hasattr(rich_comp, "status"):
             print(f"     Status: {rich_comp.status}")
-        if hasattr(rich_comp, 'value') and hasattr(rich_comp.type, 'value') and rich_comp.type.value == 'progress_bar':
+        if (
+            hasattr(rich_comp, "value")
+            and hasattr(rich_comp.type, "value")
+            and rich_comp.type.value == "progress_bar"
+        ):
             print(f"     Progress: {rich_comp.value:.1%}")
 
         print()

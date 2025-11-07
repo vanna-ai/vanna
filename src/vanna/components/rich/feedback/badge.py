@@ -9,6 +9,8 @@ class BadgeComponent(RichComponent):
 
     type: ComponentType = ComponentType.BADGE
     text: str
-    variant: str = "default"  # "default", "primary", "success", "warning", "error", "info"
+    variant: str = (
+        "default"  # "default", "primary", "success", "warning", "error", "info"
+    )
     size: str = "medium"  # "small", "medium", "large"
     icon: Optional[str] = None

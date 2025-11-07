@@ -8,7 +8,7 @@ from ..base import VannaBase
 class Anthropic_Chat(VannaBase):
     def __init__(self, client=None, config=None):
         VannaBase.__init__(self, config=config)
-      
+
         # default parameters - can be overrided using config
         self.temperature = 0.7
         self.max_tokens = 500
@@ -26,7 +26,7 @@ class Anthropic_Chat(VannaBase):
         if config is None and client is None:
             self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
             return
-      
+
         if "api_key" in config:
             self.client = anthropic.Anthropic(api_key=config["api_key"])
 
@@ -58,14 +58,16 @@ class Anthropic_Chat(VannaBase):
             )
             # claude required system message is a single filed
             # https://docs.anthropic.com/claude/reference/messages_post
-            system_message = ''
+            system_message = ""
             no_system_prompt = []
             for prompt_message in prompt:
-                role = prompt_message['role']
-                if role == 'system':
-                    system_message = prompt_message['content']
+                role = prompt_message["role"]
+                if role == "system":
+                    system_message = prompt_message["content"]
                 else:
-                    no_system_prompt.append({"role": role, "content": prompt_message['content']})
+                    no_system_prompt.append(
+                        {"role": role, "content": prompt_message["content"]}
+                    )
 
             response = self.client.messages.create(
                 model=self.config["model"],

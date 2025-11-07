@@ -6,10 +6,10 @@ from ....core.rich_component import ComponentType, RichComponent
 
 class ButtonComponent(RichComponent):
     """Interactive button that sends a message when clicked.
-    
+
     The button renders in the UI and when clicked, sends its action
     value as a message to the chat input.
-    
+
     Args:
         label: Text displayed on the button
         action: Message/command to send when clicked
@@ -18,7 +18,7 @@ class ButtonComponent(RichComponent):
         icon: Optional emoji or icon
         icon_position: Position of icon relative to label
         disabled: Whether button is disabled
-    
+
     Example:
         ButtonComponent(
             label="Generate Report",
@@ -32,7 +32,9 @@ class ButtonComponent(RichComponent):
         self,
         label: str,
         action: str,
-        variant: Literal["primary", "secondary", "success", "warning", "error", "ghost", "link"] = "primary",
+        variant: Literal[
+            "primary", "secondary", "success", "warning", "error", "ghost", "link"
+        ] = "primary",
         size: Literal["small", "medium", "large"] = "medium",
         icon: Optional[str] = None,
         icon_position: Literal["left", "right"] = "left",
@@ -54,14 +56,14 @@ class ButtonComponent(RichComponent):
 
 class ButtonGroupComponent(RichComponent):
     """Group of buttons with consistent styling.
-    
+
     Args:
         buttons: List of button data dictionaries
         orientation: Layout direction
         spacing: Gap between buttons
         alignment: Button alignment within group
         full_width: Whether buttons should stretch to fill width
-    
+
     Example:
         ButtonGroupComponent(
             buttons=[
