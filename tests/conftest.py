@@ -25,6 +25,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "chromadb: marks tests requiring ChromaDB"
     )
+    config.addinivalue_line(
+        "markers", "legacy: marks tests for LegacyVannaAdapter"
+    )
 
 
 def pytest_collection_modifyitems(config, items):

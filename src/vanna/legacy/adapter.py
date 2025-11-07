@@ -60,25 +60,88 @@ class LegacySqlRunner(SqlRunner):
         return self.vn.run_sql(args.sql)
 
 
-class LegacyAgentMemory(AgentMemory):
-    """AgentMemory implementation that wraps a legacy VannaBase instance.
+class LegacyVannaAdapter(ToolRegistry, AgentMemory):
+    """Adapter that wraps a legacy VannaBase object and exposes its methods as tools.
 
-    This class bridges the new AgentMemory interface with legacy VannaBase
-    question-sql methods, allowing legacy training data storage to work with
-    the new agent memory system.
+    This adapter automatically registers specific VannaBase methods as tools in the
+    registry with configurable group-based access control. This allows legacy Vanna
+    instances to work seamlessly with the new Agents framework.
 
-    Note: This is a basic retrofit that maps agent memory operations to the
-    legacy add_question_sql and get_similar_question_sql methods. Some features
-    may not be fully supported.
+    Features:
+    - Auto-registers legacy methods as tools
+    - Configurable group-based permissions ('user', 'admin', etc.)
+    - Seamless integration with ToolRegistry
+    - Implements AgentMemory interface
+    - Preserves legacy VannaBase functionality
+
+    Example:
+        ```python
+        from vanna.legacy.base import VannaBase
+        from vanna.legacy.adapter import LegacyVannaAdapter
+
+        # Initialize your legacy Vanna instance
+        vn = VannaBase(config={"model": "gpt-4"})
+        vn.connect_to_postgres(...)
+
+        # Create adapter and auto-register tools
+        adapter = LegacyVannaAdapter(vn)
+
+        # Tools are now available through the registry
+        schemas = await adapter.get_schemas(user)
+        ```
     """
 
-    def __init__(self, vn: VannaBase):
-        """Initialize with a legacy VannaBase instance.
+    def __init__(
+        self,
+        vn: VannaBase,
+        audit_logger: Optional[Any] = None,
+        audit_config: Optional[Any] = None,
+    ) -> None:
+        """Initialize the adapter with a legacy VannaBase instance.
 
         Args:
-            vn: The legacy VannaBase instance with training data methods
+            vanna: The legacy VannaBase instance to wrap
+            audit_logger: Optional audit logger for tool execution tracking
+            audit_config: Optional audit configuration
         """
+        ToolRegistry.__init__(self, audit_logger=audit_logger, audit_config=audit_config)
         self.vn = vn
+        self._register_tools()
+
+    def _register_tools(self) -> None:
+        """Register legacy VannaBase methods as tools with appropriate permissions.
+
+        Registers the following tools:
+        - RunSqlTool: Wraps the legacy run_sql method via LegacySqlRunner
+        - SaveQuestionToolArgsTool: Wraps add_question_sql via LegacyAgentMemory
+        - SearchSavedCorrectToolUsesTool: Wraps get_similar_question_sql via LegacyAgentMemory
+        """
+        # Create a LegacySqlRunner to wrap the VannaBase run_sql method
+        sql_runner = LegacySqlRunner(self.vn)
+
+        # Register the RunSqlTool with user and admin access
+        run_sql_tool = RunSqlTool(sql_runner)
+        self.register_local_tool(
+            run_sql_tool,
+            access_groups=['user', 'admin']
+        )
+
+        # Register memory tools using the internal _agent_memory instance
+        # SaveQuestionToolArgsTool - for saving question-tool-args patterns (admin only)
+        save_memory_tool = SaveQuestionToolArgsTool()
+        self.register_local_tool(
+            save_memory_tool,
+            access_groups=['admin']
+        )
+
+        # SearchSavedCorrectToolUsesTool - for searching similar patterns (user and admin)
+        search_memory_tool = SearchSavedCorrectToolUsesTool()
+        self.register_local_tool(
+            search_memory_tool,
+            access_groups=['user', 'admin']
+        )
+
+    # AgentMemory interface implementation
 
     async def save_tool_usage(
         self,
@@ -213,7 +276,7 @@ class LegacyAgentMemory(AgentMemory):
                 content = doc
                 doc_id = None
             elif isinstance(doc, dict):
-                content = doc.get("documentation", doc.get("content", str(doc)))
+                content = str(doc.get("documentation", doc.get("content", str(doc))))
                 doc_id = doc.get("id")
             else:
                 content = str(doc)
@@ -249,52 +312,116 @@ class LegacyAgentMemory(AgentMemory):
     ) -> List[ToolMemory]:
         """Get recently added memories.
 
-        Note: Legacy VannaBase does not provide a way to get recent memories,
-        so this returns an empty list.
+        Note: Legacy VannaBase does not provide a direct way to get recent memories,
+        so we retrieve using a blank string which typically returns the most relevant
+        or recent items from the vector store.
 
         Args:
             context: Tool execution context
             limit: Maximum number of memories to return
 
         Returns:
-            Empty list (not supported by legacy)
+            List of recently added tool memories
         """
-        return []
+        # Use blank string retrieval to get recent/relevant memories
+        similar_results = self.vn.get_similar_question_sql(question="")
+
+        # Convert legacy results to ToolMemory format
+        memories = []
+        for idx, result in enumerate(similar_results[:limit]):
+            # Legacy results are typically dicts with 'question' and 'sql' keys
+            if isinstance(result, dict) and "question" in result and "sql" in result:
+                tool_memory = ToolMemory(
+                    memory_id=None,  # Legacy doesn't provide IDs
+                    question=result["question"],
+                    tool_name="run_sql",
+                    args={"sql": result["sql"]},
+                    success=True
+                )
+                memories.append(tool_memory)
+
+        return memories
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Legacy adapters do not track text memories."""
-        return []
+        """Fetch recently stored text memories.
+
+        Note: Legacy VannaBase does not provide a direct way to get recent text memories,
+        so we retrieve using a blank string which typically returns the most relevant
+        or recent items from the vector store.
+
+        Args:
+            context: Tool execution context
+            limit: Maximum number of memories to return
+
+        Returns:
+            List of recently added text memories
+        """
+        # Use blank string retrieval to get recent/relevant documentation
+        related_docs = self.vn.get_related_documentation(question="")
+
+        # Convert legacy results to TextMemory format
+        memories = []
+        for doc in related_docs[:limit]:
+            # Legacy results are typically strings or dicts
+            if isinstance(doc, str):
+                content = doc
+                doc_id = None
+            elif isinstance(doc, dict):
+                content = str(doc.get("documentation", doc.get("content", str(doc))))
+                doc_id = doc.get("id")
+            else:
+                content = str(doc)
+                doc_id = None
+
+            # Create TextMemory object
+            text_memory = TextMemory(
+                memory_id=doc_id,
+                content=content,
+                timestamp=None  # Legacy doesn't provide timestamps
+            )
+            memories.append(text_memory)
+
+        return memories
 
     async def delete_by_id(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Delete a memory by its ID.
-
-        Note: Legacy VannaBase does not provide a way to delete by ID,
-        so this operation is not supported.
+        """Delete a memory by its ID using legacy remove_training_data method.
 
         Args:
             context: Tool execution context
             memory_id: ID of the memory to delete
 
         Returns:
-            False (operation not supported by legacy)
+            True if the memory was deleted, False otherwise
         """
-        return False
+        # Call the legacy remove_training_data method
+        # The legacy method is synchronous, so we call it directly
+        return self.vn.remove_training_data(id=memory_id)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Legacy adapters do not track text memories."""
-        return False
+        """Delete a text memory by its ID using legacy remove_training_data method.
+
+        Args:
+            context: Tool execution context
+            memory_id: ID of the text memory to delete
+
+        Returns:
+            True if the text memory was deleted, False otherwise
+        """
+        # Call the legacy remove_training_data method
+        # The legacy method is synchronous, so we call it directly
+        return self.vn.remove_training_data(id=memory_id)
 
     async def clear_memories(
         self,
@@ -316,90 +443,6 @@ class LegacyAgentMemory(AgentMemory):
             0 (operation not supported by legacy)
         """
         return 0
-
-
-class LegacyVannaAdapter(ToolRegistry):
-    """Adapter that wraps a legacy VannaBase object and exposes its methods as tools.
-
-    This adapter automatically registers specific VannaBase methods as tools in the
-    registry with configurable group-based access control. This allows legacy Vanna
-    instances to work seamlessly with the new Agents framework.
-
-    Features:
-    - Auto-registers legacy methods as tools
-    - Configurable group-based permissions ('user', 'admin', etc.)
-    - Seamless integration with ToolRegistry
-    - Preserves legacy VannaBase functionality
-
-    Example:
-        ```python
-        from vanna.legacy.base import VannaBase
-        from vanna.legacy.adapter import LegacyVannaAdapter
-
-        # Initialize your legacy Vanna instance
-        vn = VannaBase(config={"model": "gpt-4"})
-        vn.connect_to_postgres(...)
-
-        # Create adapter and auto-register tools
-        adapter = LegacyVannaAdapter(vn)
-
-        # Tools are now available through the registry
-        schemas = await adapter.get_schemas(user)
-        ```
-    """
-
-    def __init__(
-        self,
-        vn: VannaBase,
-        audit_logger: Optional[Any] = None,
-        audit_config: Optional[Any] = None,
-    ) -> None:
-        """Initialize the adapter with a legacy VannaBase instance.
-
-        Args:
-            vanna: The legacy VannaBase instance to wrap
-            audit_logger: Optional audit logger for tool execution tracking
-            audit_config: Optional audit configuration
-        """
-        super().__init__(audit_logger=audit_logger, audit_config=audit_config)
-        self.vn = vn
-        self._register_tools()
-
-    def _register_tools(self) -> None:
-        """Register legacy VannaBase methods as tools with appropriate permissions.
-
-        Registers the following tools:
-        - RunSqlTool: Wraps the legacy run_sql method via LegacySqlRunner
-        - SaveQuestionToolArgsTool: Wraps add_question_sql via LegacyAgentMemory
-        - SearchSavedCorrectToolUsesTool: Wraps get_similar_question_sql via LegacyAgentMemory
-        """
-        # Create a LegacySqlRunner to wrap the VannaBase run_sql method
-        sql_runner = LegacySqlRunner(self.vn)
-
-        # Register the RunSqlTool with user and admin access
-        run_sql_tool = RunSqlTool(sql_runner)
-        self.register_local_tool(
-            run_sql_tool,
-            access_groups=['user', 'admin']
-        )
-
-        # Create a LegacyAgentMemory to wrap the VannaBase question-sql methods
-        agent_memory = LegacyAgentMemory(self.vn)
-
-        # Register memory tools
-        # SaveQuestionToolArgsTool - for saving question-tool-args patterns (admin only)
-        save_memory_tool = SaveQuestionToolArgsTool(agent_memory)
-        self.register_local_tool(
-            save_memory_tool,
-            access_groups=['admin']
-        )
-
-        # SearchSavedCorrectToolUsesTool - for searching similar patterns (user and admin)
-        search_memory_tool = SearchSavedCorrectToolUsesTool(agent_memory)
-        self.register_local_tool(
-            search_memory_tool,
-            access_groups=['user', 'admin']
-        )
 
     # Example stub for a tool wrapper (to be expanded)
     # You can copy and customize this pattern for each tool you want to expose
