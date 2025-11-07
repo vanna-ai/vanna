@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 try:
     import chromadb
     from chromadb.config import Settings
+    from chromadb.utils import embedding_functions
 
     CHROMADB_AVAILABLE = True
 except ImportError:
@@ -49,6 +50,7 @@ class ChromaAgentMemory(AgentMemory):
         self._client = None
         self._collection = None
         self._executor = ThreadPoolExecutor(max_workers=2)
+        self._embedding_function = None
 
     def _get_client(self):
         """Get or create ChromaDB client."""
@@ -59,15 +61,29 @@ class ChromaAgentMemory(AgentMemory):
             )
         return self._client
 
+    def _get_embedding_function(self):
+        """Get or create the embedding function."""
+        if self._embedding_function is None:
+            self._embedding_function = (
+                embedding_functions.SentenceTransformerEmbeddingFunction(
+                    model_name=self.embedding_model
+                )
+            )
+        return self._embedding_function
+
     def _get_collection(self):
         """Get or create ChromaDB collection."""
         if self._collection is None:
             client = self._get_client()
+            embedding_func = self._get_embedding_function()
             try:
-                self._collection = client.get_collection(name=self.collection_name)
+                self._collection = client.get_collection(
+                    name=self.collection_name, embedding_function=embedding_func
+                )
             except Exception:
                 self._collection = client.create_collection(
                     name=self.collection_name,
+                    embedding_function=embedding_func,
                     metadata={"description": "Tool usage memories for learning"},
                 )
         return self._collection
