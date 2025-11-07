@@ -157,3 +157,16 @@ async def test_ollama_top_artist(chinook_db):
 
     agent = create_agent(llm, chinook_db)
     await test_agent_top_artist(agent)
+
+
+@pytest.mark.gemini
+@pytest.mark.asyncio
+async def test_gemini_top_artist(chinook_db):
+    """Test Gemini agent finding the top artist by sales."""
+    from vanna.integrations.google import GeminiLlmService
+
+    # API key will be picked up from GOOGLE_API_KEY or GEMINI_API_KEY env var
+    llm = GeminiLlmService(model="gemini-2.5-pro", temperature=0.0)
+
+    agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)
