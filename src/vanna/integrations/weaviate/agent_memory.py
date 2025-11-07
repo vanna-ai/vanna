@@ -241,8 +241,37 @@ class WeaviateAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Weaviate implementation does not yet support text memories."""
-        raise NotImplementedError("WeaviateAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            client = self._get_client()
+            collection = client.collections.get(self.collection_name)
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            properties = {
+                "question": content,  # Using question field for content
+                "tool_name": "",  # Empty for text memories
+                "args_json": "",
+                "timestamp": timestamp,
+                "success": True,
+                "metadata_json": json.dumps({"is_text_memory": True})
+            }
+
+            collection.data.insert(
+                properties=properties,
+                vector=embedding,
+                uuid=memory_id
+            )
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -252,24 +281,105 @@ class WeaviateAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Weaviate implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            client = self._get_client()
+            collection = client.collections.get(self.collection_name)
+
+            embedding = self._create_embedding(query)
+
+            # Build filter for text memories (empty tool_name)
+            filters = weaviate.classes.query.Filter.by_property("tool_name").equal("")
+
+            response = collection.query.near_vector(
+                near_vector=embedding,
+                limit=limit,
+                filters=filters,
+                return_metadata=weaviate.classes.query.MetadataQuery(distance=True)
+            )
+
+            search_results = []
+            for i, obj in enumerate(response.objects):
+                distance = obj.metadata.distance if obj.metadata else 1.0
+                similarity_score = 1 - distance
+
+                if similarity_score >= similarity_threshold:
+                    properties = obj.properties
+                    content = properties.get("question", "")
+
+                    memory = TextMemory(
+                        memory_id=str(obj.uuid),
+                        content=content,
+                        timestamp=properties.get("timestamp")
+                    )
+
+                    search_results.append(TextMemorySearchResult(
+                        memory=memory,
+                        similarity_score=similarity_score,
+                        rank=i + 1
+                    ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Weaviate implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            client = self._get_client()
+            collection = client.collections.get(self.collection_name)
+
+            # Query text memories (empty tool_name) and sort by timestamp
+            response = collection.query.fetch_objects(
+                filters=weaviate.classes.query.Filter.by_property("tool_name").equal(""),
+                limit=1000
+            )
+
+            # Convert to list and sort
+            objects_list = list(response.objects)
+            sorted_objects = sorted(
+                objects_list,
+                key=lambda o: o.properties.get("timestamp", ""),
+                reverse=True
+            )
+
+            memories = []
+            for obj in sorted_objects[:limit]:
+                properties = obj.properties
+                content = properties.get("question", "")
+
+                memory = TextMemory(
+                    memory_id=str(obj.uuid),
+                    content=content,
+                    timestamp=properties.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Weaviate implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            client = self._get_client()
+            collection = client.collections.get(self.collection_name)
+
+            try:
+                collection.data.delete_by_id(uuid=memory_id)
+                return True
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

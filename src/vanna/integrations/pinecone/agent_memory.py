@@ -207,8 +207,29 @@ class PineconeAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Pinecone implementation does not yet support text memories."""
-        raise NotImplementedError("PineconeAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            index = self._get_index()
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            memory_metadata = {
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True
+            }
+
+            index.upsert(vectors=[(memory_id, embedding, memory_metadata)])
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -218,24 +239,74 @@ class PineconeAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Pinecone implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            index = self._get_index()
+
+            embedding = self._create_embedding(query)
+
+            filter_dict = {"is_text_memory": True}
+
+            results = index.query(
+                vector=embedding,
+                top_k=limit,
+                filter=filter_dict,
+                include_metadata=True
+            )
+
+            search_results = []
+            for i, match in enumerate(results.matches):
+                similarity_score = match.score
+
+                if similarity_score >= similarity_threshold:
+                    metadata = match.metadata
+
+                    memory = TextMemory(
+                        memory_id=match.id,
+                        content=metadata.get("content", ""),
+                        timestamp=metadata.get("timestamp")
+                    )
+
+                    search_results.append(TextMemorySearchResult(
+                        memory=memory,
+                        similarity_score=similarity_score,
+                        rank=i + 1
+                    ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Pinecone implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            # Pinecone doesn't have a native "get all sorted by timestamp" operation
+            # This is a limitation - returning empty list
+            # In production, you'd need to maintain a separate index or use metadata filtering
+            return []
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Pinecone implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            index = self._get_index()
+
+            try:
+                index.delete(ids=[memory_id])
+                return True
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

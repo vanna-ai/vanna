@@ -164,8 +164,24 @@ class LegacyAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Legacy adapters do not support text memory storage."""
-        raise NotImplementedError("Legacy agent memory does not support text memories.")
+        """Save text memory using legacy add_documentation method.
+
+        Args:
+            content: The documentation content to save
+            context: Tool execution context (not used by legacy implementation)
+
+        Returns:
+            TextMemory object with the saved content
+        """
+        # Call the legacy add_documentation method
+        # The legacy method is synchronous, so we call it directly
+        doc_id = self.vn.add_documentation(documentation=content)
+
+        return TextMemory(
+            memory_id=doc_id,
+            content=content,
+            timestamp=None  # Legacy doesn't provide timestamps
+        )
 
     async def search_text_memories(
         self,
@@ -175,8 +191,56 @@ class LegacyAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Legacy adapters do not support text memory search."""
-        return []
+        """Search text memories using legacy get_related_documentation method.
+
+        Args:
+            query: The query to search for
+            context: Tool execution context (not used by legacy implementation)
+            limit: Maximum number of results (not directly supported by legacy)
+            similarity_threshold: Minimum similarity score (not directly supported by legacy)
+
+        Returns:
+            List of text memory search results
+        """
+        # Call the legacy get_related_documentation method
+        related_docs = self.vn.get_related_documentation(question=query)
+
+        # Convert legacy results to TextMemorySearchResult format
+        memory_results = []
+        for idx, doc in enumerate(related_docs):
+            # Legacy results are typically strings or dicts
+            if isinstance(doc, str):
+                content = doc
+                doc_id = None
+            elif isinstance(doc, dict):
+                content = doc.get("documentation", doc.get("content", str(doc)))
+                doc_id = doc.get("id")
+            else:
+                content = str(doc)
+                doc_id = None
+
+            # Create TextMemory object
+            text_memory = TextMemory(
+                memory_id=doc_id,
+                content=content,
+                timestamp=None  # Legacy doesn't provide timestamps
+            )
+
+            # Assign a simple rank-based similarity score
+            # Legacy system doesn't provide actual similarity scores
+            similarity_score = 1.0 - (idx * 0.1)  # Decreasing score by rank
+            similarity_score = max(similarity_score, 0.0)
+
+            if similarity_score >= similarity_threshold:
+                memory_results.append(
+                    TextMemorySearchResult(
+                        memory=text_memory,
+                        similarity_score=similarity_score,
+                        rank=idx + 1
+                    )
+                )
+
+        return memory_results[:limit]
 
     async def get_recent_memories(
         self,

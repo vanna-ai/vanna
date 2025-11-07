@@ -256,8 +256,35 @@ class MilvusAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Milvus implementation does not yet support text memories."""
-        raise NotImplementedError("MilvusAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            collection = self._get_collection()
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            entities = [
+                [memory_id],
+                [embedding],
+                [content],
+                [""],  # tool_name (empty for text memories)
+                [""],  # args_json (empty for text memories)
+                [timestamp],
+                [True],  # success (always true for text memories)
+                [json.dumps({"is_text_memory": True})]  # metadata_json
+            ]
+
+            collection.insert(entities)
+            collection.flush()
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -267,24 +294,103 @@ class MilvusAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Milvus implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            collection = self._get_collection()
+
+            embedding = self._create_embedding(query)
+
+            # Build filter expression for text memories
+            expr = 'tool_name == ""'
+
+            search_params = {"metric_type": "IP", "params": {"nprobe": 10}}
+
+            results = collection.search(
+                data=[embedding],
+                anns_field="embedding",
+                param=search_params,
+                limit=limit,
+                expr=expr,
+                output_fields=["id", "question", "timestamp", "metadata_json"]
+            )
+
+            search_results = []
+            for i, hits in enumerate(results):
+                for j, hit in enumerate(hits):
+                    similarity_score = hit.distance
+
+                    if similarity_score >= similarity_threshold:
+                        content = hit.entity.get("question", "")
+
+                        memory = TextMemory(
+                            memory_id=hit.entity.get("id"),
+                            content=content,
+                            timestamp=hit.entity.get("timestamp")
+                        )
+
+                        search_results.append(TextMemorySearchResult(
+                            memory=memory,
+                            similarity_score=similarity_score,
+                            rank=j + 1
+                        ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Milvus implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            collection = self._get_collection()
+
+            # Query text memory entries
+            results = collection.query(
+                expr='tool_name == ""',
+                output_fields=["id", "question", "timestamp"],
+                limit=1000
+            )
+
+            # Sort by timestamp
+            sorted_results = sorted(
+                results,
+                key=lambda r: r.get("timestamp", ""),
+                reverse=True
+            )
+
+            memories = []
+            for result in sorted_results[:limit]:
+                memory = TextMemory(
+                    memory_id=result.get("id"),
+                    content=result.get("question", ""),
+                    timestamp=result.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Milvus implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            collection = self._get_collection()
+
+            try:
+                expr = f'id == "{memory_id}"'
+                collection.delete(expr)
+                return True
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

@@ -265,8 +265,36 @@ class OpenSearchAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """OpenSearch implementation does not yet support text memories."""
-        raise NotImplementedError("OpenSearchAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            client = self._get_client()
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            document = {
+                "memory_id": memory_id,
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True,
+                "embedding": embedding
+            }
+
+            client.index(
+                index=self.index_name,
+                body=document,
+                id=memory_id,
+                refresh=True
+            )
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -276,24 +304,105 @@ class OpenSearchAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """OpenSearch implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            client = self._get_client()
+
+            embedding = self._create_embedding(query)
+
+            query_body = {
+                "size": limit,
+                "query": {
+                    "bool": {
+                        "must": [{"term": {"is_text_memory": True}}],
+                        "filter": {
+                            "knn": {
+                                "embedding": {
+                                    "vector": embedding,
+                                    "k": limit
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            response = client.search(index=self.index_name, body=query_body)
+
+            search_results = []
+            for i, hit in enumerate(response["hits"]["hits"]):
+                source = hit["_source"]
+                score = hit["_score"]
+
+                similarity_score = min(score / 10.0, 1.0)
+
+                if similarity_score >= similarity_threshold:
+                    memory = TextMemory(
+                        memory_id=source["memory_id"],
+                        content=source.get("content", ""),
+                        timestamp=source.get("timestamp")
+                    )
+
+                    search_results.append(TextMemorySearchResult(
+                        memory=memory,
+                        similarity_score=similarity_score,
+                        rank=i + 1
+                    ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """OpenSearch implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            client = self._get_client()
+
+            query = {
+                "size": limit,
+                "query": {
+                    "term": {"is_text_memory": True}
+                },
+                "sort": [{"timestamp": {"order": "desc"}}]
+            }
+
+            response = client.search(index=self.index_name, body=query)
+
+            memories = []
+            for hit in response["hits"]["hits"]:
+                source = hit["_source"]
+
+                memory = TextMemory(
+                    memory_id=source["memory_id"],
+                    content=source.get("content", ""),
+                    timestamp=source.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """OpenSearch implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            client = self._get_client()
+
+            try:
+                client.delete(index=self.index_name, id=memory_id, refresh=True)
+                return True
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

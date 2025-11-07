@@ -245,8 +245,38 @@ class QdrantAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Qdrant implementation does not yet support text memories."""
-        raise NotImplementedError("QdrantAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            client = self._get_client()
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            payload = {
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True
+            }
+
+            point = PointStruct(
+                id=memory_id,
+                vector=embedding,
+                payload=payload
+            )
+
+            client.upsert(
+                collection_name=self.collection_name,
+                points=[point]
+            )
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -256,24 +286,114 @@ class QdrantAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Qdrant implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            client = self._get_client()
+
+            embedding = self._create_embedding(query)
+
+            query_filter = Filter(
+                must=[FieldCondition(key="is_text_memory", match=MatchValue(value=True))]
+            )
+
+            results = client.search(
+                collection_name=self.collection_name,
+                query_vector=embedding,
+                limit=limit,
+                query_filter=query_filter,
+                score_threshold=similarity_threshold
+            )
+
+            search_results = []
+            for i, hit in enumerate(results):
+                payload = hit.payload
+
+                memory = TextMemory(
+                    memory_id=str(hit.id),
+                    content=payload.get("content", ""),
+                    timestamp=payload.get("timestamp")
+                )
+
+                search_results.append(TextMemorySearchResult(
+                    memory=memory,
+                    similarity_score=hit.score,
+                    rank=i + 1
+                ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Qdrant implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            client = self._get_client()
+
+            # Scroll through text memory points and sort by timestamp
+            points, _ = client.scroll(
+                collection_name=self.collection_name,
+                scroll_filter=Filter(
+                    must=[FieldCondition(key="is_text_memory", match=MatchValue(value=True))]
+                ),
+                limit=1000,
+                with_payload=True,
+                with_vectors=False
+            )
+
+            # Sort by timestamp
+            sorted_points = sorted(
+                points,
+                key=lambda p: p.payload.get("timestamp", ""),
+                reverse=True
+            )
+
+            memories = []
+            for point in sorted_points[:limit]:
+                payload = point.payload
+                memory = TextMemory(
+                    memory_id=str(point.id),
+                    content=payload.get("content", ""),
+                    timestamp=payload.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Qdrant implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            client = self._get_client()
+
+            try:
+                # Check if the point exists before attempting to delete
+                points = client.retrieve(
+                    collection_name=self.collection_name,
+                    ids=[memory_id],
+                    with_payload=False,
+                    with_vectors=False
+                )
+
+                if points and len(points) > 0:
+                    client.delete(
+                        collection_name=self.collection_name,
+                        points_selector=[memory_id]
+                    )
+                    return True
+                return False
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

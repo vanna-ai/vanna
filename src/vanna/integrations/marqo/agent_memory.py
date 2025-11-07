@@ -199,8 +199,29 @@ class MarqoAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """Marqo implementation does not yet support text memories."""
-        raise NotImplementedError("MarqoAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            client = self._get_client()
+
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+
+            document = {
+                "_id": memory_id,
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True
+            }
+
+            client.index(self.index_name).add_documents([document], tensor_fields=["content"])
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -210,24 +231,84 @@ class MarqoAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """Marqo implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            client = self._get_client()
+
+            filter_string = "is_text_memory:true"
+
+            results = client.index(self.index_name).search(
+                q=query,
+                limit=limit,
+                filter_string=filter_string
+            )
+
+            search_results = []
+            for i, hit in enumerate(results["hits"]):
+                similarity_score = hit.get("_score", 0)
+
+                if similarity_score >= similarity_threshold:
+                    memory = TextMemory(
+                        memory_id=hit["_id"],
+                        content=hit.get("content", ""),
+                        timestamp=hit.get("timestamp")
+                    )
+
+                    search_results.append(TextMemorySearchResult(
+                        memory=memory,
+                        similarity_score=similarity_score,
+                        rank=i + 1
+                    ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """Marqo implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            client = self._get_client()
+
+            results = client.index(self.index_name).search(
+                q="*",
+                limit=limit,
+                filter_string="is_text_memory:true",
+                sort="timestamp:desc"
+            )
+
+            memories = []
+            for hit in results.get("hits", []):
+                memory = TextMemory(
+                    memory_id=hit["_id"],
+                    content=hit.get("content", ""),
+                    timestamp=hit.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """Marqo implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            client = self._get_client()
+
+            try:
+                client.index(self.index_name).delete_documents(ids=[memory_id])
+                return True
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

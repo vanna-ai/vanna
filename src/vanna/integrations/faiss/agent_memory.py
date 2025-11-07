@@ -255,8 +255,33 @@ class FAISSAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """FAISS implementation does not yet support text memories."""
-        raise NotImplementedError("FAISSAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            memory_id = str(uuid.uuid4())
+            timestamp = datetime.now().isoformat()
+            embedding = self._create_embedding(content)
+
+            # Add to FAISS index
+            self._index.add(np.array([embedding]))
+
+            # Store metadata
+            idx = self._index.ntotal - 1
+            self._metadata[idx] = {
+                "memory_id": memory_id,
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True
+            }
+
+            self._save_index()
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -266,24 +291,108 @@ class FAISSAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """FAISS implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            embedding = self._create_embedding(query)
+
+            k = min(limit * 3, self._index.ntotal) if self._index.ntotal > 0 else 1
+            if k == 0:
+                return []
+
+            distances, indices = self._index.search(np.array([embedding]), k)
+
+            search_results = []
+            rank = 1
+            for dist, idx in zip(distances[0], indices[0]):
+                if idx == -1 or idx not in self._metadata:
+                    continue
+
+                metadata = self._metadata[idx]
+
+                # Filter for text memories only
+                if not metadata.get("is_text_memory", False):
+                    continue
+
+                # Convert distance to similarity score
+                if self.metric == "cosine":
+                    similarity_score = float(dist)
+                else:
+                    similarity_score = 1.0 / (1.0 + float(dist))
+
+                if similarity_score >= similarity_threshold:
+                    memory = TextMemory(
+                        memory_id=metadata["memory_id"],
+                        content=metadata["content"],
+                        timestamp=metadata.get("timestamp")
+                    )
+
+                    search_results.append(TextMemorySearchResult(
+                        memory=memory,
+                        similarity_score=similarity_score,
+                        rank=rank
+                    ))
+                    rank += 1
+
+                    if len(search_results) >= limit:
+                        break
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """FAISS implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            # Get all text memory entries and sort by timestamp
+            text_entries = [
+                entry for entry in self._metadata.values()
+                if entry.get("is_text_memory", False)
+            ]
+            sorted_entries = sorted(
+                text_entries,
+                key=lambda m: m.get("timestamp", ""),
+                reverse=True
+            )
+
+            memories = []
+            for entry in sorted_entries[:limit]:
+                memory = TextMemory(
+                    memory_id=entry["memory_id"],
+                    content=entry["content"],
+                    timestamp=entry.get("timestamp")
+                )
+                memories.append(memory)
+
+            return memories
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """FAISS implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            # Find and remove from metadata
+            idx_to_remove = None
+            for idx, metadata in self._metadata.items():
+                if metadata["memory_id"] == memory_id:
+                    idx_to_remove = idx
+                    break
+
+            if idx_to_remove is not None:
+                del self._metadata[idx_to_remove]
+                self._save_index()
+                return True
+
+            return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,

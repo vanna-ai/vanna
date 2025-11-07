@@ -246,8 +246,32 @@ class ChromaAgentMemory(AgentMemory):
         content: str,
         context: ToolContext
     ) -> TextMemory:
-        """ChromaDB implementation does not yet support text memories."""
-        raise NotImplementedError("ChromaAgentMemory does not support text memories.")
+        """Save a text memory."""
+        def _save():
+            collection = self._get_collection()
+
+            memory_id = self._create_memory_id()
+            timestamp = datetime.now().isoformat()
+
+            memory_data = {
+                "content": content,
+                "timestamp": timestamp,
+                "is_text_memory": True
+            }
+
+            collection.upsert(
+                ids=[memory_id],
+                documents=[content],
+                metadatas=[memory_data]
+            )
+
+            return TextMemory(
+                memory_id=memory_id,
+                content=content,
+                timestamp=timestamp
+            )
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _save)
 
     async def search_text_memories(
         self,
@@ -257,24 +281,92 @@ class ChromaAgentMemory(AgentMemory):
         limit: int = 10,
         similarity_threshold: float = 0.7
     ) -> List[TextMemorySearchResult]:
-        """ChromaDB implementation does not yet support text memories."""
-        return []
+        """Search for similar text memories."""
+        def _search():
+            collection = self._get_collection()
+
+            where_filter = {"is_text_memory": True}
+
+            results = collection.query(
+                query_texts=[query],
+                n_results=limit,
+                where=where_filter
+            )
+
+            search_results = []
+            if results["ids"] and len(results["ids"][0]) > 0:
+                for i, (id_, distance, metadata) in enumerate(zip(
+                    results["ids"][0],
+                    results["distances"][0],
+                    results["metadatas"][0]
+                )):
+                    similarity_score = max(0, 1 - distance)
+
+                    if similarity_score >= similarity_threshold:
+                        memory = TextMemory(
+                            memory_id=id_,
+                            content=metadata.get("content", ""),
+                            timestamp=metadata.get("timestamp")
+                        )
+
+                        search_results.append(TextMemorySearchResult(
+                            memory=memory,
+                            similarity_score=similarity_score,
+                            rank=i + 1
+                        ))
+
+            return search_results
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _search)
 
     async def get_recent_text_memories(
         self,
         context: ToolContext,
         limit: int = 10
     ) -> List[TextMemory]:
-        """ChromaDB implementation does not yet support text memories."""
-        return []
+        """Get recently added text memories."""
+        def _get_recent():
+            collection = self._get_collection()
+
+            results = collection.get(where={"is_text_memory": True})
+
+            if not results["metadatas"] or not results["ids"]:
+                return []
+
+            memories_with_time = []
+            for doc_id, metadata in zip(results["ids"], results["metadatas"]):
+                memory = TextMemory(
+                    memory_id=doc_id,
+                    content=metadata.get("content", ""),
+                    timestamp=metadata.get("timestamp")
+                )
+                memories_with_time.append((memory, metadata.get("timestamp", "")))
+
+            memories_with_time.sort(key=lambda x: x[1], reverse=True)
+
+            return [m[0] for m in memories_with_time[:limit]]
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _get_recent)
 
     async def delete_text_memory(
         self,
         context: ToolContext,
         memory_id: str
     ) -> bool:
-        """ChromaDB implementation does not yet support text memories."""
-        return False
+        """Delete a text memory by its ID."""
+        def _delete():
+            collection = self._get_collection()
+
+            try:
+                results = collection.get(ids=[memory_id])
+                if results["ids"] and len(results["ids"]) > 0:
+                    collection.delete(ids=[memory_id])
+                    return True
+                return False
+            except Exception:
+                return False
+
+        return await asyncio.get_event_loop().run_in_executor(self._executor, _delete)
 
     async def clear_memories(
         self,
