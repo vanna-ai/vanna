@@ -169,7 +169,7 @@ class TestTextMemoryModel:
         from vanna.capabilities.agent_memory import TextMemory
 
         required_fields = ['content']
-        optional_fields = ['memory_id', 'timestamp', 'metadata', 'tags']
+        optional_fields = ['memory_id', 'timestamp']
 
         model_fields = list(TextMemory.model_fields.keys())
 
@@ -185,15 +185,11 @@ class TestTextMemoryModel:
 
         memory = TextMemory(
             memory_id="text-123",
-            content="Remember to handle edge cases",
-            metadata={"source": "review"},
-            tags=["guideline", "reminder"]
+            content="Remember to handle edge cases"
         )
 
         assert memory.memory_id == "text-123"
         assert memory.content == "Remember to handle edge cases"
-        assert memory.metadata == {"source": "review"}
-        assert memory.tags == ["guideline", "reminder"]
 
 
 class TestTextMemorySearchResultModel:

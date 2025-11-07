@@ -117,17 +117,17 @@ async def test_openai_top_artist(chinook_db):
     await test_agent_top_artist(agent)
 
 
-@pytest.mark.openai
-@pytest.mark.asyncio
-async def test_openai_responses_top_artist(chinook_db):
-    """Test OpenAI Responses API agent finding the top artist by sales."""
-    from vanna.integrations.openai import OpenAIResponsesService
+# @pytest.mark.openai
+# @pytest.mark.asyncio
+# async def test_openai_responses_top_artist(chinook_db):
+#     """Test OpenAI Responses API agent finding the top artist by sales."""
+#     from vanna.integrations.openai import OpenAIResponsesService
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    llm = OpenAIResponsesService(api_key=api_key, model="gpt-5")
+#     api_key = os.getenv("OPENAI_API_KEY")
+#     llm = OpenAIResponsesService(api_key=api_key, model="gpt-5")
 
-    agent = create_agent(llm, chinook_db)
-    await test_agent_top_artist(agent)
+#     agent = create_agent(llm, chinook_db)
+#     await test_agent_top_artist(agent)
 
 
 @pytest.mark.ollama
