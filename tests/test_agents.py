@@ -131,6 +131,28 @@ async def test_openai_top_artist(chinook_db):
     await test_agent_top_artist(agent)
 
 
+@pytest.mark.azureopenai
+@pytest.mark.asyncio
+async def test_azure_openai_top_artist(chinook_db):
+    """Test Azure OpenAI agent finding the top artist by sales."""
+    from vanna.integrations.azureopenai import AzureOpenAILlmService
+
+    api_key = os.getenv("AZURE_OPENAI_API_KEY")
+    model = os.getenv("AZURE_OPENAI_MODEL")
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+
+    llm = AzureOpenAILlmService(
+        api_key=api_key,
+        model=model,
+        azure_endpoint=azure_endpoint,
+        api_version=api_version,
+    )
+
+    agent = create_agent(llm, chinook_db)
+    await test_agent_top_artist(agent)
+
+
 # @pytest.mark.openai
 # @pytest.mark.asyncio
 # async def test_openai_responses_top_artist(chinook_db):
