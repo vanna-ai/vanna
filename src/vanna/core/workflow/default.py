@@ -23,6 +23,8 @@ from vanna.components import (
     ButtonComponent,
     ButtonGroupComponent,
     SimpleTextComponent,
+    CardComponent,
+    ContainerComponent,
 )
 
 
@@ -66,7 +68,8 @@ class DefaultWorkflowHandler(WorkflowHandler):
                             "**🔧 Commands**\n"
                             "- `/help` - Show this help message\n"
                             "- `/status` - Check setup status\n"
-                            "- `/memories` - View recent memories\n\n"
+                            "- `/memories` - View recent memories\n"
+                            "- `/delete [id]` - Delete a memory by ID\n\n"
                             "Just ask me anything about your data in plain English!",
                             markdown=True,
                         ),
@@ -87,6 +90,11 @@ class DefaultWorkflowHandler(WorkflowHandler):
             "recent_memories",
         ]:
             return await self._get_recent_memories(agent, user, conversation)
+
+        # Handle delete memory command
+        if message.strip().lower().startswith("/delete "):
+            memory_id = message.strip()[8:].strip()  # Extract ID after "/delete "
+            return await self._delete_memory(agent, user, conversation, memory_id)
 
         # Don't handle other messages, pass to LLM
         return WorkflowResult(should_skip_llm=False)
@@ -500,12 +508,22 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 agent_memory=agent.agent_memory,
             )
 
-            # Get recent memories
-            memories = await agent.agent_memory.get_recent_memories(
+            # Get both tool memories and text memories
+            tool_memories = await agent.agent_memory.get_recent_memories(
                 context=context, limit=10
             )
 
-            if not memories:
+            # Try to get text memories (may not be implemented in all memory backends)
+            text_memories = []
+            try:
+                text_memories = await agent.agent_memory.get_recent_text_memories(
+                    context=context, limit=10
+                )
+            except (AttributeError, NotImplementedError):
+                # Text memories not supported by this implementation
+                pass
+
+            if not tool_memories and not text_memories:
                 return WorkflowResult(
                     should_skip_llm=True,
                     components=[
@@ -521,32 +539,95 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     ],
                 )
 
-            # Format memories for display
-            memories_content = "# 🧠 Recent Memories\n\n"
-            memories_content += f"Found {len(memories)} recent memor{'y' if len(memories) == 1 else 'ies'}:\n\n"
+            components = []
 
-            for i, memory in enumerate(memories, 1):
-                memories_content += f"## {i}. {memory.tool_name}\n"
-                memories_content += f"**Question:** {memory.question}\n\n"
-                memories_content += f"**Arguments:** `{memory.args}`\n\n"
-                memories_content += (
-                    f"**Success:** {'✅ Yes' if memory.success else '❌ No'}\n\n"
+            # Header
+            total_count = len(tool_memories) + len(text_memories)
+            header_content = f"# 🧠 Recent Memories\n\nFound {total_count} recent memor{'y' if total_count == 1 else 'ies'}"
+            components.append(
+                UiComponent(
+                    rich_component=RichTextComponent(
+                        content=header_content, markdown=True
+                    ),
+                    simple_component=None,
                 )
-                if memory.timestamp:
-                    memories_content += f"**Timestamp:** {memory.timestamp}\n\n"
-                memories_content += "---\n\n"
+            )
 
-            return WorkflowResult(
-                should_skip_llm=True,
-                components=[
+            # Display text memories
+            if text_memories:
+                components.append(
                     UiComponent(
                         rich_component=RichTextComponent(
-                            content=memories_content, markdown=True
+                            content=f"## 📝 Text Memories ({len(text_memories)})",
+                            markdown=True
                         ),
                         simple_component=None,
                     )
-                ],
-            )
+                )
+
+                for memory in text_memories:
+                    # Create card with delete button
+                    card_content = f"**Content:** {memory.content}\n\n"
+                    if memory.timestamp:
+                        card_content += f"**Timestamp:** {memory.timestamp}\n\n"
+                    card_content += f"**ID:** `{memory.memory_id}`"
+
+                    card = CardComponent(
+                        title="Text Memory",
+                        content=card_content,
+                        icon="📝",
+                        actions=[
+                            {
+                                "label": "🗑️ Delete",
+                                "action": f"/delete {memory.memory_id}",
+                                "variant": "error",
+                            }
+                        ],
+                    )
+                    components.append(
+                        UiComponent(rich_component=card, simple_component=None)
+                    )
+
+            # Display tool memories
+            if tool_memories:
+                components.append(
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content=f"## 🔧 Tool Memories ({len(tool_memories)})",
+                            markdown=True
+                        ),
+                        simple_component=None,
+                    )
+                )
+
+                for memory in tool_memories:
+                    # Create card with delete button
+                    card_content = f"**Question:** {memory.question}\n\n"
+                    card_content += f"**Tool:** {memory.tool_name}\n\n"
+                    card_content += f"**Arguments:** `{memory.args}`\n\n"
+                    card_content += f"**Success:** {'✅ Yes' if memory.success else '❌ No'}\n\n"
+                    if memory.timestamp:
+                        card_content += f"**Timestamp:** {memory.timestamp}\n\n"
+                    card_content += f"**ID:** `{memory.memory_id}`"
+
+                    card = CardComponent(
+                        title=f"Tool: {memory.tool_name}",
+                        content=card_content,
+                        icon="🔧",
+                        status="success" if memory.success else "error",
+                        actions=[
+                            {
+                                "label": "🗑️ Delete",
+                                "action": f"/delete {memory.memory_id}",
+                                "variant": "error",
+                            }
+                        ],
+                    )
+                    components.append(
+                        UiComponent(rich_component=card, simple_component=None)
+                    )
+
+            return WorkflowResult(should_skip_llm=True, components=components)
 
         except Exception as e:
             traceback.print_exc()
@@ -557,6 +638,112 @@ class DefaultWorkflowHandler(WorkflowHandler):
                         rich_component=RichTextComponent(
                             content=f"# ❌ Error Retrieving Memories\n\n"
                             f"Failed to get recent memories: {str(e)}\n\n"
+                            f"This may indicate an issue with the agent memory configuration.",
+                            markdown=True,
+                        ),
+                        simple_component=None,
+                    )
+                ],
+            )
+
+    async def _delete_memory(
+        self, agent: "Agent", user: "User", conversation: "Conversation", memory_id: str
+    ) -> WorkflowResult:
+        """Delete a memory by its ID."""
+        try:
+            # Check if agent has memory capability
+            if not hasattr(agent, "agent_memory") or agent.agent_memory is None:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# ⚠️ No Memory System\n\n"
+                                "Agent memory is not configured. Cannot delete memories.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
+
+            if not memory_id:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# ⚠️ Invalid Command\n\n"
+                                "Please provide a memory ID to delete.\n\n"
+                                "Usage: `/delete [memory_id]`",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
+
+            # Create tool context
+            from vanna.core.tool import ToolContext
+
+            context = ToolContext(
+                user=user,
+                conversation_id=conversation.id,
+                request_id=str(uuid.uuid4()),
+                agent_memory=agent.agent_memory,
+            )
+
+            # Try to delete as a tool memory first
+            deleted = await agent.agent_memory.delete_by_id(context, memory_id)
+
+            # If not found as tool memory, try as text memory
+            if not deleted:
+                try:
+                    deleted = await agent.agent_memory.delete_text_memory(context, memory_id)
+                except (AttributeError, NotImplementedError):
+                    # Text memory deletion not supported by this implementation
+                    pass
+
+            if deleted:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content=f"# ✅ Memory Deleted\n\n"
+                                f"Successfully deleted memory with ID: `{memory_id}`\n\n"
+                                f"You can view remaining memories using `/memories`.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
+            else:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content=f"# ❌ Memory Not Found\n\n"
+                                f"Could not find memory with ID: `{memory_id}`\n\n"
+                                f"Use `/memories` to see available memory IDs.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
+
+        except Exception as e:
+            traceback.print_exc()
+            return WorkflowResult(
+                should_skip_llm=True,
+                components=[
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content=f"# ❌ Error Deleting Memory\n\n"
+                            f"Failed to delete memory: {str(e)}\n\n"
                             f"This may indicate an issue with the agent memory configuration.",
                             markdown=True,
                         ),
