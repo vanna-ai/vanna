@@ -37,7 +37,7 @@ class ChromaAgentMemory(AgentMemory):
         self,
         persist_directory: str = "./chroma_memory",
         collection_name: str = "tool_memories",
-        embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+        embedding_function=None,
     ):
         if not CHROMADB_AVAILABLE:
             raise ImportError(
@@ -46,11 +46,10 @@ class ChromaAgentMemory(AgentMemory):
 
         self.persist_directory = persist_directory
         self.collection_name = collection_name
-        self.embedding_model = embedding_model
         self._client = None
         self._collection = None
         self._executor = ThreadPoolExecutor(max_workers=2)
-        self._embedding_function = None
+        self._embedding_function = embedding_function
 
     def _get_client(self):
         """Get or create ChromaDB client."""
@@ -62,13 +61,15 @@ class ChromaAgentMemory(AgentMemory):
         return self._client
 
     def _get_embedding_function(self):
-        """Get or create the embedding function."""
+        """Get or create the embedding function.
+
+        If no embedding function was provided during initialization,
+        uses ChromaDB's default embedding function.
+        """
         if self._embedding_function is None:
-            self._embedding_function = (
-                embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name=self.embedding_model
-                )
-            )
+            # Use ChromaDB's default embedding function
+            # This avoids requiring sentence-transformers as a hard dependency
+            self._embedding_function = embedding_functions.DefaultEmbeddingFunction()
         return self._embedding_function
 
     def _get_collection(self):

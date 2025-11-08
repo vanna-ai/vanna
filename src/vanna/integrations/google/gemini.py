@@ -95,7 +95,9 @@ class GeminiLlmService(LlmService):
             if hasattr(response, "usage_metadata"):
                 try:
                     usage = {
-                        "prompt_tokens": int(response.usage_metadata.prompt_token_count),
+                        "prompt_tokens": int(
+                            response.usage_metadata.prompt_token_count
+                        ),
                         "completion_tokens": int(
                             response.usage_metadata.candidates_token_count
                         ),
@@ -181,9 +183,7 @@ class GeminiLlmService(LlmService):
         return errors
 
     # Internal helpers
-    def _build_payload(
-        self, request: LlmRequest
-    ) -> tuple[List[Any], Any]:
+    def _build_payload(self, request: LlmRequest) -> tuple[List[Any], Any]:
         """Build the payload for Gemini API.
 
         Returns:
@@ -200,10 +200,11 @@ class GeminiLlmService(LlmService):
         for m in request.messages:
             # Map roles: user -> user, assistant -> model, tool -> function
             if m.role == "user":
-                contents.append(self._types.Content(
-                    role="user",
-                    parts=[self._types.Part(text=m.content)]
-                ))
+                contents.append(
+                    self._types.Content(
+                        role="user", parts=[self._types.Part(text=m.content)]
+                    )
+                )
             elif m.role == "assistant":
                 parts = []
 
@@ -214,18 +215,16 @@ class GeminiLlmService(LlmService):
                 # Add tool calls if present
                 if m.tool_calls:
                     for tc in m.tool_calls:
-                        parts.append(self._types.Part(
-                            function_call=self._types.FunctionCall(
-                                name=tc.name,
-                                args=tc.arguments
+                        parts.append(
+                            self._types.Part(
+                                function_call=self._types.FunctionCall(
+                                    name=tc.name, args=tc.arguments
+                                )
                             )
-                        ))
+                        )
 
                 if parts:
-                    contents.append(self._types.Content(
-                        role="model",
-                        parts=parts
-                    ))
+                    contents.append(self._types.Content(role="model", parts=parts))
 
             elif m.role == "tool":
                 # Tool results in Gemini format
@@ -239,15 +238,18 @@ class GeminiLlmService(LlmService):
                     # Extract function name from tool_call_id or use a default
                     function_name = m.tool_call_id.replace("call_", "")
 
-                    contents.append(self._types.Content(
-                        role="function",
-                        parts=[self._types.Part(
-                            function_response=self._types.FunctionResponse(
-                                name=function_name,
-                                response=response_content
-                            )
-                        )]
-                    ))
+                    contents.append(
+                        self._types.Content(
+                            role="function",
+                            parts=[
+                                self._types.Part(
+                                    function_response=self._types.FunctionResponse(
+                                        name=function_name, response=response_content
+                                    )
+                                )
+                            ],
+                        )
+                    )
 
         # Build tools configuration if tools are provided
         tools = None
@@ -257,11 +259,13 @@ class GeminiLlmService(LlmService):
                 # Clean schema to remove unsupported fields
                 cleaned_parameters = self._clean_schema_for_gemini(tool.parameters)
 
-                function_declarations.append({
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": cleaned_parameters,
-                })
+                function_declarations.append(
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": cleaned_parameters,
+                    }
+                )
 
             if function_declarations:
                 tools = [self._types.Tool(function_declarations=function_declarations)]
@@ -295,7 +299,12 @@ class GeminiLlmService(LlmService):
 
         candidate = response.candidates[0]
 
-        if hasattr(candidate, "content") and candidate.content and hasattr(candidate.content, "parts") and candidate.content.parts:
+        if (
+            hasattr(candidate, "content")
+            and candidate.content
+            and hasattr(candidate.content, "parts")
+            and candidate.content.parts
+        ):
             for part in candidate.content.parts:
                 # Check for text content
                 if hasattr(part, "text") and part.text:

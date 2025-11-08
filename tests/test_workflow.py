@@ -82,7 +82,9 @@ class TestWorkflowCommands:
     """Test basic workflow command handling."""
 
     @pytest.mark.asyncio
-    async def test_help_command(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_help_command(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that /help command returns help message."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "/help"
@@ -100,7 +102,9 @@ class TestWorkflowCommands:
         assert "/delete [id]" in content
 
     @pytest.mark.asyncio
-    async def test_status_command(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_status_command(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that /status command returns status information."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "/status"
@@ -110,7 +114,9 @@ class TestWorkflowCommands:
         assert len(result.components) > 0
 
     @pytest.mark.asyncio
-    async def test_memories_command(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_command(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that /memories command returns memory list."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "/memories"
@@ -120,7 +126,9 @@ class TestWorkflowCommands:
         assert len(result.components) > 0
 
     @pytest.mark.asyncio
-    async def test_unknown_command(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_unknown_command(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that unknown commands are passed to LLM."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "What is the weather?"
@@ -133,7 +141,9 @@ class TestMemoriesView:
     """Test the memories view functionality."""
 
     @pytest.mark.asyncio
-    async def test_memories_no_agent_memory(self, workflow_handler, agent_without_memory, test_user, test_conversation):
+    async def test_memories_no_agent_memory(
+        self, workflow_handler, agent_without_memory, test_user, test_conversation
+    ):
         """Test memories view when agent has no memory capability."""
         result = await workflow_handler._get_recent_memories(
             agent_without_memory, test_user, test_conversation
@@ -146,7 +156,9 @@ class TestMemoriesView:
         assert "No Memory System" in content
 
     @pytest.mark.asyncio
-    async def test_memories_empty(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_empty(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test memories view when no memories exist."""
         result = await workflow_handler._get_recent_memories(
             agent_with_memory, test_user, test_conversation
@@ -159,7 +171,9 @@ class TestMemoriesView:
         assert "No recent memories found" in content
 
     @pytest.mark.asyncio
-    async def test_memories_with_tool_memories(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_with_tool_memories(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test memories view displays tool memories correctly."""
         # Create a context and add some tool memories
         context = ToolContext(
@@ -202,7 +216,7 @@ class TestMemoriesView:
         # Check that we have tool memory section
         found_tool_section = False
         for component in result.components:
-            if hasattr(component.rich_component, 'content'):
+            if hasattr(component.rich_component, "content"):
                 if "Tool Memories" in component.rich_component.content:
                     found_tool_section = True
                     break
@@ -210,7 +224,9 @@ class TestMemoriesView:
         assert found_tool_section
 
     @pytest.mark.asyncio
-    async def test_memories_with_text_memories(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_with_text_memories(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test memories view displays text memories correctly."""
         # Create a context and add some text memories
         context = ToolContext(
@@ -242,7 +258,7 @@ class TestMemoriesView:
         # Check that we have text memory section
         found_text_section = False
         for component in result.components:
-            if hasattr(component.rich_component, 'content'):
+            if hasattr(component.rich_component, "content"):
                 if "Text Memories" in component.rich_component.content:
                     found_text_section = True
                     break
@@ -250,7 +266,9 @@ class TestMemoriesView:
         assert found_text_section
 
     @pytest.mark.asyncio
-    async def test_memories_with_both_types(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_with_both_types(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test memories view displays both tool and text memories."""
         # Create a context
         context = ToolContext(
@@ -286,12 +304,21 @@ class TestMemoriesView:
         assert len(result.components) >= 4
 
         # Check both sections exist
-        content_str = str([c.rich_component.content if hasattr(c.rich_component, 'content') else str(c.rich_component) for c in result.components])
+        content_str = str(
+            [
+                c.rich_component.content
+                if hasattr(c.rich_component, "content")
+                else str(c.rich_component)
+                for c in result.components
+            ]
+        )
         assert "Text Memories" in content_str
         assert "Tool Memories" in content_str
 
     @pytest.mark.asyncio
-    async def test_memories_have_delete_buttons(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_have_delete_buttons(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that memory cards include delete buttons."""
         # Create a context and add a memory
         context = ToolContext(
@@ -317,9 +344,12 @@ class TestMemoriesView:
         # Find a card component with actions
         found_delete_button = False
         for component in result.components:
-            if hasattr(component.rich_component, 'actions') and component.rich_component.actions:
+            if (
+                hasattr(component.rich_component, "actions")
+                and component.rich_component.actions
+            ):
                 for action in component.rich_component.actions:
-                    if '/delete' in action.get('action', ''):
+                    if "/delete" in action.get("action", ""):
                         found_delete_button = True
                         break
 
@@ -330,7 +360,9 @@ class TestMemoryDeletion:
     """Test memory deletion functionality."""
 
     @pytest.mark.asyncio
-    async def test_delete_no_agent_memory(self, workflow_handler, agent_without_memory, test_user, test_conversation):
+    async def test_delete_no_agent_memory(
+        self, workflow_handler, agent_without_memory, test_user, test_conversation
+    ):
         """Test delete command when agent has no memory capability."""
         result = await workflow_handler._delete_memory(
             agent_without_memory, test_user, test_conversation, "test-id"
@@ -341,7 +373,9 @@ class TestMemoryDeletion:
         assert "No Memory System" in content
 
     @pytest.mark.asyncio
-    async def test_delete_no_id_provided(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_delete_no_id_provided(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test delete command without memory ID."""
         result = await workflow_handler._delete_memory(
             agent_with_memory, test_user, test_conversation, ""
@@ -353,7 +387,9 @@ class TestMemoryDeletion:
         assert "memory_id" in content
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_memory(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_delete_nonexistent_memory(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test deleting a memory that doesn't exist."""
         result = await workflow_handler._delete_memory(
             agent_with_memory, test_user, test_conversation, "nonexistent-id"
@@ -364,7 +400,9 @@ class TestMemoryDeletion:
         assert "Memory Not Found" in content
 
     @pytest.mark.asyncio
-    async def test_delete_tool_memory_success(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_delete_tool_memory_success(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test successfully deleting a tool memory."""
         # Create a context and add a memory
         context = ToolContext(
@@ -383,7 +421,9 @@ class TestMemoryDeletion:
         )
 
         # Get the memory ID
-        memories = await agent_with_memory.agent_memory.get_recent_memories(context, limit=1)
+        memories = await agent_with_memory.agent_memory.get_recent_memories(
+            context, limit=1
+        )
         assert len(memories) == 1
         memory_id = memories[0].memory_id
 
@@ -398,11 +438,15 @@ class TestMemoryDeletion:
         assert memory_id in content
 
         # Verify memory is gone
-        memories_after = await agent_with_memory.agent_memory.get_recent_memories(context, limit=10)
+        memories_after = await agent_with_memory.agent_memory.get_recent_memories(
+            context, limit=10
+        )
         assert len(memories_after) == 0
 
     @pytest.mark.asyncio
-    async def test_delete_text_memory_success(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_delete_text_memory_success(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test successfully deleting a text memory."""
         # Create a context and add a text memory
         context = ToolContext(
@@ -429,11 +473,17 @@ class TestMemoryDeletion:
         assert "Memory Deleted" in content
 
         # Verify memory is gone
-        text_memories_after = await agent_with_memory.agent_memory.get_recent_text_memories(context, limit=10)
+        text_memories_after = (
+            await agent_with_memory.agent_memory.get_recent_text_memories(
+                context, limit=10
+            )
+        )
         assert len(text_memories_after) == 0
 
     @pytest.mark.asyncio
-    async def test_delete_command_parsing(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_delete_command_parsing(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that /delete command is properly parsed."""
         # Add a memory first
         context = ToolContext(
@@ -451,7 +501,9 @@ class TestMemoryDeletion:
             success=True,
         )
 
-        memories = await agent_with_memory.agent_memory.get_recent_memories(context, limit=1)
+        memories = await agent_with_memory.agent_memory.get_recent_memories(
+            context, limit=1
+        )
         memory_id = memories[0].memory_id
 
         # Test command parsing
@@ -468,7 +520,9 @@ class TestWorkflowComponentStructure:
     """Test the structure of components returned by workflow."""
 
     @pytest.mark.asyncio
-    async def test_help_has_rich_component(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_help_has_rich_component(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that help command returns properly structured components."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "/help"
@@ -476,11 +530,13 @@ class TestWorkflowComponentStructure:
 
         assert len(result.components) > 0
         for component in result.components:
-            assert hasattr(component, 'rich_component')
-            assert hasattr(component, 'simple_component')
+            assert hasattr(component, "rich_component")
+            assert hasattr(component, "simple_component")
 
     @pytest.mark.asyncio
-    async def test_memories_cards_have_proper_structure(self, workflow_handler, agent_with_memory, test_user, test_conversation):
+    async def test_memories_cards_have_proper_structure(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
         """Test that memory cards have proper structure."""
         # Add a memory
         context = ToolContext(
@@ -505,14 +561,15 @@ class TestWorkflowComponentStructure:
         # Find card components
         card_found = False
         for component in result.components:
-            if hasattr(component.rich_component, 'type'):
+            if hasattr(component.rich_component, "type"):
                 from vanna.core.rich_component import ComponentType
+
                 if component.rich_component.type == ComponentType.CARD:
                     card_found = True
                     # Check card has required fields
-                    assert hasattr(component.rich_component, 'title')
-                    assert hasattr(component.rich_component, 'content')
-                    assert hasattr(component.rich_component, 'actions')
+                    assert hasattr(component.rich_component, "title")
+                    assert hasattr(component.rich_component, "content")
+                    assert hasattr(component.rich_component, "actions")
                     assert len(component.rich_component.actions) > 0
 
         assert card_found, "Should have at least one card component"

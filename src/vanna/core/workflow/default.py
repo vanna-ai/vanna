@@ -559,7 +559,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     UiComponent(
                         rich_component=RichTextComponent(
                             content=f"## 📝 Text Memories ({len(text_memories)})",
-                            markdown=True
+                            markdown=True,
                         ),
                         simple_component=None,
                     )
@@ -594,31 +594,33 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     UiComponent(
                         rich_component=RichTextComponent(
                             content=f"## 🔧 Tool Memories ({len(tool_memories)})",
-                            markdown=True
+                            markdown=True,
                         ),
                         simple_component=None,
                     )
                 )
 
-                for memory in tool_memories:
+                for tool_memory in tool_memories:
                     # Create card with delete button
-                    card_content = f"**Question:** {memory.question}\n\n"
-                    card_content += f"**Tool:** {memory.tool_name}\n\n"
-                    card_content += f"**Arguments:** `{memory.args}`\n\n"
-                    card_content += f"**Success:** {'✅ Yes' if memory.success else '❌ No'}\n\n"
-                    if memory.timestamp:
-                        card_content += f"**Timestamp:** {memory.timestamp}\n\n"
-                    card_content += f"**ID:** `{memory.memory_id}`"
+                    card_content = f"**Question:** {tool_memory.question}\n\n"
+                    card_content += f"**Tool:** {tool_memory.tool_name}\n\n"
+                    card_content += f"**Arguments:** `{tool_memory.args}`\n\n"
+                    card_content += (
+                        f"**Success:** {'✅ Yes' if tool_memory.success else '❌ No'}\n\n"
+                    )
+                    if tool_memory.timestamp:
+                        card_content += f"**Timestamp:** {tool_memory.timestamp}\n\n"
+                    card_content += f"**ID:** `{tool_memory.memory_id}`"
 
                     card = CardComponent(
-                        title=f"Tool: {memory.tool_name}",
+                        title=f"Tool: {tool_memory.tool_name}",
                         content=card_content,
                         icon="🔧",
-                        status="success" if memory.success else "error",
+                        status="success" if tool_memory.success else "error",
                         actions=[
                             {
                                 "label": "🗑️ Delete",
-                                "action": f"/delete {memory.memory_id}",
+                                "action": f"/delete {tool_memory.memory_id}",
                                 "variant": "error",
                             }
                         ],
@@ -699,7 +701,9 @@ class DefaultWorkflowHandler(WorkflowHandler):
             # If not found as tool memory, try as text memory
             if not deleted:
                 try:
-                    deleted = await agent.agent_memory.delete_text_memory(context, memory_id)
+                    deleted = await agent.agent_memory.delete_text_memory(
+                        context, memory_id
+                    )
                 except (AttributeError, NotImplementedError):
                     # Text memory deletion not supported by this implementation
                     pass
