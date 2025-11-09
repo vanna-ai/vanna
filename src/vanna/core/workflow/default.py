@@ -27,6 +27,8 @@ from vanna.components import (
     ContainerComponent,
 )
 
+# Note: StatusCardComponent and ButtonGroupComponent are kept for /status command compatibility
+
 
 class DefaultWorkflowHandler(WorkflowHandler):
     """Default workflow handler that provides setup health checking and starter UI.
@@ -54,23 +56,36 @@ class DefaultWorkflowHandler(WorkflowHandler):
 
         # Handle basic help command
         if message.strip().lower() in ["/help", "help", "/h"]:
+            # Check if user is admin
+            is_admin = "admin" in user.group_memberships
+
+            help_content = (
+                "## 🤖 Vanna AI Assistant\n\n"
+                "I'm your AI data analyst! Here's what I can help you with:\n\n"
+                "**💬 Natural Language Queries**\n"
+                '- "Show me sales data for last quarter"\n'
+                '- "Which customers have the highest orders?"\n'
+                '- "Create a chart of revenue by month"\n\n'
+                "**🔧 Commands**\n"
+                "- `/help` - Show this help message\n"
+            )
+
+            if is_admin:
+                help_content += (
+                    "\n**🔒 Admin Commands**\n"
+                    "- `/status` - Check setup status\n"
+                    "- `/memories` - View and manage recent memories\n"
+                    "- `/delete [id]` - Delete a memory by ID\n"
+                )
+
+            help_content += "\n\nJust ask me anything about your data in plain English!"
+
             return WorkflowResult(
                 should_skip_llm=True,
                 components=[
                     UiComponent(
                         rich_component=RichTextComponent(
-                            content="## 🤖 Vanna AI Assistant\n\n"
-                            "I'm your AI data analyst! Here's what I can help you with:\n\n"
-                            "**💬 Natural Language Queries**\n"
-                            '- "Show me sales data for last quarter"\n'
-                            '- "Which customers have the highest orders?"\n'
-                            '- "Create a chart of revenue by month"\n\n'
-                            "**🔧 Commands**\n"
-                            "- `/help` - Show this help message\n"
-                            "- `/status` - Check setup status\n"
-                            "- `/memories` - View recent memories\n"
-                            "- `/delete [id]` - Delete a memory by ID\n\n"
-                            "Just ask me anything about your data in plain English!",
+                            content=help_content,
                             markdown=True,
                         ),
                         simple_component=None,
@@ -78,21 +93,69 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 ],
             )
 
-        # Handle status check command
+        # Handle status check command (admin-only)
         if message.strip().lower() in ["/status", "status"]:
+            # Check if user is admin
+            if "admin" not in user.group_memberships:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# 🔒 Access Denied\n\n"
+                                "The `/status` command is only available to administrators.\n\n"
+                                "If you need access to system status information, please contact your system administrator.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
             return await self._generate_status_check(agent, user)
 
-        # Handle get recent memories command
+        # Handle get recent memories command (admin-only)
         if message.strip().lower() in [
             "/memories",
             "memories",
             "/recent_memories",
             "recent_memories",
         ]:
+            # Check if user is admin
+            if "admin" not in user.group_memberships:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# 🔒 Access Denied\n\n"
+                                "The `/memories` command is only available to administrators.\n\n"
+                                "If you need access to memory management features, please contact your system administrator.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
             return await self._get_recent_memories(agent, user, conversation)
 
-        # Handle delete memory command
+        # Handle delete memory command (admin-only)
         if message.strip().lower().startswith("/delete "):
+            # Check if user is admin
+            if "admin" not in user.group_memberships:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# 🔒 Access Denied\n\n"
+                                "The `/delete` command is only available to administrators.\n\n"
+                                "If you need access to memory management features, please contact your system administrator.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
             memory_id = message.strip()[8:].strip()  # Extract ID after "/delete "
             return await self._delete_memory(agent, user, conversation, memory_id)
 
@@ -111,38 +174,114 @@ class DefaultWorkflowHandler(WorkflowHandler):
         # Analyze setup
         setup_analysis = self._analyze_setup(tool_names)
 
-        components = []
+        # Check if user is admin (has 'admin' in group memberships)
+        is_admin = "admin" in user.group_memberships
 
-        # Welcome message
+        # Generate single concise card
         if self.welcome_message:
-            components.append(
+            # Use custom welcome message
+            return [
                 UiComponent(
                     rich_component=RichTextComponent(
                         content=self.welcome_message, markdown=True
                     ),
                     simple_component=None,
                 )
+            ]
+        else:
+            # Generate role-aware welcome card
+            return [self._generate_starter_card(setup_analysis, is_admin)]
+
+    def _generate_starter_card(
+        self, analysis: Dict[str, Any], is_admin: bool
+    ) -> UiComponent:
+        """Generate a single concise starter card based on role and setup status."""
+
+        if is_admin:
+            # Admin view: includes setup status and memory management
+            return self._generate_admin_starter_card(analysis)
+        else:
+            # User view: simple welcome message
+            return self._generate_user_starter_card(analysis)
+
+    def _generate_admin_starter_card(self, analysis: Dict[str, Any]) -> UiComponent:
+        """Generate admin starter card with setup info and memory management."""
+
+        # Build concise content
+        if not analysis["has_sql"]:
+            title = "Admin: Setup Required"
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** requires a SQL connection to function.\n\nPlease configure a SQL tool to get started."
+            status = "error"
+            icon = "⚠️"
+        elif analysis["is_complete"]:
+            title = "Admin: System Ready"
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** is fully configured and ready.\n\n"
+            content += "**Setup:** SQL ✓ | Memory ✓ | Visualization ✓"
+            status = "success"
+            icon = "✅"
+        else:
+            title = "Admin: System Ready"
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** is ready to query your database.\n\n"
+            setup_items = []
+            setup_items.append("SQL ✓")
+            setup_items.append("Memory ✓" if analysis["has_memory"] else "Memory ✗")
+            setup_items.append("Viz ✓" if analysis["has_viz"] else "Viz ✗")
+            content += f"**Setup:** {' | '.join(setup_items)}"
+            status = "warning" if not analysis["has_memory"] else "success"
+            icon = "⚠️" if not analysis["has_memory"] else "✅"
+
+        # Add memory management info for admins
+        actions: List[Dict[str, Any]] = []
+        if analysis["has_sql"]:
+            actions.append(
+                {
+                    "label": "💡 Help",
+                    "action": "/help",
+                    "variant": "secondary",
+                }
+            )
+
+        if analysis["has_memory"]:
+            content += "\n\n**Memory Management:** Tool and text memories are available. As an admin, you can view and manage these memories to help me learn from successful queries."
+            actions.append(
+                {
+                    "label": "🧠 View Memories",
+                    "action": "/memories",
+                    "variant": "secondary",
+                }
+            )
+
+        return UiComponent(
+            rich_component=CardComponent(
+                title=title,
+                content=content,
+                icon=icon,
+                status=status,
+                actions=actions,
+                markdown=True,
+            ),
+            simple_component=None,
+        )
+
+    def _generate_user_starter_card(self, analysis: Dict[str, Any]) -> UiComponent:
+        """Generate simple user starter view using RichTextComponent."""
+
+        if not analysis["has_sql"]:
+            content = (
+                "# ⚠️ Setup Required\n\n"
+                "Vanna AI requires configuration before it can help you analyze data."
             )
         else:
-            # Generate dynamic welcome based on setup
-            components.append(self._generate_welcome_message(setup_analysis))
+            content = (
+                "# 👋 Welcome to Vanna AI\n\n"
+                "I'm your AI data analyst assistant. Ask me anything about your data in plain English!\n\n"
+                "Type `/help` to see what I can do."
+            )
 
-        # Add setup status cards
-        components.extend(self._generate_setup_status_cards(setup_analysis))
-
-        # Add quick action buttons if setup is good
-        if setup_analysis["has_sql"]:
-            quick_actions = self._generate_quick_actions(setup_analysis)
-            if quick_actions:
-                components.append(quick_actions)
-
-        # Add setup guidance if needed
-        if not setup_analysis["is_complete"]:
-            setup_guidance = self._generate_setup_guidance(setup_analysis)
-            if setup_guidance:
-                components.append(setup_guidance)
-
-        return components
+        return UiComponent(
+            rich_component=RichTextComponent(content=content, markdown=True),
+            simple_component=None,
+        )
 
     def _analyze_setup(self, tool_names: List[str]) -> Dict[str, Any]:
         """Analyze the current tool setup and return status."""
@@ -191,60 +330,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
             "tool_names": tool_names,
         }
 
-    def _generate_welcome_message(self, analysis: Dict[str, Any]) -> UiComponent:
-        """Generate a dynamic welcome message based on setup analysis."""
-
-        if not analysis["has_sql"]:
-            # Critical issue - no SQL tool
-            content = (
-                "# ⚠️ Setup Required\n\n"
-                "Welcome to **Vanna AI**! I'm your data analysis assistant, but I need a SQL connection to help you.\n\n"
-                "Please configure a SQL tool to get started."
-            )
-
-        elif analysis["is_complete"]:
-            # Perfect setup
-            content = (
-                "# 🎉 Welcome to Vanna AI!\n\n"
-                "I'm your AI data analyst assistant, ready to help you explore and analyze your data!\n\n"
-                "✅ **Your setup is complete** - SQL, memory, and visualization tools are all configured.\n\n"
-                "Ask me anything about your data in plain English, and I'll help you find insights!"
-            )
-
-        elif analysis["is_functional"]:
-            # Functional but could be better
-            content = (
-                "# 👋 Welcome to Vanna AI!\n\n"
-                "I'm your AI data analyst assistant, ready to help you explore your data!\n\n"
-                "✅ **SQL connection detected** - I can query your database.\n\n"
-            )
-
-            if not analysis["has_memory"]:
-                content += "💡 *Consider adding memory tools to help me learn from successful queries.*\n\n"
-            if not analysis["has_viz"]:
-                content += (
-                    "📊 *Add visualization tools to create charts and graphs.*\n\n"
-                )
-
-            content += "Go ahead and ask me anything about your data!"
-
-        else:
-            # Fallback
-            content = (
-                "# 🤖 Welcome to Vanna AI!\n\n"
-                "I'm your AI data analyst assistant. Let me help you explore your data!\n\n"
-                "Ask me anything about your data in natural language."
-            )
-
-        return UiComponent(
-            rich_component=RichTextComponent(content=content, markdown=True),
-            simple_component=None,
-        )
-
     def _generate_setup_status_cards(
         self, analysis: Dict[str, Any]
     ) -> List[UiComponent]:
-        """Generate status cards showing setup health."""
+        """Generate status cards showing setup health (used by /status command)."""
 
         cards = []
 
@@ -308,65 +397,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
 
         return cards
 
-    def _generate_quick_actions(self, analysis: Dict[str, Any]) -> UiComponent:
-        """Generate quick action buttons for common tasks."""
-
-        buttons = []
-
-        # Always add help
-        buttons.append(
-            {"label": "💡 Show Help", "action": "/help", "variant": "secondary"}
-        )
-
-        # Add data exploration suggestions if SQL is available
-        if analysis["has_sql"]:
-            buttons.extend(
-                [
-                    {
-                        "label": "🔍 Explore Tables",
-                        "action": "What tables are available in the database?",
-                        "variant": "secondary",
-                    },
-                    {
-                        "label": "📊 Sample Data",
-                        "action": "Show me a sample of data from the main tables",
-                        "variant": "secondary",
-                    },
-                ]
-            )
-
-        # Add memory button if memory tools are available
-        if analysis["has_memory"]:
-            buttons.append(
-                {
-                    "label": "🧠 Recent Memories",
-                    "action": "/memories",
-                    "variant": "secondary",
-                }
-            )
-
-        # Add visualization suggestion if viz tools available
-        if analysis["has_viz"]:
-            buttons.append(
-                {
-                    "label": "📈 Create Chart",
-                    "action": "Create a chart showing trends in the data",
-                    "variant": "secondary",
-                }
-            )
-
-        return UiComponent(
-            rich_component=ButtonGroupComponent(
-                buttons=buttons,
-                orientation="horizontal" if len(buttons) <= 3 else "vertical",
-            ),
-            simple_component=None,
-        )
-
     def _generate_setup_guidance(
         self, analysis: Dict[str, Any]
     ) -> Optional[UiComponent]:
-        """Generate setup guidance based on what's missing."""
+        """Generate setup guidance based on what's missing (used by /status command)."""
 
         if not analysis["has_sql"]:
             # Critical guidance - need SQL
@@ -605,9 +639,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     card_content = f"**Question:** {tool_memory.question}\n\n"
                     card_content += f"**Tool:** {tool_memory.tool_name}\n\n"
                     card_content += f"**Arguments:** `{tool_memory.args}`\n\n"
-                    card_content += (
-                        f"**Success:** {'✅ Yes' if tool_memory.success else '❌ No'}\n\n"
-                    )
+                    card_content += f"**Success:** {'✅ Yes' if tool_memory.success else '❌ No'}\n\n"
                     if tool_memory.timestamp:
                         card_content += f"**Timestamp:** {tool_memory.timestamp}\n\n"
                     card_content += f"**ID:** `{tool_memory.memory_id}`"
@@ -615,6 +647,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
                     card = CardComponent(
                         title=f"Tool: {tool_memory.tool_name}",
                         content=card_content,
+                        markdown=True,
                         icon="🔧",
                         status="success" if tool_memory.success else "error",
                         actions=[

@@ -17,3 +17,4 @@ class CardComponent(RichComponent):
     actions: List[Dict[str, Any]] = Field(default_factory=list)
     collapsible: bool = False
     collapsed: bool = False
+    markdown: bool = False  # Whether content should be rendered as markdown

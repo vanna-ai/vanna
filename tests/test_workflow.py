@@ -13,6 +13,7 @@ from vanna.core.storage import Conversation
 from vanna.core.tool import ToolContext
 from vanna.capabilities.agent_memory import ToolMemory, TextMemory
 from vanna.integrations.local.agent_memory import DemoAgentMemory
+from vanna.core.rich_component import ComponentType
 
 
 class SimpleUserResolver(UserResolver):
@@ -54,6 +55,12 @@ def test_user():
 
 
 @pytest.fixture
+def admin_test_user():
+    """Create an admin test user for tests that require admin access."""
+    return User(id="admin_user", email="admin@example.com", group_memberships=["admin"])
+
+
+@pytest.fixture
 def test_conversation():
     """Create a test conversation."""
     return MockConversation()
@@ -85,7 +92,7 @@ class TestWorkflowCommands:
     async def test_help_command(
         self, workflow_handler, agent_with_memory, test_user, test_conversation
     ):
-        """Test that /help command returns help message."""
+        """Test that /help command returns help message (non-admin view)."""
         result = await workflow_handler.try_handle(
             agent_with_memory, test_user, test_conversation, "/help"
         )
@@ -93,21 +100,27 @@ class TestWorkflowCommands:
         assert result.should_skip_llm is True
         assert len(result.components) > 0
 
-        # Check that help content includes all commands
+        # Check that help content includes basic commands
         help_component = result.components[0]
         content = help_component.rich_component.content
         assert "/help" in content
-        assert "/status" in content
-        assert "/memories" in content
-        assert "/delete [id]" in content
+        # Admin commands should NOT be visible to non-admin users
+        assert "Admin Commands" not in content
+        assert "/status" not in content
+        assert "/memories" not in content
+        assert "/delete" not in content
 
     @pytest.mark.asyncio
     async def test_status_command(
-        self, workflow_handler, agent_with_memory, test_user, test_conversation
+        self,
+        workflow_handler,
+        agent_with_memory,
+        admin_test_user,
+        test_conversation,
     ):
-        """Test that /status command returns status information."""
+        """Test that /status command returns status information (admin only)."""
         result = await workflow_handler.try_handle(
-            agent_with_memory, test_user, test_conversation, "/status"
+            agent_with_memory, admin_test_user, test_conversation, "/status"
         )
 
         assert result.should_skip_llm is True
@@ -115,11 +128,15 @@ class TestWorkflowCommands:
 
     @pytest.mark.asyncio
     async def test_memories_command(
-        self, workflow_handler, agent_with_memory, test_user, test_conversation
+        self,
+        workflow_handler,
+        agent_with_memory,
+        admin_test_user,
+        test_conversation,
     ):
-        """Test that /memories command returns memory list."""
+        """Test that /memories command returns memory list (admin only)."""
         result = await workflow_handler.try_handle(
-            agent_with_memory, test_user, test_conversation, "/memories"
+            agent_with_memory, admin_test_user, test_conversation, "/memories"
         )
 
         assert result.should_skip_llm is True
@@ -482,12 +499,16 @@ class TestMemoryDeletion:
 
     @pytest.mark.asyncio
     async def test_delete_command_parsing(
-        self, workflow_handler, agent_with_memory, test_user, test_conversation
+        self,
+        workflow_handler,
+        agent_with_memory,
+        admin_test_user,
+        test_conversation,
     ):
-        """Test that /delete command is properly parsed."""
+        """Test that /delete command is properly parsed (admin only)."""
         # Add a memory first
         context = ToolContext(
-            user=test_user,
+            user=admin_test_user,
             conversation_id=test_conversation.id,
             request_id=str(uuid.uuid4()),
             agent_memory=agent_with_memory.agent_memory,
@@ -508,7 +529,10 @@ class TestMemoryDeletion:
 
         # Test command parsing
         result = await workflow_handler.try_handle(
-            agent_with_memory, test_user, test_conversation, f"/delete {memory_id}"
+            agent_with_memory,
+            admin_test_user,
+            test_conversation,
+            f"/delete {memory_id}",
         )
 
         assert result.should_skip_llm is True
@@ -573,6 +597,277 @@ class TestWorkflowComponentStructure:
                     assert len(component.rich_component.actions) > 0
 
         assert card_found, "Should have at least one card component"
+
+
+class TestStarterUI:
+    """Test the starter UI functionality."""
+
+    @pytest.mark.asyncio
+    async def test_starter_ui_single_component(
+        self, workflow_handler, agent_with_memory, test_user, test_conversation
+    ):
+        """Test that starter UI returns a single component."""
+
+        # Mock tool registry with SQL tool
+        class MockToolRegistryWithSQL:
+            async def get_schemas(self, user):
+                from vanna.core.tool import ToolSchema
+
+                return [
+                    ToolSchema(name="run_sql", description="Run SQL", parameters={})
+                ]
+
+        agent_with_memory.tool_registry = MockToolRegistryWithSQL()
+
+        components = await workflow_handler.get_starter_ui(
+            agent_with_memory, test_user, test_conversation
+        )
+
+        assert components is not None
+        assert len(components) == 1, "Starter UI should return exactly one component"
+        assert hasattr(components[0], "rich_component")
+
+    @pytest.mark.asyncio
+    async def test_starter_ui_user_view(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that non-admin users get a simple welcome message via RichTextComponent."""
+        # Create user without admin role
+        user = User(
+            id="test_user", email="test@example.com", group_memberships=["user"]
+        )
+
+        # Mock tool registry with SQL tool
+        class MockToolRegistryWithSQL:
+            async def get_schemas(self, user):
+                from vanna.core.tool import ToolSchema
+
+                return [
+                    ToolSchema(name="run_sql", description="Run SQL", parameters={})
+                ]
+
+        agent_with_memory.tool_registry = MockToolRegistryWithSQL()
+
+        components = await workflow_handler.get_starter_ui(
+            agent_with_memory, user, test_conversation
+        )
+
+        assert len(components) == 1
+        rich_text = components[0].rich_component
+        assert rich_text.type == ComponentType.TEXT
+        assert "Welcome to Vanna AI" in rich_text.content
+        # User view should be simple and not mention memory management
+        assert "Memory Management" not in rich_text.content
+        assert "Admin" not in rich_text.content
+
+    @pytest.mark.asyncio
+    async def test_starter_ui_admin_view(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that admin users get setup status and memory management info."""
+        # Create admin user
+        admin_user = User(
+            id="admin_user", email="admin@example.com", group_memberships=["admin"]
+        )
+
+        # Mock tool registry with SQL and memory tools
+        class MockToolRegistryComplete:
+            async def get_schemas(self, user):
+                from vanna.core.tool import ToolSchema
+
+                return [
+                    ToolSchema(name="run_sql", description="Run SQL", parameters={}),
+                    ToolSchema(
+                        name="search_saved_correct_tool_uses",
+                        description="Search",
+                        parameters={},
+                    ),
+                    ToolSchema(
+                        name="save_question_tool_args",
+                        description="Save",
+                        parameters={},
+                    ),
+                ]
+
+        agent_with_memory.tool_registry = MockToolRegistryComplete()
+
+        components = await workflow_handler.get_starter_ui(
+            agent_with_memory, admin_user, test_conversation
+        )
+
+        assert len(components) == 1
+        card = components[0].rich_component
+        assert card.type == ComponentType.CARD
+        assert hasattr(card, "title")
+        assert "Admin" in card.title  # Should indicate admin status
+        assert "🔒 Admin View" in card.content  # Should show admin badge
+        assert "Setup:" in card.content
+        # Admin view should include memory management info
+        assert "Memory Management" in card.content
+        assert "As an admin" in card.content
+        # Should have View Memories button
+        assert hasattr(card, "actions")
+        assert any(
+            "View Memories" in action.get("label", "") for action in card.actions
+        )
+
+    @pytest.mark.asyncio
+    async def test_starter_ui_admin_without_memory(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that admin users see setup status even without memory tools."""
+        # Create admin user
+        admin_user = User(
+            id="admin_user", email="admin@example.com", group_memberships=["admin"]
+        )
+
+        # Mock tool registry with only SQL
+        class MockToolRegistrySQL:
+            async def get_schemas(self, user):
+                from vanna.core.tool import ToolSchema
+
+                return [
+                    ToolSchema(name="run_sql", description="Run SQL", parameters={}),
+                ]
+
+        agent_with_memory.tool_registry = MockToolRegistrySQL()
+
+        components = await workflow_handler.get_starter_ui(
+            agent_with_memory, admin_user, test_conversation
+        )
+
+        assert len(components) == 1
+        card = components[0].rich_component
+        assert card.type == ComponentType.CARD
+        # Admin should see setup status showing incomplete memory setup
+        assert "Admin" in card.title
+        assert "🔒 Admin View" in card.content
+        assert "Setup:" in card.content
+        assert "Memory ✗" in card.content
+        # Should NOT have View Memories button since memory is not available
+        memory_button_exists = any(
+            "View Memories" in action.get("label", "")
+            for action in (card.actions or [])
+        )
+        assert not memory_button_exists
+
+
+class TestAdminOnlyCommands:
+    """Test that admin-only commands are properly restricted."""
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_access_status(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that non-admin users cannot access /status command."""
+        # Create non-admin user
+        user = User(id="user", email="user@example.com", group_memberships=["user"])
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, user, test_conversation, "/status"
+        )
+
+        assert result.should_skip_llm is True
+        assert len(result.components) == 1
+        rich_text = result.components[0].rich_component
+        assert "Access Denied" in rich_text.content
+        assert "administrators" in rich_text.content
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_access_memories(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that non-admin users cannot access /memories command."""
+        # Create non-admin user
+        user = User(id="user", email="user@example.com", group_memberships=["user"])
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, user, test_conversation, "/memories"
+        )
+
+        assert result.should_skip_llm is True
+        assert len(result.components) == 1
+        rich_text = result.components[0].rich_component
+        assert "Access Denied" in rich_text.content
+        assert "administrators" in rich_text.content
+
+    @pytest.mark.asyncio
+    async def test_non_admin_cannot_delete_memories(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that non-admin users cannot use /delete command."""
+        # Create non-admin user
+        user = User(id="user", email="user@example.com", group_memberships=["user"])
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, user, test_conversation, "/delete some-memory-id"
+        )
+
+        assert result.should_skip_llm is True
+        assert len(result.components) == 1
+        rich_text = result.components[0].rich_component
+        assert "Access Denied" in rich_text.content
+        assert "administrators" in rich_text.content
+
+    @pytest.mark.asyncio
+    async def test_admin_can_access_memories(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that admin users can access /memories command."""
+        # Create admin user
+        admin_user = User(
+            id="admin", email="admin@example.com", group_memberships=["admin"]
+        )
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, admin_user, test_conversation, "/memories"
+        )
+
+        assert result.should_skip_llm is True
+        # Should show memories (even if empty, no access denied)
+        assert len(result.components) >= 1
+        assert "Access Denied" not in result.components[0].rich_component.content
+
+    @pytest.mark.asyncio
+    async def test_help_shows_admin_commands_for_admin(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that /help shows admin commands for admin users."""
+        # Create admin user
+        admin_user = User(
+            id="admin", email="admin@example.com", group_memberships=["admin"]
+        )
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, admin_user, test_conversation, "/help"
+        )
+
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "Admin Commands" in content
+        assert "/status" in content
+        assert "/memories" in content
+        assert "/delete" in content
+
+    @pytest.mark.asyncio
+    async def test_help_hides_admin_commands_for_non_admin(
+        self, workflow_handler, agent_with_memory, test_conversation
+    ):
+        """Test that /help hides admin commands for non-admin users."""
+        # Create non-admin user
+        user = User(id="user", email="user@example.com", group_memberships=["user"])
+
+        result = await workflow_handler.try_handle(
+            agent_with_memory, user, test_conversation, "/help"
+        )
+
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "Admin Commands" not in content
+        # Still shows regular commands
+        assert "/help" in content
+        # But not admin commands
+        assert "/status" not in content
 
 
 if __name__ == "__main__":
