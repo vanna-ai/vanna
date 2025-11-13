@@ -54,6 +54,7 @@ test = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytes
 dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest-cov>=4.0.0", "tox>=4.0.0", "mypy", "ruff", "pandas-stubs", "plotly-stubs", "types-PyYAML", "types-requests", "types-tabulate"]
 chromadb = ["chromadb>=1.1.0"]
 openai = ["openai"]
+azureopenai = ["openai", "azure-identity"]
 qianfan = ["qianfan"]
 mistralai = ["mistralai>=1.0.0"]
 anthropic = ["anthropic"]
@@ -93,6 +94,7 @@ markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
     "anthropic: marks tests requiring Anthropic API key",
     "openai: marks tests requiring OpenAI API key",
+    "azureopenai: marks tests requiring Azure OpenAI API key",
     "slow: marks tests as slow running",
     "postgres: marks tests requiring PostgreSQL",
     "mysql: marks tests requiring MySQL",
