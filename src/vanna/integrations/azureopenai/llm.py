@@ -93,9 +93,7 @@ class AzureOpenAILlmService(LlmService):
             )
 
         # API version - use latest stable GA version by default
-        api_version = api_version or os.getenv(
-            "AZURE_OPENAI_API_VERSION", "2024-10-21"
-        )
+        api_version = api_version or os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 
         # Build client kwargs
         client_kwargs: Dict[str, Any] = {

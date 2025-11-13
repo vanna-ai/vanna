@@ -80,12 +80,15 @@ class TestAzureOpenAILlmServiceInitialization:
         assert service.model == "gpt-5"
         assert service._is_reasoning_model
 
-    @patch.dict("os.environ", {
-        "AZURE_OPENAI_MODEL": "gpt-4o-deployment",
-        "AZURE_OPENAI_API_KEY": "env-key",
-        "AZURE_OPENAI_ENDPOINT": "https://env.openai.azure.com",
-        "AZURE_OPENAI_API_VERSION": "2024-06-01",
-    })
+    @patch.dict(
+        "os.environ",
+        {
+            "AZURE_OPENAI_MODEL": "gpt-4o-deployment",
+            "AZURE_OPENAI_API_KEY": "env-key",
+            "AZURE_OPENAI_ENDPOINT": "https://env.openai.azure.com",
+            "AZURE_OPENAI_API_VERSION": "2024-06-01",
+        },
+    )
     @patch("vanna.integrations.azureopenai.llm.AzureOpenAI")
     def test_init_from_environment(self, mock_azure_openai):
         """Test initialization from environment variables."""
@@ -159,7 +162,9 @@ class TestAzureOpenAILlmServicePayloadBuilding:
     """Test payload building for API requests."""
 
     @patch("vanna.integrations.azureopenai.llm.AzureOpenAI")
-    def test_build_payload_includes_temperature_for_standard_model(self, mock_azure_openai):
+    def test_build_payload_includes_temperature_for_standard_model(
+        self, mock_azure_openai
+    ):
         """Test that temperature is included for standard models."""
         from vanna.core.llm import LlmRequest, LlmMessage
         from vanna.core.user import User
@@ -183,7 +188,9 @@ class TestAzureOpenAILlmServicePayloadBuilding:
         assert payload["model"] == "gpt-4o"
 
     @patch("vanna.integrations.azureopenai.llm.AzureOpenAI")
-    def test_build_payload_excludes_temperature_for_reasoning_model(self, mock_azure_openai):
+    def test_build_payload_excludes_temperature_for_reasoning_model(
+        self, mock_azure_openai
+    ):
         """Test that temperature is excluded for reasoning models."""
         from vanna.core.llm import LlmRequest, LlmMessage
         from vanna.core.user import User
@@ -247,9 +254,7 @@ class TestAzureOpenAILlmServicePayloadBuilding:
             description="A test tool",
             parameters={
                 "type": "object",
-                "properties": {
-                    "param1": {"type": "string"}
-                },
+                "properties": {"param1": {"type": "string"}},
             },
         )
 
@@ -276,11 +281,15 @@ class TestImportError:
         with patch.dict("sys.modules", {"openai": None}):
             # Force module reload to trigger import error
             import sys
+
             if "vanna.integrations.azureopenai.llm" in sys.modules:
                 del sys.modules["vanna.integrations.azureopenai.llm"]
 
-            with pytest.raises(ImportError, match="pip install 'vanna\\[azureopenai\\]'"):
+            with pytest.raises(
+                ImportError, match="pip install 'vanna\\[azureopenai\\]'"
+            ):
                 from vanna.integrations.azureopenai import AzureOpenAILlmService
+
                 AzureOpenAILlmService(
                     model="gpt-4o",
                     api_key="test",
