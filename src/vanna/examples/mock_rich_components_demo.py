@@ -301,7 +301,7 @@ I've demonstrated the new primitive component system:
 - **Maintainability**: Business logic changes don't affect UI components
 - **Extensibility**: New tools don't require new component types
 
-**Before**: Semantic `ToolExecutionComponent` mixed UI with business logic
+**Primitive Components**: Compose UI from domain-agnostic building blocks
 **After**: Tools compose UI from primitive `StatusCard` + `ProgressDisplay` + `LogViewer`
 
 Your message was: "{message}"

@@ -45,7 +45,6 @@ from .containers import (
 # Specialized components
 from .specialized import (
     ArtifactComponent,
-    ToolExecutionComponent,
 )
 
 __all__ = [
@@ -81,5 +80,4 @@ __all__ = [
     "CardComponent",
     # Specialized
     "ArtifactComponent",
-    "ToolExecutionComponent",
 ]

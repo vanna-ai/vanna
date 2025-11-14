@@ -46,7 +46,6 @@ from .rich import (
     CardComponent,
     # Specialized
     ArtifactComponent,
-    ToolExecutionComponent,
 )
 
 __all__ = [
@@ -90,5 +89,4 @@ __all__ = [
     "CardComponent",
     # Rich components - Specialized
     "ArtifactComponent",
-    "ToolExecutionComponent",
 ]

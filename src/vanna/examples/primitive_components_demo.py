@@ -1,8 +1,8 @@
 """
 Demonstration of the new primitive component system.
 
-This example shows how tools now compose UI from primitive, domain-agnostic
-components instead of using semantic components like ToolExecutionComponent.
+This example shows how tools compose UI from primitive, domain-agnostic
+components like StatusCardComponent, ProgressDisplayComponent, etc.
 
 Usage:
   PYTHONPATH=. python vanna/examples/primitive_components_demo.py
@@ -185,17 +185,7 @@ class PrimitiveComponentsAgent(Agent):
                 content=f"""
 ## Key Benefits of Primitive Components
 
-**Before (Semantic Components)):**
-```python
-# Tool creates semantic component
-tool_execution = ToolExecutionComponent(
-    tool_name="analyze_data",
-    status="running",
-    # Mixed UI and business logic
-)
-```
-
-**After (Primitive Components):**
+**Primitive Component Approach:**
 ```python
 # Tool composes UI from primitives
 status_card = StatusCardComponent(

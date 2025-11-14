@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, AsyncGenerator, List, Optional
 from vanna.components import (
     UiComponent,
     SimpleTextComponent,
-    ToolExecutionComponent,  # Legacy - will be removed
     RichTextComponent,
     StatusBarUpdateComponent,
     TaskTrackerUpdateComponent,

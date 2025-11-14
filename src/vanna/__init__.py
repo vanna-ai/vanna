@@ -50,7 +50,6 @@ from .core import (
     RichTextComponent,
     StatusCardComponent,
     TaskListComponent,
-    ToolExecutionComponent,
     # Core implementations
     Agent,
     AgentConfig,
@@ -130,7 +129,6 @@ __all__ = [
     "RichTextComponent",
     "StatusCardComponent",
     "TaskListComponent",
-    "ToolExecutionComponent",
     # Core implementations
     "Agent",
     "AgentConfig",

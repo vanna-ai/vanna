@@ -52,7 +52,6 @@ from ..components import (
     RichTextComponent,
     StatusCardComponent,
     TaskListComponent,
-    ToolExecutionComponent,
 )
 
 # Exceptions
@@ -162,7 +161,6 @@ __all__ = [
     "RichTextComponent",
     "StatusCardComponent",
     "TaskListComponent",
-    "ToolExecutionComponent",
     # Core implementations
     "ToolRegistry",
     "Agent",
