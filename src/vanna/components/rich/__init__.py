@@ -9,10 +9,7 @@ from .text import RichTextComponent
 # Data components
 from .data import (
     DataFrameComponent,
-    TableComponent,
-    TableColumn,
     ChartComponent,
-    CodeBlockComponent,
 )
 
 # Feedback components
@@ -43,7 +40,6 @@ from .interactive import (
 # Container components
 from .containers import (
     CardComponent,
-    ContainerComponent,
 )
 
 # Specialized components
@@ -61,10 +57,7 @@ __all__ = [
     "RichTextComponent",
     # Data
     "DataFrameComponent",
-    "TableComponent",
-    "TableColumn",
     "ChartComponent",
-    "CodeBlockComponent",
     # Feedback
     "NotificationComponent",
     "StatusCardComponent",
@@ -86,7 +79,6 @@ __all__ = [
     "ButtonGroupComponent",
     # Containers
     "CardComponent",
-    "ContainerComponent",
     # Specialized
     "ArtifactComponent",
     "ToolExecutionComponent",

@@ -175,7 +175,7 @@ class WorkflowHandler(ABC):
 
                     return WorkflowResult(
                         should_skip_llm=True,
-                        components=[TableComponent(data=result.data)]
+                        components=[...]
                     )
 
                 # State-based workflow

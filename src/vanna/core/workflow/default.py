@@ -24,7 +24,6 @@ from vanna.components import (
     ButtonGroupComponent,
     SimpleTextComponent,
     CardComponent,
-    ContainerComponent,
 )
 
 # Note: StatusCardComponent and ButtonGroupComponent are kept for /status command compatibility

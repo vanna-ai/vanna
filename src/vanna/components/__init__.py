@@ -22,10 +22,7 @@ from .rich import (
     RichTextComponent,
     # Data
     DataFrameComponent,
-    TableComponent,
-    TableColumn,
     ChartComponent,
-    CodeBlockComponent,
     # Feedback
     NotificationComponent,
     StatusCardComponent,
@@ -47,7 +44,6 @@ from .rich import (
     ButtonGroupComponent,
     # Containers
     CardComponent,
-    ContainerComponent,
     # Specialized
     ArtifactComponent,
     ToolExecutionComponent,
@@ -70,10 +66,7 @@ __all__ = [
     "RichTextComponent",
     # Rich components - Data
     "DataFrameComponent",
-    "TableComponent",
-    "TableColumn",
     "ChartComponent",
-    "CodeBlockComponent",
     # Rich components - Feedback
     "NotificationComponent",
     "StatusCardComponent",
@@ -95,7 +88,6 @@ __all__ = [
     "ButtonGroupComponent",
     # Rich components - Containers
     "CardComponent",
-    "ContainerComponent",
     # Rich components - Specialized
     "ArtifactComponent",
     "ToolExecutionComponent",
