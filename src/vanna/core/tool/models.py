@@ -70,3 +70,15 @@ class ToolSchema(BaseModel):
     access_groups: List[str] = Field(
         default_factory=list, description="Groups permitted to access this tool"
     )
+
+
+class ToolRejection(BaseModel):
+    """Indicates tool execution should be rejected with a message.
+
+    Used by transform_args to reject tool execution when arguments
+    cannot be appropriately transformed for the user's context.
+    """
+
+    reason: str = Field(
+        description="Explanation of why the tool execution was rejected"
+    )

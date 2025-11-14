@@ -5,9 +5,9 @@ This module provides the ToolRegistry class for managing and executing tools.
 """
 
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar, Union
 
-from .tool import Tool, ToolCall, ToolContext, ToolResult, ToolSchema
+from .tool import Tool, ToolCall, ToolContext, ToolRejection, ToolResult, ToolSchema
 from .user import User
 
 if TYPE_CHECKING:
@@ -110,6 +110,37 @@ class ToolRegistry:
         # Grant access if any group in user.group_memberships exists in tool.access_groups
         return bool(user_groups & tool_groups)
 
+    async def transform_args(
+        self,
+        tool: Tool[T],
+        args: T,
+        user: User,
+        context: ToolContext,
+    ) -> Union[T, ToolRejection]:
+        """Transform and validate tool arguments based on user context.
+
+        This method allows per-user transformation of tool arguments, such as:
+        - Applying row-level security (RLS) to SQL queries
+        - Filtering available options based on user permissions
+        - Validating required arguments are present
+        - Redacting sensitive fields
+
+        The default implementation performs no transformation (NoOp).
+        Subclasses can override this method to implement custom transformation logic.
+
+        Args:
+            tool: The tool being executed
+            args: Already Pydantic-validated arguments
+            user: The user executing the tool
+            context: Full execution context
+
+        Returns:
+            Either:
+            - Transformed arguments (may be unchanged if no transformation needed)
+            - ToolRejection with explanation of why args were rejected
+        """
+        return args  # Default: no transformation (NoOp)
+
     async def execute(
         self,
         tool_call: ToolCall,
@@ -165,6 +196,25 @@ class ToolRegistry:
                 error=msg,
             )
 
+        # Transform/validate arguments based on user context
+        transform_result = await self.transform_args(
+            tool=tool,
+            args=validated_args,
+            user=context.user,
+            context=context,
+        )
+
+        if isinstance(transform_result, ToolRejection):
+            return ToolResult(
+                success=False,
+                result_for_llm=transform_result.reason,
+                ui_component=None,
+                error=transform_result.reason,
+            )
+
+        # Use transformed arguments for execution
+        final_args = transform_result
+
         # Audit successful access check
         if (
             self.audit_logger
@@ -198,7 +248,7 @@ class ToolRegistry:
         # Execute tool with context-first signature
         try:
             start_time = time.perf_counter()
-            result = await tool.execute(context, validated_args)
+            result = await tool.execute(context, final_args)
             execution_time_ms = (time.perf_counter() - start_time) * 1000
 
             # Add execution time to metadata
