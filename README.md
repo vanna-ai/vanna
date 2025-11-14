@@ -19,6 +19,8 @@ Vanna is purpose-built for **data analytics** with **user awareness** as a first
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+![Vanna2 Diagram](img/architecture.png)
+
 ---
 
 ## Why Vanna?
@@ -40,6 +42,8 @@ graph LR
 - **Rich streaming responses** — Tables, charts, SQL code blocks, not just text
 - **Works with your existing auth** — Cookies, JWTs, session tokens
 - **Enterprise security built-in** — Row-level security, audit logs, rate limiting
+
+
 
 ---
 
