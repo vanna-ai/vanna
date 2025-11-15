@@ -86,7 +86,7 @@ server.run(host='0.0.0.0', port=8000)
 #### Step 1: Install Vanna 2.0+
 
 ```bash
-pip install --force-reinstall --no-cache-dir 'vanna[flask,anthropic] @ git+https://github.com/vanna-ai/vanna.git@v2'
+pip install 'vanna[flask,anthropic]'
 ```
 
 #### Step 2: Wrap Your Existing VannaBase Instance
