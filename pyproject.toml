@@ -90,7 +90,6 @@ exclude = [
     "tests/",
     "notebooks/",
     ".github/",
-    "*.md",
     "tox.ini",
 ]
 
