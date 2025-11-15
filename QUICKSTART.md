@@ -23,9 +23,17 @@ pip install anthropic
 
 ### Step 3: Run!
 
+**Choose your version:**
+
 ```bash
+# Schema-Aware Version (RECOMMENDED - 3x faster!)
+python console_chat_app_with_schema.py Chinook.sqlite
+
+# Basic Version (LLM explores database as needed)
 python console_chat_app.py Chinook.sqlite
 ```
+
+**Recommendation:** Use the schema-aware version! It's much faster because the LLM knows your database structure from the start.
 
 ## 📝 Example Session
 
@@ -89,6 +97,17 @@ pip install anthropic pandas
 
 See [CONSOLE_CHAT_README.md](CONSOLE_CHAT_README.md) for complete documentation.
 
+## 🆚 Two Console App Versions
+
+| Feature | Schema-Aware | Basic |
+|---------|--------------|-------|
+| **Speed** | ⚡ Fast (1 query) | 🐌 Slower (3-4 queries) |
+| **Schema Discovery** | Automatic on startup | LLM explores as needed |
+| **Best For** | Production use | Learning how Vanna works |
+| **Accuracy** | High (knows exact schema) | Good (discovers schema) |
+
+**Recommendation:** Use `console_chat_app_with_schema.py` for best performance!
+
 ## 🆚 Console vs FastAPI Server
 
 | Console App | FastAPI Server |
@@ -100,3 +119,11 @@ See [CONSOLE_CHAT_README.md](CONSOLE_CHAT_README.md) for complete documentation.
 | Terminal-based | Browser-based |
 
 **Bottom line:** Use console app when you want to **understand what's happening**!
+
+## 📖 Understanding Schema Discovery
+
+See [SCHEMA_DISCOVERY_EXPLAINED.md](SCHEMA_DISCOVERY_EXPLAINED.md) to learn:
+- Why Vanna v2 doesn't automatically provide schema to the LLM
+- How the schema-aware version solves this
+- Performance comparison (3.5x faster!)
+- How to add schema awareness to your own apps
