@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "0.7.9"
+version = "2.0.0rc1"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -18,14 +18,30 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests", "tabulate", "plotly", "pandas", "sqlparse", "kaleido", "flask", "flask-sock", "flasgger", "sqlalchemy"
+    "pydantic>=2.0.0",
+    "click>=8.0.0",
+    "pandas",
+    "httpx>=0.28.0",
+    "PyYAML",
+    "plotly",
+    "tabulate",
+    "sqlparse",
+    "sqlalchemy",
+    "requests",
 ]
+
+[project.scripts]
+vanna = "vanna.servers.cli.server_runner:main"
 
 [project.urls]
 "Homepage" = "https://github.com/vanna-ai/vanna"
 "Bug Tracker" = "https://github.com/vanna-ai/vanna/issues"
 
 [project.optional-dependencies]
+flask = ["flask>=2.0.0", "flask-cors>=4.0.0"]
+fastapi = ["fastapi>=0.68.0", "uvicorn>=0.15.0"]
+servers = ["vanna[flask,fastapi]"]
+
 postgres = ["psycopg2-binary", "db-dtypes"]
 mysql = ["PyMySQL"]
 clickhouse = ["clickhouse_connect"]
@@ -33,14 +49,16 @@ bigquery = ["google-cloud-bigquery"]
 snowflake = ["snowflake-connector-python"]
 duckdb = ["duckdb"]
 google = ["google-generativeai", "google-cloud-aiplatform"]
-all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai>=1.0.0", "chromadb<1.0.0", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone", "pymilvus[model]","weaviate-client", "azure-search-documents", "azure-identity", "azure-common", "faiss-cpu", "boto", "boto3", "botocore", "langchain_core", "langchain_postgres", "langchain-community", "langchain-huggingface", "xinference-client"]
-test = ["tox"]
-chromadb = ["chromadb<1.0.0"]
+all = ["psycopg2-binary", "db-dtypes", "PyMySQL", "google-cloud-bigquery", "snowflake-connector-python", "duckdb", "openai", "qianfan", "mistralai>=1.0.0", "chromadb>=1.1.0", "anthropic", "zhipuai", "marqo", "google-generativeai", "google-cloud-aiplatform", "qdrant-client", "fastembed", "ollama", "httpx", "opensearch-py", "opensearch-dsl", "transformers", "pinecone", "pymilvus[model]","weaviate-client", "azure-search-documents", "azure-identity", "azure-common", "faiss-cpu", "boto", "boto3", "botocore", "langchain_core", "langchain_postgres", "langchain-community", "langchain-huggingface", "xinference-client"]
+test = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest-cov>=4.0.0", "tox>=4.0.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest-cov>=4.0.0", "tox>=4.0.0", "mypy", "ruff", "pandas-stubs", "plotly-stubs", "types-PyYAML", "types-requests", "types-tabulate"]
+chromadb = ["chromadb>=1.1.0"]
 openai = ["openai"]
+azureopenai = ["openai", "azure-identity"]
 qianfan = ["qianfan"]
 mistralai = ["mistralai>=1.0.0"]
 anthropic = ["anthropic"]
-gemini = ["google-generativeai"]
+gemini = ["google-genai"]
 marqo = ["marqo"]
 zhipuai = ["zhipuai"]
 ollama = ["ollama", "httpx"]
@@ -58,3 +76,145 @@ faiss-cpu = ["faiss-cpu"]
 faiss-gpu = ["faiss-gpu"]
 xinference-client = ["xinference-client"]
 oracle = ["oracledb", "chromadb<1.0.0"]
+hive = ["pyhive", "thrift"]
+presto = ["pyhive", "thrift"]
+mssql = ["pyodbc"]
+
+[tool.flit.module]
+name = "vanna"
+path = "src/vanna"
+
+[tool.flit.sdist]
+exclude = [
+    "frontends/",
+    "tests/",
+    "notebooks/",
+    ".github/",
+    "*.md",
+    "tox.ini",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "anthropic: marks tests requiring Anthropic API key",
+    "openai: marks tests requiring OpenAI API key",
+    "azureopenai: marks tests requiring Azure OpenAI API key",
+    "slow: marks tests as slow running",
+    "postgres: marks tests requiring PostgreSQL",
+    "mysql: marks tests requiring MySQL",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+# Set the target Python version
+target-version = "py311"
+
+# Set line length to 88 (Black's default)
+line-length = 88
+
+# Enable auto-fixing
+fix = false
+
+# Exclude common directories
+exclude = [
+    ".git",
+    ".tox",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+# Enable specific rule categories
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    # "I",   # isort (disabled - use `ruff check --fix` to auto-fix import sorting)
+    "N",   # pep8-naming
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+
+# Ignore specific rules
+ignore = [
+    # Formatting/style (handled by formatter or not critical)
+    "E501",  # line too long (handled by formatter)
+    "E402",  # module level import not at top of file
+    "E731",  # lambda assignment
+    "E741",  # ambiguous variable name
+    "W291",  # trailing whitespace
+    "W293",  # blank line with whitespace
+
+    # Naming conventions (legacy compatibility)
+    "N801",  # invalid class name
+    "N802",  # function name should be lowercase
+    "N803",  # argument name should be lowercase
+    "N805",  # invalid first argument name for method
+    "N806",  # variable in function should be lowercase
+    "N818",  # error suffix on exception name
+    "N999",  # invalid module name
+
+    # Unused/redefined (often intentional)
+    "F401",  # imported but unused
+    "F541",  # f-string missing placeholders
+    "F811",  # redefinition of unused name
+    "F841",  # unused variable
+
+    # Bugbear rules (opinionated or intentional)
+    "B006",  # mutable argument default (sometimes needed)
+    "B007",  # unused loop control variable
+    "B008",  # do not perform function calls in argument defaults
+    "B024",  # abstract base class without abstract method
+    "B027",  # empty method without abstract decorator
+    "B904",  # raise without from inside except (intentional in legacy code)
+    "B905",  # zip without explicit strict
+
+    # Comprehension/collection style
+    "C408",  # unnecessary collection call
+    "C416",  # unnecessary comprehension
+
+    # Simplification suggestions (all SIM rules - opinionated style)
+    "SIM102", # collapsible if
+    "SIM103", # needless bool
+    "SIM105", # suppressible exception
+    "SIM108", # if-else block instead of if-exp
+    "SIM110", # reimplemented builtin
+    "SIM114", # if with same arms
+    "SIM117", # multiple with statements
+    "SIM118", # in dict keys
+    "SIM401", # if-else block instead of dict get
+    "SIM910", # dict get with none default
+]
+
+# Allow fix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Automatically detect line endings
+line-ending = "auto"

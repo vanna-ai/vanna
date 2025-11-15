@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanna Webcomponent - Comprehensive Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #e0e0e0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .status-section {
+            padding: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.success {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.warning {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .console-monitor {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .console-monitor h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .console-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .console-log .error {
+            color: #f48771;
+        }
+
+        .console-log .warning {
+            color: #dcdcaa;
+        }
+
+        .console-log .info {
+            color: #4fc1ff;
+        }
+
+        .checklist {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .checklist h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .checklist-item .check {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .checklist-item.checked .check {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        vanna-chat {
+            width: 100%;
+            height: 100%;
+        }
+
+        .metrics {
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .metric {
+            display: flex;
+            gap: 5px;
+        }
+
+        .metric strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Component Test Suite</h1>
+            <p>Comprehensive validation for webcomponent pruning</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label>Test Mode</label>
+                <select id="mode-select">
+                    <option value="realistic">Realistic (with delays)</option>
+                    <option value="rapid">Rapid (fast)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="start-test">Run Comprehensive Test</button>
+            </div>
+
+            <div class="control-group">
+                <button class="secondary" id="clear-chat">Clear Chat</button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="status-section">
+            <div class="status-indicator">
+                <div class="status-dot" id="backend-status"></div>
+                <div class="status-text" id="backend-text">Checking backend...</div>
+            </div>
+
+            <div class="status-indicator">
+                <div class="status-dot" id="console-status"></div>
+                <div class="status-text" id="console-text">No errors detected</div>
+            </div>
+        </div>
+
+        <!-- Component Checklist -->
+        <div class="checklist">
+            <h3>Component Rendering</h3>
+            <div class="checklist-item" data-component="text">
+                <div class="check"></div>
+                <span>Text Component</span>
+            </div>
+            <div class="checklist-item" data-component="status_card">
+                <div class="check"></div>
+                <span>Status Card</span>
+            </div>
+            <div class="checklist-item" data-component="progress_display">
+                <div class="check"></div>
+                <span>Progress Display</span>
+            </div>
+            <div class="checklist-item" data-component="card">
+                <div class="check"></div>
+                <span>Card</span>
+            </div>
+            <div class="checklist-item" data-component="task_list">
+                <div class="check"></div>
+                <span>Task List</span>
+            </div>
+            <div class="checklist-item" data-component="progress_bar">
+                <div class="check"></div>
+                <span>Progress Bar</span>
+            </div>
+            <div class="checklist-item" data-component="notification">
+                <div class="check"></div>
+                <span>Notification</span>
+            </div>
+            <div class="checklist-item" data-component="status_indicator">
+                <div class="check"></div>
+                <span>Status Indicator</span>
+            </div>
+            <div class="checklist-item" data-component="badge">
+                <div class="check"></div>
+                <span>Badge</span>
+            </div>
+            <div class="checklist-item" data-component="icon_text">
+                <div class="check"></div>
+                <span>Icon Text</span>
+            </div>
+            <div class="checklist-item" data-component="button">
+                <div class="check"></div>
+                <span>Button</span>
+            </div>
+            <div class="checklist-item" data-component="button_group">
+                <div class="check"></div>
+                <span>Button Group</span>
+            </div>
+            <div class="checklist-item" data-component="dataframe">
+                <div class="check"></div>
+                <span>DataFrame</span>
+            </div>
+            <div class="checklist-item" data-component="chart">
+                <div class="check"></div>
+                <span>Chart</span>
+            </div>
+            <div class="checklist-item" data-component="artifact">
+                <div class="check"></div>
+                <span>Artifact</span>
+            </div>
+            <div class="checklist-item" data-component="log_viewer">
+                <div class="check"></div>
+                <span>Log Viewer</span>
+            </div>
+            <!-- Note: code_block, table, container not supported by webcomponent -->
+        </div>
+
+        <!-- Console Monitor -->
+        <div class="console-monitor">
+            <h3>Console Log</h3>
+            <div class="console-log" id="console-log">
+                <div class="info">Monitoring console for errors...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="chat-container">
+            <vanna-chat
+                id="vanna-chat"
+                api-url="http://localhost:5555"
+                placeholder="Type /test to run comprehensive test..."
+            ></vanna-chat>
+        </div>
+
+        <div class="metrics">
+            <div class="metric">
+                <strong>Components Rendered:</strong>
+                <span id="component-count">0</span>
+            </div>
+            <div class="metric">
+                <strong>Updates Processed:</strong>
+                <span id="update-count">0</span>
+            </div>
+            <div class="metric">
+                <strong>Errors:</strong>
+                <span id="error-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load webcomponent -->
+    <script type="module" src="/static/vanna-components.js"></script>
+
+    <script type="module">
+        // State
+        let componentCount = 0;
+        let updateCount = 0;
+        let errorCount = 0;
+        const seenComponents = new Set();
+
+        // Elements
+        const vannaChat = document.getElementById('vanna-chat');
+        const modeSelect = document.getElementById('mode-select');
+        const startTestBtn = document.getElementById('start-test');
+        const clearChatBtn = document.getElementById('clear-chat');
+        const consoleLog = document.getElementById('console-log');
+        const backendStatus = document.getElementById('backend-status');
+        const backendText = document.getElementById('backend-text');
+        const consoleStatus = document.getElementById('console-status');
+        const consoleText = document.getElementById('console-text');
+
+        // Check backend health
+        async function checkBackend() {
+            try {
+                const response = await fetch('http://localhost:5555/health');
+                const data = await response.json();
+                backendStatus.className = 'status-dot success';
+                backendText.textContent = `Backend ready (${data.mode} mode)`;
+            } catch (error) {
+                backendStatus.className = 'status-dot error';
+                backendText.textContent = 'Backend not responding';
+                addConsoleLog('error', `Backend health check failed: ${error.message}`);
+            }
+        }
+
+        // Console monitoring
+        function addConsoleLog(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleLog.appendChild(logEntry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+
+            // Update error status
+            if (type === 'error') {
+                errorCount++;
+                consoleStatus.className = 'status-dot error';
+                consoleText.textContent = `${errorCount} error(s) detected`;
+                document.getElementById('error-count').textContent = errorCount;
+            }
+        }
+
+        // Override console methods
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalLog = console.log;
+
+        console.error = function(...args) {
+            addConsoleLog('error', args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            addConsoleLog('warning', args.join(' '));
+            originalWarn.apply(console, args);
+        };
+
+        console.log = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('ERROR') || message.includes('Error')) {
+                addConsoleLog('error', message);
+            } else {
+                addConsoleLog('info', message);
+            }
+            originalLog.apply(console, args);
+        };
+
+        // Monitor window errors
+        window.addEventListener('error', (event) => {
+            addConsoleLog('error', `${event.message} at ${event.filename}:${event.lineno}`);
+            errorCount++;
+        });
+
+        // Monitor component rendering
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) { // Element node
+                        const componentType = node.getAttribute('data-component-type');
+                        if (componentType) {
+                            // Track component
+                            if (!seenComponents.has(componentType)) {
+                                seenComponents.add(componentType);
+                                componentCount++;
+                                document.getElementById('component-count').textContent = componentCount;
+
+                                // Check off in checklist
+                                const checklistItem = document.querySelector(`[data-component="${componentType}"]`);
+                                if (checklistItem) {
+                                    checklistItem.classList.add('checked');
+                                    checklistItem.querySelector('.check').textContent = '✓';
+                                }
+                            }
+
+                            updateCount++;
+                            document.getElementById('update-count').textContent = updateCount;
+                        }
+                    }
+                });
+            });
+        });
+
+        // Start observing when vanna-chat is ready
+        setTimeout(() => {
+            const shadowRoot = vannaChat.shadowRoot;
+            if (shadowRoot) {
+                const container = shadowRoot.querySelector('.rich-components-container');
+                if (container) {
+                    observer.observe(container, { childList: true, subtree: true });
+                    addConsoleLog('info', 'Component observer started');
+                }
+            }
+        }, 1000);
+
+        // Event listeners
+        startTestBtn.addEventListener('click', async () => {
+            const mode = modeSelect.value;
+
+            // Update backend mode
+            try {
+                await fetch(`http://localhost:5555/health`);
+                addConsoleLog('info', `Starting comprehensive test in ${mode} mode...`);
+
+                // Send test message through chat
+                vannaChat.dispatchEvent(new CustomEvent('send-message', {
+                    detail: { message: '/test' }
+                }));
+
+                // Alternative: directly trigger if API is exposed
+                const inputEl = vannaChat.shadowRoot?.querySelector('textarea, input');
+                if (inputEl) {
+                    inputEl.value = '/test';
+                    const form = vannaChat.shadowRoot?.querySelector('form');
+                    if (form) {
+                        form.dispatchEvent(new Event('submit', { bubbles: true }));
+                    }
+                }
+            } catch (error) {
+                addConsoleLog('error', `Failed to start test: ${error.message}`);
+            }
+        });
+
+        clearChatBtn.addEventListener('click', () => {
+            // Reset state
+            componentCount = 0;
+            updateCount = 0;
+            errorCount = 0;
+            seenComponents.clear();
+
+            document.getElementById('component-count').textContent = '0';
+            document.getElementById('update-count').textContent = '0';
+            document.getElementById('error-count').textContent = '0';
+
+            // Uncheck all checklist items
+            document.querySelectorAll('.checklist-item').forEach(item => {
+                item.classList.remove('checked');
+                item.querySelector('.check').textContent = '';
+            });
+
+            // Clear console
+            consoleLog.innerHTML = '<div class="info">Console cleared</div>';
+            consoleStatus.className = 'status-dot';
+            consoleText.textContent = 'No errors detected';
+
+            // Reload page to truly clear (vanna-chat doesn't expose clear method)
+            location.reload();
+        });
+
+        // Initial backend check
+        checkBackend();
+        setInterval(checkBackend, 5000);
+
+        // Log startup
+        addConsoleLog('info', 'Test suite initialized');
+        addConsoleLog('info', 'Ensure backend is running: python test_backend.py');
+    </script>
+</body>
+</html>
