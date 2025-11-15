@@ -26,14 +26,20 @@ pip install anthropic
 **Choose your version:**
 
 ```bash
-# Schema-Aware Version (RECOMMENDED - 3x faster!)
+# Single-Table Version (BEST for 1-5 specific tables - 97% token savings!)
+python console_chat_app_single_table.py Chinook.sqlite Album Artist
+
+# Schema-Aware Version (GOOD for small databases < 50 tables)
 python console_chat_app_with_schema.py Chinook.sqlite
 
 # Basic Version (LLM explores database as needed)
 python console_chat_app.py Chinook.sqlite
 ```
 
-**Recommendation:** Use the schema-aware version! It's much faster because the LLM knows your database structure from the start.
+**Recommendations:**
+- **Many tables, need just 1?** → Use single-table version
+- **Small database?** → Use schema-aware version
+- **Learning Vanna?** → Use basic version to see exploration
 
 ## 📝 Example Session
 
@@ -97,16 +103,20 @@ pip install anthropic pandas
 
 See [CONSOLE_CHAT_README.md](CONSOLE_CHAT_README.md) for complete documentation.
 
-## 🆚 Two Console App Versions
+## 🆚 Three Console App Versions
 
-| Feature | Schema-Aware | Basic |
-|---------|--------------|-------|
-| **Speed** | ⚡ Fast (1 query) | 🐌 Slower (3-4 queries) |
-| **Schema Discovery** | Automatic on startup | LLM explores as needed |
-| **Best For** | Production use | Learning how Vanna works |
-| **Accuracy** | High (knows exact schema) | Good (discovers schema) |
+| Feature | Single-Table | Schema-Aware | Basic |
+|---------|--------------|--------------|-------|
+| **Speed** | ⚡⚡ Fastest | ⚡ Fast | 🐌 Slower |
+| **Token Usage** | 💰 Minimal (~200) | 💸 Moderate (~8K) | 💸 Moderate |
+| **Schema Discovery** | Only specified tables | All tables | LLM explores |
+| **Best For** | 50 tables, need 1-5 | Small databases | Learning |
+| **Accuracy** | ⭐⭐⭐ Highest | ⭐⭐ High | ⭐ Good |
 
-**Recommendation:** Use `console_chat_app_with_schema.py` for best performance!
+**Recommendations:**
+- **Production, focused queries:** Use `console_chat_app_single_table.py` ⭐
+- **Development, all tables:** Use `console_chat_app_with_schema.py`
+- **Learning/debugging:** Use `console_chat_app.py`
 
 ## 🆚 Console vs FastAPI Server
 
@@ -127,3 +137,11 @@ See [SCHEMA_DISCOVERY_EXPLAINED.md](SCHEMA_DISCOVERY_EXPLAINED.md) to learn:
 - How the schema-aware version solves this
 - Performance comparison (3.5x faster!)
 - How to add schema awareness to your own apps
+
+## 💰 Single-Table Optimization
+
+See [SINGLE_TABLE_USAGE.md](SINGLE_TABLE_USAGE.md) for:
+- Using single-table version with your staffing_table
+- 97% token savings analysis (200 vs 8,000 tokens)
+- When to use single-table vs full-schema
+- Examples and FAQ
