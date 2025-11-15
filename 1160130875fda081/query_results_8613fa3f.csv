@@ -1,0 +1,12 @@
+name,type
+Album,table
+Artist,table
+Customer,table
+Employee,table
+Genre,table
+Invoice,table
+InvoiceLine,table
+MediaType,table
+Playlist,table
+PlaylistTrack,table
+Track,table
