@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "vanna"
-version = "2.0.0"
+version = "2.0.0rc1"
 authors = [
   { name="Zain Hoda", email="zain@vanna.ai" },
 ]
@@ -82,7 +82,17 @@ mssql = ["pyodbc"]
 
 [tool.flit.module]
 name = "vanna"
-path = "python-sdk/vanna"
+path = "src/vanna"
+
+[tool.flit.sdist]
+exclude = [
+    "frontends/",
+    "tests/",
+    "notebooks/",
+    ".github/",
+    "*.md",
+    "tox.ini",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

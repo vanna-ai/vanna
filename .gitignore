@@ -1,6 +1,6 @@
 build
 **.egg-info
-venv
+venn
 .DS_Store
 tests/__pycache__
 __pycache__/
@@ -19,3 +19,10 @@ chroma.sqlite3
 .coverage.*
 milvus.db
 .milvus.db.lock
+
+# Frontend builds and dependencies
+frontends/**/node_modules/
+frontends/**/static/
+frontends/**/.storybook-static/
+frontends/**/package-lock.json
+frontends/**/.mypy_cache/

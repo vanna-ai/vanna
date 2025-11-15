@@ -1,0 +1,8 @@
+# Test backend requirements for vanna-webcomponent comprehensive testing
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.0.0
+
+# Note: The vanna package itself will be imported from ../vanna/src
+# No need to install it separately for local testing

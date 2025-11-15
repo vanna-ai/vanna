@@ -1,0 +1,35 @@
+{
+  "name": "@vanna-ai/webcomponent",
+  "version": "2.0.0rc1",
+  "description": "Lit-based web components for Vanna User Agents",
+  "main": "static/vanna-components.js",
+  "scripts": {
+    "sync-version": "node scripts/sync-version.js",
+    "dev": "vite",
+    "build": "npm run sync-version && tsc && vite build",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "lit": "^3.3.1",
+    "plotly.js-dist-min": "^3.1.0"
+  },
+  "devDependencies": {
+    "@storybook/addon-actions": "^8.6.14",
+    "@storybook/addon-controls": "^8.6.14",
+    "@storybook/addon-docs": "^8.6.14",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/web-components": "^8.6.14",
+    "@storybook/web-components-vite": "^8.6.14",
+    "@types/plotly.js-dist-min": "^2.3.4",
+    "storybook": "^8.6.14",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
