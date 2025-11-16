@@ -1345,7 +1345,8 @@ def query_staffing_table(question: str) -> dict:
         # Extract schema for staffing_table
         def extract_table_schema(db_path: str, table_name: str) -> str:
             """Extract schema for a specific table."""
-            conn = sqlite3.connect(db_path)
+            # Use URI with read-only mode for better concurrency
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             cursor = conn.cursor()
 
             schema_parts = []
@@ -1436,7 +1437,11 @@ Guidelines:
         file_system = LocalFileSystem(working_directory="./adk_staffing_data")
 
         tool_registry = ToolRegistry()
-        sqlite_runner = SqliteRunner(database_path=database_path)
+
+        # Configure SQLite runner with read-only URI for better concurrency
+        # This allows multiple simultaneous users to query without locking
+        db_uri = f"file:{database_path}?mode=ro"
+        sqlite_runner = SqliteRunner(database_path=db_uri)
 
         sql_tool = RunSqlTool(
             sql_runner=sqlite_runner,
