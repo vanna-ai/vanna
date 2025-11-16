@@ -100,25 +100,13 @@ async def main():
     from vanna.core.user import UserResolver, User, RequestContext
     from vanna.integrations.sqlite import SqliteRunner
     from vanna.tools import RunSqlTool, LocalFileSystem
-    import hashlib
 
-    # Simple cookie-based user resolver for console app
-    class CookieEmailUserResolver(UserResolver):
-        """Simple user resolver that extracts email from cookies."""
-
-        def __init__(self, cookie_name: str = "vanna_email"):
-            self.cookie_name = cookie_name
-
+    # Create a simple user resolver
+    class SimpleUserResolver(UserResolver):
         async def resolve_user(self, request_context: RequestContext) -> User:
-            email = request_context.get_cookie(self.cookie_name)
-            if email:
-                user_id = hashlib.sha256(email.encode()).hexdigest()[:16]
-                username = email.split('@')[0] if '@' in email else email
-                return User(id=user_id, username=username, email=email)
-            else:
-                remote_addr = request_context.remote_addr or "unknown"
-                anonymous_id = hashlib.sha256(f"anonymous-{remote_addr}".encode()).hexdigest()[:16]
-                return User(id=anonymous_id, username="anonymous", email=None)
+            user_email = request_context.get_cookie('vanna_email') or 'guest@example.com'
+            group = 'admin' if user_email == 'admin@example.com' else 'user'
+            return User(id=user_email, email=user_email, group_memberships=[group])
 
     # Setup
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
@@ -138,7 +126,7 @@ async def main():
     sql_tool = RunSqlTool(sql_runner=sqlite_runner, file_system=file_system)
     tool_registry.register(sql_tool)
 
-    user_resolver = CookieEmailUserResolver()
+    user_resolver = SimpleUserResolver()
 
     agent = Agent(
         llm_service=llm,
@@ -153,7 +141,7 @@ async def main():
 
     # Create request context
     request_context = RequestContext(
-        cookies={user_resolver.cookie_name: "console-user@vanna.ai"},
+        cookies={"vanna_email": "console-user@vanna.ai"},
         metadata={"source": "console"},
         remote_addr="127.0.0.1",
     )
