@@ -279,9 +279,28 @@ async def main():
 
     from vanna import Agent, AgentConfig
     from vanna.core.registry import ToolRegistry
-    from vanna.core.user import CookieEmailUserResolver, RequestContext
+    from vanna.core.user import UserResolver, User, RequestContext
     from vanna.integrations.sqlite import SqliteRunner
     from vanna.tools import RunSqlTool, LocalFileSystem
+    import hashlib
+
+    # Simple cookie-based user resolver for console app
+    class CookieEmailUserResolver(UserResolver):
+        """Simple user resolver that extracts email from cookies."""
+
+        def __init__(self, cookie_name: str = "vanna_email"):
+            self.cookie_name = cookie_name
+
+        async def resolve_user(self, request_context: RequestContext) -> User:
+            email = request_context.get_cookie(self.cookie_name)
+            if email:
+                user_id = hashlib.sha256(email.encode()).hexdigest()[:16]
+                username = email.split('@')[0] if '@' in email else email
+                return User(id=user_id, username=username, email=email)
+            else:
+                remote_addr = request_context.remote_addr or "unknown"
+                anonymous_id = hashlib.sha256(f"anonymous-{remote_addr}".encode()).hexdigest()[:16]
+                return User(id=anonymous_id, username="anonymous", email=None)
 
     # Setup
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
