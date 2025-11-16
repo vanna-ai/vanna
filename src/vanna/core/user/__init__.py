@@ -8,10 +8,12 @@ from .base import UserService
 from .models import User
 from .resolver import UserResolver
 from .request_context import RequestContext
+from .cookie_resolver import CookieEmailUserResolver
 
 __all__ = [
     "UserService",
     "User",
     "UserResolver",
     "RequestContext",
+    "CookieEmailUserResolver",
 ]
