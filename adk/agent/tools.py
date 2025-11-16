@@ -1266,3 +1266,334 @@ def get_msa(country: str, location: str, days_elapsed: int = 0) -> dict:
                 "data_source": "Cache error handler"
             }
         }
+
+
+# ============================================================================
+# VANNA STAFFING TABLE QUERY TOOL
+# ============================================================================
+
+def query_staffing_table(question: str) -> dict:
+    """Query the staffing table using Vanna AI-powered SQL generation.
+
+    This tool uses Vanna to convert natural language questions into SQL queries
+    and execute them against the staffing_table database. It can answer questions
+    about employee counts, departments, salaries, hire dates, and other staffing
+    data stored in the database.
+
+    Args:
+        question (str): Natural language question about staffing data
+                       (e.g., "How many employees in Engineering?",
+                        "What's the average salary by department?",
+                        "Show recent hires in 2024")
+
+    Returns:
+        dict: {
+            "status": "success" or "error",
+            "result": {
+                "question": str,
+                "sql": str (generated SQL query),
+                "data": list or dict (query results),
+                "summary": str (human-readable summary),
+                "data_source": "Staffing Database via Vanna"
+            }
+        }
+    """
+    global last_agent_tool_used
+    last_agent_tool_used = "un_staffing_specialist"
+    tools_logger.debug(f"🔧 [Staffing Tool] Querying staffing table: '{question}'")
+
+    try:
+        import asyncio
+        import os
+        import sqlite3
+        import pandas as pd
+        from pathlib import Path
+
+        # Check if Vanna is available
+        try:
+            from vanna.integrations.anthropic import AnthropicLlmService
+            from vanna import Agent, AgentConfig
+            from vanna.core.registry import ToolRegistry
+            from vanna.core.user import CookieEmailUserResolver, RequestContext
+            from vanna.integrations.sqlite import SqliteRunner
+            from vanna.tools import RunSqlTool, LocalFileSystem
+        except ImportError as e:
+            tools_logger.error(f"❌ [Staffing Tool] Vanna not available: {e}")
+            return {
+                "status": "error",
+                "result": {
+                    "question": question,
+                    "error": "Vanna integration not available. Please install vanna package.",
+                    "data_source": "Staffing Query Tool"
+                }
+            }
+
+        # Get database path from environment or use default
+        database_path = os.getenv("STAFFING_DATABASE_PATH", "./unpolicy.db")
+
+        if not os.path.exists(database_path):
+            tools_logger.warning(f"⚠️ [Staffing Tool] Database not found: {database_path}")
+            return {
+                "status": "error",
+                "result": {
+                    "question": question,
+                    "error": f"Staffing database not found at: {database_path}. Set STAFFING_DATABASE_PATH environment variable.",
+                    "data_source": "Staffing Query Tool"
+                }
+            }
+
+        # Extract schema for staffing_table
+        def extract_table_schema(db_path: str, table_name: str) -> str:
+            """Extract schema for a specific table."""
+            # Use URI with read-only mode for better concurrency
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            cursor = conn.cursor()
+
+            schema_parts = []
+
+            # Get table DDL
+            cursor.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+                (table_name,)
+            )
+            ddl_result = cursor.fetchone()
+
+            if not ddl_result:
+                conn.close()
+                return f"Table '{table_name}' not found in database."
+
+            schema_parts.append(f"-- Table: {table_name}")
+            schema_parts.append(ddl_result[0])
+
+            # Get column info
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = cursor.fetchall()
+
+            if columns:
+                schema_parts.append(f"-- Columns ({len(columns)}):")
+                for col in columns:
+                    col_id, name, col_type, not_null, default_val, pk = col
+                    pk_marker = " [PRIMARY KEY]" if pk else ""
+                    not_null_marker = " NOT NULL" if not_null else ""
+                    default_marker = f" DEFAULT {default_val}" if default_val else ""
+                    schema_parts.append(
+                        f"--   {name}: {col_type}{pk_marker}{not_null_marker}{default_marker}"
+                    )
+
+            # Get row count
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            row_count = cursor.fetchone()[0]
+            schema_parts.append(f"-- Rows: {row_count:,}")
+
+            # Show sample data (first 3 rows)
+            if row_count > 0:
+                cursor.execute(f"SELECT * FROM {table_name} LIMIT 3")
+                sample_rows = cursor.fetchall()
+
+                cursor.execute(f"PRAGMA table_info({table_name})")
+                col_info = cursor.fetchall()
+                col_names = [col[1] for col in col_info]
+
+                schema_parts.append(f"-- Sample data (first 3 rows):")
+                for i, row in enumerate(sample_rows, 1):
+                    schema_parts.append(f"--   Row {i}: {dict(zip(col_names, row))}")
+
+            conn.close()
+            return "\n".join(schema_parts)
+
+        # Get table name from environment or use default
+        table_name = os.getenv("STAFFING_TABLE_NAME", "staffing_table")
+
+        # Extract schema
+        schema = extract_table_schema(database_path, table_name)
+
+        if "not found" in schema.lower():
+            return {
+                "status": "error",
+                "result": {
+                    "question": question,
+                    "error": schema,
+                    "data_source": "Staffing Query Tool"
+                }
+            }
+
+        # Create schema-aware tool description
+        tool_description = f"""Execute SQL queries against the staffing database.
+
+IMPORTANT: Use this schema information to generate accurate SQL queries.
+
+{schema}
+
+Guidelines:
+- Use exact table and column names as shown above
+- The database is SQLite, so use SQLite-compatible SQL syntax
+- For date queries, use strftime() function
+- Only use SELECT queries (no modifications)
+"""
+
+        # Initialize Vanna components
+        model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+        llm = AnthropicLlmService(model=model)
+        file_system = LocalFileSystem(working_directory="./adk_staffing_data")
+
+        tool_registry = ToolRegistry()
+
+        # Configure SQLite runner with read-only URI for better concurrency
+        # This allows multiple simultaneous users to query without locking
+        db_uri = f"file:{database_path}?mode=ro"
+        sqlite_runner = SqliteRunner(database_path=db_uri)
+
+        sql_tool = RunSqlTool(
+            sql_runner=sqlite_runner,
+            file_system=file_system,
+            custom_tool_description=tool_description
+        )
+        tool_registry.register(sql_tool)
+
+        user_resolver = CookieEmailUserResolver()
+
+        # Create Vanna agent
+        vanna_agent = Agent(
+            llm_service=llm,
+            config=AgentConfig(
+                stream_responses=False,  # Non-streaming for tool usage
+                max_tool_iterations=3,
+                include_thinking_indicators=False
+            ),
+            tool_registry=tool_registry,
+            user_resolver=user_resolver,
+        )
+
+        # Create request context
+        request_context = RequestContext(
+            cookies={user_resolver.cookie_name: "adk-agent@vanna.ai"},
+            metadata={"source": "adk_agent", "table": table_name},
+            remote_addr="127.0.0.1",
+        )
+
+        # Execute query asynchronously
+        async def execute_query():
+            """Execute the Vanna query and collect results."""
+            sql_query = None
+            result_df = None
+            response_text = ""
+
+            async for component in vanna_agent.send_message(
+                request_context=request_context,
+                message=question,
+                conversation_id=f"adk-staffing-{id(question)}",
+            ):
+                # Capture SQL query
+                if hasattr(component, 'tool_call') and component.tool_call:
+                    if component.tool_call.tool_name == 'run_sql':
+                        if hasattr(component.tool_call, 'args') and component.tool_call.args:
+                            sql_query = component.tool_call.args.get('sql', '')
+
+                # Capture query results
+                if hasattr(component, 'tool_result') and component.tool_result:
+                    if hasattr(component.tool_result, 'content'):
+                        content = component.tool_result.content
+                        if isinstance(content, pd.DataFrame):
+                            result_df = content
+
+                # Capture response text
+                if hasattr(component, 'simple_component') and component.simple_component:
+                    if hasattr(component.simple_component, 'text'):
+                        text = component.simple_component.text
+                        if text and text.strip():
+                            response_text += text + " "
+
+                if hasattr(component, 'rich_component') and component.rich_component:
+                    if hasattr(component.rich_component, 'content'):
+                        content = component.rich_component.content
+                        if content and content.strip():
+                            response_text += content + " "
+
+            return sql_query, result_df, response_text.strip()
+
+        # Run the async query
+        try:
+            # Get or create event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            # Execute query
+            sql_query, result_df, response_text = loop.run_until_complete(execute_query())
+
+            tools_logger.debug(f"✅ [Staffing Tool] Query executed successfully")
+
+            # Format results
+            if result_df is not None and not result_df.empty:
+                # Convert DataFrame to list of dicts for JSON serialization
+                data = result_df.to_dict('records')
+                rows, cols = result_df.shape
+
+                # Create summary
+                summary = f"Query returned {rows} row(s) with {cols} column(s)."
+                if response_text:
+                    summary = response_text
+
+                return {
+                    "status": "success",
+                    "result": {
+                        "question": question,
+                        "sql": sql_query or "SQL query generated",
+                        "data": data,
+                        "row_count": rows,
+                        "column_count": cols,
+                        "summary": summary,
+                        "data_source": f"Staffing Database ({table_name}) via Vanna"
+                    }
+                }
+            elif sql_query:
+                # Query executed but no results
+                return {
+                    "status": "success",
+                    "result": {
+                        "question": question,
+                        "sql": sql_query,
+                        "data": [],
+                        "summary": response_text or "Query executed successfully with no results.",
+                        "data_source": f"Staffing Database ({table_name}) via Vanna"
+                    }
+                }
+            else:
+                # No SQL generated
+                return {
+                    "status": "error",
+                    "result": {
+                        "question": question,
+                        "error": "Unable to generate SQL query for this question.",
+                        "suggestion": response_text or "Try rephrasing your question to be more specific about staffing data.",
+                        "data_source": "Staffing Query Tool"
+                    }
+                }
+
+        except Exception as e:
+            tools_logger.error(f"❌ [Staffing Tool] Query execution error: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "result": {
+                    "question": question,
+                    "error": f"Query execution failed: {str(e)}",
+                    "data_source": "Staffing Query Tool"
+                }
+            }
+
+    except Exception as e:
+        tools_logger.error(f"❌ [Staffing Tool] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "result": {
+                "question": question,
+                "error": f"Staffing query tool error: {str(e)}",
+                "data_source": "Staffing Query Tool"
+            }
+        }

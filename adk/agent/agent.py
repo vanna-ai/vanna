@@ -16,10 +16,11 @@ os.environ['GOOGLE_GENAI_USE_VERTEXAI'] = 'FALSE'
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from .utils import (
-    load_main_agent_instruction, 
-    load_salary_agent_instruction, 
-    load_leave_agent_instruction, 
-    load_travel_agent_instruction
+    load_main_agent_instruction,
+    load_salary_agent_instruction,
+    load_leave_agent_instruction,
+    load_travel_agent_instruction,
+    load_staffing_agent_instruction
 )
 
 # Model configuration functions
@@ -92,7 +93,7 @@ else:  # Default to Gemini with deterministic settings
 
 # Create specialized sub-agents WITH tools (since sub-agents can have tools)
 from .tools import get_salary_info, get_leave_info, get_travel_info, get_pa_rate, get_msa_rate, dsa_rates_search, get_staff_benefits_by_category
-from .tools import get_salary, get_post_adjustment, get_msa, get_dsa
+from .tools import get_salary, get_post_adjustment, get_msa, get_dsa, query_staffing_table
 
 # Salary Sub-agent WITH Azure tool AND PA/MSA rate tools
 salary_agent = Agent(
@@ -148,6 +149,20 @@ benefits_agent = Agent(
     tools=[get_staff_benefits_by_category],  # Add staff benefits category tool
 )
 
+# Staffing Data Sub-agent WITH Vanna-powered SQL query tool
+staffing_agent = Agent(
+    name="un_staffing_specialist",
+    model=model_config,
+    description=(
+        "UN Staffing Data Specialist that provides detailed staffing information from the staffing database "
+        "using Vanna AI-powered SQL queries. Answers questions about employee counts, department sizes, "
+        "salary distributions, hiring trends, tenure analysis, and organizational structure data. "
+        "Converts natural language questions into SQL queries and presents results in a clear, actionable format."
+    ),
+    instruction=load_staffing_agent_instruction(),
+    tools=[query_staffing_table],  # Add Vanna staffing query tool
+)
+
 # Enhanced main agent instructions for coordination
 def create_main_agent_instructions():
     """Create instructions for the main routing coordinator agent"""
@@ -160,9 +175,10 @@ You are the main UN Policy Agent coordinator responsible for routing user querie
 ## Available Specialist Sub-agents
 
 1. **Salary Sub-agent** (un_salary_specialist): Handles all salary, compensation, Post Adjustment rates, Mission Subsistence Allowance (MSA), and Personal Allowance (PA) queries
-2. **Leave Sub-agent** (un_leave_specialist): Handles all leave entitlements, accrual, leave policies, and time-off procedures  
+2. **Leave Sub-agent** (un_leave_specialist): Handles all leave entitlements, accrual, leave policies, and time-off procedures
 3. **Travel Sub-agent** (un_travel_specialist): Handles all travel policies, DSA rates, travel authorization, and official travel procedures
 4. **Benefits Sub-agent** (un_benefits_specialist): Handles general benefits, allowances, education grants, rental subsidies, and other entitlements. Has access to staff category-specific benefits tool for international vs local staff distinctions
+5. **Staffing Sub-agent** (un_staffing_specialist): Handles all staffing database queries, employee counts, department data, hiring trends, and organizational structure using Vanna AI-powered SQL queries
 
 ## Routing Strategy - ALWAYS Route to Specialists
 
@@ -171,12 +187,14 @@ You are the main UN Policy Agent coordinator responsible for routing user querie
 ### Routing Rules:
 - **Salary/Compensation queries** → Salary specialist
   - Examples: "P-3 salary with PA in Geneva", "FS4 salary in UNIFIL", "Post Adjustment", "salary scale", "compensation", "MSA rates", "PA rates"
-- **Leave queries** → Leave specialist  
+- **Leave queries** → Leave specialist
   - Examples: "annual leave", "AL", "sick leave", "SL", "parental leave", "home leave", "R&R", "days off", "leave entitlement", "leave days", "ML", "maternity leave", "paternity leave"
 - **Travel queries** → Travel specialist
   - Examples: "DSA rates", "travel authorization", "business class", "official travel", "per diem"
 - **Benefits/Allowances queries** → Benefits specialist
   - Examples: "education grant", "rental subsidy", "health insurance", "dependency allowance", "benefits overview", "UN benefits", "international staff benefits"
+- **Staffing/Database queries** → Staffing specialist
+  - Examples: "How many employees in Engineering?", "department headcount", "average salary by department", "recent hires", "hiring trends", "employee count", "staffing levels", "show me employees in HR", "who was hired in 2024"
 
 ## Response Format
 
@@ -244,11 +262,11 @@ un_policy_agent = Agent(
     description=(
         "Main UN Policy Agent coordinator that routes user queries to specialized sub-agents. "
         "Functions as a pure routing coordinator to ensure users get precise, tool-enhanced responses "
-        "from domain specialists with access to Azure policy databases."
+        "from domain specialists with access to Azure policy databases and staffing data."
     ),
     instruction=create_main_agent_instructions(),
     # Root agent has NO tools - pure routing coordinator
-    sub_agents=[salary_agent, leave_agent, travel_agent, benefits_agent],  # All specialists with tools/knowledge
+    sub_agents=[salary_agent, leave_agent, travel_agent, benefits_agent, staffing_agent],  # All specialists with tools/knowledge
 )
 
 # Export for ADK - Pure routing coordinator with specialized sub-agents
@@ -258,6 +276,7 @@ agent = un_policy_agent
 # Architecture Summary:
 # - Main Agent: Pure routing coordinator (NO tools, NO domain knowledge)
 # - Salary Agent: Salary/compensation specialist (WITH salary/PA/MSA tools)
-# - Leave Agent: Leave policy specialist (WITH leave tools)  
+# - Leave Agent: Leave policy specialist (WITH leave tools)
 # - Travel Agent: Travel policy specialist (WITH travel/DSA tools)
 # - Benefits Agent: Benefits/allowances specialist (WITH benefits knowledge)
+# - Staffing Agent: Staffing database specialist (WITH Vanna-powered SQL query tool)
