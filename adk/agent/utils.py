@@ -102,13 +102,27 @@ def load_leave_agent_instruction() -> str:
 def load_travel_agent_instruction() -> str:
     """
     Load the travel agent instructions for the travel tool.
-    
+
     Returns:
         str: Travel domain knowledge and behavioral guidelines
     """
     try:
         return load_instruction_from_file('travel_agent_instructions.md')
-        
+
     except Exception as e:
         print(f"❌ Error loading travel agent instructions: {e}")
         return """You are a specialized UN travel policy tool. Provide accurate information about official travel policies, DSA rates, travel authorization, and travel-related entitlements."""
+
+def load_staffing_agent_instruction() -> str:
+    """
+    Load the staffing agent instructions for the staffing query tool.
+
+    Returns:
+        str: Staffing query domain knowledge and behavioral guidelines
+    """
+    try:
+        return load_instruction_from_file('staffing_agent_instructions.md')
+
+    except Exception as e:
+        print(f"❌ Error loading staffing agent instructions: {e}")
+        return """You are a specialized UN staffing data agent. Provide accurate information about employee counts, departments, salaries, and other staffing data using Vanna-powered SQL queries."""
