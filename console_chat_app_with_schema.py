@@ -216,7 +216,7 @@ async def main():
         file_system=file_system,
         custom_tool_description=schema_aware_description
     )
-    tool_registry.register(sql_tool)
+    tool_registry.register_local_tool(sql_tool, access_groups=[])
 
     user_resolver = SimpleUserResolver()
 

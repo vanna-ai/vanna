@@ -124,7 +124,7 @@ async def main():
     tool_registry = ToolRegistry()
     sqlite_runner = SqliteRunner(database_path=database_path)
     sql_tool = RunSqlTool(sql_runner=sqlite_runner, file_system=file_system)
-    tool_registry.register(sql_tool)
+    tool_registry.register_local_tool(sql_tool, access_groups=[])
 
     user_resolver = SimpleUserResolver()
 
