@@ -869,7 +869,8 @@ export class VannaChat extends LitElement {
     console.log('sendMessage called with:', messageText);
 
     // Use provided message or fall back to current input
-    const textToSend = messageText !== undefined ? messageText : this.currentMessage;
+    // Check if messageText is actually a string (not an event object)
+    const textToSend = (typeof messageText === 'string') ? messageText : this.currentMessage;
 
     console.log('Will send:', textToSend);
 

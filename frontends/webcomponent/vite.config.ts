@@ -6,7 +6,7 @@ export default defineConfig({
     __BUILD_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
   },
   build: {
-    outDir: 'static',
+    outDir: 'dist',
     lib: {
       entry: 'src/index.ts',
       formats: ['es'],
@@ -16,5 +16,9 @@ export default defineConfig({
       // Remove external to bundle lit with the components
       // external: /^lit/,
     },
+  },
+  preview: {
+    port: 9876,
+    strictPort: true,
   },
 });
