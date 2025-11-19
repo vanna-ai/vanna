@@ -148,13 +148,24 @@ class QdrantAgentMemory(AgentMemory):
             if conditions:
                 query_filter = Filter(must=conditions)
 
-            results = client.search(
-                collection_name=self.collection_name,
-                query_vector=embedding,
-                limit=limit,
-                query_filter=query_filter,
-                score_threshold=similarity_threshold,
-            )
+            # Use query_points for newer qdrant-client (1.8.0+) or search for older versions
+            if hasattr(client, "query_points"):
+                results = client.query_points(
+                    collection_name=self.collection_name,
+                    query=embedding,
+                    limit=limit,
+                    query_filter=query_filter,
+                    score_threshold=similarity_threshold,
+                ).points
+            else:
+                # Fallback to search method for older qdrant-client versions
+                results = client.search(
+                    collection_name=self.collection_name,
+                    query_vector=embedding,
+                    limit=limit,
+                    query_filter=query_filter,
+                    score_threshold=similarity_threshold,
+                )
 
             search_results = []
             for i, hit in enumerate(results):
@@ -293,13 +304,24 @@ class QdrantAgentMemory(AgentMemory):
                 ]
             )
 
-            results = client.search(
-                collection_name=self.collection_name,
-                query_vector=embedding,
-                limit=limit,
-                query_filter=query_filter,
-                score_threshold=similarity_threshold,
-            )
+            # Use query_points for newer qdrant-client (1.8.0+) or search for older versions
+            if hasattr(client, "query_points"):
+                results = client.query_points(
+                    collection_name=self.collection_name,
+                    query=embedding,
+                    limit=limit,
+                    query_filter=query_filter,
+                    score_threshold=similarity_threshold,
+                ).points
+            else:
+                # Fallback to search method for older qdrant-client versions
+                results = client.search(
+                    collection_name=self.collection_name,
+                    query_vector=embedding,
+                    limit=limit,
+                    query_filter=query_filter,
+                    score_threshold=similarity_threshold,
+                )
 
             search_results = []
             for i, hit in enumerate(results):
