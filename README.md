@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-<!-- Add demo GIF/video here showing the web component in action -->
+https://github.com/user-attachments/assets/476cd421-d0b0-46af-8b29-0f40c73d6d83
 
 
 ![Vanna2 Demo](img/architecture.png)
