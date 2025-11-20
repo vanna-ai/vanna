@@ -215,6 +215,11 @@ class QdrantAgentMemory(AgentMemory):
             memories = []
             for point in sorted_points[:limit]:
                 payload = point.payload
+
+                # Skip text memories - they have is_text_memory flag
+                if payload.get("is_text_memory"):
+                    continue
+
                 memory = ToolMemory(
                     memory_id=str(point.id),
                     question=payload["question"],

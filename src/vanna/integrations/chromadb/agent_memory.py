@@ -215,6 +215,10 @@ class ChromaAgentMemory(AgentMemory):
             for i, (doc_id, metadata) in enumerate(
                 zip(results["ids"], results["metadatas"])
             ):
+                # Skip text memories - they have is_text_memory flag
+                if metadata.get("is_text_memory"):
+                    continue
+
                 args = json.loads(metadata.get("args_json", "{}"))
                 metadata_dict = json.loads(metadata.get("metadata_json", "{}"))
 
