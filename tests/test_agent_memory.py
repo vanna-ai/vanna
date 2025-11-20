@@ -271,3 +271,176 @@ class TestLocalAgentMemory:
             context=test_context, memory_id="fake-id-12345"
         )
         assert fake_deleted is False
+
+    @pytest.mark.asyncio
+    async def test_save_and_search_text_memories(
+        self, memory_fixture, test_user, request
+    ):
+        """Test saving and searching text memories."""
+        memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        # Save a text memory
+        text_memory = await memory.save_text_memory(
+            content="The status column uses 1 for active, 0 for inactive",
+            context=test_context,
+        )
+
+        assert text_memory.memory_id is not None
+        assert (
+            text_memory.content == "The status column uses 1 for active, 0 for inactive"
+        )
+
+        # Search for similar text memories
+        results = await memory.search_text_memories(
+            query="status column meaning",
+            context=test_context,
+            limit=5,
+            similarity_threshold=0.3,
+        )
+
+        assert len(results) > 0
+        assert (
+            results[0].memory.content
+            == "The status column uses 1 for active, 0 for inactive"
+        )
+        assert results[0].similarity_score > 0.3
+
+    @pytest.mark.asyncio
+    async def test_multiple_text_memories(self, memory_fixture, test_user, request):
+        """Test storing and searching multiple text memories."""
+        memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        text_contents = [
+            "The fiscal year starts in April",
+            "MRR means Monthly Recurring Revenue",
+            "Always exclude test accounts where email contains 'test'",
+        ]
+
+        for content in text_contents:
+            await memory.save_text_memory(content=content, context=test_context)
+
+        # Search for fiscal year info
+        results = await memory.search_text_memories(
+            query="When does the fiscal year start?",
+            context=test_context,
+            limit=10,
+            similarity_threshold=0.2,
+        )
+
+        assert len(results) >= 1
+        assert any("fiscal year" in r.memory.content.lower() for r in results)
+
+    @pytest.mark.asyncio
+    async def test_get_recent_text_memories(self, memory_fixture, test_user, request):
+        """Test getting recent text memories."""
+        memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        await memory.save_text_memory("First text memory", test_context)
+        await asyncio.sleep(0.01)
+        await memory.save_text_memory("Second text memory", test_context)
+        await asyncio.sleep(0.01)
+        await memory.save_text_memory("Third text memory", test_context)
+
+        recent = await memory.get_recent_text_memories(context=test_context, limit=2)
+
+        assert isinstance(recent, list)
+        assert len(recent) <= 2
+
+        if recent:
+            assert all(hasattr(m, "memory_id") for m in recent)
+            assert all(hasattr(m, "content") for m in recent)
+
+    @pytest.mark.asyncio
+    async def test_delete_text_memory(self, memory_fixture, test_user, request):
+        """Test deleting text memories by ID."""
+        memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        text_memory = await memory.save_text_memory(
+            "Test memory to delete", test_context
+        )
+
+        assert text_memory.memory_id is not None
+
+        deleted = await memory.delete_text_memory(
+            context=test_context, memory_id=text_memory.memory_id
+        )
+
+        assert deleted is True
+
+        # Verify it's gone
+        recent = await memory.get_recent_text_memories(context=test_context, limit=10)
+        assert all(m.memory_id != text_memory.memory_id for m in recent)
+
+        # Try deleting non-existent memory
+        fake_deleted = await memory.delete_text_memory(
+            context=test_context, memory_id="fake-text-id-12345"
+        )
+        assert fake_deleted is False
+
+    @pytest.mark.asyncio
+    async def test_mixed_tool_and_text_memories(
+        self, memory_fixture, test_user, request
+    ):
+        """Test that tool memories and text memories can coexist without errors."""
+        memory = request.getfixturevalue(memory_fixture)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        # Save some tool memories
+        await memory.save_tool_usage(
+            question="Show me top customers",
+            tool_name="run_sql",
+            args={"sql": "SELECT * FROM customers"},
+            context=test_context,
+        )
+
+        # Save some text memories
+        await memory.save_text_memory(
+            content="The fiscal year starts in April",
+            context=test_context,
+        )
+
+        await memory.save_tool_usage(
+            question="Get sales data",
+            tool_name="run_sql",
+            args={"sql": "SELECT * FROM sales"},
+            context=test_context,
+        )
+
+        await memory.save_text_memory(
+            content="MRR means Monthly Recurring Revenue",
+            context=test_context,
+        )
+
+        # This should only return tool memories, not text memories
+        tool_memories = await memory.get_recent_memories(context=test_context, limit=10)
+
+        assert isinstance(tool_memories, list)
+        assert len(tool_memories) == 2  # Should only have the 2 tool memories
+        assert all(hasattr(m, "question") for m in tool_memories)
+        assert all(hasattr(m, "tool_name") for m in tool_memories)
+
+        # This should only return text memories, not tool memories
+        text_memories = await memory.get_recent_text_memories(
+            context=test_context, limit=10
+        )
+
+        assert isinstance(text_memories, list)
+        assert len(text_memories) == 2  # Should only have the 2 text memories
+        assert all(hasattr(m, "content") for m in text_memories)
+        assert all(
+            "fiscal year" in m.content or "MRR" in m.content for m in text_memories
+        )

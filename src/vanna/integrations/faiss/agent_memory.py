@@ -218,6 +218,10 @@ class FAISSAgentMemory(AgentMemory):
 
             memories = []
             for entry in sorted_entries[:limit]:
+                # Skip text memories - they have is_text_memory flag
+                if entry.get("is_text_memory"):
+                    continue
+
                 memory = ToolMemory(
                     memory_id=entry["memory_id"],
                     question=entry["question"],
