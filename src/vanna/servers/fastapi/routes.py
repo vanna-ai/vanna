@@ -53,10 +53,12 @@ def register_chat_routes(
 
         async def generate() -> AsyncGenerator[str, None]:
             """Generate SSE stream."""
+            import asyncio
             try:
                 async for chunk in chat_handler.handle_stream(chat_request):
                     chunk_json = chunk.model_dump_json()
                     yield f"data: {chunk_json}\n\n"
+                    await asyncio.sleep(0)  # Yield control to event loop for immediate data transmission
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 traceback.print_stack()
