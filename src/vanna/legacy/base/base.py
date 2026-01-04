@@ -1110,6 +1110,104 @@ class VannaBase(ABC):
         self.run_sql_is_set = True
         self.run_sql = run_sql_mysql
 
+    def connect_to_doris(
+        self,
+        host: str = None,
+        dbname: str = None,
+        user: str = None,
+        password: str = None,
+        port: int = None,
+        **kwargs,
+    ):
+        """
+        Connect to an Apache Doris database.
+
+        Args:
+            host: Doris FE host address. Defaults to DORIS_HOST environment variable.
+            dbname: Database name. Defaults to DORIS_DATABASE environment variable.
+            user: Database user. Defaults to DORIS_USER environment variable.
+            password: Database password. Defaults to DORIS_PASSWORD environment variable.
+            port: Doris FE query port (default: 9030). Defaults to DORIS_PORT environment variable.
+            **kwargs: Additional PyMySQL connection parameters.
+        """
+        try:
+            import pymysql.cursors
+        except ImportError:
+            raise DependencyError(
+                "You need to install required dependencies to execute this method,"
+                " run command: \npip install PyMySQL"
+            )
+
+        if not host:
+            host = os.getenv("DORIS_HOST")
+
+        if not host:
+            raise ImproperlyConfigured("Please set your Apache Doris host")
+
+        if not dbname:
+            dbname = os.getenv("DORIS_DATABASE")
+
+        if not dbname:
+            raise ImproperlyConfigured("Please set your Apache Doris database")
+
+        if not user:
+            user = os.getenv("DORIS_USER")
+
+        if not user:
+            raise ImproperlyConfigured("Please set your Apache Doris user")
+
+        if not password:
+            password = os.getenv("DORIS_PASSWORD")
+
+        if not password:
+            raise ImproperlyConfigured("Please set your Apache Doris password")
+
+        if not port:
+            port = os.getenv("DORIS_PORT")
+
+        if not port:
+            port = 9030  # Default Doris FE query port
+
+        conn = None
+
+        try:
+            conn = pymysql.connect(
+                host=host,
+                user=user,
+                password=password,
+                database=dbname,
+                port=int(port),
+                cursorclass=pymysql.cursors.DictCursor,
+                **kwargs,
+            )
+        except pymysql.Error as e:
+            raise ValidationError(e)
+
+        def run_sql_doris(sql: str) -> Union[pd.DataFrame, None]:
+            if conn:
+                try:
+                    conn.ping(reconnect=True)
+                    cs = conn.cursor()
+                    cs.execute(sql)
+                    results = cs.fetchall()
+
+                    # Create a pandas dataframe from the results
+                    df = pd.DataFrame(
+                        results, columns=[desc[0] for desc in cs.description]
+                    )
+                    return df
+
+                except pymysql.Error as e:
+                    conn.rollback()
+                    raise ValidationError(e)
+
+                except Exception as e:
+                    conn.rollback()
+                    raise e
+
+        self.run_sql_is_set = True
+        self.run_sql = run_sql_doris
+
     def connect_to_clickhouse(
         self,
         host: str = None,

@@ -501,6 +501,54 @@ class TestMySQLRunner:
         assert runner.host == "localhost"
 
 
+class TestDorisRunner:
+    """Sanity tests for DorisRunner implementation."""
+
+    def test_doris_runner_import(self):
+        """Test that DorisRunner can be imported."""
+        from vanna.integrations.doris import DorisRunner
+
+        assert DorisRunner is not None
+
+    def test_doris_runner_implements_sql_runner(self):
+        """Test that DorisRunner implements SqlRunner interface."""
+        from vanna.integrations.doris import DorisRunner
+        from vanna.capabilities.sql_runner import SqlRunner
+
+        assert issubclass(DorisRunner, SqlRunner)
+
+    def test_doris_runner_has_run_sql_method(self):
+        """Test that DorisRunner implements run_sql method."""
+        from vanna.integrations.doris import DorisRunner
+
+        assert hasattr(DorisRunner, "run_sql")
+        assert not getattr(DorisRunner.run_sql, "__isabstractmethod__", False)
+
+    def test_doris_runner_instantiation(self):
+        """Test that DorisRunner can be instantiated with required parameters."""
+        from vanna.integrations.doris import DorisRunner
+
+        runner = DorisRunner(
+            host="localhost", database="test-db", user="test-user", password="test-pass"
+        )
+        assert runner is not None
+        assert runner.host == "localhost"
+        assert runner.port == 9030  # Default Doris port
+
+    def test_doris_runner_custom_port(self):
+        """Test that DorisRunner can be instantiated with custom port."""
+        from vanna.integrations.doris import DorisRunner
+
+        runner = DorisRunner(
+            host="localhost",
+            database="test-db",
+            user="test-user",
+            password="test-pass",
+            port=9031,
+        )
+        assert runner.port == 9031
+
+
 class TestClickHouseRunner:
     """Sanity tests for ClickHouseRunner implementation."""
 
