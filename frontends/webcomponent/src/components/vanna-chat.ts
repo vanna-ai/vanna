@@ -707,7 +707,7 @@ export class VannaChat extends LitElement {
     `
   ];
 
-  @property() title = 'Vanna AI Chat';
+  @property() title = 'thaink² AI Chat';
   @property() placeholder = 'Ask me anything...';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) showProgress = true;
