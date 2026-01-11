@@ -1213,8 +1213,8 @@ class VannaFlaskApp(VannaFlaskAPI):
         auth: AuthInterface = NoAuth(),
         debug=True,
         allow_llm_to_see_data=False,
-        logo="https://img.vanna.ai/vanna-flask.svg",
-        title="Welcome to Vanna.AI",
+        logo= "https://raw.githubusercontent.com/thaink2/thaink2publicimages/refs/heads/main/thaink2-logo-blue-medium%20(1).png",#"https://img.vanna.ai/vanna-flask.svg",
+        title="Welcome to thaink² AI",
         subtitle="Your AI-powered copilot for SQL queries.",
         show_training_data=True,
         suggested_questions=True,
@@ -1313,7 +1313,7 @@ class VannaFlaskApp(VannaFlaskAPI):
         # Proxy the /vanna.svg file to the remote server
         @self.flask_app.route("/vanna.svg")
         def proxy_vanna_svg():
-            remote_url = "https://vanna.ai/img/vanna.svg"
+            remote_url = "https://raw.githubusercontent.com/thaink2/thaink2publicimages/refs/heads/main/thaink2-logo-blue-medium%20(1).png"
             response = requests.get(remote_url, stream=True)
 
             # Check if the request to the remote URL was successful
