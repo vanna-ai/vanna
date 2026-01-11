@@ -59,7 +59,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
             is_admin = "admin" in user.group_memberships
 
             help_content = (
-                "## 🤖 Vanna AI Assistant\n\n"
+                "## 🤖 thaink² AI Assistant\n\n"
                 "I'm your AI data analyst! Here's what I can help you with:\n\n"
                 "**💬 Natural Language Queries**\n"
                 '- "Show me sales data for last quarter"\n'
@@ -209,18 +209,18 @@ class DefaultWorkflowHandler(WorkflowHandler):
         # Build concise content
         if not analysis["has_sql"]:
             title = "Admin: Setup Required"
-            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** requires a SQL connection to function.\n\nPlease configure a SQL tool to get started."
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**thaink² AI** requires a SQL connection to function.\n\nPlease configure a SQL tool to get started."
             status = "error"
             icon = "⚠️"
         elif analysis["is_complete"]:
             title = "Admin: System Ready"
-            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** is fully configured and ready.\n\n"
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**thaink² AI** is fully configured and ready.\n\n"
             content += "**Setup:** SQL ✓ | Memory ✓ | Visualization ✓"
             status = "success"
             icon = "✅"
         else:
             title = "Admin: System Ready"
-            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**Vanna AI** is ready to query your database.\n\n"
+            content = "**🔒 Admin View** - You have admin privileges and will see additional system information.\n\n**thaink² AI** is ready to query your database.\n\n"
             setup_items = []
             setup_items.append("SQL ✓")
             setup_items.append("Memory ✓" if analysis["has_memory"] else "Memory ✗")
@@ -268,7 +268,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
         if not analysis["has_sql"]:
             content = (
                 "# ⚠️ Setup Required\n\n"
-                "Vanna AI requires configuration before it can help you analyze data."
+                "thaink² AI requires configuration before it can help you analyze data."
             )
         else:
             content = (
@@ -405,7 +405,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
             # Critical guidance - need SQL
             content = (
                 "## 🚨 Setup Required\n\n"
-                "To get started with Vanna AI, you need to configure a SQL connection tool:\n\n"
+                "To get started with thaink² AI, you need to configure a SQL connection tool:\n\n"
                 "```python\n"
                 "from vanna.tools import RunSqlTool\n\n"
                 "# Add SQL tool to your agent\n"
@@ -467,7 +467,7 @@ class DefaultWorkflowHandler(WorkflowHandler):
 
         if analysis["is_complete"]:
             status_content += (
-                "🎉 **Excellent!** Your Vanna AI setup is complete and optimized.\n\n"
+                "🎉 **Excellent!** Your thaink² AI setup is complete and optimized.\n\n"
             )
         elif analysis["is_functional"]:
             status_content += (
