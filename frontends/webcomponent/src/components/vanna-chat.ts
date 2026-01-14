@@ -717,6 +717,7 @@ export class VannaChat extends LitElement {
   @property({ attribute: 'sse-endpoint' }) sseEndpoint = '/api/vanna/v2/chat_sse';
   @property({ attribute: 'ws-endpoint' }) wsEndpoint = '/api/vanna/v2/chat_websocket';
   @property({ attribute: 'poll-endpoint' }) pollEndpoint = '/api/vanna/v2/chat_poll';
+  @property({ type: Object, attribute: 'custom-headers' }) customHeaders: Record<string, string> = {};
   @property() subtitle = '';
   @property() startingState: 'normal' | 'maximized' | 'minimized' = 'normal';
 
@@ -847,6 +848,12 @@ export class VannaChat extends LitElement {
       this.classList.add(this._windowState);
       console.log('Applied CSS classes:', this.className);
     }
+
+	if (changedProperties.has('customHeaders')) {
+		console.log('customHeaders changed.');
+		this.apiClient.setCustomHeaders(this.customHeaders);
+		console.log('Custom headers updated.');
+	}
   }
 
   private handleInput(e: Event) {
