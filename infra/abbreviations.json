@@ -1,0 +1,12 @@
+{
+  "appContainerApps": "ca-",
+  "appManagedEnvironments": "cae-",
+  "cognitiveServicesAccounts": "oai-",
+  "containerRegistryRegistries": "cr",
+  "insightsComponents": "appi-",
+  "keyVaultVaults": "kv-",
+  "managedIdentityUserAssignedIdentities": "id-",
+  "operationalInsightsWorkspaces": "log-",
+  "resourcesResourceGroups": "rg-",
+  "storageStorageAccounts": "st"
+}

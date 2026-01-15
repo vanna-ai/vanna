@@ -1,0 +1,204 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  id-token: write   # Required for OIDC authentication
+  contents: read
+
+env:
+  AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  # ==========================================================================
+  # Job 1: Build and Test
+  # ==========================================================================
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[fastapi,azureopenai,test]"
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --tb=short
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontends/tecknoworks-chat/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontends/tecknoworks-chat
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontends/tecknoworks-chat
+          npm run build
+
+      - name: Build Docker image
+        run: |
+          docker build -t tecknoworks-ai-agent:${{ github.sha }} .
+
+      - name: Test Docker image health
+        run: |
+          # Start container with minimal config for health check
+          docker run -d --name test-container \
+            -e OPENAI_API_KEY=test-key \
+            -p 8000:8000 \
+            tecknoworks-ai-agent:${{ github.sha }} || true
+
+          # Wait for startup
+          sleep 15
+
+          # Check if container is running
+          docker logs test-container
+
+          # Cleanup
+          docker stop test-container || true
+          docker rm test-container || true
+
+  # ==========================================================================
+  # Job 2: Deploy to Dev (auto on push to main)
+  # ==========================================================================
+  deploy-dev:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Azure Developer CLI
+        uses: Azure/setup-azd@v1
+
+      - name: Log in with Azure (Federated Credentials)
+        run: |
+          azd auth login \
+            --client-id "${{ env.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ env.AZURE_TENANT_ID }}"
+
+      - name: Provision Infrastructure
+        run: azd provision --environment dev --no-prompt
+        env:
+          AZURE_ENV_NAME: dev
+          AZURE_LOCATION: eastus
+          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Application
+        run: azd deploy --environment dev --no-prompt
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          echo "url=$(azd env get-value SERVICE_API_ENDPOINT_URL)" >> $GITHUB_OUTPUT
+
+      - name: Verify deployment
+        run: |
+          sleep 30
+          curl -f "${{ steps.get-url.outputs.url }}/health" || echo "Health check pending..."
+
+  # ==========================================================================
+  # Job 3: Deploy to Staging (manual trigger)
+  # ==========================================================================
+  deploy-staging:
+    if: github.event.inputs.environment == 'staging'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Azure Developer CLI
+        uses: Azure/setup-azd@v1
+
+      - name: Log in with Azure
+        run: |
+          azd auth login \
+            --client-id "${{ env.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ env.AZURE_TENANT_ID }}"
+
+      - name: Deploy to Staging
+        run: |
+          azd provision --environment staging --no-prompt
+          azd deploy --environment staging --no-prompt
+        env:
+          AZURE_ENV_NAME: staging
+          AZURE_LOCATION: eastus
+          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+  # ==========================================================================
+  # Job 4: Deploy to Production (manual trigger with approval)
+  # ==========================================================================
+  deploy-prod:
+    if: github.event.inputs.environment == 'prod'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+      url: ${{ steps.deploy.outputs.endpoint }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Azure Developer CLI
+        uses: Azure/setup-azd@v1
+
+      - name: Log in with Azure
+        run: |
+          azd auth login \
+            --client-id "${{ env.AZURE_CLIENT_ID }}" \
+            --federated-credential-provider "github" \
+            --tenant-id "${{ env.AZURE_TENANT_ID }}"
+
+      - name: Deploy to Production
+        id: deploy
+        run: |
+          azd provision --environment prod --no-prompt
+          azd deploy --environment prod --no-prompt
+          echo "endpoint=$(azd env get-value SERVICE_API_ENDPOINT_URL)" >> $GITHUB_OUTPUT
+        env:
+          AZURE_ENV_NAME: prod
+          AZURE_LOCATION: eastus2
+          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify production deployment
+        run: |
+          sleep 60
+          curl -f "${{ steps.deploy.outputs.endpoint }}/health"

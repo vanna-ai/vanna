@@ -1,0 +1,41 @@
+# Azure Developer CLI (azd) configuration
+# Deploy Tecknoworks AI Agent to Azure Container Apps
+
+name: tecknoworks-ai-agent
+
+metadata:
+  template: tecknoworks-ai-agent@1.0.0
+
+services:
+  api:
+    project: .
+    language: python
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+
+hooks:
+  preprovision:
+    shell: sh
+    run: |
+      echo "========================================"
+      echo "Tecknoworks AI Agent - Azure Deployment"
+      echo "========================================"
+      echo ""
+      echo "Preparing to deploy to Azure..."
+
+  postprovision:
+    shell: sh
+    run: |
+      echo ""
+      echo "========================================"
+      echo "Deployment Complete!"
+      echo "========================================"
+      echo ""
+      echo "Your Tecknoworks AI Agent is now running at:"
+      echo "  ${SERVICE_API_ENDPOINT_URL}"
+      echo ""
+      echo "Test the health endpoint:"
+      echo "  curl ${SERVICE_API_ENDPOINT_URL}/health"
+      echo ""

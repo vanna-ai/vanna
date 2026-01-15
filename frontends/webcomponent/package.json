@@ -1,6 +1,6 @@
 {
   "name": "@vanna/webcomponent",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Lit-based web components for Vanna User Agents",
   "main": "dist/vanna-components.js",
   "scripts": {

@@ -1,0 +1,73 @@
+# Git
+.git
+.github
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+.eggs
+*.egg
+.pytest_cache
+.tox
+.coverage
+htmlcov
+.mypy_cache
+.ruff_cache
+.venv
+venv
+ENV
+env
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Build artifacts (we build fresh in Docker)
+dist
+build
+*.egg-info
+
+# Documentation (not needed in production)
+docs
+papers
+*.md
+!README.md
+
+# Tests (not needed in production)
+tests
+*_test.py
+test_*.py
+
+# Examples and notebooks
+examples
+notebooks
+*.ipynb
+
+# Local environment files
+.env
+.env.*
+*.local
+
+# Other
+*.log
+tmp
+temp
+Chinook.sqlite
+
+# Frontend build will be handled in Docker
+frontends/webcomponent/dist
+frontends/webcomponent/node_modules
+frontends/react-chat/node_modules
