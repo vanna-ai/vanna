@@ -514,7 +514,8 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
       striped = true,
       bordered = true,
       compact = false,
-      column_types = {}
+      column_types = {},
+      sql_query = null
     } = component.data;
 
     // Limit displayed rows
@@ -535,6 +536,20 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
       `;
     }
 
+    // SQL query collapsible section
+    let sqlQueryHTML = '';
+    if (sql_query) {
+      sqlQueryHTML = `
+        <details class="sql-query-details">
+          <summary class="sql-query-summary">View SQL Query</summary>
+          <div class="sql-query-content">
+            <pre class="sql-query-code"><code>${this.escapeHtml(sql_query)}</code></pre>
+            <button class="sql-copy-btn" title="Copy SQL">Copy</button>
+          </div>
+        </details>
+      `;
+    }
+
     let actionsHTML = '';
     if (searchable || exportable || filterable) {
       actionsHTML = `
@@ -545,7 +560,7 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
             </div>
           ` : ''}
           ${exportable ? `
-            <button class="export-btn" title="Export to CSV">📥 Export</button>
+            <button class="export-btn" title="Export to CSV">Export</button>
           ` : ''}
         </div>
       `;
@@ -603,13 +618,14 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
 
     container.innerHTML = `
       ${headerHTML}
+      ${sqlQueryHTML}
       ${actionsHTML}
       ${tableHTML}
     `;
 
 
     // Add event listeners
-    this.attachEventListeners(container, displayedData, columns);
+    this.attachEventListeners(container, displayedData, columns, sql_query);
 
     return container;
   }
@@ -641,7 +657,7 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
     return div.innerHTML;
   }
 
-  private attachEventListeners(container: HTMLElement, data: any[], columns: string[]): void {
+  private attachEventListeners(container: HTMLElement, data: any[], columns: string[], sqlQuery?: string | null): void {
     // Search functionality
     const searchInput = container.querySelector('.search-input') as HTMLInputElement;
     if (searchInput) {
@@ -656,6 +672,31 @@ export class DataFrameComponentRenderer extends BaseComponentRenderer {
     if (exportBtn) {
       exportBtn.addEventListener('click', () => {
         this.exportToCSV(data, columns);
+      });
+    }
+
+    // SQL copy functionality
+    const sqlCopyBtn = container.querySelector('.sql-copy-btn') as HTMLButtonElement;
+    if (sqlCopyBtn && sqlQuery) {
+      sqlCopyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(sqlQuery).then(() => {
+          sqlCopyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            sqlCopyBtn.textContent = 'Copy';
+          }, 2000);
+        }).catch(() => {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = sqlQuery;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          sqlCopyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            sqlCopyBtn.textContent = 'Copy';
+          }, 2000);
+        });
       });
     }
 

@@ -46,7 +46,10 @@ export function ChatMessage({ message, onSuggestionClick }: ChatMessageProps) {
         {message.data && !isUser && (
           <div className="w-full">
             {message.data.type === "table" && (
-              <DataTable data={message.data.payload} />
+              <DataTable 
+                data={Array.isArray(message.data.payload) ? message.data.payload : message.data.payload.data}
+                sqlQuery={!Array.isArray(message.data.payload) ? message.data.payload.sql_query : undefined}
+              />
             )}
 
             {message.data.type === "chart" && (

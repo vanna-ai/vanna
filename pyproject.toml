@@ -55,6 +55,7 @@ dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-mock>=3.10.0", "pytest
 chromadb = ["chromadb>=1.1.0"]
 openai = ["openai"]
 azureopenai = ["openai", "azure-identity"]
+foundry = ["azure-ai-inference>=1.0.0b6", "azure-identity"]
 qianfan = ["qianfan"]
 mistralai = ["mistralai>=1.0.0"]
 anthropic = ["anthropic"]
@@ -104,6 +105,7 @@ markers = [
     "anthropic: marks tests requiring Anthropic API key",
     "openai: marks tests requiring OpenAI API key",
     "azureopenai: marks tests requiring Azure OpenAI API key",
+    "foundry: marks tests requiring Azure AI Foundry endpoint",
     "gemini: marks tests requiring Gemini API key",
     "ollama: marks tests requiring local Ollama instance",
     "legacy: marks tests for legacy adapter",

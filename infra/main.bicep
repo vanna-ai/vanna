@@ -1,5 +1,5 @@
 // Tecknoworks AI Agent - Azure Infrastructure
-// Deploys Container App with Azure OpenAI integration
+// Deploys Container App with Azure AI Foundry or Azure OpenAI integration
 
 targetScope = 'subscription'
 
@@ -28,6 +28,18 @@ param azureOpenAIModel string = 'gpt-4o'
 
 @description('Azure OpenAI capacity in TPM (tokens per minute) in thousands')
 param azureOpenAICapacityTPM int = 30
+
+// Azure AI Foundry parameters (takes priority over Azure OpenAI)
+@description('Azure AI Foundry endpoint URL (takes priority over Azure OpenAI when set)')
+@secure()
+param azureAIFoundryEndpoint string = ''
+
+@description('Azure AI Foundry API key')
+@secure()
+param azureAIFoundryApiKey string = ''
+
+@description('Azure AI Foundry model name (optional, uses default if not specified)')
+param azureAIFoundryModel string = ''
 
 // Generate unique suffix for resources
 var abbrs = loadJsonContent('./abbreviations.json')
@@ -138,7 +150,11 @@ module containerApp './modules/container-app.bicep' = {
     tags: union(tags, { 'azd-service-name': 'api' })
     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
     containerRegistryName: containerRegistry.outputs.name
-    // Use deployed Azure OpenAI if available, otherwise use provided endpoint
+    // Azure AI Foundry (takes priority when set)
+    azureAIFoundryEndpoint: azureAIFoundryEndpoint
+    azureAIFoundryApiKey: azureAIFoundryApiKey
+    azureAIFoundryModel: azureAIFoundryModel
+    // Use deployed Azure OpenAI if available, otherwise use provided endpoint (fallback)
     azureOpenAIEndpoint: deployAzureOpenAI ? azureOpenAI.outputs.endpoint : azureOpenAIEndpoint
     azureOpenAIApiKey: deployAzureOpenAI ? azureOpenAI.outputs.apiKey : azureOpenAIApiKey
     azureOpenAIModel: deployAzureOpenAI ? azureOpenAI.outputs.deploymentName : azureOpenAIModel
@@ -156,7 +172,11 @@ output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 output SERVICE_API_ENDPOINT_URL string = containerApp.outputs.uri
 output SERVICE_API_NAME string = containerApp.outputs.name
 
-// Azure OpenAI outputs (when deployed)
+// Azure AI Foundry outputs (when configured)
+output AZURE_AI_FOUNDRY_ENDPOINT string = azureAIFoundryEndpoint
+output AZURE_AI_FOUNDRY_MODEL string = azureAIFoundryModel
+
+// Azure OpenAI outputs (when deployed, fallback)
 output AZURE_OPENAI_ENDPOINT string = deployAzureOpenAI ? azureOpenAI.outputs.endpoint : azureOpenAIEndpoint
 output AZURE_OPENAI_MODEL string = deployAzureOpenAI ? azureOpenAI.outputs.deploymentName : azureOpenAIModel
 

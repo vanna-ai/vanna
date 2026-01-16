@@ -26,3 +26,12 @@ frontends/**/static/
 frontends/**/.storybook-static/
 frontends/**/package-lock.json
 frontends/**/.mypy_cache/
+
+# Query cache directories (hash-named)
+[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*/
+
+# Generated data
+**/openai_data/
+
+# Archives
+*.zip

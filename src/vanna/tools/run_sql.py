@@ -105,11 +105,12 @@ class RunSqlTool(Tool[RunSqlToolArgs]):
 
                     result = f"{results_preview}\n\nResults saved to file: {filename}\n\n**IMPORTANT: FOR VISUALIZE_DATA USE FILENAME: {filename}**"
 
-                    # Create DataFrame component for UI
+                    # Create DataFrame component for UI with SQL query in collapsible section
                     dataframe_component = DataFrameComponent.from_records(
                         records=cast(List[Dict[str, Any]], results_data),
                         title="Query Results",
-                        description=f"SQL query returned {row_count} rows with {len(columns)} columns",
+                        description=f"Returned {row_count} rows with {len(columns)} columns",
+                        sql_query=args.sql,  # Include SQL for collapsible display
                     )
 
                     ui_component = UiComponent(

@@ -17,6 +17,7 @@ from vanna.components import (
     TaskTrackerUpdateComponent,
     ChatInputUpdateComponent,
     StatusCardComponent,
+    CardComponent,
     Task,
 )
 from .config import AgentConfig
@@ -645,8 +646,18 @@ class Agent:
 
         while tool_iterations < self.config.max_tool_iterations:
             if self.config.include_thinking_indicators and tool_iterations == 0:
-                # TODO: Yield thinking indicator
-                pass
+                # Yield initial thinking indicator
+                yield UiComponent(
+                    rich_component=CardComponent(
+                        title="Analyzing your question...",
+                        content="I'm analyzing your request to determine the best approach.",
+                        icon=None,
+                        status="info",
+                        collapsible=True,
+                        collapsed=False,
+                    ),
+                    simple_component=SimpleTextComponent(text="Analyzing your request..."),
+                )
 
             # Get LLM response
             if self.config.stream_responses:
@@ -657,6 +668,37 @@ class Agent:
             # Handle tool calls
             if response.is_tool_call():
                 tool_iterations += 1
+
+                # Show what tools the agent is about to use (always visible)
+                tool_names = [tc.name for tc in (response.tool_calls or [])]
+                tool_list_text = ", ".join(tool_names) if tool_names else "analyzing"
+
+                # Format tool explanation for the user
+                tool_explanations = {
+                    "search_saved_correct_tool_uses": "Searching memory for similar questions",
+                    "run_sql": "Executing database query",
+                    "visualize_data": "Creating data visualization",
+                    "save_question_tool_args": "Saving this pattern for future use",
+                }
+
+                step_descriptions = []
+                for name in tool_names:
+                    explanation = tool_explanations.get(name, f"Using {name}")
+                    step_descriptions.append(f"• {explanation}")
+
+                steps_content = "\n".join(step_descriptions) if step_descriptions else "Processing your request..."
+
+                yield UiComponent(
+                    rich_component=CardComponent(
+                        title="Taking action...",
+                        content=steps_content,
+                        icon=None,
+                        status="info",
+                        collapsible=True,
+                        collapsed=False,
+                    ),
+                    simple_component=SimpleTextComponent(text=f"Taking action: {tool_list_text}"),
+                )
 
                 # First, add the assistant message with tool_calls to the conversation
                 # This is required for OpenAI API - tool messages must follow assistant messages with tool_calls

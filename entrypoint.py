@@ -1,13 +1,22 @@
 """
 Tecknoworks AI Agent - Azure Deployment Entrypoint
 
-This script initializes the FastAPI server with Azure OpenAI for production deployment.
+This script initializes the FastAPI server with Azure AI Foundry for production deployment.
 It uses environment variables for configuration, which are typically injected from Azure Key Vault.
+
+Supported LLM providers (in priority order):
+- Azure AI Foundry (recommended): AZURE_AI_FOUNDRY_ENDPOINT, AZURE_AI_FOUNDRY_API_KEY
+- Azure OpenAI (legacy): AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY
+- OpenAI (fallback): OPENAI_API_KEY
 """
 
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Ensure the src directory is in the Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -44,12 +53,32 @@ def get_llm_service():
     """
     Get the appropriate LLM service based on environment configuration.
 
-    Supports:
-    - Azure OpenAI (recommended for Azure deployment)
+    Supports (in priority order):
+    - Azure AI Foundry (recommended for Azure deployment)
+    - Azure OpenAI (legacy)
     - OpenAI (fallback)
     """
 
-    # Check for Azure OpenAI configuration first
+    # Check for Azure AI Foundry configuration first (highest priority)
+    foundry_endpoint = os.getenv("AZURE_AI_FOUNDRY_ENDPOINT")
+    foundry_api_key = os.getenv("AZURE_AI_FOUNDRY_API_KEY")
+    foundry_model = os.getenv("AZURE_AI_FOUNDRY_MODEL")
+    foundry_use_entra_id = os.getenv("AZURE_AI_FOUNDRY_USE_ENTRA_ID", "").lower() in ("true", "1", "yes")
+
+    if foundry_endpoint and (foundry_api_key or foundry_use_entra_id):
+        print(f"Using Azure AI Foundry: {foundry_endpoint}")
+        if foundry_model:
+            print(f"Model: {foundry_model}")
+
+        from vanna.integrations.foundry import AzureAIFoundryLlmService
+        return AzureAIFoundryLlmService(
+            endpoint=foundry_endpoint,
+            api_key=foundry_api_key,
+            model=foundry_model,
+            use_entra_id=foundry_use_entra_id
+        )
+
+    # Check for Azure OpenAI configuration (legacy)
     azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
     azure_model = os.getenv("AZURE_OPENAI_MODEL", "gpt-4o")
@@ -79,6 +108,7 @@ def get_llm_service():
 
     raise ValueError(
         "No LLM configuration found. Please set either:\n"
+        "  - AZURE_AI_FOUNDRY_ENDPOINT + AZURE_AI_FOUNDRY_API_KEY or AZURE_AI_FOUNDRY_USE_ENTRA_ID=true\n"
         "  - AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY (for Azure OpenAI)\n"
         "  - OPENAI_API_KEY (for OpenAI)"
     )
@@ -124,12 +154,34 @@ def main():
         access_groups=['admin', 'user']
     )
 
-    # Create agent
+    # Configure UI features for better user experience
+    # Enable more features for regular users to see what's happening
+    from vanna.core.agent.config import UiFeatures, UiFeature
+
+    ui_features = UiFeatures(
+        feature_group_access={
+            # Both admin and user can see tool names in task tracker
+            UiFeature.UI_FEATURE_SHOW_TOOL_NAMES: ["admin", "user"],
+            # Both can see tool arguments (shows what the agent is doing)
+            UiFeature.UI_FEATURE_SHOW_TOOL_ARGUMENTS: ["admin", "user"],
+            # Only admin sees error details
+            UiFeature.UI_FEATURE_SHOW_TOOL_ERROR: ["admin"],
+            # Both can see LLM's reasoning before tool execution
+            UiFeature.UI_FEATURE_SHOW_TOOL_INVOCATION_MESSAGE_IN_CHAT: ["admin", "user"],
+            # Both can see detailed memory search results
+            UiFeature.UI_FEATURE_SHOW_MEMORY_DETAILED_RESULTS: ["admin", "user"],
+        }
+    )
+
+    # Create agent with enhanced UI features
     agent = Agent(
         llm_service=llm,
         tool_registry=tools,
         user_resolver=SimpleUserResolver(),
-        config=AgentConfig(),
+        config=AgentConfig(
+            ui_features=ui_features,
+            max_tool_iterations=25,  # Increased from default 10 for complex analytical workflows
+        ),
         agent_memory=agent_memory
     )
 

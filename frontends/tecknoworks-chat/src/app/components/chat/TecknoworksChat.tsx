@@ -104,7 +104,7 @@ export function TecknoworksChat({ isEmbedded = false }: { isEmbedded?: boolean }
         }
 
         if (payload) {
-          return { data: { type: "table", payload } };
+          return { data: { type: "table", payload: { data: payload, sql_query: dfData.sql_query } } };
         }
         return {};
       }
@@ -132,6 +132,14 @@ export function TecknoworksChat({ isEmbedded = false }: { isEmbedded?: boolean }
         const buttonData = data as ButtonGroupData;
         if (buttonData?.buttons) {
           return { data: { type: "buttons", payload: buttonData.buttons } };
+        }
+        return {};
+      }
+
+      case "notification": {
+        const notifData = data as { message?: string; level?: string };
+        if (notifData?.message) {
+          return { content: `[${notifData.level?.toUpperCase() || 'INFO'}] ${notifData.message}` };
         }
         return {};
       }

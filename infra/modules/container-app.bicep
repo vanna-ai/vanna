@@ -22,6 +22,17 @@ param azureOpenAIModel string = 'gpt-4o'
 @description('Application Insights connection string for monitoring')
 param appInsightsConnectionString string = ''
 
+@description('Azure AI Foundry endpoint URL (takes priority over Azure OpenAI)')
+@secure()
+param azureAIFoundryEndpoint string = ''
+
+@description('Azure AI Foundry API key')
+@secure()
+param azureAIFoundryApiKey string = ''
+
+@description('Azure AI Foundry model name')
+param azureAIFoundryModel string = ''
+
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01' existing = {
   name: containerAppsEnvironmentName
 }
@@ -69,6 +80,14 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           name: 'azure-openai-api-key'
           value: azureOpenAIApiKey
         }
+        {
+          name: 'azure-ai-foundry-endpoint'
+          value: azureAIFoundryEndpoint
+        }
+        {
+          name: 'azure-ai-foundry-api-key'
+          value: azureAIFoundryApiKey
+        }
       ]
     }
     template: {
@@ -81,6 +100,20 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
             memory: '1Gi'
           }
           env: [
+            // Azure AI Foundry (takes priority when set)
+            {
+              name: 'AZURE_AI_FOUNDRY_ENDPOINT'
+              secretRef: 'azure-ai-foundry-endpoint'
+            }
+            {
+              name: 'AZURE_AI_FOUNDRY_API_KEY'
+              secretRef: 'azure-ai-foundry-api-key'
+            }
+            {
+              name: 'AZURE_AI_FOUNDRY_MODEL'
+              value: azureAIFoundryModel
+            }
+            // Azure OpenAI (fallback)
             {
               name: 'AZURE_OPENAI_ENDPOINT'
               secretRef: 'azure-openai-endpoint'
@@ -97,6 +130,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
               name: 'AZURE_OPENAI_API_VERSION'
               value: '2024-10-21'
             }
+            // Server configuration
             {
               name: 'PORT'
               value: '${targetPort}'

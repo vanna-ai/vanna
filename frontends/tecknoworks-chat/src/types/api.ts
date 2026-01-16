@@ -92,6 +92,7 @@ export interface DataFrameData {
   description?: string;
   row_count?: number;
   column_count?: number;
+  sql_query?: string;
 }
 
 export interface ChartData {

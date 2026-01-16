@@ -16,6 +16,9 @@ class DataFrameComponent(RichComponent):
     row_count: int = 0
     column_count: int = 0
 
+    # SQL query that generated this data (displayed in collapsible section)
+    sql_query: Optional[str] = None
+
     # Display options
     max_rows_displayed: int = 100  # Limit rows shown in UI
     searchable: bool = True

@@ -909,6 +909,99 @@ export const richComponentStyles = css`
     font-size: 0.875rem;
   }
 
+  /* SQL Query Collapsible Section */
+  .sql-query-details {
+    border-bottom: 1px solid var(--vanna-outline-dimmer);
+  }
+
+  .sql-query-summary {
+    padding: var(--vanna-space-3) var(--vanna-space-5);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--vanna-foreground-dimmer);
+    user-select: none;
+    transition: background var(--vanna-duration-200) ease;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: var(--vanna-space-2);
+  }
+
+  .sql-query-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .sql-query-summary::before {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid var(--vanna-foreground-dimmer);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform var(--vanna-duration-200) ease;
+  }
+
+  .sql-query-details[open] .sql-query-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .sql-query-summary:hover {
+    background: var(--vanna-background-higher);
+    color: var(--vanna-foreground-default);
+  }
+
+  .sql-query-content {
+    padding: var(--vanna-space-3) var(--vanna-space-5);
+    background: var(--vanna-background-root);
+    position: relative;
+  }
+
+  .sql-query-code {
+    margin: 0;
+    padding: var(--vanna-space-3);
+    background: var(--vanna-background-default);
+    border: 1px solid var(--vanna-outline-dimmer);
+    border-radius: var(--vanna-border-radius-md);
+    font-family: var(--vanna-font-family-mono);
+    font-size: 0.813rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--vanna-foreground-default);
+  }
+
+  .sql-query-code code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .sql-copy-btn {
+    position: absolute;
+    top: var(--vanna-space-4);
+    right: var(--vanna-space-6);
+    padding: var(--vanna-space-1) var(--vanna-space-2);
+    border: 1px solid var(--vanna-outline-default);
+    border-radius: var(--vanna-border-radius-sm);
+    background: var(--vanna-background-default);
+    color: var(--vanna-foreground-dimmer);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all var(--vanna-duration-200) ease;
+  }
+
+  .sql-copy-btn:hover {
+    background: var(--vanna-background-higher);
+    color: var(--vanna-foreground-default);
+    border-color: var(--vanna-accent-primary-default);
+  }
+
   /* Primitive Component Styles */
 
   /* Status Card */

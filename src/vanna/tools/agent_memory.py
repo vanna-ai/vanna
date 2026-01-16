@@ -146,7 +146,8 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
 
             if not results:
                 no_results_msg = (
-                    "No similar tool usage patterns found for this question."
+                    "No similar tool usage patterns found for this question. "
+                    "This means the question is new and I'll answer it from scratch using my knowledge and available tools."
                 )
 
                 # Check if user has access to detailed memory results
@@ -158,14 +159,19 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                     in ui_features_available
                 )
 
-                # Create UI component based on access level
+                # Create UI component based on access level - always show helpful message
                 if show_detailed_results:
-                    # Admin view: Show card indicating 0 results
+                    # Detailed view: Show card with explanation
                     ui_component = UiComponent(
                         rich_component=CardComponent(
-                            title="🧠 Memory Search: 0 Results",
-                            content="No similar tool usage patterns found for this question.\n\nSearched agent memory with no matches.",
-                            icon="🔍",
+                            title="Memory Check Complete",
+                            content=(
+                                "**No similar questions found in memory.**\n\n"
+                                "This appears to be a new type of question. "
+                                "I'll analyze it fresh and determine the best approach to help you.\n\n"
+                                "_Tip: If my answer is helpful, I can save it for faster responses next time._"
+                            ),
+                            icon=None,
                             status="info",
                             collapsible=True,
                             collapsed=True,
@@ -174,12 +180,16 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                         simple_component=None,
                     )
                 else:
-                    # Non-admin view: Simple status message
+                    # Simple view: Show concise card
                     ui_component = UiComponent(
-                        rich_component=StatusBarUpdateComponent(
-                            status="idle",
-                            message="No similar patterns found",
-                            detail="Searched agent memory",
+                        rich_component=CardComponent(
+                            title="Memory Check",
+                            content="No similar questions found. Analyzing your request fresh.",
+                            icon=None,
+                            status="info",
+                            collapsible=True,
+                            collapsed=True,
+                            markdown=False,
                         ),
                         simple_component=None,
                     )
@@ -209,25 +219,23 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
 
             # Create UI component based on access level
             if show_detailed_results:
-                # Admin view: Show detailed results in collapsible card
-                detailed_content = "**Retrieved memories passed to LLM:**\n\n"
+                # Detailed view: Show results in collapsible card
+                detailed_content = "**Found similar questions I've answered before:**\n\n"
                 for i, result in enumerate(results, 1):
                     memory = result.memory
-                    detailed_content += f"**{i}. {memory.tool_name}** (similarity: {result.similarity_score:.2f})\n"
-                    detailed_content += f"- **Question:** {memory.question}\n"
-                    detailed_content += f"- **Arguments:** `{memory.args}`\n"
-                    if memory.timestamp:
-                        detailed_content += f"- **Timestamp:** {memory.timestamp}\n"
-                    if memory.memory_id:
-                        detailed_content += f"- **ID:** `{memory.memory_id}`\n"
-                    detailed_content += "\n"
+                    similarity_pct = int(result.similarity_score * 100)
+                    detailed_content += f"**{i}. Similar question** ({similarity_pct}% match)\n"
+                    detailed_content += f"   _\"{memory.question}\"_\n"
+                    detailed_content += f"   Used `{memory.tool_name}` tool\n\n"
+
+                detailed_content += "_Using these patterns to help answer your question._"
 
                 ui_component = UiComponent(
                     rich_component=CardComponent(
-                        title=f"🧠 Memory Search: {len(results)} Result(s)",
+                        title=f"Found {len(results)} Similar Question(s)",
                         content=detailed_content.strip(),
-                        icon="🔍",
-                        status="info",
+                        icon=None,
+                        status="success",
                         collapsible=True,
                         collapsed=True,  # Start collapsed to avoid clutter
                         markdown=True,  # Render content as markdown
@@ -235,12 +243,16 @@ class SearchSavedCorrectToolUsesTool(Tool[SearchSavedCorrectToolUsesParams]):
                     simple_component=None,
                 )
             else:
-                # Non-admin view: Simple status message
+                # Simple view: Show concise card
                 ui_component = UiComponent(
-                    rich_component=StatusBarUpdateComponent(
+                    rich_component=CardComponent(
+                        title=f"Found {len(results)} Similar Question(s)",
+                        content="Using previous experience to help answer your question.",
+                        icon=None,
                         status="success",
-                        message=f"Found {len(results)} similar pattern(s)",
-                        detail="Retrieved from agent memory",
+                        collapsible=True,
+                        collapsed=True,
+                        markdown=False,
                     ),
                     simple_component=None,
                 )
