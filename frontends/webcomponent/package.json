@@ -1,6 +1,6 @@
 {
   "name": "@vanna/webcomponent",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Lit-based web components for Vanna User Agents",
   "main": "dist/vanna-components.js",
   "scripts": {
@@ -39,8 +39,10 @@
     "src"
   ],
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "lit": "^3.3.1",
-    "plotly.js-dist-min": "^3.1.0"
+    "plotly.js-dist-min": "^3.1.0",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@storybook/addon-actions": "^8.6.14",
