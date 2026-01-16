@@ -62,7 +62,7 @@ def get_index_html(
             theme: {{
                 extend: {{
                     colors: {{
-                        'vanna-navy': '#023d60',
+                        'vanna-navy': '#013DFF',
                         'vanna-cream': '#e7e1cf',
                         'vanna-teal': '#15a8a8',
                         'vanna-orange': '#fe5d26',

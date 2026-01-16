@@ -4,9 +4,9 @@ import { css } from 'lit';
 export const vannaDesignTokens = css`
   :host {
     /* Vanna 2.0 Brand Colors */
-    --vanna-navy: rgb(2, 61, 96);
+    --vanna-navy: #013DFF;
     --vanna-cream: rgb(231, 225, 207);
-    --vanna-teal: rgb(21, 168, 168);
+    --vanna-teal: #013DFF;
     --vanna-orange: rgb(254, 93, 38);
     --vanna-magenta: rgb(191, 19, 99);
 
@@ -22,13 +22,13 @@ export const vannaDesignTokens = css`
     --vanna-foreground-dimmer: rgb(71, 85, 105);
     --vanna-foreground-dimmest: rgb(100, 116, 139);
 
-    --vanna-accent-primary-default: rgb(21, 168, 168);
+    --vanna-accent-primary-default: #013DFF;
     --vanna-accent-primary-stronger: rgb(2, 61, 96);
     --vanna-accent-primary-strongest: rgb(2, 61, 96);
     --vanna-accent-primary-subtle: rgba(21, 168, 168, 0.1);
-    --vanna-accent-primary-hover: rgb(21, 168, 168);
+    --vanna-accent-primary-hover: #013DFF;
 
-    --vanna-accent-positive-default: rgb(21, 168, 168);
+    --vanna-accent-positive-default: #013DFF;
     --vanna-accent-positive-stronger: rgb(2, 61, 96);
     --vanna-accent-positive-subtle: rgba(21, 168, 168, 0.1);
 
@@ -44,7 +44,7 @@ export const vannaDesignTokens = css`
     --vanna-outline-default: rgba(21, 168, 168, 0.3);
     --vanna-outline-dimmer: rgb(241, 245, 249);
     --vanna-outline-dimmest: rgb(248, 250, 252);
-    --vanna-outline-hover: rgb(21, 168, 168);
+    --vanna-outline-hover: #013DFF;
 
     /* Typography */
     --vanna-font-family-default: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -118,14 +118,14 @@ export const vannaDesignTokens = css`
     --vanna-foreground-dimmer: rgb(203, 213, 225);
     --vanna-foreground-dimmest: rgb(148, 163, 184);
 
-    --vanna-accent-primary-default: rgb(21, 168, 168);
-    --vanna-accent-primary-stronger: rgb(21, 168, 168);
+    --vanna-accent-primary-default: #013DFF;
+    --vanna-accent-primary-stronger: #013DFF;
     --vanna-accent-primary-strongest: rgb(2, 61, 96);
     --vanna-accent-primary-subtle: rgba(21, 168, 168, 0.15);
-    --vanna-accent-primary-hover: rgb(21, 168, 168);
+    --vanna-accent-primary-hover: #013DFF;
 
-    --vanna-accent-positive-default: rgb(21, 168, 168);
-    --vanna-accent-positive-stronger: rgb(21, 168, 168);
+    --vanna-accent-positive-default: #013DFF;
+    --vanna-accent-positive-stronger: #013DFF;
     --vanna-accent-positive-subtle: rgba(21, 168, 168, 0.15);
 
     --vanna-accent-negative-default: rgb(248, 113, 113);
@@ -139,7 +139,7 @@ export const vannaDesignTokens = css`
     --vanna-outline-default: rgba(21, 168, 168, 0.3);
     --vanna-outline-dimmer: rgb(31, 41, 55);
     --vanna-outline-dimmest: rgb(17, 24, 39);
-    --vanna-outline-hover: rgb(21, 168, 168);
+    --vanna-outline-hover: #013DFF;
 
     --vanna-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.6);
     --vanna-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
