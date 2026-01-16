@@ -24,5 +24,5 @@ milvus.db
 frontends/**/node_modules/
 frontends/**/static/
 frontends/**/.storybook-static/
-frontends/**/package-lock.json
+# frontends/**/package-lock.json  # Removed to allow committing lock files for reproducible builds
 frontends/**/.mypy_cache/
