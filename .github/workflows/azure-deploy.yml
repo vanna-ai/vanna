@@ -1,21 +1,11 @@
-name: Deploy to Azure
+name: Build and Deploy to Azure
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - staging
-          - prod
+  workflow_dispatch:  # Manual re-deploy option
 
 permissions:
   id-token: write   # Required for OIDC authentication
@@ -91,10 +81,10 @@ jobs:
           docker rm test-container || true
 
   # ==========================================================================
-  # Job 2: Deploy to Dev (auto on push to main)
+  # Job 2: Deploy to Azure (auto on push to main, or manual trigger)
   # ==========================================================================
-  deploy-dev:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: dev
@@ -131,74 +121,3 @@ jobs:
         run: |
           sleep 30
           curl -f "${{ steps.get-url.outputs.url }}/health" || echo "Health check pending..."
-
-  # ==========================================================================
-  # Job 3: Deploy to Staging (manual trigger)
-  # ==========================================================================
-  deploy-staging:
-    if: github.event.inputs.environment == 'staging'
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Azure Developer CLI
-        uses: Azure/setup-azd@v1
-
-      - name: Log in with Azure
-        run: |
-          azd auth login \
-            --client-id "${{ env.AZURE_CLIENT_ID }}" \
-            --federated-credential-provider "github" \
-            --tenant-id "${{ env.AZURE_TENANT_ID }}"
-
-      - name: Deploy to Staging
-        run: |
-          azd provision --environment staging --no-prompt
-          azd deploy --environment staging --no-prompt
-        env:
-          AZURE_ENV_NAME: staging
-          AZURE_LOCATION: eastus
-          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
-
-  # ==========================================================================
-  # Job 4: Deploy to Production (manual trigger with approval)
-  # ==========================================================================
-  deploy-prod:
-    if: github.event.inputs.environment == 'prod'
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    environment:
-      name: prod
-      url: ${{ steps.deploy.outputs.endpoint }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Azure Developer CLI
-        uses: Azure/setup-azd@v1
-
-      - name: Log in with Azure
-        run: |
-          azd auth login \
-            --client-id "${{ env.AZURE_CLIENT_ID }}" \
-            --federated-credential-provider "github" \
-            --tenant-id "${{ env.AZURE_TENANT_ID }}"
-
-      - name: Deploy to Production
-        id: deploy
-        run: |
-          azd provision --environment prod --no-prompt
-          azd deploy --environment prod --no-prompt
-          echo "endpoint=$(azd env get-value SERVICE_API_ENDPOINT_URL)" >> $GITHUB_OUTPUT
-        env:
-          AZURE_ENV_NAME: prod
-          AZURE_LOCATION: eastus2
-          AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Verify production deployment
-        run: |
-          sleep 60
-          curl -f "${{ steps.deploy.outputs.endpoint }}/health"
