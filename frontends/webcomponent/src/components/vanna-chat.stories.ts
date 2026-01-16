@@ -36,7 +36,7 @@ type Story = StoryObj;
 
 export const Default: Story = {
   args: {
-    title: 'thaink AI Chat',
+    title: 'thaink² AI Chat',
     placeholder: 'Describe what you want to build...',
     disabled: false,
     showProgress: true,
@@ -59,7 +59,7 @@ export const Default: Story = {
 
 export const LightMode: Story = {
   args: {
-    title: 'thaink AI Chat',
+    title: 'thaink² AI Chat',
     placeholder: 'Describe what you want to build...',
     disabled: false,
     showProgress: true,
@@ -82,7 +82,7 @@ export const LightMode: Story = {
 
 export const WithConversation: Story = {
   args: {
-    title: 'thaink AI Chat',
+    title: 'thaink² AI Chat',
     placeholder: 'Continue the conversation...',
     disabled: false,
     showProgress: true,
@@ -133,7 +133,7 @@ export const WithConversation: Story = {
 
 export const MaxAutonomyMode: Story = {
   args: {
-    title: 'thaink AI Chat - Max Autonomy',
+    title: 'thaink² AI Chat - Max Autonomy',
     placeholder: 'Describe your project...',
     disabled: false,
     showProgress: true,
@@ -192,7 +192,7 @@ export const MaxAutonomyMode: Story = {
 
 export const WorkingState: Story = {
   args: {
-    title: 'thaink AI Chat',
+    title: 'thaink² AI Chat',
     placeholder: 'Ask me anything...',
     disabled: true,
     showProgress: true,
@@ -237,7 +237,7 @@ export const WorkingState: Story = {
 
 export const CompactMode: Story = {
   args: {
-    title: 'thaink AI Chat',
+    title: 'thaink² AI Chat',
     placeholder: 'Quick question...',
     disabled: false,
     showProgress: false,
@@ -271,7 +271,7 @@ export const CompactMode: Story = {
 
 export const WithRichComponents: Story = {
   args: {
-    title: 'thaink AI Chat - Rich Components',
+    title: 'thaink² AI Chat - Rich Components',
     placeholder: 'Ask me to analyze data or build something...',
     disabled: false,
     showProgress: true,
@@ -545,7 +545,7 @@ export const WithRichComponents: Story = {
 
 export const WithToolExecutionComponents: Story = {
   args: {
-    title: 'thaink AI Chat - Tool Execution',
+    title: 'thaink² AI Chat - Tool Execution',
     placeholder: 'Ask me to run commands or execute tools...',
     disabled: false,
     showProgress: true,
@@ -801,7 +801,7 @@ export const WithToolExecutionComponents: Story = {
 
 export const WithChart: Story = {
   args: {
-    title: 'thaink AI Chat - Chart Display',
+    title: 'thaink² AI Chat - Chart Display',
     placeholder: 'Ask me to analyze data...',
     disabled: false,
     showProgress: true,
@@ -1025,7 +1025,7 @@ The chart shows the distribution of sales across the top 10 artists.`,
 
 export const WithButtons: Story = {
   args: {
-    title: 'thaink AI Chat - Button Components',
+    title: 'thaink² AI Chat - Button Components',
     placeholder: 'Click buttons to send messages...',
     disabled: false,
     showProgress: false,
