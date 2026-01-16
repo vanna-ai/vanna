@@ -3,7 +3,7 @@ name: Basic Integration Tests
 on:
   push:
     branches:
-      - main
+      - main2
 
 permissions:
   contents: read
