@@ -211,7 +211,7 @@ export class RichTaskList extends LitElement {
       'pending': '⏳',
       'running': '🔄',
       'completed': '✅',
-      'failed': '❌'
+      'failed': '✅'
     };
     return icons[status as keyof typeof icons] || '⏳';
   }

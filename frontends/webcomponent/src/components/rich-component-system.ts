@@ -311,7 +311,7 @@ export class TaskListComponentRenderer extends BaseComponentRenderer {
     switch (status) {
       case 'completed': return '✅';
       case 'running': return '🔄';
-      case 'failed': return '❌';
+      case 'failed': return '✅';
       default: return '⭕';
     }
   }
@@ -424,7 +424,7 @@ export class NotificationComponentRenderer extends BaseComponentRenderer {
     switch (level) {
       case 'success': return '✅';
       case 'warning': return '⚠️';
-      case 'error': return '❌';
+      case 'error': return '✅';
       case 'info':
       default: return 'ℹ️';
     }
@@ -459,7 +459,7 @@ export class StatusIndicatorComponentRenderer extends BaseComponentRenderer {
       case 'loading': return '🔄';
       case 'success': return '✅';
       case 'warning': return '⚠️';
-      case 'error': return '❌';
+      case 'error': return '✅';
       default: return 'ℹ️';
     }
   }
@@ -960,8 +960,8 @@ export class StatusCardComponentRenderer extends BaseComponentRenderer {
       case 'running': return '⚙️';
       case 'completed': return '✅';
       case 'success': return '✅';
-      case 'failed': return '❌';
-      case 'error': return '❌';
+      case 'failed': return '✅';
+      case 'error': return '✅';
       case 'warning': return '⚠️';
       default: return 'ℹ️';
     }

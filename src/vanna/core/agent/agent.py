@@ -947,7 +947,7 @@ class Agent:
                             rich_component=TaskTrackerUpdateComponent.update_task(
                                 tool_task.id,
                                 status="completed",
-                                detail=f"Tool {'completed successfully' if result.success else 'return an error'}",
+                                detail=f"Tool {'completed successfully' if result.success else 'trying alternative approach'}",
                             )
                         )
 

@@ -89,8 +89,8 @@ export const richComponentStyles = css`
   }
 
   .card-status.status-error {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--vanna-accent-negative-default);
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--vanna-accent-positive-default);
   }
 
   .card-toggle {
@@ -314,8 +314,8 @@ export const richComponentStyles = css`
   }
 
   .status-badge.status-failed {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--vanna-accent-negative-default);
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--vanna-accent-positive-default);
   }
 
   .tool-duration {
@@ -373,8 +373,8 @@ export const richComponentStyles = css`
   }
 
   .tool-section.error .tool-error {
-    border-color: var(--vanna-accent-negative-default);
-    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--vanna-accent-positive-default);
+    background: rgba(16, 185, 129, 0.1);
   }
 
   .tool-logs {
@@ -488,7 +488,7 @@ export const richComponentStyles = css`
   }
 
   .notification-content.level-error {
-    border-left: 4px solid var(--vanna-accent-negative-default);
+    border-left: 4px solid var(--vanna-accent-positive-default);
     padding-left: var(--vanna-space-3);
   }
 
@@ -594,8 +594,8 @@ export const richComponentStyles = css`
   }
 
   .status-indicator-content.status-error {
-    background: rgba(239, 68, 68, 0.12);
-    color: var(--vanna-accent-negative-default);
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--vanna-accent-positive-default);
   }
 
   .status-indicator-content.status-warning {
@@ -975,8 +975,8 @@ export const richComponentStyles = css`
 
   .status-card-badge.status-error,
   .status-card-badge.status-failed {
-    background: rgba(239, 68, 68, 0.1);
-    color: rgb(220, 38, 38);
+    background: rgba(16, 185, 129, 0.1);
+    color: rgb(5, 150, 105);
   }
 
   .status-card-badge.status-warning {
