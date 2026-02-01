@@ -124,8 +124,6 @@ async def test_chromadb_collection_retrieval_without_embedding_function():
         assert collection.name == "test_collection"
         assert collection.count() == 2
 
-        print("✅ Test passed: Existing collection retrieved without embedding function initialization")
-
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -170,8 +168,6 @@ async def test_chromadb_collection_creation_with_embedding_function():
 
         # Verify _get_embedding_function was called
         assert len(get_ef_called) > 0, "_get_embedding_function should be called when creating new collection"
-
-        print("✅ Test passed: New collection created with embedding function")
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
