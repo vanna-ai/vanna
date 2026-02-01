@@ -50,7 +50,6 @@ async def test_chromadb_collection_retrieval_without_embedding_function(test_use
     try:
         import chromadb
         from chromadb.config import Settings
-        from chromadb.utils import embedding_functions
     except ImportError:
         pytest.skip("ChromaDB not installed")
 

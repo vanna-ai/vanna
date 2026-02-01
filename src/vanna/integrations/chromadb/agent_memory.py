@@ -144,7 +144,7 @@ class ChromaAgentMemory(AgentMemory):
             try:
                 # Try to get existing collection first
                 # Don't pass embedding_function here to avoid re-instantiating/downloading it
-                # For existing collections, ChromaDB uses the stored embedding-function configuration
+                # For existing collections, ChromaDB uses the stored embedding function configuration
                 self._collection = client.get_collection(
                     name=self.collection_name
                 )
