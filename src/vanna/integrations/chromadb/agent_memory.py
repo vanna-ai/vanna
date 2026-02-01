@@ -76,12 +76,15 @@ class ChromaAgentMemory(AgentMemory):
         """Get or create ChromaDB collection."""
         if self._collection is None:
             client = self._get_client()
-            embedding_func = self._get_embedding_function()
             try:
+                # Try to get existing collection first
+                # Don't pass embedding_function to avoid triggering model download
                 self._collection = client.get_collection(
-                    name=self.collection_name, embedding_function=embedding_func
+                    name=self.collection_name
                 )
             except Exception:
+                # Collection doesn't exist, create it with embedding function
+                embedding_func = self._get_embedding_function()
                 self._collection = client.create_collection(
                     name=self.collection_name,
                     embedding_function=embedding_func,
