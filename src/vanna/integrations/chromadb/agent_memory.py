@@ -15,6 +15,7 @@ try:
     import chromadb
     from chromadb.config import Settings
     from chromadb.utils import embedding_functions
+    from chromadb.errors import NotFoundError
 
     CHROMADB_AVAILABLE = True
 except ImportError:
@@ -31,7 +32,51 @@ from vanna.core.tool import ToolContext
 
 
 class ChromaAgentMemory(AgentMemory):
-    """ChromaDB-based implementation of AgentMemory."""
+    """ChromaDB-based implementation of AgentMemory.
+    
+    This implementation uses ChromaDB's PersistentClient to store agent memories
+    on disk, ensuring they persist across application restarts.
+    
+    Key Features:
+    - Persistent storage: All memories are automatically saved to disk
+    - Efficient retrieval: Existing collections are loaded without re-initializing
+      embedding functions, avoiding unnecessary model downloads
+    - Flexible embedding: Supports custom embedding functions or uses ChromaDB's
+      default embedding function
+    
+    Args:
+        persist_directory: Directory where ChromaDB will store its data.
+                          Defaults to "./chroma_memory". Use an absolute path
+                          for production deployments to ensure consistent location
+                          across restarts.
+        collection_name: Name of the ChromaDB collection to use. Multiple agents
+                        can share the same persist_directory with different
+                        collection names.
+        embedding_function: Optional custom embedding function. If not provided,
+                           ChromaDB's DefaultEmbeddingFunction is used (requires
+                           internet connection on first use to download the model).
+    
+    Example:
+        >>> from vanna.integrations.chromadb import ChromaAgentMemory
+        >>> # Basic usage with defaults
+        >>> memory = ChromaAgentMemory(
+        ...     persist_directory="/app/data/chroma",
+        ...     collection_name="my_agent_memory"
+        ... )
+        >>>
+        >>> # With custom embedding function (e.g., for offline use)
+        >>> from chromadb.utils import embedding_functions
+        >>> ef = embedding_functions.SentenceTransformerEmbeddingFunction()
+        >>> memory = ChromaAgentMemory(
+        ...     persist_directory="/app/data/chroma",
+        ...     embedding_function=ef
+        ... )
+    
+    Note:
+        The default embedding function downloads an ONNX model (~80MB) on first use.
+        For air-gapped or offline environments, pre-download the model or provide
+        a custom embedding function.
+    """
 
     def __init__(
         self,
@@ -79,10 +124,11 @@ class ChromaAgentMemory(AgentMemory):
             try:
                 # Try to get existing collection first
                 # Don't pass embedding_function to avoid triggering model download
+                # ChromaDB will use the embedding function that was stored with the collection
                 self._collection = client.get_collection(
                     name=self.collection_name
                 )
-            except Exception:
+            except NotFoundError:
                 # Collection doesn't exist, create it with embedding function
                 embedding_func = self._get_embedding_function()
                 self._collection = client.create_collection(
