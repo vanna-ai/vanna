@@ -167,7 +167,7 @@ async def test_chromadb_collection_creation_with_embedding_function():
         assert collection.name == "new_collection"
 
         # Verify _get_embedding_function was called
-        assert len(get_ef_called) > 0, "_get_embedding_function should be called when creating new collection"
+        assert get_ef_called, "_get_embedding_function should be called when creating new collection"
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
