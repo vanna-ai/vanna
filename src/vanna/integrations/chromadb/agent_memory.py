@@ -15,7 +15,14 @@ try:
     import chromadb
     from chromadb.config import Settings
     from chromadb.utils import embedding_functions
-    from chromadb.errors import NotFoundError
+    
+    try:
+        from chromadb.errors import NotFoundError
+    except ImportError:
+        # Fallback for older ChromaDB versions that don't have chromadb.errors
+        class NotFoundError(Exception):
+            """Fallback NotFoundError for older ChromaDB versions."""
+            pass
 
     CHROMADB_AVAILABLE = True
 except ImportError:
@@ -55,6 +62,9 @@ class ChromaAgentMemory(AgentMemory):
         embedding_function: Optional custom embedding function. If not provided,
                            ChromaDB's DefaultEmbeddingFunction is used (requires
                            internet connection on first use to download the model).
+                           Once a collection is created, subsequent application
+                           restarts will retrieve the existing collection without
+                           re-downloading the model.
     
     Example:
         >>> from vanna.integrations.chromadb import ChromaAgentMemory
@@ -76,6 +86,16 @@ class ChromaAgentMemory(AgentMemory):
         The default embedding function downloads an ONNX model (~80MB) on first use.
         For air-gapped or offline environments, pre-download the model or provide
         a custom embedding function.
+    
+    Limitation:
+        This class does not validate that an existing Chroma collection was created
+        with the same embedding function as the one configured for the current
+        ``ChromaAgentMemory`` instance. If you reuse a collection (same
+        ``persist_directory`` and ``collection_name``) with a different embedding
+        function than was originally used, queries may fail or produce incorrect
+        similarity results. It is your responsibility to ensure that a given
+        collection is always accessed with a consistent embedding function, or to
+        implement your own validation around collection creation and reuse.
     """
 
     def __init__(
@@ -123,8 +143,8 @@ class ChromaAgentMemory(AgentMemory):
             client = self._get_client()
             try:
                 # Try to get existing collection first
-                # Don't pass embedding_function to avoid triggering model download
-                # ChromaDB will use the embedding function that was stored with the collection
+                # Don't pass embedding_function here to avoid re-instantiating/downloading it
+                # For existing collections, ChromaDB uses the stored embedding-function configuration
                 self._collection = client.get_collection(
                     name=self.collection_name
                 )

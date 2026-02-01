@@ -8,8 +8,8 @@ import pytest
 import tempfile
 import shutil
 import asyncio
-from unittest.mock import MagicMock, patch
 
+from vanna.integrations.chromadb import ChromaAgentMemory
 from vanna.core.user import User
 from vanna.core.tool import ToolContext
 
@@ -37,33 +37,40 @@ def create_test_context(test_user, agent_memory):
 
 
 @pytest.mark.asyncio
-async def test_chromadb_collection_retrieval_without_embedding_function():
+async def test_chromadb_collection_retrieval_without_embedding_function(test_user):
     """
     Test that existing ChromaDB collections can be retrieved without
     initializing the embedding function (avoiding model downloads).
+    
+    This test simulates the real-world scenario where:
+    1. A collection is created with an embedding function (first app run)
+    2. The app restarts and retrieves the existing collection
+    3. The embedding function should NOT be re-initialized on retrieval
     """
     try:
         import chromadb
         from chromadb.config import Settings
-        from vanna.integrations.chromadb import ChromaAgentMemory
+        from chromadb.utils import embedding_functions
     except ImportError:
         pytest.skip("ChromaDB not installed")
 
     temp_dir = tempfile.mkdtemp()
 
     try:
-        # Setup: Create a collection with some data (simulating previous session)
-        client = chromadb.PersistentClient(
-            path=temp_dir, settings=Settings(anonymized_telemetry=False, allow_reset=True)
+        # Session 1: Create a collection using ChromaAgentMemory (simulating first app run)
+        # This will create the collection with an embedding function
+        memory1 = ChromaAgentMemory(
+            persist_directory=temp_dir, collection_name="test_collection"
         )
-
-        # Create collection without embedding function
-        collection = client.create_collection("test_collection")
-
-        # Add data with explicit embeddings (no embedding function needed)
+        
+        context = create_test_context(test_user, memory1)
+        
+        # Save some memories (this will create the collection)
+        # We need to add explicit embeddings to avoid model download in test environment
+        collection = memory1._get_collection()
         collection.add(
             ids=["mem1", "mem2"],
-            documents=["memory 1", "memory 2"],
+            documents=["test question 1", "test question 2"],
             embeddings=[[0.1] * 384, [0.2] * 384],
             metadatas=[
                 {
@@ -84,45 +91,43 @@ async def test_chromadb_collection_retrieval_without_embedding_function():
                 },
             ],
         )
-
-        # Clean up client completely to simulate app restart
-        # Force clear the shared system cache
+        
+        # Clean up references to simulate app restart
         del collection
-        client_identifier = temp_dir
-        from chromadb.api.shared_system_client import SharedSystemClient
-        if client_identifier in SharedSystemClient._identifier_to_system:
-            system = SharedSystemClient._identifier_to_system.pop(client_identifier)
-            system.stop()
-        del client
+        del memory1
 
-        # Test: Create ChromaAgentMemory and verify it retrieves the collection
-        # WITHOUT calling _get_embedding_function for existing collections
-        memory = ChromaAgentMemory(
+        # Session 2: Create new ChromaAgentMemory instance (simulating app restart)
+        # This should retrieve the existing collection WITHOUT calling _get_embedding_function
+        memory2 = ChromaAgentMemory(
             persist_directory=temp_dir, collection_name="test_collection"
         )
 
-        # Mock the _get_embedding_function to ensure it's not called for retrieval
-        original_get_ef = memory._get_embedding_function
+        # Mock _get_embedding_function to verify it's not called
+        original_get_ef = memory2._get_embedding_function
 
         def mock_get_ef():
-            # If this is called, it means we're trying to create a new collection
-            # which should NOT happen when the collection already exists
             pytest.fail(
                 "_get_embedding_function was called when retrieving existing collection"
             )
 
-        memory._get_embedding_function = mock_get_ef
+        memory2._get_embedding_function = mock_get_ef
 
         # This should retrieve the existing collection without calling _get_embedding_function
-        collection = memory._get_collection()
+        collection2 = memory2._get_collection()
 
-        # Restore original method for cleanup
-        memory._get_embedding_function = original_get_ef
+        # Restore original method
+        memory2._get_embedding_function = original_get_ef
 
-        # Verify collection was retrieved
-        assert collection is not None
-        assert collection.name == "test_collection"
-        assert collection.count() == 2
+        # Verify collection was retrieved successfully
+        assert collection2 is not None
+        assert collection2.name == "test_collection"
+        assert collection2.count() == 2
+        
+        # Test that we can use public API methods on the retrieved collection
+        context2 = create_test_context(test_user, memory2)
+        recent = await memory2.get_recent_memories(context=context2, limit=10)
+        assert len(recent) == 2
+        assert recent[0].question in ["test question 1", "test question 2"]
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
