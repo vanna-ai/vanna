@@ -9,19 +9,17 @@ export class VannaStatusBar extends LitElement {
     css`
       :host {
         display: block;
-        background: rgba(254, 93, 38, 0.1);
-        border: 2px solid var(--vanna-orange);
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.3);
         border-radius: var(--vanna-border-radius-xl);
         padding: var(--vanna-space-4) var(--vanna-space-5);
         margin-bottom: var(--vanna-space-4);
         font-family: var(--vanna-font-family-default);
         font-size: 14px;
         font-weight: 500;
-        color: var(--vanna-navy);
+        color: var(--vanna-foreground-default);
         backdrop-filter: blur(12px);
-        box-shadow:
-          var(--vanna-shadow-lg),
-          0 0 0 1px rgba(254, 93, 38, 0.1);
+        box-shadow: var(--vanna-shadow-sm);
         
         /* Animation properties */
         opacity: 1;
@@ -95,36 +93,11 @@ export class VannaStatusBar extends LitElement {
         }
       }
 
-      :host([status="working"]) {
-        background: var(--vanna-orange);
-        border-color: var(--vanna-orange);
-        color: white;
-        box-shadow:
-          var(--vanna-shadow-xl),
-          0 0 0 2px rgba(254, 93, 38, 0.3),
-          0 0 20px rgba(254, 93, 38, 0.4);
-      }
-
-      :host([status="error"]) {
-        background: linear-gradient(135deg, var(--vanna-accent-negative-subtle) 0%, rgba(239, 68, 68, 0.15) 100%);
-        border-color: var(--vanna-accent-negative-default);
-        color: var(--vanna-accent-negative-stronger);
-        box-shadow: 
-          var(--vanna-shadow-xl),
-          0 0 0 2px rgba(239, 68, 68, 0.3),
-          0 0 20px rgba(239, 68, 68, 0.2);
-        animation: errorShake 0.5s ease-in-out, errorGlow 2s ease-in-out;
-      }
-
+      /* All states use the same neutral grey box - dot color indicates status */
+      :host([status="working"]),
+      :host([status="error"]),
       :host([status="success"]) {
-        background: linear-gradient(135deg, var(--vanna-accent-positive-subtle) 0%, rgba(16, 185, 129, 0.15) 100%);
-        border-color: var(--vanna-accent-positive-default);
-        color: var(--vanna-accent-positive-stronger);
-        box-shadow: 
-          var(--vanna-shadow-xl),
-          0 0 0 2px rgba(16, 185, 129, 0.3),
-          0 0 20px rgba(16, 185, 129, 0.2);
-        animation: successPulse 0.6s ease-out, successGlow 2s ease-out;
+        /* Keep the same neutral styling as default */
       }
 
       @keyframes errorShake {
@@ -164,36 +137,33 @@ export class VannaStatusBar extends LitElement {
       }
 
       .status-indicator {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         border-radius: var(--vanna-border-radius-full);
-        background: var(--vanna-accent-primary-default);
+        background: rgb(16, 185, 129);
         flex-shrink: 0;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
       }
 
-      .status-indicator.working {
-        background: white;
-        animation: workingPulse 1.5s ease-in-out infinite;
+      .status-indicator.idle,
+      .status-indicator.working,
+      .status-indicator.success {
+        background: rgb(16, 185, 129);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
       }
 
       .status-indicator.error {
-        background: linear-gradient(45deg, var(--vanna-accent-negative-default), var(--vanna-accent-negative-stronger));
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 8px rgba(239, 68, 68, 0.4);
-      }
-
-      .status-indicator.success {
-        background: linear-gradient(45deg, var(--vanna-accent-positive-default), var(--vanna-accent-positive-stronger));
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 8px rgba(16, 185, 129, 0.4);
+        background: rgb(239, 68, 68);
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
       }
 
       .spinner {
-        width: 16px;
-        height: 16px;
-        border: 3px solid rgba(21, 168, 168, 0.3);
-        border-top-color: var(--vanna-teal);
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(16, 185, 129, 0.3);
+        border-top-color: rgb(16, 185, 129);
         border-radius: var(--vanna-border-radius-full);
-        animation: spin 1s linear infinite, spinnerGlow 2s ease-in-out infinite;
+        animation: spin 1s linear infinite;
         flex-shrink: 0;
       }
 
