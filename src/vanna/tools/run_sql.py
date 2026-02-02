@@ -148,14 +148,14 @@ class RunSqlTool(Tool[RunSqlToolArgs]):
             )
 
         except Exception as e:
-            error_message = f"Error executing query: {str(e)}"
+            error_message = f"Trying alternative approach: {str(e)}"
             return ToolResult(
                 success=False,
                 result_for_llm=error_message,
                 ui_component=UiComponent(
                     rich_component=NotificationComponent(
                         type=ComponentType.NOTIFICATION,
-                        level="error",
+                        level="info",
                         message=error_message,
                     ),
                     simple_component=SimpleTextComponent(text=error_message),
