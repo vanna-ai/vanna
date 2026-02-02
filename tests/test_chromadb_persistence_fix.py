@@ -4,6 +4,7 @@ Test for ChromaDB persistence fix.
 This test verifies that ChromaDB collections can be retrieved without triggering
 unnecessary embedding function initialization/model downloads.
 """
+
 import pytest
 import tempfile
 import shutil
@@ -41,7 +42,7 @@ async def test_chromadb_collection_retrieval_without_embedding_function(test_use
     """
     Test that existing ChromaDB collections can be retrieved without
     initializing the embedding function (avoiding model downloads).
-    
+
     This test simulates the real-world scenario where:
     1. A collection is created with an embedding function (first app run)
     2. The app restarts and retrieves the existing collection
@@ -61,9 +62,9 @@ async def test_chromadb_collection_retrieval_without_embedding_function(test_use
         memory1 = ChromaAgentMemory(
             persist_directory=temp_dir, collection_name="test_collection"
         )
-        
+
         context = create_test_context(test_user, memory1)
-        
+
         # Save some memories (this will create the collection)
         # We need to add explicit embeddings to avoid model download in test environment
         collection = memory1._get_collection()
@@ -90,7 +91,7 @@ async def test_chromadb_collection_retrieval_without_embedding_function(test_use
                 },
             ],
         )
-        
+
         # Clean up references to simulate app restart
         del collection
         del memory1
@@ -121,7 +122,7 @@ async def test_chromadb_collection_retrieval_without_embedding_function(test_use
         assert collection2 is not None
         assert collection2.name == "test_collection"
         assert collection2.count() == 2
-        
+
         # Test that we can use public API methods on the retrieved collection
         context2 = create_test_context(test_user, memory2)
         recent = await memory2.get_recent_memories(context=context2, limit=10)
@@ -171,7 +172,9 @@ async def test_chromadb_collection_creation_with_embedding_function():
         assert collection.name == "new_collection"
 
         # Verify _get_embedding_function was called
-        assert get_ef_called, "_get_embedding_function should be called when creating new collection"
+        assert get_ef_called, (
+            "_get_embedding_function should be called when creating new collection"
+        )
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
