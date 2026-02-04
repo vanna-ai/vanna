@@ -41,6 +41,7 @@ class GeminiLlmService(LlmService):
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.7,
+        vertexai: Optional[bool] = None,
         **extra_config: Any,
     ) -> None:
         try:
@@ -67,7 +68,7 @@ class GeminiLlmService(LlmService):
         self._types = types
 
         # Create client
-        self._client = genai.Client(api_key=api_key)
+        self._client = genai.Client(api_key=api_key, vertexai=vertexai)
 
         # Store generation config
         self.temperature = temperature
