@@ -1,0 +1,3 @@
+[console_scripts]
+vanna=vanna.servers.cli.server_runner:main
+

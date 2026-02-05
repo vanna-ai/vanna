@@ -1,0 +1,77 @@
+Metadata-Version: 2.1
+Name: invoke
+Version: 2.2.1
+Summary: Pythonic task execution
+Home-page: https://pyinvoke.org
+Author: Jeff Forcier
+Author-email: jeff@bitprophet.org
+License: BSD
+Project-URL: Docs, https://docs.pyinvoke.org
+Project-URL: Source, https://github.com/pyinvoke/invoke
+Project-URL: Issues, https://github.com/pyinvoke/invoke/issues
+Project-URL: Changelog, https://www.pyinvoke.org/changelog.html
+Project-URL: CI, https://app.circleci.com/pipelines/github/pyinvoke/invoke
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Software Distribution
+Classifier: Topic :: System :: Systems Administration
+Requires-Python: >=3.6
+License-File: LICENSE
+
+
+|version| |python| |license| |ci| |coverage|
+
+.. |version| image:: https://img.shields.io/pypi/v/invoke
+    :target: https://pypi.org/project/invoke/
+    :alt: PyPI - Package Version
+.. |python| image:: https://img.shields.io/pypi/pyversions/invoke
+    :target: https://pypi.org/project/invoke/
+    :alt: PyPI - Python Version
+.. |license| image:: https://img.shields.io/pypi/l/invoke
+    :target: https://github.com/pyinvoke/invoke/blob/main/LICENSE
+    :alt: PyPI - License
+.. |ci| image:: https://img.shields.io/circleci/build/github/pyinvoke/invoke/main
+    :target: https://app.circleci.com/pipelines/github/pyinvoke/invoke
+    :alt: CircleCI
+.. |coverage| image:: https://img.shields.io/codecov/c/gh/pyinvoke/invoke
+    :target: https://app.codecov.io/gh/pyinvoke/invoke
+    :alt: Codecov
+
+Welcome to Invoke!
+==================
+
+Invoke is a Python (2.7 and 3.4+) library for managing shell-oriented
+subprocesses and organizing executable Python code into CLI-invokable tasks. It
+draws inspiration from various sources (``make``/``rake``, Fabric 1.x, etc) to
+arrive at a powerful & clean feature set.
+
+To find out what's new in this version of Invoke, please see `the changelog
+<https://pyinvoke.org/changelog.html#{}>`_.
+
+The project maintainer keeps a `roadmap
+<https://bitprophet.org/projects#roadmap>`_ on his website.
+
+
+For a high level introduction, including example code, please see `our main
+project website <https://pyinvoke.org>`_; or for detailed API docs, see `the
+versioned API website <https://docs.pyinvoke.org>`_.

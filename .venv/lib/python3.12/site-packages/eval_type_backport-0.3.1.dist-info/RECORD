@@ -1,0 +1,13 @@
+eval_type_backport-0.3.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+eval_type_backport-0.3.1.dist-info/METADATA,sha256=73x_Cz51D6-yzY9mhkPY6ZdJWP0eZDQWurrrJkLKfiw,2369
+eval_type_backport-0.3.1.dist-info/RECORD,,
+eval_type_backport-0.3.1.dist-info/WHEEL,sha256=_zCd3N1l69ArxyTb8rzEoP9TpbYXkqRFSNOD5OuxnTs,91
+eval_type_backport-0.3.1.dist-info/licenses/LICENSE.txt,sha256=srfwdD-IU7QFrDhiGY82cj9-lQvTbrGvaZFzVm59nTA,1066
+eval_type_backport-0.3.1.dist-info/top_level.txt,sha256=M4BNq08Fh2y365Y2vRjVmJvc9p1_bOy9hYyo9_2esN0,19
+eval_type_backport/__init__.py,sha256=lnogxHNegHr_T2NEtm5r2uvSh1ZhiK7WP2ZwobuwAWo,299
+eval_type_backport/__pycache__/__init__.cpython-312.pyc,,
+eval_type_backport/__pycache__/eval_type_backport.cpython-312.pyc,,
+eval_type_backport/__pycache__/version.cpython-312.pyc,,
+eval_type_backport/eval_type_backport.py,sha256=4ayub0aHKZI-8xtuI1mcfbAyHG4qXdQDFQMYyuXzYkw,8911
+eval_type_backport/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+eval_type_backport/version.py,sha256=2KwowXhmiT6-Bln7VPq9d9sRpAzJq9qLyclhp2KWmjA,21

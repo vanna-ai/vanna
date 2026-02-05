@@ -1,0 +1,3 @@
+[console_scripts]
+inv = invoke.main:program.run
+invoke = invoke.main:program.run
