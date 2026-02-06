@@ -65,6 +65,15 @@ def pytest_collection_modifyitems(config, items):
                     )
                 )
 
+        # Skip legacy tests if no Anthropic API key (legacy adapter tests use Anthropic)
+        if "legacy" in item.keywords:
+            if not os.getenv("ANTHROPIC_API_KEY"):
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="ANTHROPIC_API_KEY required for legacy adapter tests"
+                    )
+                )
+
 
 @pytest.fixture(scope="session")
 def chinook_db(tmp_path_factory):
