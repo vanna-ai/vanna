@@ -69,6 +69,7 @@ class SnowflakeRunner(SqlRunner):
         self.database = database
         self.role = role
         self.warehouse = warehouse
+        self.schema = kwargs.pop("schema", None)  # extracted so we can USE SCHEMA explicitly
         self.private_key_path = private_key_path
         self.private_key_passphrase = private_key_passphrase
         self.private_key_content = private_key_content
@@ -133,6 +134,11 @@ class SnowflakeRunner(SqlRunner):
             # Use the specified database if provided
             if self.database:
                 cursor.execute(f"USE DATABASE {self.database}")
+
+            # USE DATABASE resets the session schema to the DB default, so
+            # explicitly restore the schema if one was specified.
+            if self.schema:
+                cursor.execute(f"USE SCHEMA {self.schema}")
 
             # Execute the query
             cursor.execute(args.sql)

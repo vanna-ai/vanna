@@ -158,7 +158,7 @@ class OpenAILlmService(LlmService):
             try:
                 loaded = json.loads(args_raw)
                 if isinstance(loaded, dict):
-                    args_dict: Dict[str, Any] = loaded
+                    args_dict: Dict[str, Any] = self._normalize_args(loaded)
                 else:
                     args_dict = {"args": loaded}
             except Exception:
@@ -241,6 +241,17 @@ class OpenAILlmService(LlmService):
 
         return payload
 
+    @staticmethod
+    def _normalize_args(args: Dict[str, Any]) -> Dict[str, Any]:
+        """Strip trailing '=' from argument keys.
+
+        gpt-4o-mini occasionally emits Python-style kwarg notation in tool call
+        JSON (e.g. ``{"question=": "..."}`` instead of ``{"question": "..."}``)
+        due to the function-call examples in the system prompt. This normalises
+        such keys so Pydantic validation succeeds.
+        """
+        return {k.rstrip("="): v for k, v in args.items()}
+
     def _extract_tool_calls_from_message(self, message: Any) -> List[ToolCall]:
         tool_calls: List[ToolCall] = []
         raw_tool_calls = getattr(message, "tool_calls", None) or []
@@ -252,7 +263,7 @@ class OpenAILlmService(LlmService):
             try:
                 loaded = json.loads(args_raw)
                 if isinstance(loaded, dict):
-                    args_dict: Dict[str, Any] = loaded
+                    args_dict: Dict[str, Any] = self._normalize_args(loaded)
                 else:
                     args_dict = {"args": loaded}
             except Exception:
