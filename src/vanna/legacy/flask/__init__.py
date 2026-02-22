@@ -534,6 +534,14 @@ class VannaFlaskAPI:
                         }
                     )
 
+                if not vn.is_sql_valid(sql=sql):
+                    return jsonify(
+                        {
+                            "type": "error",
+                            "error": "SQL validation failed. Only SELECT statements are allowed by default. Override is_sql_valid() to enable other statement types.",
+                        }
+                    )
+
                 df = vn.run_sql(sql=sql)
 
                 self.cache.set(id=id, field="df", value=df)

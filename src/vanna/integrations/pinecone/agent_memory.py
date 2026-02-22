@@ -38,6 +38,7 @@ class PineconeAgentMemory(AgentMemory):
         environment: str = "us-east-1",
         dimension: int = 384,
         metric: str = "cosine",
+        embedding_model: str = "all-MiniLM-L6-v2",
     ):
         if not PINECONE_AVAILABLE:
             raise ImportError(
@@ -49,8 +50,10 @@ class PineconeAgentMemory(AgentMemory):
         self.environment = environment
         self.dimension = dimension
         self.metric = metric
+        self.embedding_model_name = embedding_model
         self._client = None
         self._index = None
+        self._embedding_model = None
         self._executor = ThreadPoolExecutor(max_workers=2)
 
     def _get_client(self):
@@ -76,13 +79,24 @@ class PineconeAgentMemory(AgentMemory):
             self._index = client.Index(self.index_name)
         return self._index
 
-    def _create_embedding(self, text: str) -> List[float]:
-        """Create a simple embedding from text (placeholder - should use actual embedding model)."""
-        # TODO: Replace with actual embedding model
-        import hashlib
+    def _load_embedding_model(self):
+        """Lazy-load the sentence-transformers embedding model."""
+        if self._embedding_model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+            except ImportError as e:
+                raise ImportError(
+                    "sentence-transformers is required for PineconeAgentMemory. "
+                    "Install with: pip install sentence-transformers"
+                ) from e
+            self._embedding_model = SentenceTransformer(self.embedding_model_name)
+        return self._embedding_model
 
-        hash_val = int(hashlib.md5(text.encode()).hexdigest(), 16)
-        return [(hash_val >> i) % 100 / 100.0 for i in range(self.dimension)]
+    def _create_embedding(self, text: str) -> List[float]:
+        """Create a real semantic embedding using sentence-transformers."""
+        model = self._load_embedding_model()
+        embedding = model.encode(text, show_progress_bar=False)
+        return embedding.tolist()
 
     async def save_tool_usage(
         self,

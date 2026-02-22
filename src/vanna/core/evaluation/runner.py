@@ -18,12 +18,49 @@ from .base import (
     Evaluator,
 )
 from vanna.core import UiComponent
+from vanna.core.llm import LlmRequest, LlmResponse
+from vanna.core.middleware import LlmMiddleware
 from vanna.core.user.request_context import RequestContext
 from vanna.core.observability import ObservabilityProvider
 
 if TYPE_CHECKING:
     from vanna import Agent
     from .report import EvaluationReport, ComparisonReport
+
+
+class _RecordingLlmMiddleware(LlmMiddleware):
+    """Internal middleware that records tool calls and LLM request metadata.
+
+    A fresh instance is created per test-case execution so recordings are
+    fully isolated between concurrent runs — no shared mutable state.
+    """
+
+    def __init__(self) -> None:
+        self.tool_calls: List[Dict[str, Any]] = []
+        self.llm_requests: List[Dict[str, Any]] = []
+        self.total_tokens: int = 0
+
+    async def before_llm_request(self, request: LlmRequest) -> LlmRequest:
+        self.llm_requests.append(
+            {
+                "message_count": len(request.messages),
+                "tool_count": len(request.tools or []),
+                "stream": request.stream,
+            }
+        )
+        return request
+
+    async def after_llm_response(
+        self, request: LlmRequest, response: LlmResponse
+    ) -> LlmResponse:
+        if response.tool_calls:
+            for tc in response.tool_calls:
+                self.tool_calls.append(
+                    {"tool_name": tc.name, "arguments": tc.arguments}
+                )
+        if response.usage:
+            self.total_tokens += response.usage.get("total_tokens", 0) or 0
+        return response
 
 
 class EvaluationRunner:
@@ -271,27 +308,52 @@ class EvaluationRunner:
     ) -> AgentResult:
         """Execute agent and capture full trajectory.
 
+        A fresh _RecordingLlmMiddleware and a per-run agent copy are created
+        for every test case so concurrent executions never share mutable state.
+
         Args:
             agent: The agent to execute
             test_case: The test case to run
 
         Returns:
-            AgentResult with all captured data
+            AgentResult with all captured data (tool_calls, llm_requests, tokens)
         """
+        from vanna.core.agent import Agent as AgentClass
+        from vanna.integrations.local import MemoryConversationStore
+
+        recorder = _RecordingLlmMiddleware()
         components: List[UiComponent] = []
-        tool_calls: List[Dict[str, Any]] = []
         error: Optional[str] = None
 
+        # Build a per-run agent that shares the same services but has its own
+        # conversation store (isolation) and the recording middleware appended.
+        eval_agent = AgentClass(
+            llm_service=agent.llm_service,
+            tool_registry=agent.tool_registry,
+            user_resolver=agent.user_resolver,
+            agent_memory=agent.agent_memory,
+            conversation_store=MemoryConversationStore(),
+            config=agent.config,
+            system_prompt_builder=agent.system_prompt_builder,
+            lifecycle_hooks=list(agent.lifecycle_hooks),
+            llm_middlewares=[*agent.llm_middlewares, recorder],
+            workflow_handler=agent.workflow_handler,
+            error_recovery_strategy=agent.error_recovery_strategy,
+            context_enrichers=list(agent.context_enrichers),
+            llm_context_enhancer=agent.llm_context_enhancer,
+            conversation_filters=list(agent.conversation_filters),
+            observability_provider=agent.observability_provider,
+            audit_logger=agent.audit_logger,
+        )
+
         try:
-            # Create request context with user info from test case
-            # This allows the agent's UserResolver to resolve the correct user
             request_context = RequestContext(
                 cookies={"user_id": test_case.user.id},
                 headers={},
                 metadata={"test_case_user": test_case.user},
             )
 
-            async for component in agent.send_message(
+            async for component in eval_agent.send_message(
                 request_context=request_context,
                 message=test_case.message,
                 conversation_id=test_case.conversation_id,
@@ -301,13 +363,11 @@ class EvaluationRunner:
         except Exception as e:
             error = str(e)
 
-        # TODO: Extract tool calls and LLM requests from observability
-        # For now, these will be empty unless we hook into observability
-
         return AgentResult(
             test_case_id=test_case.id,
             components=components,
-            tool_calls=tool_calls,
-            llm_requests=[],
+            tool_calls=recorder.tool_calls,
+            llm_requests=recorder.llm_requests,
+            total_tokens=recorder.total_tokens,
             error=error,
         )

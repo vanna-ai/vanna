@@ -151,18 +151,25 @@ class GeminiLlmService(LlmService):
                 if hasattr(chunk, "text") and chunk.text:
                     yield LlmStreamChunk(content=chunk.text)
 
-            # After stream completes, check for tool calls in accumulated response
+            # After stream completes, check ALL chunks for tool calls.
+            # Gemini 3 may return function_call in an earlier chunk (finish_reason=None)
+            # while the final chunk only carries finish_reason=STOP with no function_call.
             if accumulated_chunks:
                 final_chunk = accumulated_chunks[-1]
-                _, tool_calls = self._parse_response_chunk(final_chunk)
 
                 finish_reason = None
                 if final_chunk.candidates:
                     finish_reason = str(final_chunk.candidates[0].finish_reason).lower()
 
-                if tool_calls:
+                all_tool_calls: list = []
+                for chunk in accumulated_chunks:
+                    _, chunk_tool_calls = self._parse_response_chunk(chunk)
+                    if chunk_tool_calls:
+                        all_tool_calls.extend(chunk_tool_calls)
+
+                if all_tool_calls:
                     yield LlmStreamChunk(
-                        tool_calls=tool_calls,
+                        tool_calls=all_tool_calls,
                         finish_reason=finish_reason,
                     )
                 else:
@@ -197,6 +204,15 @@ class GeminiLlmService(LlmService):
         if request.system_prompt:
             system_instruction = request.system_prompt
 
+        # Build a lookup of tool_call_id -> thought_signature from assistant messages,
+        # needed to include thought_signature in function response parts (Gemini 3).
+        thought_sig_by_call_id: dict = {}
+        for m in request.messages:
+            if m.role == "assistant" and m.tool_calls:
+                for tc in m.tool_calls:
+                    if tc.thought_signature is not None:
+                        thought_sig_by_call_id[tc.id] = tc.thought_signature
+
         for m in request.messages:
             # Map roles: user -> user, assistant -> model, tool -> function
             if m.role == "user":
@@ -212,16 +228,17 @@ class GeminiLlmService(LlmService):
                 if m.content and m.content.strip():
                     parts.append(self._types.Part(text=m.content))
 
-                # Add tool calls if present
+                # Add tool calls if present, preserving thought_signature for Gemini 3
                 if m.tool_calls:
                     for tc in m.tool_calls:
-                        parts.append(
-                            self._types.Part(
-                                function_call=self._types.FunctionCall(
-                                    name=tc.name, args=tc.arguments
-                                )
+                        part_kwargs: dict = {
+                            "function_call": self._types.FunctionCall(
+                                name=tc.name, args=tc.arguments
                             )
-                        )
+                        }
+                        if tc.thought_signature is not None:
+                            part_kwargs["thought_signature"] = tc.thought_signature
+                        parts.append(self._types.Part(**part_kwargs))
 
                 if parts:
                     contents.append(self._types.Content(role="model", parts=parts))
@@ -238,16 +255,21 @@ class GeminiLlmService(LlmService):
                     # Extract function name from tool_call_id or use a default
                     function_name = m.tool_call_id.replace("call_", "")
 
+                    # Include thought_signature in the function response Part if
+                    # available — required by Gemini 3 for correct tool processing.
+                    fn_part_kwargs: dict = {
+                        "function_response": self._types.FunctionResponse(
+                            name=function_name, response=response_content
+                        )
+                    }
+                    ts = thought_sig_by_call_id.get(m.tool_call_id)
+                    if ts is not None:
+                        fn_part_kwargs["thought_signature"] = ts
+
                     contents.append(
                         self._types.Content(
                             role="function",
-                            parts=[
-                                self._types.Part(
-                                    function_response=self._types.FunctionResponse(
-                                        name=function_name, response=response_content
-                                    )
-                                )
-                            ],
+                            parts=[self._types.Part(**fn_part_kwargs)],
                         )
                     )
 
@@ -313,12 +335,14 @@ class GeminiLlmService(LlmService):
                 # Check for function calls
                 if hasattr(part, "function_call") and part.function_call:
                     fc = part.function_call
-                    # Convert function call to ToolCall
+                    # Convert function call to ToolCall, preserving thought_signature
+                    # required by Gemini 3 models for subsequent function call turns
                     tool_calls.append(
                         ToolCall(
                             id=f"call_{fc.name}",  # Generate an ID
                             name=fc.name,
                             arguments=dict(fc.args) if hasattr(fc, "args") else {},
+                            thought_signature=getattr(part, "thought_signature", None),
                         )
                     )
 

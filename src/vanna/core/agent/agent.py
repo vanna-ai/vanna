@@ -17,6 +17,7 @@ from vanna.components import (
     TaskTrackerUpdateComponent,
     ChatInputUpdateComponent,
     StatusCardComponent,
+    StatusIndicatorComponent,
     Task,
 )
 from .config import AgentConfig
@@ -645,8 +646,13 @@ class Agent:
 
         while tool_iterations < self.config.max_tool_iterations:
             if self.config.include_thinking_indicators and tool_iterations == 0:
-                # TODO: Yield thinking indicator
-                pass
+                yield UiComponent(  # type: ignore
+                    rich_component=StatusIndicatorComponent(
+                        status="loading",
+                        message="Thinking...",
+                        pulse=True,
+                    )
+                )
 
             # Get LLM response
             if self.config.stream_responses:

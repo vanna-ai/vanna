@@ -23,6 +23,11 @@ class ToolCall(BaseModel):
     id: str = Field(description="Unique identifier for this tool call")
     name: str = Field(description="Name of the tool to execute")
     arguments: Dict[str, Any] = Field(description="Raw arguments from LLM")
+    thought_signature: Optional[bytes] = Field(
+        default=None,
+        description="Opaque thought signature required by some LLMs (e.g. Gemini 3) "
+        "to correctly process function call results in subsequent turns.",
+    )
 
 
 class ToolContext(BaseModel):

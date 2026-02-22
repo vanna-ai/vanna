@@ -34,11 +34,13 @@ class VannaFastAPIServer:
             Configured FastAPI application
         """
         # Create FastAPI app
-        app_config = self.config.get("fastapi", {})
+        app_config = dict(self.config.get("fastapi", {}))
         app = FastAPI(
-            title="Vanna Agents API",
-            description="API server for Vanna Agents framework",
-            version="0.1.0",
+            title=app_config.pop("title", "Vanna Agents API"),
+            description=app_config.pop(
+                "description", "API server for Vanna Agents framework"
+            ),
+            version=app_config.pop("version", "0.1.0"),
             **app_config,
         )
 
