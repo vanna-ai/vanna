@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Optional, Dict, Any
 import traceback
 import uuid
 from .base import WorkflowHandler, WorkflowResult
+from vanna.core.tool import ToolContext
 
 if TYPE_CHECKING:
     from ..agent.agent import Agent
@@ -157,6 +158,10 @@ class DefaultWorkflowHandler(WorkflowHandler):
                 )
             memory_id = message.strip()[8:].strip()  # Extract ID after "/delete "
             return await self._delete_memory(agent, user, conversation, memory_id)
+
+        # Human-in-the-loop: handle "Save to memory" (thumbs up) — only save when user approved
+        if message.strip() == "/save_to_memory":
+            return await self._handle_save_to_memory(agent, user, conversation)
 
         # Don't handle other messages, pass to LLM
         return WorkflowResult(should_skip_llm=False)
@@ -781,6 +786,109 @@ class DefaultWorkflowHandler(WorkflowHandler):
                             content=f"# ❌ Error Deleting Memory\n\n"
                             f"Failed to delete memory: {str(e)}\n\n"
                             f"This may indicate an issue with the agent memory configuration.",
+                            markdown=True,
+                        ),
+                        simple_component=None,
+                    )
+                ],
+            )
+
+    async def _handle_save_to_memory(
+        self, agent: "Agent", user: "User", conversation: "Conversation"
+    ) -> WorkflowResult:
+        """Handle human-in-the-loop save: persist pending_save to agent memory when user clicks Save to memory."""
+        # Only users who can use the save tool may trigger this (e.g. admin)
+        tools = await agent.tool_registry.get_schemas(user)
+        tool_names = [t.name for t in tools]
+        if "save_question_tool_args" not in tool_names:
+            return WorkflowResult(
+                should_skip_llm=True,
+                components=[
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content="# 🔒 Cannot Save to Memory\n\n"
+                            "You do not have permission to save tool usage to memory.",
+                            markdown=True,
+                        ),
+                        simple_component=None,
+                    )
+                ],
+            )
+
+        pending = (conversation.metadata or {}).get("pending_save")
+        if not pending:
+            return WorkflowResult(
+                should_skip_llm=True,
+                components=[
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content="# ℹ️ Nothing to Save\n\n"
+                            "Save to memory is available after a successful query or chart. Run a query first, then use the **👍 Save to memory** button when you're happy with the result.",
+                            markdown=True,
+                        ),
+                        simple_component=None,
+                    )
+                ],
+            )
+
+        try:
+            if not hasattr(agent, "agent_memory") or agent.agent_memory is None:
+                return WorkflowResult(
+                    should_skip_llm=True,
+                    components=[
+                        UiComponent(
+                            rich_component=RichTextComponent(
+                                content="# ⚠️ No Memory System\n\n"
+                                "Agent memory is not configured. Cannot save.",
+                                markdown=True,
+                            ),
+                            simple_component=None,
+                        )
+                    ],
+                )
+
+            context = ToolContext(
+                user=user,
+                conversation_id=conversation.id,
+                request_id=str(uuid.uuid4()),
+                agent_memory=agent.agent_memory,
+            )
+            await agent.agent_memory.save_tool_usage(
+                question=pending["question"],
+                tool_name=pending["tool_name"],
+                args=pending["args"],
+                context=context,
+                success=True,
+            )
+
+            # Clear pending so the same run cannot be saved again
+            if conversation.metadata is None:
+                conversation.metadata = {}
+            conversation.metadata.pop("pending_save", None)
+            if agent.config.auto_save_conversations:
+                await agent.conversation_store.update_conversation(conversation)
+
+            return WorkflowResult(
+                should_skip_llm=True,
+                components=[
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content="# ✅ Saved to Memory\n\n"
+                            "This question and the tool used have been saved. I'll use similar patterns for future questions.",
+                            markdown=True,
+                        ),
+                        simple_component=None,
+                    )
+                ],
+            )
+        except Exception as e:
+            traceback.print_exc()
+            return WorkflowResult(
+                should_skip_llm=True,
+                components=[
+                    UiComponent(
+                        rich_component=RichTextComponent(
+                            content=f"# ❌ Failed to Save\n\nFailed to save to memory: {str(e)}",
                             markdown=True,
                         ),
                         simple_component=None,

@@ -121,3 +121,11 @@ class AgentConfig(BaseModel):
     max_tokens: Optional[int] = Field(default=None, gt=0)
     ui_features: UiFeatures = Field(default_factory=UiFeatures)
     audit_config: AuditConfig = Field(default_factory=AuditConfig)
+
+    # Human-in-the-loop memory: when True, only save question–tool–args when the user
+    # clicks "Save to memory" (thumbs up) after seeing the result. Prevents poisoned
+    # memory from the LLM saving incorrect patterns.
+    require_human_approval_for_memory: bool = Field(
+        default=False,
+        description="If True, tool usage is saved to memory only when the user approves via the Save to memory button; the LLM must not call save_question_tool_args.",
+    )
