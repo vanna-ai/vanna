@@ -41,6 +41,28 @@ class MockToolRegistry:
         return []
 
 
+class MockToolRegistryWithSave:
+    """Mock tool registry that includes save_question_tool_args (for save_to_memory permission)."""
+
+    async def get_schemas(self, user):
+        """Return schemas including save_question_tool_args."""
+        return [type("ToolSchema", (), {"name": "save_question_tool_args"})()]
+
+
+class MockConfig:
+    """Mock agent config for save_to_memory workflow tests."""
+
+    auto_save_conversations = False
+
+
+class MockConversationStore:
+    """Mock conversation store for save_to_memory workflow tests."""
+
+    async def update_conversation(self, conversation):
+        """No-op for tests."""
+        pass
+
+
 class MockConversation:
     """Mock conversation for testing."""
 
@@ -83,6 +105,33 @@ def agent_with_memory():
 def agent_without_memory():
     """Create a mock agent without memory."""
     return MockAgent(agent_memory=None)
+
+
+@pytest.fixture
+def agent_with_save_capability():
+    """Create a mock agent with memory and save_question_tool_args permission for save_to_memory tests."""
+    memory = DemoAgentMemory(max_items=100)
+    agent = MockAgent(agent_memory=memory, tool_registry=MockToolRegistryWithSave())
+    agent.config = MockConfig()
+    agent.conversation_store = MockConversationStore()
+    return agent
+
+
+@pytest.fixture
+def conversation_with_pending_save(admin_test_user):
+    """Conversation with pending_save set (simulates user ran query and is about to click Save to memory)."""
+    return Conversation(
+        id=str(uuid.uuid4()),
+        user=admin_test_user,
+        messages=[],
+        metadata={
+            "pending_save": {
+                "question": "What were total sales last month?",
+                "tool_name": "run_sql",
+                "args": {"sql": "SELECT SUM(amount) FROM sales WHERE month = 10"},
+            }
+        },
+    )
 
 
 class TestWorkflowCommands:
@@ -538,6 +587,132 @@ class TestMemoryDeletion:
         assert result.should_skip_llm is True
         content = result.components[0].rich_component.content
         assert "Memory Deleted" in content or "Memory Not Found" in content
+
+
+class TestSaveToMemoryWorkflow:
+    """Test human-in-the-loop save_to_memory workflow (thumbs up -> save question-SQL pair)."""
+
+    @pytest.mark.asyncio
+    async def test_save_to_memory_without_permission(
+        self,
+        workflow_handler,
+        agent_with_memory,
+        test_user,
+        test_conversation,
+    ):
+        """User without save_question_tool_args gets permission denied."""
+        # agent_with_memory uses MockToolRegistry() which returns [] - no save tool
+        conv = Conversation(
+            id=test_conversation.id,
+            user=test_user,
+            messages=[],
+            metadata={
+                "pending_save": {"question": "Q", "tool_name": "run_sql", "args": {}}
+            },
+        )
+        result = await workflow_handler.try_handle(
+            agent_with_memory, test_user, conv, "/save_to_memory"
+        )
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "Cannot Save" in content or "permission" in content.lower()
+
+    @pytest.mark.asyncio
+    async def test_save_to_memory_nothing_to_save(
+        self,
+        workflow_handler,
+        agent_with_save_capability,
+        admin_test_user,
+        test_conversation,
+    ):
+        """No pending_save in conversation -> Nothing to Save."""
+        conv = Conversation(
+            id=test_conversation.id,
+            user=admin_test_user,
+            messages=[],
+            metadata={},
+        )
+        result = await workflow_handler.try_handle(
+            agent_with_save_capability, admin_test_user, conv, "/save_to_memory"
+        )
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "Nothing to Save" in content
+
+    @pytest.mark.asyncio
+    async def test_save_to_memory_no_agent_memory(
+        self,
+        workflow_handler,
+        admin_test_user,
+        conversation_with_pending_save,
+    ):
+        """Agent without memory capability -> No Memory System."""
+        agent = MockAgent(agent_memory=None, tool_registry=MockToolRegistryWithSave())
+        agent.config = MockConfig()
+        agent.conversation_store = MockConversationStore()
+        result = await workflow_handler.try_handle(
+            agent, admin_test_user, conversation_with_pending_save, "/save_to_memory"
+        )
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "No Memory System" in content
+
+    @pytest.mark.asyncio
+    async def test_save_to_memory_success(
+        self,
+        workflow_handler,
+        agent_with_save_capability,
+        admin_test_user,
+        conversation_with_pending_save,
+    ):
+        """User validates (clicks save) -> pending_save is persisted to agent memory."""
+        pending = conversation_with_pending_save.metadata["pending_save"]
+        result = await workflow_handler.try_handle(
+            agent_with_save_capability,
+            admin_test_user,
+            conversation_with_pending_save,
+            "/save_to_memory",
+        )
+        assert result.should_skip_llm is True
+        content = result.components[0].rich_component.content
+        assert "Saved to Memory" in content
+
+        # Verify memory was actually saved
+        context = ToolContext(
+            user=admin_test_user,
+            conversation_id=conversation_with_pending_save.id,
+            request_id=str(uuid.uuid4()),
+            agent_memory=agent_with_save_capability.agent_memory,
+        )
+        recent = await agent_with_save_capability.agent_memory.get_recent_memories(
+            context, limit=1
+        )
+        assert len(recent) == 1
+        assert recent[0].question == pending["question"]
+        assert recent[0].tool_name == pending["tool_name"]
+        assert recent[0].args == pending["args"]
+
+        # Pending should be cleared
+        assert conversation_with_pending_save.metadata.get("pending_save") is None
+
+    @pytest.mark.asyncio
+    async def test_save_to_memory_command_routing(
+        self,
+        workflow_handler,
+        agent_with_save_capability,
+        admin_test_user,
+        conversation_with_pending_save,
+    ):
+        """try_handle routes /save_to_memory to _handle_save_to_memory and skips LLM."""
+        result = await workflow_handler.try_handle(
+            agent_with_save_capability,
+            admin_test_user,
+            conversation_with_pending_save,
+            "/save_to_memory",
+        )
+        assert result.should_skip_llm is True
+        assert len(result.components) == 1
+        assert "Saved to Memory" in result.components[0].rich_component.content
 
 
 class TestWorkflowComponentStructure:

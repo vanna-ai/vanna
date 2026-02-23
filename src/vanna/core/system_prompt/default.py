@@ -32,7 +32,11 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
         self.base_prompt = base_prompt
 
     async def build_system_prompt(
-        self, user: "User", tools: List["ToolSchema"]
+        self,
+        user: "User",
+        tools: List["ToolSchema"],
+        *,
+        require_human_approval_for_memory: bool = False,
     ) -> Optional[str]:
         """
         Build a system prompt with memory workflow instructions.
@@ -40,6 +44,8 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
         Args:
             user: The user making the request
             tools: List of tools available to the user
+            require_human_approval_for_memory: If True, do not instruct the LLM to call
+                save_question_tool_args; the user saves via the Save to memory button only.
 
         Returns:
             System prompt string with memory workflow instructions if applicable
@@ -52,6 +58,8 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
         has_search = "search_saved_correct_tool_uses" in tool_names
         has_save = "save_question_tool_args" in tool_names
         has_text_memory = "save_text_memory" in tool_names
+        # When human approval is required, we do not tell the LLM to save; only the button does
+        llm_may_save = has_save and not require_human_approval_for_memory
 
         # Get today's date
         today_date = datetime.now().strftime("%Y-%m-%d")
@@ -91,11 +99,18 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
                 ]
             )
 
-        if has_save:
+        if llm_may_save:
             prompt_parts.extend(
                 [
                     "",
                     "• AFTER successfully executing a tool that produces correct and useful results, you MUST call save_question_tool_args to save the successful pattern for future use.",
+                ]
+            )
+        elif has_save and require_human_approval_for_memory:
+            prompt_parts.extend(
+                [
+                    "",
+                    "• Do NOT call save_question_tool_args. The user will save successful patterns using the **👍 Save to memory** button after they approve the result. Only user-approved runs are saved.",
                 ]
             )
 
@@ -110,10 +125,15 @@ class DefaultSystemPromptBuilder(SystemPromptBuilder):
                     else "",
                     "  • Then: Execute the appropriate tool(s) based on search results and the question",
                     f'  • Finally: If successful, call save_question_tool_args(question="user\'s question", tool_name="tool_used", args={{the args you used}})'
-                    if has_save
+                    if llm_may_save
                     else "",
                     "",
-                    "Do NOT skip the search step, even if you think you know how to answer. Do NOT forget to save successful executions."
+                    "Do NOT skip the search step, even if you think you know how to answer."
+                    + (
+                        " Do NOT forget to save successful executions."
+                        if llm_may_save
+                        else ""
+                    )
                     if has_search
                     else "",
                     "",

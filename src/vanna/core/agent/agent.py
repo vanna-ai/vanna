@@ -18,6 +18,7 @@ from vanna.components import (
     ChatInputUpdateComponent,
     StatusCardComponent,
     Task,
+    ButtonGroupComponent,
 )
 from .config import AgentConfig
 from vanna.core.storage import ConversationStore
@@ -597,7 +598,9 @@ class Agent:
             )
 
         system_prompt = await self.system_prompt_builder.build_system_prompt(
-            user, tool_schemas
+            user,
+            tool_schemas,
+            require_human_approval_for_memory=self.config.require_human_approval_for_memory,
         )
 
         # Enhance system prompt with LLM context enhancer
@@ -983,6 +986,47 @@ class Agent:
                         else:
                             # Success results are always shown if they exist
                             yield result.ui_component
+
+                            # Human-in-the-loop: offer "Save to memory" only when user must approve
+                            if (
+                                self.config.require_human_approval_for_memory
+                                and result.success
+                                and tool_call.name in ("run_sql", "visualize_data")
+                                and "save_question_tool_args"
+                                in [t.name for t in tool_schemas]
+                            ):
+                                # Question for this turn is the last user message
+                                user_msgs = [
+                                    m for m in conversation.messages if m.role == "user"
+                                ]
+                                question = user_msgs[-1].content if user_msgs else ""
+                                if conversation.metadata is None:
+                                    conversation.metadata = {}
+                                conversation.metadata["pending_save"] = {
+                                    "question": question,
+                                    "tool_name": tool_call.name,
+                                    "args": dict(tool_call.arguments)
+                                    if tool_call.arguments
+                                    else {},
+                                }
+                                yield UiComponent(
+                                    rich_component=ButtonGroupComponent(
+                                        buttons=[
+                                            {
+                                                "label": "👍 Save to memory",
+                                                "action": "/save_to_memory",
+                                                "variant": "success",
+                                            }
+                                        ],
+                                        orientation="horizontal",
+                                        spacing="small",
+                                    ),
+                                    simple_component=None,
+                                )
+                                if self.config.auto_save_conversations:
+                                    await self.conversation_store.update_conversation(
+                                        conversation
+                                    )
 
                     # Collect tool result data
                     tool_results.append(

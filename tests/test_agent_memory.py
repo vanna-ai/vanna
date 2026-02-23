@@ -444,3 +444,78 @@ class TestLocalAgentMemory:
         assert all(
             "fiscal year" in m.content or "MRR" in m.content for m in text_memories
         )
+
+
+class TestUserValidatedMemoryPattern:
+    """Test that agent memory correctly stores and retrieves user-validated question-SQL pairs.
+
+    When human-in-the-loop is enabled, the workflow saves (question, tool_name, args)
+    only after the user clicks 'Save to memory'. These tests verify the memory layer
+    persists and retrieves that shape correctly.
+    """
+
+    @pytest.mark.asyncio
+    async def test_save_user_validated_question_sql_then_search(self, test_user):
+        """Save a user-validated question-SQL pair (as workflow would after thumbs up), then search."""
+        memory = DemoAgentMemory(max_items=100)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        # Simulate what the workflow saves after user clicks "Save to memory"
+        question = "What were total sales last month?"
+        tool_name = "run_sql"
+        args = {"sql": "SELECT SUM(amount) FROM sales WHERE month = 10"}
+
+        await memory.save_tool_usage(
+            question=question,
+            tool_name=tool_name,
+            args=args,
+            context=test_context,
+            success=True,
+        )
+
+        results = await memory.search_similar_usage(
+            question="Show me last month's total sales",
+            context=test_context,
+            limit=5,
+            similarity_threshold=0.3,
+        )
+
+        assert len(results) > 0
+        assert results[0].memory.question == question
+        assert results[0].memory.tool_name == tool_name
+        assert results[0].memory.args == args
+        assert results[0].similarity_score > 0.3
+
+    @pytest.mark.asyncio
+    async def test_save_user_validated_visualize_then_search(self, test_user):
+        """Save a user-validated question-chart pair (visualize_data), then search."""
+        memory = DemoAgentMemory(max_items=100)
+        test_context = create_test_context(test_user, memory)
+
+        await memory.clear_memories(context=test_context)
+
+        question = "Chart revenue by month"
+        tool_name = "visualize_data"
+        args = {"data": "revenue_by_month", "chart_type": "bar"}
+
+        await memory.save_tool_usage(
+            question=question,
+            tool_name=tool_name,
+            args=args,
+            context=test_context,
+            success=True,
+        )
+
+        results = await memory.search_similar_usage(
+            question="Show me a chart of revenue by month",
+            context=test_context,
+            limit=5,
+            similarity_threshold=0.3,
+        )
+
+        assert len(results) > 0
+        assert results[0].memory.question == question
+        assert results[0].memory.tool_name == tool_name
+        assert results[0].memory.args == args
