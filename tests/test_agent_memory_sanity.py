@@ -522,7 +522,7 @@ class TestFAISSAgentMemory:
             memory = FAISSAgentMemory(persist_path=temp_dir)
 
             assert memory is not None
-            assert memory.persist_path == temp_dir
+            assert memory.index_path == temp_dir
         except ImportError:
             pytest.skip("FAISS not installed")
 

@@ -506,31 +506,49 @@ class TestClickHouseRunner:
 
     def test_clickhouse_runner_import(self):
         """Test that ClickHouseRunner can be imported."""
-        from vanna.integrations.clickhouse import ClickHouseRunner
+        try:
+            from vanna.integrations.clickhouse import ClickHouseRunner
+        except ImportError:
+            pytest.skip("clickhouse_connect not installed")
 
         assert ClickHouseRunner is not None
 
     def test_clickhouse_runner_implements_sql_runner(self):
         """Test that ClickHouseRunner implements SqlRunner interface."""
-        from vanna.integrations.clickhouse import ClickHouseRunner
+        try:
+            from vanna.integrations.clickhouse import ClickHouseRunner
+        except ImportError:
+            pytest.skip("clickhouse_connect not installed")
         from vanna.capabilities.sql_runner import SqlRunner
 
         assert issubclass(ClickHouseRunner, SqlRunner)
 
     def test_clickhouse_runner_has_run_sql_method(self):
         """Test that ClickHouseRunner implements run_sql method."""
-        from vanna.integrations.clickhouse import ClickHouseRunner
+        try:
+            from vanna.integrations.clickhouse import ClickHouseRunner
+        except ImportError:
+            pytest.skip("clickhouse_connect not installed")
 
         assert hasattr(ClickHouseRunner, "run_sql")
         assert not getattr(ClickHouseRunner.run_sql, "__isabstractmethod__", False)
 
     def test_clickhouse_runner_instantiation(self):
         """Test that ClickHouseRunner can be instantiated with required parameters."""
-        from vanna.integrations.clickhouse import ClickHouseRunner
+        try:
+            from vanna.integrations.clickhouse import ClickHouseRunner
+        except ImportError:
+            pytest.skip("clickhouse_connect not installed")
 
-        runner = ClickHouseRunner(
-            host="localhost", database="test-db", user="test-user", password="test-pass"
-        )
+        try:
+            runner = ClickHouseRunner(
+                host="localhost",
+                database="test-db",
+                user="test-user",
+                password="test-pass",
+            )
+        except ImportError:
+            pytest.skip("clickhouse_connect not installed")
         assert runner is not None
         assert runner.host == "localhost"
 
@@ -540,31 +558,46 @@ class TestOracleRunner:
 
     def test_oracle_runner_import(self):
         """Test that OracleRunner can be imported."""
-        from vanna.integrations.oracle import OracleRunner
+        try:
+            from vanna.integrations.oracle import OracleRunner
+        except ImportError:
+            pytest.skip("oracledb not installed")
 
         assert OracleRunner is not None
 
     def test_oracle_runner_implements_sql_runner(self):
         """Test that OracleRunner implements SqlRunner interface."""
-        from vanna.integrations.oracle import OracleRunner
+        try:
+            from vanna.integrations.oracle import OracleRunner
+        except ImportError:
+            pytest.skip("oracledb not installed")
         from vanna.capabilities.sql_runner import SqlRunner
 
         assert issubclass(OracleRunner, SqlRunner)
 
     def test_oracle_runner_has_run_sql_method(self):
         """Test that OracleRunner implements run_sql method."""
-        from vanna.integrations.oracle import OracleRunner
+        try:
+            from vanna.integrations.oracle import OracleRunner
+        except ImportError:
+            pytest.skip("oracledb not installed")
 
         assert hasattr(OracleRunner, "run_sql")
         assert not getattr(OracleRunner.run_sql, "__isabstractmethod__", False)
 
     def test_oracle_runner_instantiation(self):
         """Test that OracleRunner can be instantiated with required parameters."""
-        from vanna.integrations.oracle import OracleRunner
+        try:
+            from vanna.integrations.oracle import OracleRunner
+        except ImportError:
+            pytest.skip("oracledb not installed")
 
-        runner = OracleRunner(
-            user="test-user", password="test-pass", dsn="localhost:1521/ORCL"
-        )
+        try:
+            runner = OracleRunner(
+                user="test-user", password="test-pass", dsn="localhost:1521/ORCL"
+            )
+        except ImportError:
+            pytest.skip("oracledb not installed")
         assert runner is not None
         assert runner.user == "test-user"
 
@@ -646,31 +679,46 @@ class TestMSSQLRunner:
 
     def test_mssql_runner_import(self):
         """Test that MSSQLRunner can be imported."""
-        from vanna.integrations.mssql import MSSQLRunner
+        try:
+            from vanna.integrations.mssql import MSSQLRunner
+        except ImportError:
+            pytest.skip("pyodbc not installed")
 
         assert MSSQLRunner is not None
 
     def test_mssql_runner_implements_sql_runner(self):
         """Test that MSSQLRunner implements SqlRunner interface."""
-        from vanna.integrations.mssql import MSSQLRunner
+        try:
+            from vanna.integrations.mssql import MSSQLRunner
+        except ImportError:
+            pytest.skip("pyodbc not installed")
         from vanna.capabilities.sql_runner import SqlRunner
 
         assert issubclass(MSSQLRunner, SqlRunner)
 
     def test_mssql_runner_has_run_sql_method(self):
         """Test that MSSQLRunner implements run_sql method."""
-        from vanna.integrations.mssql import MSSQLRunner
+        try:
+            from vanna.integrations.mssql import MSSQLRunner
+        except ImportError:
+            pytest.skip("pyodbc not installed")
 
         assert hasattr(MSSQLRunner, "run_sql")
         assert not getattr(MSSQLRunner.run_sql, "__isabstractmethod__", False)
 
     def test_mssql_runner_instantiation(self):
         """Test that MSSQLRunner can be instantiated with ODBC connection string."""
-        from vanna.integrations.mssql import MSSQLRunner
+        try:
+            from vanna.integrations.mssql import MSSQLRunner
+        except ImportError:
+            pytest.skip("pyodbc not installed")
 
-        runner = MSSQLRunner(
-            odbc_conn_str="Driver={SQL Server};Server=localhost;Database=test;Trusted_Connection=yes;"
-        )
+        try:
+            runner = MSSQLRunner(
+                odbc_conn_str="Driver={SQL Server};Server=localhost;Database=test;Trusted_Connection=yes;"
+            )
+        except ImportError:
+            pytest.skip("pyodbc not installed")
         assert runner is not None
 
 
@@ -679,29 +727,46 @@ class TestPrestoRunner:
 
     def test_presto_runner_import(self):
         """Test that PrestoRunner can be imported."""
-        from vanna.integrations.presto import PrestoRunner
+        try:
+            from vanna.integrations.presto import PrestoRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
         assert PrestoRunner is not None
 
     def test_presto_runner_implements_sql_runner(self):
         """Test that PrestoRunner implements SqlRunner interface."""
-        from vanna.integrations.presto import PrestoRunner
+        try:
+            from vanna.integrations.presto import PrestoRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
         from vanna.capabilities.sql_runner import SqlRunner
 
         assert issubclass(PrestoRunner, SqlRunner)
 
     def test_presto_runner_has_run_sql_method(self):
         """Test that PrestoRunner implements run_sql method."""
-        from vanna.integrations.presto import PrestoRunner
+        try:
+            from vanna.integrations.presto import PrestoRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
         assert hasattr(PrestoRunner, "run_sql")
         assert not getattr(PrestoRunner.run_sql, "__isabstractmethod__", False)
 
     def test_presto_runner_instantiation(self):
         """Test that PrestoRunner can be instantiated with required parameters."""
-        from vanna.integrations.presto import PrestoRunner
+        try:
+            from vanna.integrations.presto import PrestoRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
-        runner = PrestoRunner(host="localhost", user="test-user", password="test-pass")
+        try:
+            runner = PrestoRunner(
+                host="localhost", user="test-user", password="test-pass"
+            )
+        except ImportError:
+            pytest.skip("pyhive not installed")
         assert runner is not None
         assert runner.host == "localhost"
 
@@ -711,28 +776,45 @@ class TestHiveRunner:
 
     def test_hive_runner_import(self):
         """Test that HiveRunner can be imported."""
-        from vanna.integrations.hive import HiveRunner
+        try:
+            from vanna.integrations.hive import HiveRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
         assert HiveRunner is not None
 
     def test_hive_runner_implements_sql_runner(self):
         """Test that HiveRunner implements SqlRunner interface."""
-        from vanna.integrations.hive import HiveRunner
+        try:
+            from vanna.integrations.hive import HiveRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
         from vanna.capabilities.sql_runner import SqlRunner
 
         assert issubclass(HiveRunner, SqlRunner)
 
     def test_hive_runner_has_run_sql_method(self):
         """Test that HiveRunner implements run_sql method."""
-        from vanna.integrations.hive import HiveRunner
+        try:
+            from vanna.integrations.hive import HiveRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
         assert hasattr(HiveRunner, "run_sql")
         assert not getattr(HiveRunner.run_sql, "__isabstractmethod__", False)
 
     def test_hive_runner_instantiation(self):
         """Test that HiveRunner can be instantiated with required parameters."""
-        from vanna.integrations.hive import HiveRunner
+        try:
+            from vanna.integrations.hive import HiveRunner
+        except ImportError:
+            pytest.skip("pyhive not installed")
 
-        runner = HiveRunner(host="localhost", user="test-user", password="test-pass")
+        try:
+            runner = HiveRunner(
+                host="localhost", user="test-user", password="test-pass"
+            )
+        except ImportError:
+            pytest.skip("pyhive not installed")
         assert runner is not None
         assert runner.host == "localhost"
