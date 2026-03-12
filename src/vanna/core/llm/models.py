@@ -44,7 +44,7 @@ class LlmResponse(BaseModel):
     content: Optional[str] = None
     tool_calls: Optional[List[ToolCall]] = None
     finish_reason: Optional[str] = None
-    usage: Optional[Dict[str, int]] = None
+    usage: Optional[Dict[str, Any]] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def is_tool_call(self) -> bool:
