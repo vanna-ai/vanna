@@ -5,8 +5,13 @@ This package provides a flexible framework for creating conversational AI agents
 with tool execution, conversation management, and user scoping.
 """
 
-# Version information
-__version__ = "0.1.0"
+# Version information — read from pyproject.toml via installed package metadata
+try:
+    from importlib.metadata import version as _pkg_version
+
+    __version__ = _pkg_version("vanna")
+except Exception:
+    __version__ = "0.0.0"
 
 # Import core framework components
 from .core import (
