@@ -13,6 +13,8 @@ class OpenAI_Chat(VannaBase):
         self.temperature = 0.7
 
         if "temperature" in config:
+            # Allow None to omit the parameter entirely for models that
+            # only support the API default (e.g. o3-mini, gpt-5-nano).
             self.temperature = config["temperature"]
 
         if "api_type" in config:
@@ -63,6 +65,13 @@ class OpenAI_Chat(VannaBase):
         for message in prompt:
             num_tokens += len(message["content"]) / 4
 
+        # Only include temperature when explicitly set (not None).
+        # Some models (e.g. o3-mini, gpt-5-nano) reject any temperature
+        # value and require the parameter to be omitted entirely.
+        extra_kwargs = {}
+        if self.temperature is not None:
+            extra_kwargs["temperature"] = self.temperature
+
         if kwargs.get("model", None) is not None:
             model = kwargs.get("model", None)
             print(f"Using model {model} for {num_tokens} tokens (approx)")
@@ -70,7 +79,7 @@ class OpenAI_Chat(VannaBase):
                 model=model,
                 messages=prompt,
                 stop=None,
-                temperature=self.temperature,
+                **extra_kwargs,
             )
         elif kwargs.get("engine", None) is not None:
             engine = kwargs.get("engine", None)
@@ -79,7 +88,7 @@ class OpenAI_Chat(VannaBase):
                 engine=engine,
                 messages=prompt,
                 stop=None,
-                temperature=self.temperature,
+                **extra_kwargs,
             )
         elif self.config is not None and "engine" in self.config:
             print(
@@ -89,7 +98,7 @@ class OpenAI_Chat(VannaBase):
                 engine=self.config["engine"],
                 messages=prompt,
                 stop=None,
-                temperature=self.temperature,
+                **extra_kwargs,
             )
         elif self.config is not None and "model" in self.config:
             print(
@@ -99,7 +108,7 @@ class OpenAI_Chat(VannaBase):
                 model=self.config["model"],
                 messages=prompt,
                 stop=None,
-                temperature=self.temperature,
+                **extra_kwargs,
             )
         else:
             if num_tokens > 3500:
@@ -112,7 +121,7 @@ class OpenAI_Chat(VannaBase):
                 model=model,
                 messages=prompt,
                 stop=None,
-                temperature=self.temperature,
+                **extra_kwargs,
             )
 
         # Find the first response from the chatbot that has text in it (some responses may not have text)
