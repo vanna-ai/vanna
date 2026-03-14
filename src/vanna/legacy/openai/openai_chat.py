@@ -10,6 +10,7 @@ class OpenAI_Chat(VannaBase):
         VannaBase.__init__(self, config=config)
 
         # default parameters - can be overrided using config
+        # Set to None to omit temperature from requests (required for some models like o3-mini, gpt-5-nano)
         self.temperature = 0.7
 
         if "temperature" in config:
@@ -50,6 +51,19 @@ class OpenAI_Chat(VannaBase):
     def assistant_message(self, message: str) -> any:
         return {"role": "assistant", "content": message}
 
+    def _build_create_kwargs(self, **kwargs) -> dict:
+        """Build kwargs for chat.completions.create, omitting temperature if None."""
+        create_kwargs = {
+            "messages": kwargs.pop("messages"),
+            "stop": None,
+        }
+        create_kwargs.update(kwargs)
+        # Only include temperature if it is not None; some models (e.g. o3-mini,
+        # gpt-5-nano on Azure) reject requests where temperature != default.
+        if self.temperature is not None:
+            create_kwargs["temperature"] = self.temperature
+        return create_kwargs
+
     def submit_prompt(self, prompt, **kwargs) -> str:
         if prompt is None:
             raise Exception("Prompt is None")
@@ -67,39 +81,27 @@ class OpenAI_Chat(VannaBase):
             model = kwargs.get("model", None)
             print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
-                model=model,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
+                **self._build_create_kwargs(model=model, messages=prompt)
             )
         elif kwargs.get("engine", None) is not None:
             engine = kwargs.get("engine", None)
             print(f"Using model {engine} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
-                engine=engine,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
+                **self._build_create_kwargs(engine=engine, messages=prompt)
             )
         elif self.config is not None and "engine" in self.config:
             print(
                 f"Using engine {self.config['engine']} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
-                engine=self.config["engine"],
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
+                **self._build_create_kwargs(engine=self.config["engine"], messages=prompt)
             )
         elif self.config is not None and "model" in self.config:
             print(
                 f"Using model {self.config['model']} for {num_tokens} tokens (approx)"
             )
             response = self.client.chat.completions.create(
-                model=self.config["model"],
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
+                **self._build_create_kwargs(model=self.config["model"], messages=prompt)
             )
         else:
             if num_tokens > 3500:
@@ -109,10 +111,7 @@ class OpenAI_Chat(VannaBase):
 
             print(f"Using model {model} for {num_tokens} tokens (approx)")
             response = self.client.chat.completions.create(
-                model=model,
-                messages=prompt,
-                stop=None,
-                temperature=self.temperature,
+                **self._build_create_kwargs(model=model, messages=prompt)
             )
 
         # Find the first response from the chatbot that has text in it (some responses may not have text)
