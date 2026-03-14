@@ -92,7 +92,7 @@ All streamed in real-time to your web component.
 **Framework-agnostic** — React, Vue, plain HTML
 
 ### ✅ Works With Your Stack
-**Any LLM:** OpenAI, Anthropic, Ollama, Azure, Google Gemini, AWS Bedrock, Mistral, Others
+**Any LLM:** OpenAI, Anthropic, Ollama, Azure, Google Gemini, AWS Bedrock, Mistral, MiniMax, Others
 **Any Database:** PostgreSQL, MySQL, Snowflake, BigQuery, Redshift, SQLite, Oracle, SQL Server, DuckDB, ClickHouse, Others
 **Your Auth System:** Bring your own — cookies, JWTs, OAuth tokens
 **Your Framework:** FastAPI, Flask
