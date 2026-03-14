@@ -145,6 +145,11 @@ class VannaBase(ABC):
 
                 try:
                     self.log(title="Running Intermediate SQL", message=intermediate_sql)
+                    if not self.is_sql_valid(intermediate_sql):
+                        raise ValueError(
+                            "Intermediate SQL is not a valid SELECT statement. "
+                            "Override is_sql_valid() if you need to allow other statement types."
+                        )
                     df = self.run_sql(intermediate_sql)
 
                     prompt = self.get_sql_prompt(
@@ -1732,6 +1737,14 @@ class VannaBase(ABC):
         except Exception as e:
             print(e)
             return None, None, None
+
+        # If the SQL is not valid (e.g. the LLM returned a plain-text explanation
+        # instead of a query), surface the LLM response to the user and stop early
+        # rather than attempting to display or execute it.
+        if not self.is_sql_valid(sql=sql):
+            if print_results:
+                print(sql)
+            return sql, None, None
 
         if print_results:
             try:
