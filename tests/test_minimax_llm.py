@@ -17,12 +17,12 @@ class TestMinimaxLlmServiceInitialization:
         from vanna.integrations.minimax import MinimaxLlmService
 
         service = MinimaxLlmService(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             api_key="test-key",
             base_url="https://api.minimax.io/v1",
         )
 
-        assert service.model == "MiniMax-M2.5"
+        assert service.model == "MiniMax-M2.7"
 
         mock_openai.assert_called_once()
         call_kwargs = mock_openai.call_args[1]
@@ -31,12 +31,12 @@ class TestMinimaxLlmServiceInitialization:
 
     @patch("openai.OpenAI")
     def test_init_default_model(self, mock_openai):
-        """Test that default model is MiniMax-M2.5."""
+        """Test that default model is MiniMax-M2.7."""
         from vanna.integrations.minimax import MinimaxLlmService
 
         service = MinimaxLlmService(api_key="test-key")
 
-        assert service.model == "MiniMax-M2.5"
+        assert service.model == "MiniMax-M2.7"
 
     @patch("openai.OpenAI")
     def test_init_default_base_url(self, mock_openai):
