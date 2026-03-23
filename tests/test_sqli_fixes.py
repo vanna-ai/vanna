@@ -1,10 +1,23 @@
 import unittest
 from unittest.mock import MagicMock, patch
-import pandas as pd
-from vanna.legacy.google.bigquery_vector import BigQuery_VectorStore
-from vanna.legacy.pgvector.pgvector import PG_VectorStore
+
+try:
+    import pandas as pd
+    from google.cloud import bigquery
+    from vanna.legacy.google.bigquery_vector import BigQuery_VectorStore
+    HAS_BIGQUERY = True
+except ImportError:
+    HAS_BIGQUERY = False
+
+try:
+    from vanna.legacy.pgvector.pgvector import PG_VectorStore
+    HAS_PGVECTOR = True
+except ImportError:
+    HAS_PGVECTOR = False
 
 class TestSQLIFixes(unittest.TestCase):
+    
+    @unittest.skipIf(not HAS_BIGQUERY, "google-cloud-bigquery not installed")
     @patch('google.cloud.bigquery.Client')
     @patch('google.cloud.bigquery.Dataset')
     @patch('google.cloud.bigquery.Table')
@@ -32,6 +45,7 @@ class TestSQLIFixes(unittest.TestCase):
             self.assertEqual(job_config.query_parameters[0].name, "id")
             self.assertEqual(job_config.query_parameters[0].value, test_id)
 
+    @unittest.skipIf(not HAS_BIGQUERY, "google-cloud-bigquery not installed")
     @patch('google.cloud.bigquery.Client')
     @patch('google.cloud.bigquery.Dataset')
     @patch('google.cloud.bigquery.Table')
@@ -66,6 +80,7 @@ class TestSQLIFixes(unittest.TestCase):
                     break
             self.assertTrue(found)
 
+    @unittest.skipIf(not HAS_PGVECTOR, "langchain_postgres or sqlalchemy not installed")
     @patch('vanna.legacy.pgvector.pgvector.create_engine')
     @patch('vanna.legacy.pgvector.pgvector.PGVector')
     def test_pgvector_remove_collection_parameterized(self, mock_pgvector, mock_create_engine):
