@@ -35,11 +35,11 @@ class OpenAI_Chat(VannaBase):
             return
 
         if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60.0)
             return
 
         if "api_key" in config:
-            self.client = OpenAI(api_key=config["api_key"])
+            self.client = OpenAI(api_key=config["api_key"], timeout=60.0)
 
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}

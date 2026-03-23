@@ -30,7 +30,7 @@ class DeepSeekChat(VannaBase):
         api_key = config["api_key"]
         model = config["model"]
         self.model = model
-        self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+        self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1", timeout=60.0)
 
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}

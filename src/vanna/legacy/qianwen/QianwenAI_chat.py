@@ -35,7 +35,7 @@ class QianWenAI_Chat(VannaBase):
             return
 
         if config is None and client is None:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60.0)
             return
 
         if "api_key" in config:
@@ -43,10 +43,11 @@ class QianWenAI_Chat(VannaBase):
                 self.client = OpenAI(
                     api_key=config["api_key"],
                     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+                    timeout=60.0,
                 )
             else:
                 self.client = OpenAI(
-                    api_key=config["api_key"], base_url=config["base_url"]
+                    api_key=config["api_key"], base_url=config["base_url"], timeout=60.0
                 )
 
     def system_message(self, message: str) -> any:

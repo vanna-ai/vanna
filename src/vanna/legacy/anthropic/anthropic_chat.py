@@ -24,11 +24,11 @@ class Anthropic_Chat(VannaBase):
             return
 
         if config is None and client is None:
-            self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+            self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"), timeout=60.0)
             return
 
         if "api_key" in config:
-            self.client = anthropic.Anthropic(api_key=config["api_key"])
+            self.client = anthropic.Anthropic(api_key=config["api_key"], timeout=60.0)
 
     def system_message(self, message: str) -> any:
         return {"role": "system", "content": message}
