@@ -148,10 +148,18 @@ class BigQuery_VectorStore(VannaBase):
                 options => '{{"use_brute_force":true}}'
             )
         WHERE
-            base.training_data_type = '{training_data_type}'
+            base.training_data_type = @training_data_type
         """
 
-        results = self.conn.query(query).result().to_dataframe()
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter(
+                    "training_data_type", "STRING", training_data_type
+                ),
+            ]
+        )
+
+        results = self.conn.query(query, job_config=job_config).result().to_dataframe()
         return results
 
     def get_embeddings(self, data: str, task: str) -> List[float]:
@@ -271,10 +279,16 @@ class BigQuery_VectorStore(VannaBase):
         return self.conn.query(query).result().to_dataframe()
 
     def remove_training_data(self, id: str, **kwargs) -> bool:
-        query = f"DELETE FROM `{self.table_id}` WHERE id = '{id}'"
+        query = f"DELETE FROM `{self.table_id}` WHERE id = @id"
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("id", "STRING", id),
+            ]
+        )
 
         try:
-            self.conn.query(query).result()
+            self.conn.query(query, job_config=job_config).result()
             return True
 
         except Exception as e:

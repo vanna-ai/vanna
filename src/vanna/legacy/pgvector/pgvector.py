@@ -250,9 +250,9 @@ class PG_VectorStore(VannaBase):
 
         # SQL query to delete rows based on the condition
         query = text(
-            f"""
+            """
             DELETE FROM langchain_pg_embedding
-            WHERE cmetadata->>'id' LIKE '%{suffix}'
+            WHERE cmetadata->>'id' LIKE :suffix
         """
         )
 
@@ -260,7 +260,7 @@ class PG_VectorStore(VannaBase):
         with engine.connect() as connection:
             with connection.begin() as transaction:
                 try:
-                    result = connection.execute(query)
+                    result = connection.execute(query, {"suffix": f"%{suffix}"})
                     transaction.commit()  # Explicitly commit the transaction
                     if result.rowcount > 0:
                         logging.info(
