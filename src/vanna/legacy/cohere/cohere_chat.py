@@ -40,6 +40,8 @@ class Cohere_Chat(VannaBase):
         self.client = OpenAI(
             base_url="https://api.cohere.ai/compatibility/v1",
             api_key=api_key,
+            timeout=60.0,
+        max_retries=3,
         )
 
     def system_message(self, message: str) -> any:

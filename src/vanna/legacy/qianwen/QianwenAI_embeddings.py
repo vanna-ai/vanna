@@ -14,7 +14,7 @@ class QianWenAI_Embeddings(VannaBase):
         if self.client is not None:
             return
 
-        self.client = OpenAI()
+        self.client = OpenAI(timeout=60.0, max_retries=3)
 
         if config is None:
             return
