@@ -8,7 +8,6 @@
 
 https://github.com/user-attachments/assets/476cd421-d0b0-46af-8b29-0f40c73d6d83
 
-
 ![Vanna2 Demo](img/architecture.png)
 
 ---
@@ -44,10 +43,7 @@ https://github.com/user-attachments/assets/476cd421-d0b0-46af-8b29-0f40c73d6d83
 ```html
 <!-- Drop into any existing webpage -->
 <script src="https://img.vanna.ai/vanna-components.js"></script>
-<vanna-chat
-  sse-endpoint="https://your-api.com/chat"
-  theme="dark">
-</vanna-chat>
+<vanna-chat sse-endpoint="https://your-api.com/chat" theme="dark"> </vanna-chat>
 ```
 
 Uses your existing cookies/JWTs. Works with React, Vue, or plain HTML.
@@ -75,29 +71,34 @@ All streamed in real-time to your web component.
 ## Why Vanna 2.0?
 
 ### ✅ Get Started Instantly
-* Production chat interface
-* Custom agent with your database
-* Embed in any webpage
+
+- Production chat interface
+- Custom agent with your database
+- Embed in any webpage
 
 ### ✅ Enterprise-Ready Security
+
 **User-aware at every layer** — Identity flows through system prompts, tool execution, and SQL filtering
 **Row-level security** — Queries automatically filtered per user permissions
 **Audit logs** — Every query tracked per user for compliance
 **Rate limiting** — Per-user quotas via lifecycle hooks
 
 ### ✅ Beautiful Web UI Included
+
 **Pre-built `<vanna-chat>` component** — No need to build your own chat interface
 **Streaming tables & charts** — Rich components, not just text
 **Responsive & customizable** — Works on mobile, desktop, light/dark themes
 **Framework-agnostic** — React, Vue, plain HTML
 
 ### ✅ Works With Your Stack
-**Any LLM:** OpenAI, Anthropic, Ollama, Azure, Google Gemini, AWS Bedrock, Mistral, Others
+
+**Any LLM:** OpenAI, Anthropic, Groq, Ollama, Azure, Google Gemini, AWS Bedrock, Mistral, Others
 **Any Database:** PostgreSQL, MySQL, Snowflake, BigQuery, Redshift, SQLite, Oracle, SQL Server, DuckDB, ClickHouse, Others
 **Your Auth System:** Bring your own — cookies, JWTs, OAuth tokens
 **Your Framework:** FastAPI, Flask
 
 ### ✅ Extensible But Opinionated
+
 **Custom tools** — Extend the `Tool` base class
 **Lifecycle hooks** — Quota checking, logging, content filtering
 **LLM middlewares** — Caching, prompt engineering
@@ -191,7 +192,19 @@ register_chat_routes(app, chat_handler)
 # - GET / (optional web UI)
 ```
 
+**Using Groq instead of Anthropic:**
+
+```python
+from vanna.integrations.groq import GroqLlmService
+
+llm = GroqLlmService(
+    api_key="your_api_key",
+    model="llama-3.3-70b-versatile"
+)
+```
+
 **Then in your frontend:**
+
 ```html
 <vanna-chat sse-endpoint="/api/vanna/v2/chat_sse"></vanna-chat>
 ```
@@ -264,6 +277,7 @@ Vanna 2.0 includes powerful enterprise features for production use:
 ## Use Cases
 
 **Vanna is ideal for:**
+
 - 📊 Data analytics applications with natural language interfaces
 - 🔐 Multi-tenant SaaS needing user-aware permissions
 - 🎨 Teams wanting a pre-built web component + backend
