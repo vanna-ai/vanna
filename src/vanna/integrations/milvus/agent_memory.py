@@ -175,7 +175,9 @@ class MilvusAgentMemory(AgentMemory):
             embedding = self._create_embedding(question)
 
             # Build filter expression
-            expr = "success == true"
+            # Exclude text memories (tool_name == "") so only tool usage
+            # records are returned.
+            expr = 'success == true && tool_name != ""'
             if tool_name_filter:
                 expr += f' && tool_name == "{tool_name_filter}"'
 
@@ -204,10 +206,10 @@ class MilvusAgentMemory(AgentMemory):
                     similarity_score = hit.distance
 
                     if similarity_score >= similarity_threshold:
-                        args = json.loads(hit.entity.get("args_json", "{}"))
-                        metadata_dict = json.loads(
-                            hit.entity.get("metadata_json", "{}")
-                        )
+                        args_raw = hit.entity.get("args_json", "{}") or "{}"
+                        args = json.loads(args_raw)
+                        metadata_raw = hit.entity.get("metadata_json", "{}") or "{}"
+                        metadata_dict = json.loads(metadata_raw)
 
                         memory = ToolMemory(
                             memory_id=hit.entity.get("id"),
@@ -239,9 +241,9 @@ class MilvusAgentMemory(AgentMemory):
         def _get_recent():
             collection = self._get_collection()
 
-            # Query all entries and sort by timestamp
+            # Query tool usage entries (exclude text memories) and sort by timestamp
             results = collection.query(
-                expr="id != ''",
+                expr='id != \'\' && tool_name != ""',
                 output_fields=[
                     "id",
                     "question",
@@ -261,8 +263,10 @@ class MilvusAgentMemory(AgentMemory):
 
             memories = []
             for result in sorted_results[:limit]:
-                args = json.loads(result.get("args_json", "{}"))
-                metadata_dict = json.loads(result.get("metadata_json", "{}"))
+                args_raw = result.get("args_json", "{}") or "{}"
+                args = json.loads(args_raw)
+                metadata_raw = result.get("metadata_json", "{}") or "{}"
+                metadata_dict = json.loads(metadata_raw)
 
                 memory = ToolMemory(
                     memory_id=result.get("id"),
@@ -311,7 +315,7 @@ class MilvusAgentMemory(AgentMemory):
                 [embedding],
                 [content],
                 [""],  # tool_name (empty for text memories)
-                [""],  # args_json (empty for text memories)
+                ["{}"],  # args_json (valid empty JSON for text memories)
                 [timestamp],
                 [True],  # success (always true for text memories)
                 [json.dumps({"is_text_memory": True})],  # metadata_json
