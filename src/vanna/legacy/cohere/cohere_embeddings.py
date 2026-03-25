@@ -37,6 +37,7 @@ class Cohere_Embeddings(VannaBase):
             base_url="https://api.cohere.ai/compatibility/v1",
             api_key=api_key,
             timeout=60.0,
+        max_retries=3,
         )
 
     def generate_embedding(self, data: str, **kwargs) -> list[float]:

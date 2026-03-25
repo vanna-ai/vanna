@@ -23,7 +23,7 @@ class OpenAIResponsesService(LlmService):
                 "openai package is required. Install with: pip install 'vanna[openai]'"
             ) from e
 
-        self.client = AsyncOpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"), timeout=60.0)
+        self.client = AsyncOpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"), timeout=60.0, max_retries=3)
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-5")
 
     async def send_request(self, request: LlmRequest) -> LlmResponse:
