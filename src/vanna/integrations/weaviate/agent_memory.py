@@ -143,8 +143,11 @@ class WeaviateAgentMemory(AgentMemory):
 
             embedding = self._create_embedding(question)
 
-            # Build filter
-            filters = weaviate.classes.query.Filter.by_property("success").equal(True)
+            # Build filter — exclude text memories (tool_name == "")
+            filters = (
+                weaviate.classes.query.Filter.by_property("success").equal(True)
+                & weaviate.classes.query.Filter.by_property("tool_name").not_equal("")
+            )
             if tool_name_filter:
                 filters = filters & weaviate.classes.query.Filter.by_property(
                     "tool_name"
@@ -165,8 +168,10 @@ class WeaviateAgentMemory(AgentMemory):
 
                 if similarity_score >= similarity_threshold:
                     properties = obj.properties
-                    args = json.loads(properties.get("args_json", "{}"))
-                    metadata_dict = json.loads(properties.get("metadata_json", "{}"))
+                    args_raw = properties.get("args_json", "{}") or "{}"
+                    args = json.loads(args_raw)
+                    metadata_raw = properties.get("metadata_json", "{}") or "{}"
+                    metadata_dict = json.loads(metadata_raw)
 
                     memory = ToolMemory(
                         memory_id=str(obj.uuid),
@@ -197,8 +202,11 @@ class WeaviateAgentMemory(AgentMemory):
             client = self._get_client()
             collection = client.collections.get(self.collection_name)
 
-            # Query and sort by timestamp
-            response = collection.query.fetch_objects(limit=1000)
+            # Query tool usage entries (exclude text memories) and sort by timestamp
+            response = collection.query.fetch_objects(
+                filters=weaviate.classes.query.Filter.by_property("tool_name").not_equal(""),
+                limit=1000,
+            )
 
             # Convert to list and sort
             objects_list = list(response.objects)
@@ -211,8 +219,10 @@ class WeaviateAgentMemory(AgentMemory):
             memories = []
             for obj in sorted_objects[:limit]:
                 properties = obj.properties
-                args = json.loads(properties.get("args_json", "{}"))
-                metadata_dict = json.loads(properties.get("metadata_json", "{}"))
+                args_raw = properties.get("args_json", "{}") or "{}"
+                args = json.loads(args_raw)
+                metadata_raw = properties.get("metadata_json", "{}") or "{}"
+                metadata_dict = json.loads(metadata_raw)
 
                 memory = ToolMemory(
                     memory_id=str(obj.uuid),
@@ -260,7 +270,7 @@ class WeaviateAgentMemory(AgentMemory):
             properties = {
                 "question": content,  # Using question field for content
                 "tool_name": "",  # Empty for text memories
-                "args_json": "",
+                "args_json": "{}",
                 "timestamp": timestamp,
                 "success": True,
                 "metadata_json": json.dumps({"is_text_memory": True}),
