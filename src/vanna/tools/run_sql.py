@@ -62,8 +62,16 @@ class RunSqlTool(Tool[RunSqlToolArgs]):
             # Determine query type
             query_type = args.sql.strip().upper().split()[0]
 
-            if query_type == "SELECT":
-                # Handle SELECT queries with results
+            # This includes SHOW, DESCRIBE, EXPLAIN, etc., which return tabular data.
+            # Some SQL commands like SHOW, DESCRIBE, and EXPLAIN return result sets
+            # but are not SELECT statements. Treat them as read queries to ensure
+            # their results are passed to the LLM instead of being interpreted as
+            # data manipulation operations. 
+            # rows affected" message, preventing hallucinations for schema or table introspection queries.
+            READ_QUERY_TYPES = {"SELECT", "SHOW", "DESCRIBE", "DESC", "EXPLAIN", "WITH"}
+
+            if query_type in READ_QUERY_TYPES:
+                # Handle  READ_QUERY_TYPES queries with results
                 if df.empty:
                     result = "Query executed successfully. No rows returned."
                     ui_component = UiComponent(
