@@ -146,6 +146,27 @@ async def test_gemini_streaming_request(test_user):
 
 @pytest.mark.gemini
 @pytest.mark.asyncio
+async def test_gemini_initialization_with_vertexai():
+    """Test that Gemini service can be initialized with vertexai=True parameter."""
+    from vanna.integrations.google import GeminiLlmService
+
+    # This test will be skipped by conftest.py if GOOGLE_API_KEY is not set
+    llm = GeminiLlmService(
+        model="gemini-2.5-pro",
+        temperature=0.7,
+        vertexai=True,
+    )
+
+    print(f"✓ GeminiLlmService initialized with vertexai=True")
+    print(f"  Model: {llm.model_name}")
+    print(f"  Temperature: {llm.temperature}")
+
+    assert llm.model_name == "gemini-2.5-pro"
+    assert llm.temperature == 0.7
+
+
+@pytest.mark.gemini
+@pytest.mark.asyncio
 async def test_gemini_validate_tools():
     """Test tool validation (does not require API key for actual calls)."""
     from vanna.integrations.google import GeminiLlmService

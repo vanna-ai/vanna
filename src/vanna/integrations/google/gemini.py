@@ -33,6 +33,9 @@ class GeminiLlmService(LlmService):
         api_key: API key; falls back to env `GOOGLE_API_KEY` or `GEMINI_API_KEY`.
             GOOGLE_API_KEY takes precedence if both are set.
         temperature: Temperature for generation (0.0-2.0). Default 0.7.
+        vertexai: If True, use Vertex AI endpoint instead of direct Gemini API.
+            Requires GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION to be set.
+            Default False.
         extra_config: Extra kwargs forwarded to GenerateContentConfig.
     """
 
@@ -41,6 +44,7 @@ class GeminiLlmService(LlmService):
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         temperature: float = 0.7,
+        vertexai: bool = False,
         **extra_config: Any,
     ) -> None:
         try:
@@ -67,7 +71,7 @@ class GeminiLlmService(LlmService):
         self._types = types
 
         # Create client
-        self._client = genai.Client(api_key=api_key)
+        self._client = genai.Client(api_key=api_key, vertexai=vertexai)
 
         # Store generation config
         self.temperature = temperature
