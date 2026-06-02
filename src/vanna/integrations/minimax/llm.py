@@ -3,8 +3,8 @@ MiniMax LLM service implementation.
 
 This module provides an implementation of the LlmService interface backed by
 MiniMax's OpenAI-compatible Chat Completions API. MiniMax provides models such
-as MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, and
-MiniMax-M2.5-highspeed with 204K context windows.
+as MiniMax-M3 (default, 512K context with image input support),
+MiniMax-M2.7, and MiniMax-M2.7-highspeed.
 
 The service uses the openai Python SDK pointed at MiniMax's API endpoint,
 since MiniMax exposes an OpenAI-compatible interface.
@@ -32,7 +32,7 @@ class MinimaxLlmService(LlmService):
     This service wraps that API using the ``openai`` Python SDK.
 
     Args:
-        model: MiniMax model name (e.g., ``"MiniMax-M2.7"``).
+        model: MiniMax model name (e.g., ``"MiniMax-M3"``).
         api_key: API key; falls back to env ``MINIMAX_API_KEY``.
         base_url: Optional custom base URL; env ``MINIMAX_BASE_URL`` if unset.
             Defaults to ``https://api.minimax.io/v1``.
@@ -40,7 +40,7 @@ class MinimaxLlmService(LlmService):
     """
 
     DEFAULT_BASE_URL = "https://api.minimax.io/v1"
-    DEFAULT_MODEL = "MiniMax-M2.7"
+    DEFAULT_MODEL = "MiniMax-M3"
 
     def __init__(
         self,

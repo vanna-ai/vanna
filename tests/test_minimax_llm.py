@@ -31,12 +31,19 @@ class TestMinimaxLlmServiceInitialization:
 
     @patch("openai.OpenAI")
     def test_init_default_model(self, mock_openai):
-        """Test that default model is MiniMax-M2.7."""
+        """Test that default model is MiniMax-M3."""
         from vanna.integrations.minimax import MinimaxLlmService
 
         service = MinimaxLlmService(api_key="test-key")
 
-        assert service.model == "MiniMax-M2.7"
+        assert service.model == "MiniMax-M3"
+
+    @patch("openai.OpenAI")
+    def test_init_default_model_class_constant(self, mock_openai):
+        """Test that DEFAULT_MODEL class constant is MiniMax-M3."""
+        from vanna.integrations.minimax import MinimaxLlmService
+
+        assert MinimaxLlmService.DEFAULT_MODEL == "MiniMax-M3"
 
     @patch("openai.OpenAI")
     def test_init_default_base_url(self, mock_openai):
@@ -54,16 +61,16 @@ class TestMinimaxLlmServiceInitialization:
         from vanna.integrations.minimax import MinimaxLlmService
 
         service = MinimaxLlmService(
-            model="MiniMax-M2.5-highspeed",
+            model="MiniMax-M2.7-highspeed",
             api_key="test-key",
         )
 
-        assert service.model == "MiniMax-M2.5-highspeed"
+        assert service.model == "MiniMax-M2.7-highspeed"
 
     @patch.dict(
         "os.environ",
         {
-            "MINIMAX_MODEL": "MiniMax-M2.5-highspeed",
+            "MINIMAX_MODEL": "MiniMax-M2.7-highspeed",
             "MINIMAX_API_KEY": "env-key",
             "MINIMAX_BASE_URL": "https://custom.minimax.io/v1",
         },
@@ -75,7 +82,7 @@ class TestMinimaxLlmServiceInitialization:
 
         service = MinimaxLlmService()
 
-        assert service.model == "MiniMax-M2.5-highspeed"
+        assert service.model == "MiniMax-M2.7-highspeed"
 
         call_kwargs = mock_openai.call_args[1]
         assert call_kwargs["api_key"] == "env-key"
@@ -219,7 +226,7 @@ class TestMinimaxLlmServicePayloadBuilding:
         from vanna.integrations.minimax import MinimaxLlmService
 
         service = MinimaxLlmService(
-            model="MiniMax-M2.5-highspeed", api_key="test-key"
+            model="MiniMax-M2.7-highspeed", api_key="test-key"
         )
 
         request = LlmRequest(
@@ -229,7 +236,7 @@ class TestMinimaxLlmServicePayloadBuilding:
 
         payload = service._build_payload(request)
 
-        assert payload["model"] == "MiniMax-M2.5-highspeed"
+        assert payload["model"] == "MiniMax-M2.7-highspeed"
 
 
 class TestMinimaxLlmServiceToolValidation:
